@@ -9,6 +9,7 @@ db = SQLAlchemy()
 
 def initialize_models():
     from Server.Models.Users import Users
+    from Server.Models.Shops import Shops
 
 def create_app(config_name):
     app.config.from_object(config_name)
