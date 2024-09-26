@@ -8,11 +8,13 @@ app = Flask(__name__)
 db = SQLAlchemy()
 
 def initialize_models():
-    pass
+    from Server.Models.Users import Users
 
 def create_app(config_name):
     app.config.from_object(config_name)
-   
+    app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    
     #Initialize DB with app
     db.init_app(app)
     migrate = Migrate(app, db)
@@ -20,6 +22,7 @@ def create_app(config_name):
     # Create database schemas
     with app.app_context():
         initialize_models()
+        
 
 
     return app
