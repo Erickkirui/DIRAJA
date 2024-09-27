@@ -11,6 +11,7 @@ def initialize_models():
     from Server.Models.Users import Users
     from Server.Models.Shops import Shops
     from Server.Models.Sales import Sales
+    from Server.Models.Bank import Bank
 
 def create_app(config_name):
     app.config.from_object(config_name)
