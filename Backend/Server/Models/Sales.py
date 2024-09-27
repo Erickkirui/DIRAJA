@@ -35,7 +35,7 @@ class Sales(db.Model):
     @validates('payment_method')
     def validate_payment_method(self, key,payment_method):
         valid_method = ['bank', 'cash', 'mpesa']
-        assert payment_method in payment_method, f"Invalid status. Must be one of: {', '.join(valid_method)}"
+        assert payment_method in payment_method, f"Invalid Payment Method. Must be one of: {', '.join(valid_method)}"
         return payment_method
     
     @validates('metric')
