@@ -50,6 +50,5 @@ class Sales(db.Model):
             f"shop_id='{self.shop_id}', customer_name='{self.customer_name}', "
             f"item_nem={self.item_name}, quantity='{self.quantity}', metric='{self.metric}', "
             f"unit_price='{self.unit_price}', amount_paid='{self.amount_paid}'),"
-            f"total_price='{self.total_price}', payment_method='{self.payment_method}'),"
-            f"created_at='{self.created_at}')"
+            f"total_price='{self.total_price}', payment_method='{self.payment_method}')"
         )
