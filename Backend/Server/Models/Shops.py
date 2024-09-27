@@ -20,7 +20,8 @@ class Shops(db.Model):
     #Relationships
     users = db.relationship('Users', backref='shops', lazy=True)
     sales = db.relationship('Sales', backref='shops', lazy=True)
-    
+   
+
     @validates('shopstatus')
     def validate_shopstatus(self, key, shopstatus):
         valid_shopstatus = ['active', 'inactive']
