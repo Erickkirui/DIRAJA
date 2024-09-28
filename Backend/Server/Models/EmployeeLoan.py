@@ -7,7 +7,7 @@ from sqlalchemy import func
 class EmployeeLoan(db.Model):
     __tablename__= "employeesLoan"
 
-
+    
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
     loan = db.Column (db.Float, nullable=False)
