@@ -11,7 +11,7 @@ class Stock(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
     quantity = db.Column (db.Float, nullable=False)
-    metric =db.Column (db.Float)
+    metric =db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)
     totalCost = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)

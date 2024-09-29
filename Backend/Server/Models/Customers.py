@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 from sqlalchemy.orm import validates
+from sqlalchemy import func
 
 class Customers(db.Model):
     __tablename__= "customers"
@@ -13,6 +14,7 @@ class Customers(db.Model):
     item = db.Column(db.JSON, unique=False, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # relationship 
     shops = db.relationship('Shops' ,backref='customers', lazy=True)

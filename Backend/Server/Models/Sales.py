@@ -1,7 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 from sqlalchemy.orm import validates
-from sqlalchemy import func
 
 class Sales(db.Model):
     __tablename__ = "sales"
@@ -11,24 +10,25 @@ class Sales(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
     customer_name = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default="unpaid", nullable=False)
     customer_number = db.Column(db.Integer, nullable=False)
     item_name = db.Column(db.String, nullable=False)
-    quantity = db.Column(db.Integer, nullable=False)
+    quantity = db.Column(db.Float, nullable=False)
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False)
     
+    #Relationship
     users = db.relationship('Users', backref='sales', lazy=True)
-    # shops = db.relationship('Shops', backref='sales', lazy=True)
+    
     
     #Validations
     @validates('status')
     def validate_status(self, key,status):
-        valid_status = ['paid', 'unpaid', 'partially paid']
+        valid_status = ['paid', 'unpaid', 'partially_paid']
         assert status in status, f"Invalid status. Must be one of: {', '.join(valid_status)}"
         return status
     
@@ -43,6 +43,14 @@ class Sales(db.Model):
         valid_metric = ['item', 'kg', 'ltrs']
         assert metric in metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
         return metric
+    
+    @validates('customer_number')
+    def validate_customer_number(self, key, customer_number):
+        phone_str = str(customer_number)
+        assert phone_str.isdigit(), "Phone number must contain only digits."
+        assert len(phone_str) >= 10 and len(phone_str) <= 15, "Phone number must be between 10 and 15 digits."
+        return customer_number
+    
    
     def __repr__(self):
         return (
