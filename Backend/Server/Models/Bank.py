@@ -16,7 +16,7 @@ class Bank(db.Model):
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     
     #Relationships
-    # sales = db.relationship('Sales', backref='bank', lazy=True)
+    sales = db.relationship('Sales', backref='bank', lazy=True)
     
     
     def __repr__(self):

@@ -14,14 +14,14 @@ class Employees(db.Model):
     phone_number = db.Column(db.Integer, nullable=False)
     work_email = db.Column(db.String(100), nullable= False)
     account_status= db.Column(db.String(10), nullable=False)
-    shop_assigned = db.Column (db.String, nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
     role = db.Column(db.String, nullable=False)
     personal_email = db.Column(db.String(100), nullable= False)
     designation = db.Column(db.String(100), nullable= False)
     date_of_birth = db.Column (db.DateTime, nullable=False)
     national_id_number = db.Column (db.Integer, nullable=False)
     kra_pin = db.Column (db.String(20), nullable= False)
-    monthly_gross_salary = db.Column (db.Integer, nullable=False)
+    monthly_gross_salary = db.Column (db.Float, nullable=False)
     payment_method = db.Column(db.String, nullable= False)
     bank_account_number = db.Column(db.Integer )
     bank_name = db.Column(db.String)
@@ -30,7 +30,11 @@ class Employees(db.Model):
     contract_termination_date = db.Column (db.DateTime, nullable=False)
     contract_renewal_date = db.Column (db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-
+    
+    #Relationship
+    shops = db.relationship('Shops' ,backref='employees', lazy=True)
+    
+    #Valiidations
     @validates('work_email')
     def validate_email(self, key, work_email):
         assert '@' in work_email, "work_email address must contain the @ symbol."
