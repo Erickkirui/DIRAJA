@@ -17,6 +17,7 @@ def initialize_models():
     from Server.Models.EmployeeLoan import  EmployeeLoan
     from Server.Models.Stock import Stock
     from Server.Models.Expenses import Expenses 
+    from Server.Models.Inventory import Inventory
 
 def create_app(config_name):
     app.config.from_object(config_name)
