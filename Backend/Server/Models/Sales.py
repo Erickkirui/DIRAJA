@@ -23,6 +23,7 @@ class Sales(db.Model):
     
     #Relationship
     users = db.relationship('Users', backref='sales', lazy=True)
+    shops = db.relationship('Shops', backref='sales_for_shop', lazy=True, foreign_keys=[shop_id])
     
     
     #Validations

@@ -11,7 +11,6 @@ class Shops(db.Model):
     #Table columns
     shops_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     shop_name = db.Column(db.String, unique=True, nullable=False)
     employee = db.Column(db.JSON, unique=True, nullable=False)
     shop_status = db.Column(db.String, default="active", nullable=False)
@@ -19,7 +18,7 @@ class Shops(db.Model):
     
     #Relationships
     users = db.relationship('Users', backref='shops', lazy=True)
-    sales = db.relationship('Sales', backref='shops', lazy=True)
+   
    
 
     @validates('shopstatus')
