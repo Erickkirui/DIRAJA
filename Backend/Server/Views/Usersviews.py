@@ -23,6 +23,10 @@ class Addusers(Resource):
         role = data.get('role')
         password = data.get('password')
 
+        # Check if user already exists
+        if Users.query.filter_by(email=email).first():
+            return {'message': 'User already exists'}, 400
+
         user = Users(username=username, email=email, password=password, role=role)
         db.session.add(user)
         db.session.commit()
@@ -35,8 +39,19 @@ class Addusers(Resource):
 class UsersResourceById(Resource):
 
 
-    def get(self):
-        pass
+    def get(self, users_id):
+        user = Users.query.get(users_id)
+
+        if user :
+            return {
+                    "users_id": user.users_id,
+                    "username": user.username,
+                    "email": user.email,
+                    "password": user.password,
+                    "role" : user.role
+                }, 200
+        else:
+            return {"error": "User not found"}, 404
 
     def delete(self):
         pass
