@@ -8,8 +8,8 @@ class Stock(db.Model):
     __tablename__= "stock"
 
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
+    stock_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     quantity = db.Column (db.Float, nullable=False)
     metric =db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)

@@ -8,8 +8,8 @@ class EmployeeLoan(db.Model):
     __tablename__= "employeesLoan"
 
     
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'))
+    loan_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
     loan = db.Column (db.Float, nullable=False)
     wallet_ballance =db.Column (db.Float)
 

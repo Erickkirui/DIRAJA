@@ -8,9 +8,9 @@ class Expenses(db.Model):
     __tablename__= "expenses"
 
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
+    expense_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     item = db.Column(db.String(100), unique=False, nullable=False)
     description = db.Column(db.String(100), nullable=False)
     quantity = db.Column (db.Float, nullable=True)

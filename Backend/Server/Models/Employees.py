@@ -7,14 +7,14 @@ from sqlalchemy import func
 class Employees(db.Model):
     __tablename__= "employees"
 
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    employee_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     first_name = db.Column(db.String(20), nullable=False)
     middle_name = db.Column(db.String(20), nullable=False)
     surname = db.Column(db.String(20), nullable=False)
     phone_number = db.Column(db.Integer, nullable=False)
     work_email = db.Column(db.String(100), nullable= False)
     account_status= db.Column(db.String(10), nullable=False)
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     role = db.Column(db.String, nullable=False)
     personal_email = db.Column(db.String(100), nullable= False)
     designation = db.Column(db.String(100), nullable= False)
