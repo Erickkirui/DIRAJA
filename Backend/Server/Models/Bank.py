@@ -9,8 +9,8 @@ class Bank(db.Model):
     
     
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    sales_id = db.Column(db.Integer, db.ForeignKey('sales.id'))
+    bank_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     bank_name = db.Column(db.String, unique=True, nullable=False)
     account_number = db.Column(db.JSON, unique=True, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

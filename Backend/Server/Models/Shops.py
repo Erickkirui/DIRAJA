@@ -9,9 +9,9 @@ class Shops(db.Model):
     
     
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    sales_id = db.Column(db.Integer, db.ForeignKey('sales.id'))
+    shops_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
+    sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     shop_name = db.Column(db.String, unique=True, nullable=False)
     employee = db.Column(db.JSON, unique=True, nullable=False)
     shop_status = db.Column(db.String, default="active", nullable=False)

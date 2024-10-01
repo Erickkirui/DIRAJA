@@ -6,9 +6,9 @@ class Sales(db.Model):
     __tablename__ = "sales"
     
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
+    sales_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     customer_name = db.Column(db.String(20), nullable=False)
     status = db.Column(db.String(20), default="unpaid", nullable=False)
     customer_number = db.Column(db.Integer, nullable=False)

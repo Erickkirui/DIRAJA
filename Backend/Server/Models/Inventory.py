@@ -8,7 +8,7 @@ class Inventory(db.Model):
     __tablename__= "inventory"
 
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    inventory_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     quantity = db.Column (db.Float, nullable=False)
     metric =db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)

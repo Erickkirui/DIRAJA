@@ -9,7 +9,7 @@ class Users(db.Model):
     __tablename__ = "users"
     
     #Table columns
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    users_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     username = db.Column(db.String(20), unique=False, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     role = db.Column(db.String, default="manager", nullable=False)

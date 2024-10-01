@@ -6,11 +6,11 @@ from sqlalchemy import func
 class Customers(db.Model):
     __tablename__= "customers"
 
-    id = db.Column(db.Integer, primary_key=True , autoincrement=True)
+    customer_id = db.Column(db.Integer, primary_key=True , autoincrement=True)
     customer_name = db.Column(db.String(20), nullable=False)
     customer_number = db.Column(db.Integer, nullable=False)
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.id'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     item = db.Column(db.JSON, unique=False, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), nullable=False)
