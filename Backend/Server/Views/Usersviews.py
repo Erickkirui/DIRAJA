@@ -15,6 +15,9 @@ class Addusers(Resource):
     def post (self):
         data = request.get_json()
 
+        if 'username' not in data or 'email' not in data or 'password' not in data:
+            return {'message': 'Missing username, email, or password'}, 400
+
         username = data.get('username')
         email = data.get('email')
         role = data.get('role')
