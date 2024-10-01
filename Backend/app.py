@@ -19,6 +19,11 @@ def initialize_models():
     from Server.Models.Expenses import Expenses 
     from Server.Models.Inventory import Inventory
 
+def initialize_views():
+    from  Server.Views import api_endpoint
+    app.register_blueprint(api_endpoint)
+
+
 def create_app(config_name):
     app.config.from_object(config_name)
     app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
@@ -31,6 +36,10 @@ def create_app(config_name):
     # Create database schemas
     with app.app_context():
         initialize_models()
+
+    initialize_views()
+
+
         
 
 
