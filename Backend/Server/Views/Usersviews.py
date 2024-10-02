@@ -1,7 +1,9 @@
 from  flask_restful import Resource
 from Server.Models.Users import Users
 from app import db
-from flask import request
+import bcrypt
+from flask_jwt_extended import create_access_token, create_refresh_token
+from flask import jsonify,request,make_response
 
 
 
@@ -33,7 +35,35 @@ class Addusers(Resource):
 
 
         return {'message': 'User added successfully'}, 201
-    
+
+
+class UserLogin(Resource):
+    def post(self):
+        
+        email = request.json.get("email", None)
+        password = request.json.get("password", None)
+
+
+        user = Users.query.filter_by(email=email).one_or_none()
+
+        if not user:
+            return make_response(jsonify({"error": "User not found. Please check your email."}), 404)
+
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            return make_response(jsonify({"error": "Wrong password"}), 401)
+        
+        username = user.username
+
+        # Include the role in the response
+        access_token = create_access_token(identity=user.users_id, additional_claims={'roles': [user.role]})
+        refresh_token = create_refresh_token(identity=user.users_id)
+
+        return make_response(jsonify({
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "username": username,
+            "role": user.role
+        }), 200)
 
 
 class UsersResourceById(Resource):
