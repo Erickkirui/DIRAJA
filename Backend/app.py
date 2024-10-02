@@ -2,10 +2,12 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_jwt_extended import JWTManager
 
 
 app = Flask(__name__)
 db = SQLAlchemy()
+jwt = JWTManager()
 
 def initialize_models():
     from Server.Models.Users import Users
@@ -28,10 +30,15 @@ def create_app(config_name):
     app.config.from_object(config_name)
     app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    #JWT SETUP KEY
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 86000))
     
     #Initialize DB with app
     db.init_app(app)
     migrate = Migrate(app, db)
+    jwt.init_app(app)
    
     # Create database schemas
     with app.app_context():
