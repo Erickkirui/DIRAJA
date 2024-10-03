@@ -27,8 +27,8 @@ class CountUsers(Resource):
         return {"total users": countUsers}, 200
 
 class Addusers(Resource):
-    @jwt_required
-    @check_role('manager')
+    
+    
     def post (self):
         data = request.get_json()
 
@@ -102,3 +102,20 @@ class UsersResourceById(Resource):
         pass
 
    
+class GetAllUsers(Resource):
+
+    def get(self):
+        users = Users.query.all()
+
+        all_users = [{
+
+            "user_id": user.users_id,
+            "username": user.username,
+            "email": user.email,
+            "password": user.password,
+            "role" : user.role
+            
+        } for user in users]
+
+        return make_response(jsonify(all_users), 200)
+    
