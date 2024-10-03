@@ -20,25 +20,45 @@ def check_role(required_role):
 
 class AddInventory(Resource):
     
-    @jwt_required
-    @check_role('manager')
+    # @jwt_required
+    # @check_role('manager')
     def post (self):
         data = request.get_json()
         
         
-        if 'itemname' not in data or 'quantity'  not in data or 'metric' not in data or 'unitCost' not in data or 'amountPaid' not in data or 'unitPrice' not in data:
+        if 'itemname' not in data or 'quantity'  not in data or 'metric' not in data or 'unitCost' not in data  or 'totalCost' not in data or 'amountPaid' not in data or 'unitPrice' not in data:
             return {'message': 'Missing itemname, quantity, metric, unitcost, amountpaid or unitprice'}, 400
     
         itemname = data.get('itemname')
         quantity = data.get('quantity') 
         metric =  data.get('metric')
+        totalCost = data.get('totalCost')
         unitCost = data.get('unitCost')
         amountPaid = data.get('amountPaid')
         unitPrice = data.get('unitPrice')
         
-
-        inventory = Inventory(itemname=itemname, quantity=quantity, metric=metric, unitCost=unitCost, amountPaid=amountPaid, unitPrice=unitPrice)
+        inventory = Inventory(itemname=itemname, quantity=quantity, metric=metric, totalCost=totalCost, unitCost=unitCost, amountPaid=amountPaid, unitPrice=unitPrice)
         db.session.add(inventory)
         db.session.commit()
         
         return {'message': 'Inventory added successfully'}, 201
+    
+class GetAllInventory(Resource):
+    # @jwt_required
+    def get(self):
+        inventories = Inventory.query.all()
+
+        all_inventory = [{
+
+            "inventory_id": inventory.inventory_id,
+            "itemname": inventory.itemname,
+            "quantity": inventory.quantity,
+            "metric": inventory.metric,
+            "totalCost" : inventory.totalCost,
+            "unitCost": inventory.unitCost,
+            "amountPaid": inventory.amountPaid,
+            "unitPrice": inventory.unitPrice
+            
+        } for inventory in inventories]
+
+        return make_response(jsonify(all_inventory), 200)

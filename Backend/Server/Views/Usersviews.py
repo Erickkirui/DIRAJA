@@ -21,7 +21,7 @@ def check_role(required_role):
 
 
 class CountUsers(Resource):
-
+    @jwt_required()
     def get(self):
         countUsers = Users.query.count()
         return {"total users": countUsers}, 200
@@ -103,7 +103,7 @@ class UsersResourceById(Resource):
 
    
 class GetAllUsers(Resource):
-    @jwt_required
+    # @jwt_required
     def get(self):
         users = Users.query.all()
 
