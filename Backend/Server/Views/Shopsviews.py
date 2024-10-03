@@ -88,6 +88,25 @@ class ShopsResourceByName(Resource):
             return {"message": "Shop deleted successfully"}, 200
         else:
             return {"error": "Shop not found"}, 404
+        
+    def put(self, shopname):
+        shop = Shops.query.filter_by(shopname=shopname).first()
+        if not shop:
+            return {"error": "Shop not found"}, 404
+        
+        data = request.get_json()
+        
+        # Update the shop's fields
+        if 'shopname' in data:
+            shop.shopname = data['shopname']
+        if 'employee' in data:
+            shop.employee = data['employee']
+        if 'shopstatus' in data:
+            shop.shopstatus = data['shopstatus']
+        
+        db.session.commit()
+        
+        return {"message": "Shop updated successfully"}, 200
 
 
    
