@@ -4,7 +4,20 @@ from app import db
 import bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
 from flask import jsonify,request,make_response
+from functools import wraps
+from flask_jwt_extended import jwt_required,get_jwt_identity
 
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 
 
 class CountUsers(Resource):
@@ -14,6 +27,8 @@ class CountUsers(Resource):
         return {"total users": countUsers}, 200
 
 class Addusers(Resource):
+    
+    
     def post (self):
         data = request.get_json()
 
@@ -87,3 +102,20 @@ class UsersResourceById(Resource):
         pass
 
    
+class GetAllUsers(Resource):
+    @jwt_required
+    def get(self):
+        users = Users.query.all()
+
+        all_users = [{
+
+            "user_id": user.users_id,
+            "username": user.username,
+            "email": user.email,
+            "password": user.password,
+            "role" : user.role
+            
+        } for user in users]
+
+        return make_response(jsonify(all_users), 200)
+    
