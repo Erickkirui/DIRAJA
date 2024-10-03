@@ -6,6 +6,7 @@ api_endpoint = Blueprint
 # add all file inputs 
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, ShopsResourceByName
+from Server.Views.Inventoryviews import AddInventory
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
@@ -23,3 +24,6 @@ api.add_resource(UserLogin, '/login')
 api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
 api.add_resource(ShopsResourceByName, '/shop/<string:shopname>')
+
+# inventory endpoints 
+api.add_resource(AddInventory, '/newinventory')
