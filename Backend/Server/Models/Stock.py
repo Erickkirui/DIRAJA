@@ -9,9 +9,10 @@ class Stock(db.Model):
 
     #Table columns
     stock_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    itemname = db.Column(db.String(100), nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     quantity = db.Column (db.Float, nullable=False)
-    metric =db.Column (db.String)
+    metric = db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)
     totalCost = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)

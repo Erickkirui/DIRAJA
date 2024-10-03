@@ -9,8 +9,9 @@ class Inventory(db.Model):
 
     #Table columns
     inventory_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    itemname = db.Column(db.String(100), nullable=False)
     quantity = db.Column (db.Float, nullable=False)
-    metric =db.Column (db.String)
+    metric = db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)
     totalCost = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
