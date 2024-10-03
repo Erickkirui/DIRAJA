@@ -7,7 +7,7 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, ShopsResourceByName
 
-from Server.Views.Inventoryviews import AddInventory
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory
 
 from Server.Views.Expenses import AllExpenses
 
@@ -32,6 +32,7 @@ api.add_resource(ShopsResourceByName, '/shop/<string:shopname>')
 
 # inventory endpoints 
 api.add_resource(AddInventory, '/newinventory')
+api.add_resource(GetAllInventory,'/allinventories')
 
 
 # expenses endpoint 
