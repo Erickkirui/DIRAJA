@@ -62,3 +62,23 @@ class GetAllInventory(Resource):
         } for inventory in inventories]
 
         return make_response(jsonify(all_inventory), 200)
+    
+class InventoryByName(Resource):
+    def get(self, itemname):
+
+        inventory = Inventory.query.filter_by(itemname=itemname).first()
+
+   
+        if inventory :
+            return {
+            "inventory_id": inventory.inventory_id,
+            "itemname": inventory.itemname,
+            "quantity": inventory.quantity,
+            "metric": inventory.metric,
+            "totalCost" : inventory.totalCost,
+            "unitCost": inventory.unitCost,
+            "amountPaid": inventory.amountPaid,
+            "unitPrice": inventory.unitPrice
+        }, 200
+        else:
+             return {"error": "Inventory not found"}, 400
