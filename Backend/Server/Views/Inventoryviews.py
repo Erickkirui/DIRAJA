@@ -82,3 +82,41 @@ class InventoryByName(Resource):
         }, 200
         else:
              return {"error": "Inventory not found"}, 400
+         
+    def put(self, itemname):
+        inventory = Inventory.query.filter_by(itemname=itemname).first()
+        if not inventory:
+            return {"error": "Item not found"}, 404
+        
+        data = request.get_json()
+        
+        # Update the shop's fields
+        if 'itemname' in data:
+            inventory.itemname = data['itemname']
+        if 'quantity' in data:
+            inventory.quantity = data['quantity']
+        if 'metric' in data:
+            inventory.metric = data['metric']
+        if 'unitCost' in data:
+            inventory.unitCost = data['unitCost']
+        if 'totalCost' in data:
+            inventory.totalcost = data['totalCost']
+        if 'amountPaid' in data:
+            inventory.amountPaid = data['amountPaid']
+        if 'unitPrice' in data:
+            inventory.metric = data['unitPrice']
+        
+        db.session.commit()
+        
+        return {"message": "Invemtory updated successfully"}, 200
+    
+    def delete(self, itemname):
+
+        inventory = Inventory.query.filter_by(itemname=itemname).first()
+        
+        if inventory:
+            db.session.delete(inventory)  
+            db.session.commit()  
+            return {"message": "item deleted successfully"}, 200
+        else:
+            return {"error": "item not found"}, 404
