@@ -12,7 +12,7 @@ class AddNewemployee(Resource):
     def post(self):
         data = request.get_json()
 
-        employee_id = data.get('employee_id')
+        
         first_name = data.get('first_name')
         middle_name = data.get('middle_name')
         surname = data.get('surname')
@@ -38,7 +38,7 @@ class AddNewemployee(Resource):
         contract_renewal_date = self.parse_date(data.get('contract_renewal_date'))
 
         new_employee = Employees(
-            employee_id=employee_id,
+            
             first_name=first_name,
             middle_name=middle_name,
             surname=surname,
@@ -80,3 +80,39 @@ class AddNewemployee(Resource):
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
         return None
+
+
+class GetAllemployees(Resource):
+
+    def get(self):
+
+        employees = Employees.query.all()
+
+        all_employess = [ {
+            'employee_id' : employee.employee_id,
+            'first_name' : employee.first_name,
+            'middle_name' : employee.middle_name,
+            'surname' : employee.surname,
+            'phone_number' : employee.phone_number,
+            'work_email' : employee.work_email,
+            'account_status' :employee. account_status,
+            'shop_id' : employee.shop_id,
+            'role' : employee.role,
+            'personal_email' :  employee.personal_email,
+            'designation' : employee.designation ,
+            'date_of_birth' : employee.date_of_birth,
+            'national_id_number':employee.national_id_number,
+            'kra_pin' : employee.kra_pin,
+            'monthly_gross_salary': employee.monthly_gross_salary,
+            'payment_method' : employee.payment_method,
+            'bank_account_number' : employee.bank_account_number,
+            'bank_name': employee.bank_name,
+            'department':employee.department,
+            'starting_date' : employee.starting_date,
+            'contract_termination_date': employee.contract_termination_date,
+            'contract_renewal_date': employee.contract_renewal_date
+
+        } for employee in employees ]
+
+
+        return make_response(jsonify(all_employess), 200)
