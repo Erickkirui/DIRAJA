@@ -30,11 +30,10 @@ class AddBank(Resource):
         
         return {'message': 'Bank added successfully'}, 201
     
-class BankResourceByName(Resource):
-    def get(self, bankname):
+class BankResourceById(Resource):
+    def get(self, bank_id):
 
-        bank = Bank.query.filter_by(bankname=bankname).first()
-
+        bank = Bank.query.get(bank_id)
    
         if bank :
             return {
@@ -46,9 +45,9 @@ class BankResourceByName(Resource):
              return {"error": "Bank not found"}, 400
          
          
-    def delete(self, bankname):
+    def delete(self, bank_id):
 
-        bank = Bank.query.filter_by(bankname=bankname).first()
+        bank = Bank.query.get(bank_id)
         
         if bank:
             db.session.delete(bank)  

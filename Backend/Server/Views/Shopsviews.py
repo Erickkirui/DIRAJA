@@ -1,10 +1,12 @@
 from  flask_restful import Resource
-from Server.Models.Shops import Shops
+from Server.Models.Shops import Shops, ShopStock
 from Server.Models.Users import Users
+from Server.Models.Inventory import Inventory, db, Distribution, Transfer
 from app import db
 from functools import wraps
 from flask import request,make_response,jsonify
 from flask_jwt_extended import jwt_required,get_jwt_identity
+from sqlalchemy.exc import SQLAlchemyError
 
 def check_role(required_role):
     def wrapper(fn):
@@ -110,7 +112,49 @@ class ShopsResourceByName(Resource):
 
 
    
-        
+#Delete a shopstock
+class ShopStockDelete(Resource):
+    def delete(self, shopname, stock_id):
+        try:
+            # Start a transaction
+            with db.session.begin_nested():
+                # Fetch the ShopStock entry
+                shop_stock = ShopStock.query.filter_by(shop_id=shopname, stock_id=stock_id).first()
+                if not shop_stock:
+                    return {"error": f"Stock with ID {stock_id} for Shop name {shopname} not found"}, 404
 
-        
-        
+                # Fetch the corresponding Inventory item
+                inventory_item = Inventory.query.get(shop_stock.inventory_id)
+                if not inventory_item:
+                    return {"error": f"Inventory item with ID {shop_stock.inventory_id} not found"}, 404
+
+                # Add the quantity back to the central inventory
+                inventory_item.quantity += shop_stock.quantity
+                db.session.add(inventory_item)
+
+                # Delete the ShopStock entry
+                db.session.delete(shop_stock)
+
+                # Commit the transaction
+                db.session.commit()
+
+            # Prepare the response
+            response = {
+                "message": "Shop stock deleted successfully and quantity returned to central inventory",
+                "inventory_item": {
+                    "inventory_id": inventory_item.inventory_id,
+                    "item_name": inventory_item.item_name,
+                    "updated_quantity": inventory_item.quantity
+                },
+                "deleted_stock": {
+                    "stock_id": stock_id,
+                    "shopname": shopname,
+                    "quantity_returned": shop_stock.quantity
+                }
+            }
+
+            return response, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while deleting shop stock"}, 500
