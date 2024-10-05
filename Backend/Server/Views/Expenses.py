@@ -45,7 +45,8 @@ class AddExpence(Resource):
 
 
 class AllExpenses(Resource):
-
+    
+    @jwt_required()
     def get(self):
 
         expenses = Expenses.query.all()
@@ -66,4 +67,31 @@ class AllExpenses(Resource):
 
         return make_response(jsonify(all_expenses), 200)
     
+
+class GetShopExpenses(Resource):
+    @jwt_required()
+    def get(self, shop_id):
+
+        shopExpenses= Expenses.query.filter_by(shop_id=shop_id).all()
+
+        expensesForShop = [{
+            
+            "expense_id " : expense.expense_id ,
+            "user_id": expense.user_id,
+            "shop_id" :expense.shop_id,
+            "item":expense.item,
+            "description" : expense.description,
+            "quantity" : expense.quantity,
+            "totalPrice" : expense.totalPrice,
+            "amountPaid" : expense.amountPaid,
+            "created_at" : expense.created_at
+
+        } for expense in shopExpenses]
+
+        return make_response(jsonify(expensesForShop), 200)
+
+
     
+
+
+
