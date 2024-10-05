@@ -83,7 +83,6 @@ class UserLogin(Resource):
 
 class UsersResourceById(Resource):
 
-
     def get(self, users_id):
         user = Users.query.get(users_id)
 
@@ -98,12 +97,21 @@ class UsersResourceById(Resource):
         else:
             return {"error": "User not found"}, 404
 
-    def delete(self):
-        pass
+    def delete(self, users_id):
+        user = Users.query.get(users_id)
+
+        if user:
+            # Delete the user
+            db.session.delete(user)
+            db.session.commit()
+
+            return {"message": f"User with id {users_id} deleted successfully"}, 200
+        else:
+            return {"error": "User not found"}, 404
 
    
 class GetAllUsers(Resource):
-    # @jwt_required
+    @jwt_required()
     def get(self):
         users = Users.query.all()
 
