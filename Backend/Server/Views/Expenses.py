@@ -45,7 +45,7 @@ class AddExpence(Resource):
 
 
 class AllExpenses(Resource):
-    
+
     @jwt_required()
     def get(self):
 
@@ -89,9 +89,74 @@ class GetShopExpenses(Resource):
         } for expense in shopExpenses]
 
         return make_response(jsonify(expensesForShop), 200)
-
-
     
 
 
+class ExpensesResources(Resource):
+    @jwt_required()
+    def get(self, expense_id):
+        # Fetch the specific expense by ID
+        expense = Expenses.query.get(expense_id)
 
+        if expense:
+            return {
+                "expense_id": expense.expense_id,
+                "user_id": expense.user_id,
+                "shop_id": expense.shop_id,
+                "item": expense.item,
+                "description": expense.description,
+                "quantity": expense.quantity,
+                "totalPrice": expense.totalPrice,
+                "amountPaid": expense.amountPaid,
+                # Convert datetime object to string
+                "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
+            }, 200
+        else:
+            return {"error": "Expense not found"}, 404
+
+    
+    @jwt_required()
+    def delete(self, expense_id):
+        # Fetch the specific expense by ID
+        expense = Expenses.query.get(expense_id)
+
+        if expense:
+            # Delete the expense
+            db.session.delete(expense)
+            db.session.commit()
+
+            return {"message": "Expense deleted successfully"}, 200
+        else:
+            return {"error": "Expense not found"}, 404
+        
+    @jwt_required()
+    def put(self, expense_id):
+        # Get the data from the request to update the expense
+        data = request.get_json()
+
+        # Fetch the specific expense by ID
+        expense = Expenses.query.get(expense_id)
+
+        if expense:
+            # Update the expense with the provided data
+            expense.item = data.get('item', expense.item)
+            expense.description = data.get('description', expense.description)
+            expense.quantity = data.get('quantity', expense.quantity)
+            expense.totalPrice = data.get('totalPrice', expense.totalPrice)
+            expense.amountPaid = data.get('amountPaid', expense.amountPaid)
+            
+            # Convert created_at from string to datetime, handling both formats
+            if 'created_at' in data:
+                try:
+                    # Try parsing the full datetime first
+                    expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    # If only the date is provided, parse as date
+                    expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d')
+
+            # Commit the changes to the database
+            db.session.commit()
+
+            return {"message": "Expense updated successfully"}, 200
+        else:
+            return {"error": "Expense not found"}, 404
