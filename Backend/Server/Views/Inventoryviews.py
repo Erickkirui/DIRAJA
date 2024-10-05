@@ -63,7 +63,7 @@ class GetAllInventory(Resource):
 
         return make_response(jsonify(all_inventory), 200)
     
-class InventoryByName(Resource):
+class InventoryResourceByName(Resource):
     def get(self, itemname):
 
         inventory = Inventory.query.filter_by(itemname=itemname).first()
