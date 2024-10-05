@@ -42,8 +42,6 @@ class AddExpence(Resource):
         return {"message": "Expense added successfully"}, 201
 
 
-
-
 class AllExpenses(Resource):
 
     @jwt_required()
