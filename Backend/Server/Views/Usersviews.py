@@ -111,7 +111,7 @@ class UsersResourceById(Resource):
 
    
 class GetAllUsers(Resource):
-    @jwt_required()
+    # @jwt_required()
     def get(self):
         users = Users.query.all()
 
