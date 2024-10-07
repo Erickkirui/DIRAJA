@@ -11,7 +11,7 @@ class EmployeeLoan(db.Model):
     loan_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
     loan = db.Column (db.Float, nullable=False)
-    wallet_ballance =db.Column (db.Float)
+    wallet_ballance =db.Column (db.Float ,default=0)
 
     #relationship 
 
