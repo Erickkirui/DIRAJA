@@ -11,7 +11,6 @@ class AddNewemployee(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
-
         
         first_name = data.get('first_name')
         middle_name = data.get('middle_name')
