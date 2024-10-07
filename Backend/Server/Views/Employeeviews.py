@@ -11,8 +11,7 @@ class AddNewemployee(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
-
-        employee_id = data.get('employee_id')
+        
         first_name = data.get('first_name')
         middle_name = data.get('middle_name')
         surname = data.get('surname')
@@ -38,7 +37,7 @@ class AddNewemployee(Resource):
         contract_renewal_date = self.parse_date(data.get('contract_renewal_date'))
 
         new_employee = Employees(
-            employee_id=employee_id,
+            
             first_name=first_name,
             middle_name=middle_name,
             surname=surname,
@@ -80,3 +79,137 @@ class AddNewemployee(Resource):
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
         return None
+
+
+class GetAllemployees(Resource):
+
+    def get(self):
+
+        employees = Employees.query.all()
+
+        all_employess = [ {
+            'employee_id' : employee.employee_id,
+            'first_name' : employee.first_name,
+            'middle_name' : employee.middle_name,
+            'surname' : employee.surname,
+            'phone_number' : employee.phone_number,
+            'work_email' : employee.work_email,
+            'account_status' :employee. account_status,
+            'shop_id' : employee.shop_id,
+            'role' : employee.role,
+            'personal_email' :  employee.personal_email,
+            'designation' : employee.designation ,
+            'date_of_birth' : employee.date_of_birth,
+            'national_id_number':employee.national_id_number,
+            'kra_pin' : employee.kra_pin,
+            'monthly_gross_salary': employee.monthly_gross_salary,
+            'payment_method' : employee.payment_method,
+            'bank_account_number' : employee.bank_account_number,
+            'bank_name': employee.bank_name,
+            'department':employee.department,
+            'starting_date' : employee.starting_date,
+            'contract_termination_date': employee.contract_termination_date,
+            'contract_renewal_date': employee.contract_renewal_date
+
+        } for employee in employees ]
+
+
+        return make_response(jsonify(all_employess), 200)
+    
+
+from flask import request, jsonify, make_response
+from datetime import datetime
+
+class Employeeresource(Resource):
+    def get(self, employee_id):
+        """Get employee details by employee_id"""
+        employee = Employees.query.get(employee_id)
+
+        if not employee:
+            return {"error": "Employee not found"}, 404
+
+        employee_data = {
+            'employee_id': employee.employee_id,
+            'first_name': employee.first_name,
+            'middle_name': employee.middle_name,
+            'surname': employee.surname,
+            'phone_number': employee.phone_number,
+            'work_email': employee.work_email,
+            'account_status': employee.account_status,
+            'shop_id': employee.shop_id,
+            'role': employee.role,
+            'personal_email': employee.personal_email,
+            'designation': employee.designation,
+            'date_of_birth': employee.date_of_birth,
+            'national_id_number': employee.national_id_number,
+            'kra_pin': employee.kra_pin,
+            'monthly_gross_salary': employee.monthly_gross_salary,
+            'payment_method': employee.payment_method,
+            'bank_account_number': employee.bank_account_number,
+            'bank_name': employee.bank_name,
+            'department': employee.department,
+            'starting_date': employee.starting_date,
+            'contract_termination_date': employee.contract_termination_date,
+            'contract_renewal_date': employee.contract_renewal_date
+        }
+
+        return make_response(jsonify(employee_data), 200)
+
+    def put(self, employee_id):
+        """Update employee details by employee_id"""
+        data = request.get_json()
+
+        employee = Employees.query.get(employee_id)
+        if not employee:
+            return {"error": "Employee not found"}, 404
+
+        # Update fields with the provided data
+        employee.first_name = data.get('first_name', employee.first_name)
+        employee.middle_name = data.get('middle_name', employee.middle_name)
+        employee.surname = data.get('surname', employee.surname)
+        employee.phone_number = data.get('phone_number', employee.phone_number)
+        employee.work_email = data.get('work_email', employee.work_email)
+        employee.account_status = data.get('account_status', employee.account_status)
+        employee.shop_id = data.get('shop_id', employee.shop_id)
+        employee.role = data.get('role', employee.role)
+        employee.personal_email = data.get('personal_email', employee.personal_email)
+        employee.designation = data.get('designation', employee.designation)
+        employee.date_of_birth = self.parse_date(data.get('date_of_birth'), employee.date_of_birth)
+        employee.national_id_number = data.get('national_id_number', employee.national_id_number)
+        employee.kra_pin = data.get('kra_pin', employee.kra_pin)
+        employee.monthly_gross_salary = data.get('monthly_gross_salary', employee.monthly_gross_salary)
+        employee.payment_method = data.get('payment_method', employee.payment_method)
+        employee.bank_account_number = data.get('bank_account_number', employee.bank_account_number)
+        employee.bank_name = data.get('bank_name', employee.bank_name)
+        employee.department = data.get('department', employee.department)
+        employee.starting_date = self.parse_date(data.get('starting_date'), employee.starting_date)
+        employee.contract_termination_date = self.parse_date(data.get('contract_termination_date'), employee.contract_termination_date)
+        employee.contract_renewal_date = self.parse_date(data.get('contract_renewal_date'), employee.contract_renewal_date)
+
+        db.session.commit()
+
+        return {"message": "Employee updated successfully"}, 200
+
+    def delete(self, employee_id):
+        """Delete an employee by employee_id"""
+        employee = Employees.query.get(employee_id)
+        if not employee:
+            return {"error": "Employee not found"}, 404
+
+        db.session.delete(employee)
+        db.session.commit()
+
+        return {"message": "Employee deleted successfully"}, 200
+
+    def parse_date(self, date_str, original_date):
+        """Helper method to parse a date string into a datetime object"""
+        if date_str:
+            try:
+                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+            except ValueError:
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d')
+                except ValueError:
+                    return original_date  # Return the original date if parsing fails
+        return original_date  # Return the original date if no new date is provided
+
