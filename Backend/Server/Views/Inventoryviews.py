@@ -22,51 +22,70 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
+
+#DIFFERENT APPROACH. This one shows the initial quantity that was added to the inventory and the available quantity after a distribution is made
 class AddInventory(Resource):
-    
-    # @jwt_required
-    # @check_role('manager')
-    def post (self):
+    @jwt_required()
+    @check_role('manager')
+    def post(self):
         data = request.get_json()
         
-        
-        if 'itemname' not in data or 'quantity'  not in data or 'metric' not in data or 'unitCost' not in data  or 'totalCost' not in data or 'amountPaid' not in data or 'unitPrice' not in data:
-            return {'message': 'Missing itemname, quantity, metric, unitcost, amountpaid or unitprice'}, 400
-    
+        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'totalCost', 'amountPaid', 'unitPrice']
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing itemname, quantity, metric, unitCost, totalCost, amountPaid, or unitPrice'}, 400
+
         itemname = data.get('itemname')
         quantity = data.get('quantity') 
-        metric =  data.get('metric')
+        metric = data.get('metric')
         totalCost = data.get('totalCost')
         unitCost = data.get('unitCost')
         amountPaid = data.get('amountPaid')
         unitPrice = data.get('unitPrice')
         
-        inventory = Inventory(itemname=itemname, quantity=quantity, metric=metric, totalCost=totalCost, unitCost=unitCost, amountPaid=amountPaid, unitPrice=unitPrice)
+        # Convert the 'created_at' string to a datetime object
+        created_at = data.get('created_at')
+        if created_at:
+            created_at = datetime.strptime(created_at, '%Y-%m-%d')
+        
+        inventory = Inventory(
+            itemname=itemname, 
+            initial_quantity=quantity,  # Set initial_quantity
+            quantity=quantity,          # Set remaining quantity
+            metric=metric, 
+            totalCost=totalCost, 
+            unitCost=unitCost, 
+            amountPaid=amountPaid, 
+            unitPrice=unitPrice,
+            created_at=created_at
+        )
         db.session.add(inventory)
         db.session.commit()
         
         return {'message': 'Inventory added successfully'}, 201
     
+    
 class GetAllInventory(Resource):
-    # @jwt_required
+    @jwt_required
     def get(self):
         inventories = Inventory.query.all()
 
         all_inventory = [{
-
             "inventory_id": inventory.inventory_id,
             "itemname": inventory.itemname,
-            "quantity": inventory.quantity,
+            "initial_quantity": inventory.initial_quantity,      # Initial Quantity
+            "remaining_quantity": inventory.quantity,             # Remaining Quantity
             "metric": inventory.metric,
-            "totalCost" : inventory.totalCost,
+            "totalCost": inventory.totalCost,
             "unitCost": inventory.unitCost,
             "amountPaid": inventory.amountPaid,
+            "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
-            
         } for inventory in inventories]
 
         return make_response(jsonify(all_inventory), 200)
-    
+
+
 class InventoryResourceById(Resource):
     def get(self, inventory_id):
 
@@ -81,6 +100,7 @@ class InventoryResourceById(Resource):
             "totalCost" : inventory.totalCost,
             "unitCost": inventory.unitCost,
             "amountPaid": inventory.amountPaid,
+            "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
         }, 200
         else:
@@ -125,9 +145,7 @@ class InventoryResourceById(Resource):
             return {"error": "item not found"}, 404
 
 
-
-
-#Stock distribution from inventory to different shops
+#New trial to update unitCost on shop_stock. This one ensures that totalCosts reflects on the specific shopstock and adjusts according to quantity transfered.
 class InventoryDistribute(Resource):
     def post(self):
         data = request.get_json()
@@ -174,7 +192,8 @@ class InventoryDistribute(Resource):
                 distribution = Distribution(
                     inventory_id=inventory_id,
                     remaining_quantity=inventory_item.quantity,
-                    distributed_at= datetime.utcnow(),
+                    # Convert the 'created_at' string to a datetime object
+                    distributed_at=datetime.utcnow(),
                     # distributed_by=distributed_by
                 )
                 db.session.add(distribution)
@@ -198,28 +217,42 @@ class InventoryDistribute(Resource):
                         inventory_id=inventory_id
                     ).first()
 
+                    # **New: Calculate total_cost and retrieve unit_price**
+                    total_cost = inventory_item.unitCost * qty
+                    unit_price = inventory_item.unitPrice
+
                     if shop_stock:
                         shop_stock.quantity += qty
+                        # **New: Update total_cost in ShopStock**
+                        shop_stock.total_cost += total_cost
+                        # **Assuming unit_price remains the same; otherwise, handle accordingly**
                     else:
+                        # **New: Create ShopStock with total_cost and unit_price**
                         shop_stock = ShopStock(
                             shop_id=shop_id,
                             inventory_id=inventory_id,
-                            quantity=qty
+                            quantity=qty,
+                            total_cost=total_cost,      # New Field
+                            unit_price=unit_price       # New Field
                         )
                         db.session.add(shop_stock)
 
-                    # Create a transfer record
+                    # **New: Create a transfer record with total_cost**
                     transfer_record = Transfer(
                         distribution_id=distribution.distribution_id,
                         shop_id=shop_id,
-                        quantity=qty
+                        quantity=qty,
+                        total_cost=total_cost          # New Field
                     )
                     db.session.add(transfer_record)
 
+                    # **Updated: Include total_cost and unit_price in the response**
                     transfer_responses.append({
                         "shop_id": shop_id,
                         "shop_name": shop.shopname,
-                        "transferred_quantity": qty
+                        "transferred_quantity": qty,
+                        "total_cost": total_cost,      # New Field
+                        "unit_price": unit_price       # New Field
                     })
 
                 # Commit the transaction
@@ -243,13 +276,12 @@ class InventoryDistribute(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred during the distribution process"}, 500
-        
+
 
 #Getting distributions made
-
 class GetAllDistributions(Resource):
-    # @jwt_required()
-    # @check_role('manager')  # Adjust role as needed
+    @jwt_required()
+    @check_role('manager')  # Adjust role as needed
     def get(self):
         try:
             # Optional: Implement pagination
@@ -294,9 +326,10 @@ class GetAllDistributions(Resource):
             db.session.rollback()
             return {"error": "An error occurred while fetching distributions"}, 500
 
+
 class GetDistributionById(Resource):
-    # @jwt_required()
-    # @check_role('manager')  
+    @jwt_required()
+    @check_role('manager')  
     def get(self, distribution_id):
         try:
             distribution = Distribution.query.options(joinedload(Distribution.transfers).joinedload(Transfer.shop)).get(distribution_id)

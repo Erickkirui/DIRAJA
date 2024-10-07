@@ -10,6 +10,7 @@ class Inventory(db.Model):
     #Table columns
     inventory_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     itemname = db.Column(db.String(100), nullable=False)
+    initial_quantity = db.Column(db.Integer)
     quantity = db.Column (db.Float, nullable=False)
     metric = db.Column (db.String)
     unitCost = db.Column (db.Float, nullable=False)
@@ -18,7 +19,7 @@ class Inventory(db.Model):
     unitPrice = db.Column (db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    
+    # shop_stocks = db.relationship('ShopStock', backref='inventory', lazy=True)
     
     #validations
     
@@ -42,6 +43,7 @@ class Distribution(db.Model):
 
     inventory = db.relationship('Inventory', backref=db.backref('distributions', lazy=True))
     transfers = db.relationship('Transfer', backref='distributions', lazy=True)
+    
 
     def __repr__(self):
         return f"<Distribution {self.distribution_id} - Item ID: {self.inventory_id}>"
@@ -53,6 +55,7 @@ class Transfer(db.Model):
     distribution_id = db.Column(db.Integer, db.ForeignKey('distributions.distribution_id'), nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
+    total_cost = db.Column(db.Float, nullable=False, default=0.0)  # New Field
 
     shop = db.relationship('Shops', backref=db.backref('transfers', lazy=True))
 

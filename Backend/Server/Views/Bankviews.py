@@ -1,14 +1,29 @@
 from  flask_restful import Resource
 from Server.Models.Bank import Bank
+from Server.Models.Users import Users
 from app import db
 from functools import wraps
 from flask import request,make_response,jsonify
 from flask_jwt_extended import jwt_required,get_jwt_identity
 
+
+
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
+
 class AddBank(Resource):
     
-    # @jwt_required
-    # @check_role('manager')
+    @jwt_required
+    @check_role('manager')
     def post (self):
         data = request.get_json()
         
