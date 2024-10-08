@@ -3,8 +3,6 @@ from Server.Models.Employees import Employees
 from app import db
 from flask_jwt_extended import jwt_required
 from flask import jsonify,request,make_response
-
-
 from datetime import datetime
 
 class AddNewemployee(Resource):
