@@ -24,7 +24,7 @@ def check_role(required_role):
 
 class AddShops(Resource):
     
-    @jwt_required
+    @jwt_required()
     @check_role('manager')
     def post (self):
         data = request.get_json()
@@ -49,6 +49,7 @@ class AddShops(Resource):
     
     
 class ShopsResourceById(Resource):
+    
     def get(self, shops_id):
 
         shop = Shops.query.get(shops_id)

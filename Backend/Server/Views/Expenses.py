@@ -20,8 +20,9 @@ def check_role(required_role):
     return wrapper
 
 class AddExpence(Resource):
-    @check_role('manager')
+    
     @jwt_required()
+    @check_role('manager')
 
     def post(self):
         data = request.get_json()
@@ -58,8 +59,9 @@ class AddExpence(Resource):
 
 
 class AllExpenses(Resource):
-    @check_role('manager')
+    
     @jwt_required()
+    @check_role('manager')
     def get(self):
 
         expenses = Expenses.query.all()
@@ -82,8 +84,10 @@ class AllExpenses(Resource):
     
 
 class GetShopExpenses(Resource):
-    @check_role('manager')
+    
     @jwt_required()
+    @check_role('manager')
+
     def get(self, shop_id):
 
         shopExpenses= Expenses.query.filter_by(shop_id=shop_id).all()
@@ -107,8 +111,10 @@ class GetShopExpenses(Resource):
 
 
 class ExpensesResources(Resource):
-    @check_role('manager')
+    
     @jwt_required()
+    @check_role('manager')
+
     def get(self, expense_id):
         # Fetch the specific expense by ID
         expense = Expenses.query.get(expense_id)
@@ -129,8 +135,9 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
 
-    @check_role('manager')
+   
     @jwt_required()
+    @check_role('manager')
     def delete(self, expense_id):
         # Fetch the specific expense by ID
         expense = Expenses.query.get(expense_id)
@@ -144,8 +151,9 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
         
-    @check_role('manager')   
+      
     @jwt_required()
+    @check_role('manager')
     def put(self, expense_id):
         # Get the data from the request to update the expense
         data = request.get_json()
