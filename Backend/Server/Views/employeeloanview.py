@@ -6,10 +6,10 @@ from flask import jsonify,request,make_response
 
 
 class GetEmployeeLoan(Resource):
-    @jwt_required
-    def get(self, employee_id):
+    @jwt_required()
+    def get(self,employee_id):
 
-        employeesloan = EmployeeLoan.query.filter_by(employee_id =employee_id)
+        employeesloan = EmployeeLoan.query.filter_by(employee_id = employee_id)
 
         emlpoyee_loan = [{
 
