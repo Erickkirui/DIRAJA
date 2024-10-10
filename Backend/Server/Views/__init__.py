@@ -10,6 +10,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
+from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
@@ -42,7 +43,12 @@ api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventor
 api.add_resource(GetAllStock, '/allstock')
 
 
+#Employess Routes
 
+api.add_resource(AddNewemployee, '/newemployee')
+api.add_resource(GetAllemployees,'/allemployees')
+api.add_resource(Employeeresource, '/employee/<int:employee_id>')
+## Add get employess by shop_id
 
 # inventory endpoints 
 api.add_resource(AddInventory, '/newinventory')
