@@ -24,7 +24,7 @@ def check_role(required_role):
 
 class AddShops(Resource):
     
-    @jwt_required
+    @jwt_required()
     @check_role('manager')
     def post (self):
         data = request.get_json()
@@ -49,6 +49,8 @@ class AddShops(Resource):
     
     
 class ShopsResourceById(Resource):
+    @jwt_required()
+    @check_role('manager')
     def get(self, shops_id):
 
         shop = Shops.query.get(shops_id)
@@ -63,27 +65,11 @@ class ShopsResourceById(Resource):
         else:
              return {"error": "Shop not found"}, 400
          
-
-class ShopsResourceByName(Resource):
-    def get(self, shopname):
-
-        shop = Shops.query.filter_by(shopname=shopname).first()
-
-   
-        if shop :
-            return {
-            "shops_id": shop.shops_id,
-            "shopname": shop.shopname,
-            "employee": shop.employee,
-            "shopstatus": shop.shopstatus
-        }, 200
-        else:
-             return {"error": "Shop not found"}, 400
-         
-         
-    def delete(self, shopname):
-
-        shop = Shops.query.filter_by(shopname=shopname).first()
+    @jwt_required()
+    def delete(self, shops_id):
+    
+        
+        shop = Shops.query.get(shops_id)
         
         if shop:
             db.session.delete(shop)  
@@ -91,9 +77,11 @@ class ShopsResourceByName(Resource):
             return {"message": "Shop deleted successfully"}, 200
         else:
             return {"error": "Shop not found"}, 404
+    
+    @jwt_required()
+    def put(self, shops_id):
         
-    def put(self, shopname):
-        shop = Shops.query.filter_by(shopname=shopname).first()
+        shop = Shops.query.get(shops_id)
         if not shop:
             return {"error": "Shop not found"}, 404
         
@@ -110,12 +98,44 @@ class ShopsResourceByName(Resource):
         db.session.commit()
         
         return {"message": "Shop updated successfully"}, 200
+         
+
+class GetAllShops(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+
+        shops = Shops.query.all()
+    
+        all_shops = [{
+            
+            "shop_id " : shop.shops_id ,
+            "user_id": shop.user_id,
+            "shopname" :shop.shopname,
+            "employee":shop.employee,
+            "shopstatus" : shop.shopstatus,
+            "created_at" : shop.created_at
+
+        } for shop in shops]
+
+        return make_response(jsonify(all_shops), 200)
+
+class CountShops(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        countShops = Shops.query.count()
+        return {"total shops": countShops}, 200      
+         
+    
 
 
 
 
 # Delete a shop stock(One that alligns with the route) This deletes an item from a specific shop and returns the item to the central inventory
 class ShopStockDelete(Resource):
+    @jwt_required()
     def delete(self, shop_id, inventory_id):
         try:
             # Start a transaction
@@ -167,7 +187,6 @@ class ShopStockDelete(Resource):
 class GetShopStock(Resource):
     
     @jwt_required()
-    @check_role('manager')
     
     def get(self):
         try:
@@ -224,7 +243,6 @@ class GetShopStock(Resource):
 #Get shopstock by id
 class GetShopStockByShopId(Resource):
     @jwt_required()
-    @check_role('manager')
     
     def get(self, shop_id):
         try:
@@ -261,3 +279,41 @@ class GetShopStockByShopId(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching shop stock data"}, 500
+        
+
+# Get all shop stocks across all shops 
+class GetAllStock(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            # Base query for all shop stocks
+            shop_stocks = ShopStock.query.options(
+                joinedload(ShopStock.shop),
+                joinedload(ShopStock.inventory)
+            ).all()
+
+            # Serialize the data
+            shop_stock_list = []
+            for stock in shop_stocks:
+                shop_stock_list.append({
+                    "shop_id": stock.shop_id,
+                    "shop_name": stock.shop.shopname,  
+                    "inventory_id": stock.inventory_id,
+                    "item_name": stock.inventory.itemname,  
+                    "quantity": stock.quantity,
+                    "total_cost": stock.total_cost,
+                    "unit_price": stock.unit_price
+                })
+
+            # Prepare the response
+            response = {
+                "total_shop_stocks": len(shop_stock_list),
+                "shop_stocks": shop_stock_list
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching all shop stock data"}, 500
