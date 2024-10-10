@@ -1,13 +1,29 @@
 from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
+from Server.Models.Users import Users
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 from datetime import datetime
+from functools import wraps
+
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 
 class AddExpence(Resource):
     
     @jwt_required()
+    @check_role('manager')
+
     def post(self):
         data = request.get_json()
 
@@ -43,8 +59,9 @@ class AddExpence(Resource):
 
 
 class AllExpenses(Resource):
-
+    
     @jwt_required()
+    @check_role('manager')
     def get(self):
 
         expenses = Expenses.query.all()
@@ -67,7 +84,10 @@ class AllExpenses(Resource):
     
 
 class GetShopExpenses(Resource):
+    
     @jwt_required()
+    @check_role('manager')
+
     def get(self, shop_id):
 
         shopExpenses= Expenses.query.filter_by(shop_id=shop_id).all()
@@ -91,7 +111,10 @@ class GetShopExpenses(Resource):
 
 
 class ExpensesResources(Resource):
+    
     @jwt_required()
+    @check_role('manager')
+
     def get(self, expense_id):
         # Fetch the specific expense by ID
         expense = Expenses.query.get(expense_id)
@@ -112,8 +135,9 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
 
-    
+   
     @jwt_required()
+    @check_role('manager')
     def delete(self, expense_id):
         # Fetch the specific expense by ID
         expense = Expenses.query.get(expense_id)
@@ -127,7 +151,9 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
         
+      
     @jwt_required()
+    @check_role('manager')
     def put(self, expense_id):
         # Get the data from the request to update the expense
         data = request.get_json()

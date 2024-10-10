@@ -28,7 +28,6 @@ class CountUsers(Resource):
 
 class Addusers(Resource):
     
-    
     def post (self):
         data = request.get_json()
 
@@ -83,6 +82,8 @@ class UserLogin(Resource):
 
 class UsersResourceById(Resource):
 
+    @jwt_required()
+    @check_role('manager')
     def get(self, users_id):
         user = Users.query.get(users_id)
 
@@ -96,7 +97,9 @@ class UsersResourceById(Resource):
                 }, 200
         else:
             return {"error": "User not found"}, 404
-
+    
+    @jwt_required()
+    @check_role('manager')
     def delete(self, users_id):
         user = Users.query.get(users_id)
 
@@ -111,7 +114,9 @@ class UsersResourceById(Resource):
 
    
 class GetAllUsers(Resource):
-    # @jwt_required()
+
+    @jwt_required()
+    @check_role('manager')
     def get(self):
         users = Users.query.all()
 

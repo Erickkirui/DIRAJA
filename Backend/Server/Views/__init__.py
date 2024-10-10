@@ -8,7 +8,7 @@ from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLo
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops, ShopStockDelete, GetShopStock, GetShopStockByShopId,CountShops,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById, InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses
+from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
@@ -62,6 +62,7 @@ api.add_resource(GetDistributionById, '/inventory/distributions/<distribution_id
 api.add_resource(AddExpence,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
+api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
 
 
 # banks endpoint
@@ -75,4 +76,20 @@ api.add_resource(GetAllCustomers, '/allcustomers')
 api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
 
 
+
+###  Manager dashbord 
+# 1. Total sales 
+# 2. Total expenses 
+# 3. Count all Shops
+# 4. Count Employess
+# 5. Sales filter by current date 
+# 6. Current date expenses 
+# 7. Check items that are close >-10 0 - out of stock 
+
+
+## clerak Dashbord
+# 1.sales for shop for the day
+# 2.Total slaes
+#4.Customesrs for customners
+# 5.stock 
 
