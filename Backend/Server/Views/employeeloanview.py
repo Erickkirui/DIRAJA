@@ -1,12 +1,27 @@
 from flask_restful import Resource
 from Server.Models.EmployeeLoan import EmployeeLoan
+from Server.Models.Users import Users
 from app import db
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
+from functools import wraps
 
+
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 
 class GetEmployeeLoan(Resource):
     @jwt_required()
+    @check_role('manager')
     def get(self,employee_id):
 
         employeesloan = EmployeeLoan.query.filter_by(employee_id = employee_id)
@@ -26,6 +41,7 @@ class GetEmployeeLoan(Resource):
 
 class AddEmployeeLoan(Resource):
     @jwt_required()
+    @check_role('manager')
     def post(self):
         data = request.get_json()
 
