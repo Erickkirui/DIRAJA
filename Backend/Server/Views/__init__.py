@@ -11,6 +11,7 @@ from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
+from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
@@ -50,6 +51,9 @@ api.add_resource(GetAllemployees,'/allemployees')
 api.add_resource(Employeeresource, '/employee/<int:employee_id>')
 ## Add get employess by shop_id
 
+
+#Employee loan 
+api.add_resource(AddEmployeeLoan,'/newloan')
 # inventory endpoints 
 api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
@@ -57,6 +61,7 @@ api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 
 #distribute stock to a specific shop
 api.add_resource(InventoryDistribute, '/inventory/distribute')
+api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
 
 #get distribution details
 api.add_resource(GetAllDistributions, '/inventory/distributions')
