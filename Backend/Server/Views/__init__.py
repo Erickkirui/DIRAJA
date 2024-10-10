@@ -5,7 +5,7 @@ api_endpoint = Blueprint
 
 # add all file inputs 
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
-from Server.Views.Shopsviews import AddShops, ShopsResourceById, ShopsResourceByName, ShopStockDelete, GetShopStock, GetShopStockByShopId
+from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops, ShopStockDelete, GetShopStock, GetShopStockByShopId,CountShops,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById, InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
@@ -27,7 +27,11 @@ api.add_resource(UserLogin, '/login')
 # shops endpoints 
 api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
-api.add_resource(ShopsResourceByName, '/shop/<string:shopname>')
+api.add_resource(GetAllShops, '/allshops')
+api.add_resource(CountShops, '/countshops')
+
+
+#stock endpoints
 #Get stock
 api.add_resource(GetShopStock, '/shop_stock')
 #Get stock by shopid
@@ -35,6 +39,7 @@ api.add_resource(GetShopStockByShopId, '/shop_stock/shop/<int:shop_id>')
 #Delete a stock in a specific shop
 # api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:stock_id>')
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
+api.add_resource(GetAllStock, '/allstock')
 
 
 
