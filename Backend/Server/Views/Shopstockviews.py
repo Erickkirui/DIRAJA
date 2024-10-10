@@ -1,5 +1,6 @@
 from  flask_restful import Resource
-from Server.Models.Shops import Shops, ShopStock
+from Server.Models.Shops import Shops
+from Server.Models.Shopstock import ShopStock
 from Server.Models.Users import Users
 from Server.Models.Inventory import Inventory, db
 from app import db

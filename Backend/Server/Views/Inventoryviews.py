@@ -1,6 +1,9 @@
 from  flask_restful import Resource
-from Server.Models.Inventory import Inventory, db, Distribution, Transfer
-from Server.Models.Shops import ShopStock, Shops
+from Server.Models.Inventory import Inventory, db
+from Server.Models.Distribution import Distribution
+from Server.Models.Transfer import Transfer
+from Server.Models.Shops import Shops
+from Server.Models.Shopstock import ShopStock
 from Server.Models.Users import Users
 from app import db
 from functools import wraps
