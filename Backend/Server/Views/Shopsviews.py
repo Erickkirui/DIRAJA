@@ -49,12 +49,9 @@ class AddShops(Resource):
     
     
 class ShopsResourceById(Resource):
-<<<<<<< HEAD
-    
-=======
+
     @jwt_required()
     @check_role('manager')
->>>>>>> 3623566007b7cd8eee5c352cfd7d310b532f4015
     def get(self, shops_id):
 
         shop = Shops.query.get(shops_id)
