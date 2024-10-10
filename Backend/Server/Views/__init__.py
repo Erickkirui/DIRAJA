@@ -14,6 +14,7 @@ from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,Expense
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
@@ -88,6 +89,14 @@ api.add_resource(BankResourceById, '/bank/<int:bank_id>')
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
+
+
+#Sales 
+api.add_resource(AddSale, '/newsale')
+api.add_resource(GetSales, '/allsales')
+api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
+api.add_resource(SalesResources,'/sale/<int:sales_id>')
+
 
 
 
