@@ -1,7 +1,8 @@
 from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
-from Server.Models.Shops import Shops,ShopStock
+from Server.Models.Shops import Shops
+from Server.Models.Shopstock import ShopStock
 from Server.Models.Inventory import Inventory 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
