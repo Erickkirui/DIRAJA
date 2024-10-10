@@ -9,30 +9,17 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 
 
-def check_role(required_role):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = Users.query.get(current_user_id)
-            if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
 
 class AddCustomer(Resource):
     @jwt_required()
-    @check_role('manager')
-    
     def post(self):
         data = request.get_json()
+        current_user_id = get_jwt_identity() 
 
         required_fields = [
             'customer_name',
             'customer_number',
             'shop_id',
-            'user_id',
             'item',
             'amount_paid',
             'payment_method'
@@ -47,7 +34,6 @@ class AddCustomer(Resource):
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
         shop_id = data.get('shop_id')
-        user_id = data.get('user_id')
         item = data.get('item')
         amount_paid = data.get('amount_paid')
         payment_method = data.get('payment_method')
@@ -61,7 +47,7 @@ class AddCustomer(Resource):
             customer_name=customer_name,
             customer_number=customer_number,
             shop_id=shop_id,
-            user_id=user_id,
+            user_id=current_user_id,
             item=item,
             amount_paid=amount_paid,
             payment_method=payment_method,
@@ -86,8 +72,6 @@ class AddCustomer(Resource):
 
 class GetAllCustomers(Resource):
     @jwt_required()
-    @check_role('manager')
-    
     def get(self):
         try:
             customers = Customers.query.order_by(Customers.created_at.desc()).all()
@@ -114,9 +98,8 @@ class GetAllCustomers(Resource):
             return {"error": "An error occurred while fetching customers"}, 500
 
 class GetCustomerById(Resource):
-    @jwt_required()
-    @check_role('manager')
     
+    @jwt_required()
     def get(self, customer_id):
         try:
             customer = Customers.query.get(customer_id)
