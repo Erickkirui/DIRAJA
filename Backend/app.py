@@ -20,6 +20,9 @@ def initialize_models():
     from Server.Models.Stock import Stock
     from Server.Models.Expenses import Expenses 
     from Server.Models.Inventory import Inventory
+    from Server.Models.Shopstock import ShopStock
+    from Server.Models.Distribution import Distribution
+    from Server.Models.Transfer import Transfer
 
 def initialize_views():
     from  Server.Views import api_endpoint

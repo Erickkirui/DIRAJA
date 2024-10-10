@@ -1,7 +1,8 @@
 from  flask_restful import Resource
-from Server.Models.Shops import Shops, ShopStock
+from Server.Models.Shops import Shops
+from Server.Models.Shopstock import ShopStock
 from Server.Models.Users import Users
-from Server.Models.Inventory import Inventory, db, Distribution, Transfer
+from Server.Models.Inventory import Inventory, db
 from app import db
 from functools import wraps
 from flask import request,make_response,jsonify
@@ -112,7 +113,6 @@ class GetAllShops(Resource):
         all_shops = [{
             
             "shop_id " : shop.shops_id ,
-            "user_id": shop.user_id,
             "shopname" :shop.shopname,
             "employee":shop.employee,
             "shopstatus" : shop.shopstatus,
