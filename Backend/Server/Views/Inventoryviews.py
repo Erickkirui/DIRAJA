@@ -66,8 +66,10 @@ class AddInventory(Resource):
     
     
 class GetAllInventory(Resource):
-    @jwt_required
+    @jwt_required()
+    @check_role('manager')
     def get(self):
+    
         inventories = Inventory.query.all()
 
         all_inventory = [{
@@ -87,6 +89,8 @@ class GetAllInventory(Resource):
 
 
 class InventoryResourceById(Resource):
+    @jwt_required()
+    @check_role('manager')
     def get(self, inventory_id):
 
         inventory = Inventory.query.get(inventory_id)
@@ -105,7 +109,10 @@ class InventoryResourceById(Resource):
         }, 200
         else:
              return {"error": "Inventory not found"}, 400
-         
+
+
+    @jwt_required()
+    @check_role('manager')
     def put(self, inventory_id):
         inventory = Inventory.query.get(inventory_id)
         if not inventory:
@@ -133,6 +140,9 @@ class InventoryResourceById(Resource):
         
         return {"message": "Invemtory updated successfully"}, 200
     
+
+    @jwt_required()
+    @check_role('manager')
     def delete(self, inventory_id):
 
         inventory = Inventory.query.get(inventory_id)
@@ -147,6 +157,8 @@ class InventoryResourceById(Resource):
 
 #New trial to update unitCost on shop_stock. This one ensures that totalCosts reflects on the specific shopstock and adjusts according to quantity transfered.
 class InventoryDistribute(Resource):
+    @jwt_required()
+    @check_role('manager')
     def post(self):
         data = request.get_json()
 
@@ -280,6 +292,7 @@ class InventoryDistribute(Resource):
 
 #Getting distributions made
 class GetAllDistributions(Resource):
+    
     @jwt_required()
     @check_role('manager')  # Adjust role as needed
     def get(self):

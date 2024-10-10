@@ -13,6 +13,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
+
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
 
