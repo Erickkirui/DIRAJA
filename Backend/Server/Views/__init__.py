@@ -5,9 +5,11 @@ api_endpoint = Blueprint
 
 # add all file inputs 
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
-from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops, ShopStockDelete, GetShopStock, GetShopStockByShopId,CountShops,GetAllStock
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById, InventoryDistribute, GetAllDistributions, GetDistributionById
+from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops,CountShops
+from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById
 from Server.Views.Bankviews import AddBank, BankResourceById
+from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
