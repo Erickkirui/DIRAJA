@@ -1,5 +1,6 @@
 from  flask_restful import Resource
 from Server.Models.Users import Users
+from Server.Models.Employees import Employees
 from app import db
 import bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -53,10 +54,8 @@ class Addusers(Resource):
 
 class UserLogin(Resource):
     def post(self):
-        
         email = request.json.get("email", None)
         password = request.json.get("password", None)
-
 
         user = Users.query.filter_by(email=email).one_or_none()
 
@@ -67,18 +66,26 @@ class UserLogin(Resource):
             return make_response(jsonify({"error": "Wrong password"}), 401)
         
         username = user.username
+        shop_id = None  # Initialize shop_id as None
 
-        # Include the role in the response
+        # Check if the user is a clerk and retrieve the shop_id if so
+        if user.role == 'clerk' and user.employee_id:
+            employee = Employees.query.filter_by(employee_id=user.employee_id).one_or_none()
+            if employee:
+                shop_id = employee.shop_id  # Get the shop_id from the Employee record
+
+        # Create tokens
         access_token = create_access_token(identity=user.users_id, additional_claims={'roles': [user.role]})
         refresh_token = create_refresh_token(identity=user.users_id)
 
+        # Return response
         return make_response(jsonify({
             "access_token": access_token,
             "refresh_token": refresh_token,
             "username": username,
-            "role": user.role
+            "role": user.role,
+            "shop_id": shop_id  # Include shop_id in the response
         }), 200)
-
 
 class UsersResourceById(Resource):
 
