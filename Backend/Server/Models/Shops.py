@@ -15,10 +15,6 @@ class Shops(db.Model):
     shopstatus = db.Column(db.String, default="active", nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     
-    
-    
-   
-   
 
     @validates('shopstatus')
     def validate_shopstatus(self, key, shopstatus):
