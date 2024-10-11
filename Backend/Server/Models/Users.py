@@ -14,7 +14,13 @@ class Users(db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     role = db.Column(db.String, default="manager", nullable=False)
     password = db.Column(db.String, unique=True, nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
+
+
+    #users relationship
+    employees = db.relationship('Employees', backref='users', lazy=True)
+
     
     # Data validation
     @validates('email')

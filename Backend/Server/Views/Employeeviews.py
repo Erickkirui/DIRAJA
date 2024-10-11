@@ -26,7 +26,7 @@ class AddNewemployee(Resource):
     @check_role('manager')
     def post(self):
         data = request.get_json()
-        
+
         first_name = data.get('first_name')
         middle_name = data.get('middle_name')
         surname = data.get('surname')
@@ -52,7 +52,6 @@ class AddNewemployee(Resource):
         contract_renewal_date = self.parse_date(data.get('contract_renewal_date'))
 
         new_employee = Employees(
-            
             first_name=first_name,
             middle_name=middle_name,
             surname=surname,
@@ -79,7 +78,20 @@ class AddNewemployee(Resource):
         db.session.add(new_employee)
         db.session.commit()
 
-        return {"message": "Employee added successfully"}, 201
+        # Add a new user with the employee details
+        default_password = 'defaultPassword123'  # Set a default password or generate one
+        new_user = Users(
+            username=first_name,  # Use first name as username
+            email=work_email,  # Use work email
+            role=role if role else 'manager',  # Set role to 'employee' if not provided
+            password=default_password,  # Set a default password, or use a password hash function
+            employee_id=new_employee.employee_id  # Link to the newly created employee
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        return {"message": "Employee and user added successfully"}, 201
 
     def parse_date(self, date_str):
         """
@@ -94,6 +106,7 @@ class AddNewemployee(Resource):
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
         return None
+
 
 
 class GetAllemployees(Resource):
