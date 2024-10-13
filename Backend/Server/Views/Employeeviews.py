@@ -241,3 +241,9 @@ class Employeeresource(Resource):
                     return original_date  # Return the original date if parsing fails
         return original_date  # Return the original date if no new date is provided
 
+class CountEmployees(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        countEmployees = Employees.query.count()
+        return {"total employees": countEmployees}, 200 
