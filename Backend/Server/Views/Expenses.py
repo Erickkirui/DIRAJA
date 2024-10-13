@@ -1,6 +1,7 @@
 from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
 from Server.Models.Users import Users
+from Server.Utils import get_expenses_filtered, serialize_expenses
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
@@ -184,3 +185,29 @@ class ExpensesResources(Resource):
             return {"message": "Expense updated successfully"}, 200
         else:
             return {"error": "Expense not found"}, 404
+        
+
+
+class TodaysExpenses(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        expenses = get_expenses_filtered('today').all()
+        return make_response(jsonify(serialize_expenses(expenses)), 200)
+
+class WeeksExpenses(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        expenses = get_expenses_filtered('week').all()
+        return make_response(jsonify(serialize_expenses(expenses)), 200)
+
+class MonthsExpenses(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        expenses = get_expenses_filtered('month').all()
+        return make_response(jsonify(serialize_expenses(expenses)), 200)
