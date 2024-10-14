@@ -3,12 +3,10 @@ import { BrowserRouter as Router,Routes,Route  } from 'react-router-dom';
 import Managerdashord from './Pages/Managerdashord';
 import ScrollTotop from './Components/ScrollTotop';
 import Navbar from './Components/Navbar';
-<<<<<<< HEAD
- 
-
-=======
 import LoginPage from './Pages/LoginPage';
->>>>>>> 0eba9762e738d12f0933aef5f11b13c551c5a336
+
+
+
 
 
 const Layout = ({ children }) => {
