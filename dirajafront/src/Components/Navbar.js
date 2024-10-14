@@ -1,4 +1,5 @@
 import React from 'react'
+import '../Styles/navigation.css'
 
 function Navbar() {
   return (
@@ -7,10 +8,10 @@ function Navbar() {
         <h1>DIRAJA SHOP</h1>
 
         <div className='main-menu'>
-            <h2>MAIN MENU</h2>
+            <h4>MAIN MENU</h4>
 
             <ul>
-                <li>Dashboardd</li>
+                <li>Dashboard</li>
                 <li>Sales</li>
                 <li>Expenses</li>
                 <li>Shops</li>
@@ -18,8 +19,9 @@ function Navbar() {
                 <li>Employees</li>
             </ul>
         </div>
+
         <div className='accounting-menu'>
-            <h2>ACCOUNTING</h2>
+            <h4>ACCOUNTING</h4>
             <ul>
                 <li>Balance Sheet</li>
                 <li>Cash Flow</li>
