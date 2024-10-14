@@ -1,14 +1,20 @@
-from  flask_restful import Resource
+# Server/Views/Shopstockviews.py
+
+from flask_restful import Resource
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Users import Users
 from Server.Models.Inventory import Inventory, db
+from Server.Models.Expenses import Expenses  # Import Expenses model
+from Server.Models.Transfer import Transfer  # Import Transfer model
 from app import db
 from functools import wraps
-from flask import request,make_response,jsonify
-from flask_jwt_extended import jwt_required,get_jwt_identity
+from flask import request, make_response, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
+import datetime 
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -17,14 +23,16 @@ def check_role(required_role):
             current_user_id = get_jwt_identity()
             user = Users.query.get(current_user_id)
             if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+                return make_response(jsonify({"error": "Unauthorized access"}), 403)
             return fn(*args, **kwargs)
         return decorator
     return wrapper
 
-# Delete a shop stock(One that alligns with the route) This deletes an item from a specific shop and returns the item to the central inventory
+# Delete a shop stock (one that aligns with the route)
+# This deletes an item from a specific shop and returns the item to the central inventory
 class ShopStockDelete(Resource):
     @jwt_required()
+    @check_role('manager')  # Ensure only managers can perform this action
     def delete(self, shop_id, inventory_id):
         try:
             # Start a transaction
@@ -39,12 +47,51 @@ class ShopStockDelete(Resource):
                 if not inventory_item:
                     return {"error": f"Inventory item with ID {shop_stock.inventory_id} not found"}, 404
 
+                # Calculate the total cost to reverse
+                total_cost_reversed = shop_stock.total_cost
+
                 # Add the quantity back to the central inventory
                 inventory_item.quantity += shop_stock.quantity
                 db.session.add(inventory_item)
 
                 # Delete the ShopStock entry
                 db.session.delete(shop_stock)
+
+                # Find the corresponding Transfer and Expense
+                transfers = Transfer.query.filter_by(
+                    shop_id=shop_id,
+                    inventory_id=inventory_id,
+                    quantity=shop_stock.quantity
+                ).first()
+
+                if transfers and transfers.expenses:
+                    # Create a negative Expense to reverse the original expense
+                    negative_expense = Expenses(
+                        shop_id=shop_id,
+                        item=shop_stock.inventory.itemname,
+                        description=f"Stock return of {shop_stock.quantity} {inventory_item.metric} {shop_stock.inventory.itemname}",
+                        quantity=shop_stock.quantity,
+                        totalPrice=-transfers.total_cost,  # Negative to reverse
+                        amountPaid=-transfers.total_cost,  # Negative to reverse
+                        created_at=datetime.datetime.utcnow(),
+                        user_id=get_jwt_identity(),
+                        transfer_id=transfers.transfer_id
+                    )
+                    db.session.add(negative_expense)
+                else:
+                    # If no matching transfer is found, create a standalone negative expense
+                    negative_expense = Expenses(
+                        shop_id=shop_id,
+                        item=shop_stock.inventory.itemname,
+                        description=f"Stock return of {shop_stock.quantity} {inventory_item.metric} {shop_stock.inventory.itemname}",
+                        quantity=shop_stock.quantity,
+                        totalPrice=-total_cost_reversed,  # Negative to reverse
+                        amountPaid=-total_cost_reversed,  # Negative to reverse
+                        created_at=datetime.datetime.utcnow(),
+                        
+                        # No transfer_id since it's a standalone adjustment
+                    )
+                    db.session.add(negative_expense)
 
                 # Commit the transaction
                 db.session.commit()
@@ -54,13 +101,19 @@ class ShopStockDelete(Resource):
                 "message": "Shop stock deleted successfully and quantity returned to central inventory",
                 "inventory_item": {
                     "inventory_id": inventory_item.inventory_id,
-                    "itemname": inventory_item.itemname,  # Corrected field name
+                    "item_name": inventory_item.itemname,
                     "updated_quantity": inventory_item.quantity
                 },
                 "deleted_stock": {
                     "shop_id": shop_id,
                     "inventory_id": inventory_id,
                     "quantity_returned": shop_stock.quantity
+                },
+                "expense_adjustment": {
+                    "description": negative_expense.description,
+                    "totalPrice": negative_expense.totalPrice,
+                    "amountPaid": negative_expense.amountPaid,
+                    "created_at": negative_expense.created_at.isoformat()
                 }
             }
 
@@ -69,6 +122,81 @@ class ShopStockDelete(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while deleting shop stock"}, 500
+
+
+
+
+# from  flask_restful import Resource
+# from Server.Models.Shops import Shops
+# from Server.Models.Shopstock import ShopStock
+# from Server.Models.Users import Users
+# from Server.Models.Inventory import Inventory, db
+# from app import db
+# from functools import wraps
+# from flask import request,make_response,jsonify
+# from flask_jwt_extended import jwt_required,get_jwt_identity
+# from sqlalchemy.exc import SQLAlchemyError
+# from sqlalchemy.orm import joinedload
+
+# def check_role(required_role):
+#     def wrapper(fn):
+#         @wraps(fn)
+#         def decorator(*args, **kwargs):
+#             current_user_id = get_jwt_identity()
+#             user = Users.query.get(current_user_id)
+#             if user and user.role != required_role:
+#                  return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+#             return fn(*args, **kwargs)
+#         return decorator
+#     return wrapper
+
+# # Delete a shop stock(One that alligns with the route) This deletes an item from a specific shop and returns the item to the central inventory
+# class ShopStockDelete(Resource):
+#     @jwt_required()
+#     def delete(self, shop_id, inventory_id):
+#         try:
+#             # Start a transaction
+#             with db.session.begin_nested():
+#                 # Fetch the ShopStock entry
+#                 shop_stock = ShopStock.query.filter_by(shop_id=shop_id, inventory_id=inventory_id).first()
+#                 if not shop_stock:
+#                     return {"error": f"Stock for Inventory ID {inventory_id} in Shop ID {shop_id} not found"}, 404
+
+#                 # Fetch the corresponding Inventory item
+#                 inventory_item = Inventory.query.get(shop_stock.inventory_id)
+#                 if not inventory_item:
+#                     return {"error": f"Inventory item with ID {shop_stock.inventory_id} not found"}, 404
+
+#                 # Add the quantity back to the central inventory
+#                 inventory_item.quantity += shop_stock.quantity
+#                 db.session.add(inventory_item)
+
+#                 # Delete the ShopStock entry
+#                 db.session.delete(shop_stock)
+
+#                 # Commit the transaction
+#                 db.session.commit()
+
+#             # Prepare the response
+#             response = {
+#                 "message": "Shop stock deleted successfully and quantity returned to central inventory",
+#                 "inventory_item": {
+#                     "inventory_id": inventory_item.inventory_id,
+#                     "itemname": inventory_item.itemname,  # Corrected field name
+#                     "updated_quantity": inventory_item.quantity
+#                 },
+#                 "deleted_stock": {
+#                     "shop_id": shop_id,
+#                     "inventory_id": inventory_id,
+#                     "quantity_returned": shop_stock.quantity
+#                 }
+#             }
+
+#             return response, 200
+
+#         except SQLAlchemyError as e:
+#             db.session.rollback()
+#             return {"error": "An error occurred while deleting shop stock"}, 500
 
         
 

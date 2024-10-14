@@ -1,12 +1,29 @@
 from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
+from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Utils import get_sales_filtered, serialize_sales
+from flask import jsonify,request,make_response
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Inventory import Inventory 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from flask import jsonify, request
+from functools import wraps
+
+
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 
 class AddSale(Resource):
     @jwt_required()
@@ -247,3 +264,30 @@ class SalesResources(Resource):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
+
+
+class TodaysSales(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        sales = get_sales_filtered('today').all()
+        return make_response(jsonify(serialize_sales(sales)), 200)
+
+class WeeksSales(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        sales = get_sales_filtered('week').all()
+        return make_response(jsonify(serialize_sales(sales)), 200)
+
+class MonthsSales(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        sales = get_sales_filtered('month').all()
+        return make_response(jsonify(serialize_sales(sales)), 200)
+    
+    
