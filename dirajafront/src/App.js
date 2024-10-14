@@ -4,6 +4,8 @@ import { BrowserRouter as Router,Routes,Route  } from 'react-router-dom';
 import Managerdashord from './Pages/Managerdashord';
 import ScrollTotop from './Components/ScrollTotop';
 import Navbar from './Components/Navbar';
+ 
+
 
 
 const Layout = ({ children }) => {
