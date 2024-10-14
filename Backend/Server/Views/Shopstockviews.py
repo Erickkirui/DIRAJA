@@ -13,7 +13,8 @@ from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-import datetime
+import datetime 
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -57,24 +58,24 @@ class ShopStockDelete(Resource):
                 db.session.delete(shop_stock)
 
                 # Find the corresponding Transfer and Expense
-                transfer = Transfer.query.filter_by(
+                transfers = Transfer.query.filter_by(
                     shop_id=shop_id,
                     inventory_id=inventory_id,
                     quantity=shop_stock.quantity
                 ).first()
 
-                if transfer and transfer.expense:
+                if transfers and transfers.expenses:
                     # Create a negative Expense to reverse the original expense
                     negative_expense = Expenses(
                         shop_id=shop_id,
                         item=shop_stock.inventory.itemname,
                         description=f"Stock return of {shop_stock.quantity} {inventory_item.metric} {shop_stock.inventory.itemname}",
                         quantity=shop_stock.quantity,
-                        totalPrice=-transfer.total_cost,  # Negative to reverse
-                        amountPaid=-transfer.total_cost,  # Negative to reverse
-                        created_at=datetime.utcnow(),
+                        totalPrice=-transfers.total_cost,  # Negative to reverse
+                        amountPaid=-transfers.total_cost,  # Negative to reverse
+                        created_at=datetime.datetime.utcnow(),
                         user_id=get_jwt_identity(),
-                        transfer_id=transfer.transfer_id
+                        transfer_id=transfers.transfer_id
                     )
                     db.session.add(negative_expense)
                 else:
@@ -86,8 +87,8 @@ class ShopStockDelete(Resource):
                         quantity=shop_stock.quantity,
                         totalPrice=-total_cost_reversed,  # Negative to reverse
                         amountPaid=-total_cost_reversed,  # Negative to reverse
-                        created_at=datetime.utcnow(),
-                        user_id=get_jwt_identity()
+                        created_at=datetime.datetime.utcnow(),
+                        
                         # No transfer_id since it's a standalone adjustment
                     )
                     db.session.add(negative_expense)

@@ -22,7 +22,7 @@ class Expenses(db.Model):
     # Relationships 
     user = db.relationship('Users', backref='expenses', lazy=True)
     shop = db.relationship('Shops', backref='expenses', lazy=True)
-    transfer = db.relationship('Transfer', backref='expense', lazy=True)  # New Relationship
+    transfer = db.relationship('Transfer', back_populates='expenses', lazy=True)  #New Relationship
 
     def __repr__(self):
         return f"Expense (id={self.expense_id}, user_id='{self.user_id}', shop_id='{self.shop_id}', item='{self.item}', description='{self.description}', quantity='{self.quantity}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')"

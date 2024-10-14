@@ -11,12 +11,12 @@ class Transfer(db.Model):
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     total_cost = db.Column(db.Float, nullable=False)
-    expense_id = db.Column(db.Integer, db.ForeignKey('expenses.expense_id'), nullable=True)  # New Field
+    # expense_id = db.Column(db.Integer, db.ForeignKey('expenses.expense_id'), nullable=True)  # New Field
 
-    distribution = db.relationship('Distribution', backref='transfers', lazy=True)
+    # distribution = db.relationship('Distribution', backref='transfers', lazy=True)
     shop = db.relationship('Shops', backref='transfers', lazy=True)
     inventory = db.relationship('Inventory', backref='transfers', lazy=True)
-    expense = db.relationship('Expenses', backref='transfer', lazy=True)  # New Relationship
+    expense = db.relationship('Expenses', back_populates='transfers', lazy=True)  #New Relationship
 
     def __repr__(self):
         return f"<Transfer {self.transfer_id} - Shop ID: {self.shop_id}, Inventory ID: {self.inventory_id}, Quantity: {self.quantity}>"
