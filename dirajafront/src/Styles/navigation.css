@@ -1,18 +1,38 @@
 .navigation-container h4{
     color: #ccc;
-    font-size: 18px;
+    font-size: 12px;
     font-weight: 400;
     
 }
 
+.menu-item img{
+    object-fit: contain;
+    width: 30px;
+    height: 30px;
+}
+
+.accounting-menu{
+    border-top: 1px solid #ccc ;
+}
+
+.navigation-container h1{
+    font-size: 18px;
+    font-weight: 500;
+}
+.menu-item{
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+   
+}
 .navigation-container ul{
    list-style: none;
    gap: 20px;
+   padding: 0;
 
 }
 
 .navigation-container li{
     text-align: left;
-    font-size: 18px;
-    margin-bottom: 15px;
+    font-size: 16px;
 }
