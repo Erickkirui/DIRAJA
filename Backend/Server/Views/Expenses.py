@@ -76,7 +76,7 @@ class AllExpenses(Resource):
 
             # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
-            shop_name = shop.shop_name if shop else "Unknown Shop"
+            shopname = shop.shopname if shop else "Unknown Shop"
 
             # Append the data
             all_expenses.append({
@@ -84,7 +84,7 @@ class AllExpenses(Resource):
                 "user_id": expense.user_id,
                 "username": username,  # Manually fetched username
                 "shop_id": expense.shop_id,
-                "shop_name": shop_name,  # Manually fetched shop name
+                "shop_name": shopname,  # Manually fetched shop name
                 "item": expense.item,
                 "description": expense.description,
                 "quantity": expense.quantity,
