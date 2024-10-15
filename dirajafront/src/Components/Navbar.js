@@ -11,12 +11,31 @@ function Navbar() {
             <h4>MAIN MENU</h4>
 
             <ul>
-                <li>Dashboard</li>
-                <li>Sales</li>
-                <li>Expenses</li>
-                <li>Shops</li>
-                <li>Customers</li>
-                <li>Employees</li>
+                <div className='menu-item'>
+                    <img src='/images/Dashbord.png' alt='menu-icon' />
+                    <li>Dashbord</li>
+                </div>
+                <div className='menu-item'>
+                    <img src='/images/Sales.png' alt='menu-icon' />
+                    <li>Sales</li>
+                </div>
+                <div className='menu-item'>
+                    <img src='/images/Expenses.png' alt='menu-icon' />
+                    <li>Expenses</li>
+                </div>
+                <div className='menu-item'>
+                    <img src='/images/Shop.png' alt='menu-icon' />
+                    <li>Shops</li>
+                </div>
+                <div className='menu-item'>
+                    <img src='/images/Customers.png' alt='menu-icon' />
+                    <li>Customers</li>
+                </div>
+                <div className='menu-item'>
+                    <img src='/images/Employees.png' alt='menu-icon' />
+                    <li>Employees</li>
+                </div>
+                
             </ul>
         </div>
 
