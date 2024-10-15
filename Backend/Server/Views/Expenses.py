@@ -22,7 +22,6 @@ def check_role(required_role):
     return wrapper
 
 class AddExpence(Resource):
-    
     @jwt_required()
     @check_role('manager')
 
@@ -94,7 +93,6 @@ class AllExpenses(Resource):
             })
 
         return make_response(jsonify(all_expenses), 200)
-    
 
 class GetShopExpenses(Resource):
     

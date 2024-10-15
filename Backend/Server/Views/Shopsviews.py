@@ -112,7 +112,7 @@ class GetAllShops(Resource):
     
         all_shops = [{
             
-            "shop_id " : shop.shops_id ,
+            "shop_id": shop.shops_id,  
             "shopname" :shop.shopname,
             "employee":shop.employee,
             "shopstatus" : shop.shopstatus,
