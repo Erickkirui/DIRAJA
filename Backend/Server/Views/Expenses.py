@@ -1,6 +1,7 @@
 from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
 from Server.Models.Users import Users
+from Server.Models.Shops import Shops
 from Server.Utils import get_expenses_filtered, serialize_expenses
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
@@ -64,22 +65,33 @@ class AllExpenses(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-
         expenses = Expenses.query.all()
-    
-        all_expenses = [{
-            
-            "expense_id " : expense.expense_id ,
-            "user_id": expense.user_id,
-            "shop_id" :expense.shop_id,
-            "item":expense.item,
-            "description" : expense.description,
-            "quantity" : expense.quantity,
-            "totalPrice" : expense.totalPrice,
-            "amountPaid" : expense.amountPaid,
-            "created_at" : expense.created_at
 
-        } for expense in expenses]
+        all_expenses = []
+        
+        for expense in expenses:
+            # Fetch username and shop name manually using user_id and shop_id
+            user = Users.query.filter_by(users_id=expense.user_id).first()
+            shop = Shops.query.filter_by(shops_id=expense.shop_id).first()
+
+            # Handle cases where user or shop may not be found
+            username = user.username if user else "Unknown User"
+            shop_name = shop.shop_name if shop else "Unknown Shop"
+
+            # Append the data
+            all_expenses.append({
+                "expense_id": expense.expense_id,
+                "user_id": expense.user_id,
+                "username": username,  # Manually fetched username
+                "shop_id": expense.shop_id,
+                "shop_name": shop_name,  # Manually fetched shop name
+                "item": expense.item,
+                "description": expense.description,
+                "quantity": expense.quantity,
+                "totalPrice": expense.totalPrice,
+                "amountPaid": expense.amountPaid,
+                "created_at": expense.created_at
+            })
 
         return make_response(jsonify(all_expenses), 200)
     

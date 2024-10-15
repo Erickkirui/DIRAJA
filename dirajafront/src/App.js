@@ -5,6 +5,8 @@ import ScrollTotop from './Components/ScrollTotop';
 import Navbar from './Components/Navbar';
 import LoginPage from './Pages/LoginPage';
 import NewShopPage from './Pages/NewShopPage';
+import ExpensePage from './Pages/ExpensePage';
+
 
 
 
@@ -37,7 +39,11 @@ function App() {
           <Routes>
             <Route path='/login' element={<LoginPage/>} ></Route>
             <Route path='/' element={<Layout><Managerdashord/></Layout>} ></Route>
+
             <Route path='/newshop' element={<NewShopPage/>} ></Route>
+
+            <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
+
 
           </Routes>
        
