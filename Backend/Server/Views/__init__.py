@@ -44,7 +44,9 @@ api.add_resource(GetShopStock, '/shop_stock')
 api.add_resource(GetShopStockByShopId, '/shop_stock/shop/<int:shop_id>')  
 #Delete a stock in a specific shop
 # api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:stock_id>')
-api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
+# api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
+api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
+
 api.add_resource(GetAllStock, '/allstock')
 
 
