@@ -11,10 +11,5 @@
 
  
 .body-area{
-  background-color: var(--background);
   padding: 20px;
-}
-.test{
-
-  width: 100%;
 }

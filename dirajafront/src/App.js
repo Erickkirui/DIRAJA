@@ -4,6 +4,7 @@ import Managerdashord from './Pages/Managerdashord';
 import ScrollTotop from './Components/ScrollTotop';
 import Navbar from './Components/Navbar';
 import LoginPage from './Pages/LoginPage';
+import ExpensePage from './Pages/ExpensePage';
 
 
 const Layout = ({ children }) => {
@@ -33,6 +34,8 @@ function App() {
           <Routes>
             <Route path='/login' element={<LoginPage/>} ></Route>
             <Route path='/' element={<Layout><Managerdashord/></Layout>} ></Route>
+            <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
+
           </Routes>
        
       </Router>
