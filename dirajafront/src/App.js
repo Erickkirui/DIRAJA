@@ -7,6 +7,7 @@ import LoginPage from './Pages/LoginPage';
 import NewShopPage from './Pages/NewShopPage';
 import ExpensePage from './Pages/ExpensePage';
 import AddExpensePage from './Pages/AddExpensePage';
+import AddEmployeePage from './Pages/AddEmployeePage';
 
 
 
@@ -44,6 +45,7 @@ function App() {
             <Route path='/newshop' element={<NewShopPage/>} ></Route>
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
+            <Route path='/addemployee' element={<Layout><AddEmployeePage /></Layout>} ></Route>
             
           </Routes>
        

@@ -1,13 +1,10 @@
 import React from 'react'
 import AddEmployee from '../Components/AddEmployee'
 
-
-function AddExpensePage() {
+export default function AddEmployeePage() {
   return (
     <div>
-      <AddEmployee />
+     <AddEmployee />
     </div>
   )
 }
-
-export default AddExpensePage
