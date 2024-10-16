@@ -12,12 +12,28 @@ const AddShop = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Get the access token from local storage
+    const accessToken = localStorage.getItem('access_token');
+
+    if (!accessToken) {
+      setMessage('You are not authenticated');
+      return;
+    }
+
     try {
-      const response = await axios.post('/diraja/newshop', {
-        shopname,
-        employee,
-        shopstatus,
-      });
+      const response = await axios.post(
+        '/diraja/newshop',
+        {
+          shopname,
+          employee,
+          shopstatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}` // Include the token in the request header
+          },
+        }
+      );
 
       if (response.status === 201) {
         setMessage('Shop added successfully');

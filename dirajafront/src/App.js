@@ -6,6 +6,7 @@ import Navbar from './Components/Navbar';
 import LoginPage from './Pages/LoginPage';
 import NewShopPage from './Pages/NewShopPage';
 import ExpensePage from './Pages/ExpensePage';
+import ShopsPage from './Pages/ShopsPage';
 
 
 
@@ -42,7 +43,9 @@ function App() {
 
             <Route path='/newshop' element={<NewShopPage/>} ></Route>
 
-            <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
+            <Route path='/allexpenses' element={<Layout><ExpensePage/></Layout>} ></Route>
+
+            <Route path='/allshops' element={<Layout><ShopsPage/></Layout>} ></Route>
 
 
           </Routes>
