@@ -38,13 +38,13 @@ function App() {
       <Router>
         <ScrollTotop />
           <Routes>
+
             <Route path='/login' element={<LoginPage/>} ></Route>
             <Route path='/' element={<Layout><Managerdashord/></Layout>} ></Route>
-
             <Route path='/newshop' element={<NewShopPage/>} ></Route>
-
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
+            
           </Routes>
        
       </Router>

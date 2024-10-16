@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AddExpense = () => {
   const [expenseData, setExpenseData] = useState({
-    shops_id: '',  // This matches the backend expectation
+    shop_id: '',  // Updated field name to match the backend
     item: '',
     description: '',
     quantity: '',
@@ -41,8 +41,15 @@ const AddExpense = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Convert shops_id to an integer
-    const parsedValue = name === 'shops_id' ? parseInt(value, 10) : value;
+    console.log(`Changing field: ${name}, Value: ${value}`);
+
+    // Convert shop_id to an integer and validate
+    const parsedValue = name === 'shop_id' ? parseInt(value, 10) : value;
+
+    if (name === 'shop_id' && isNaN(parsedValue)) {
+      console.log("Invalid shop ID selected.");
+      return;
+    }
 
     setExpenseData({
       ...expenseData,
@@ -53,12 +60,11 @@ const AddExpense = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!expenseData.shops_id) {
+    if (!expenseData.shop_id) {
       setMessage({ type: 'error', text: 'Please select a shop' });
       return;
     }
 
-    // Log the expense data being sent to the server
     console.log('Posting expense data:', JSON.stringify(expenseData, null, 2));
 
     try {
@@ -71,7 +77,7 @@ const AddExpense = () => {
       if (response.status === 201) {
         setMessage({ type: 'success', text: 'Expense added successfully' });
         setExpenseData({
-          shops_id: '',  // Reset after success
+          shop_id: '',  // Reset after success
           item: '',
           description: '',
           quantity: '',
@@ -100,17 +106,17 @@ const AddExpense = () => {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="shops_id">Shop</label>
+          <label htmlFor="shop_id">Shop</label>
           <select
-            name="shops_id"  // This matches the backend field name
-            value={expenseData.shops_id}
+            name="shop_id"  // Updated to match the backend field name
+            value={expenseData.shop_id}
             onChange={handleChange}
-            className={`border p-2 w-full ${expenseData.shops_id ? 'text-black' : 'text-red-500'}`}
+            className={`border p-2 w-full ${expenseData.shop_id ? 'text-black' : 'text-red-500'}`}
           >
             <option value="">Select a shop</option>
             {shops.length > 0 ? (
               shops.map((shop) => (
-                <option key={shop.shop_id} value={shop.shop_id}>  {/* Use shop_id */}
+                <option key={shop.shop_id} value={shop.shop_id || ''}>  {/* Use shop_id */}
                   {shop.shopname}
                 </option>
               ))
