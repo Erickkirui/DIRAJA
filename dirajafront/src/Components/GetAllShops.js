@@ -5,8 +5,10 @@ import '../Styles/shops.css';
 
 const Shops = () => {
   const [shops, setShops] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [shopsPerPage] = useState(10); // Adjust as needed
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -35,12 +37,19 @@ const Shops = () => {
     fetchShops();
   }, []);
 
+    // Get current shops
+  const indexOfLastShop = currentPage * shopsPerPage;
+  const indexOfFirstShop = indexOfLastShop - shopsPerPage;
+  const currentShops = shops.slice(indexOfFirstShop, indexOfLastShop);
+
+  // Change page
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(shops.length / shopsPerPage);
+
   if (loading) {
     return <p>Loading shops...</p>;
-  }
-
-  if (error) {
-    return <p>{error}</p>;
   }
 
   return (
@@ -54,7 +63,7 @@ const Shops = () => {
       <table className="shops-table">
         <thead>
           <tr>
-            <th>Shop ID</th>
+            <th>ID</th>
             <th>Shop Name</th>
             <th>Employee</th>
             <th>Status</th>
@@ -62,9 +71,9 @@ const Shops = () => {
           </tr>
         </thead>
         <tbody>
-          {shops.length > 0 ? (
-            shops.map((shop) => (
-              <tr key={shop.shop_id}>
+          {currentShops.length > 0 ? (
+            currentShops.map((shop) => (
+              <tr key={shop.shop_id + shop.shopname + shop.employee + shop.created_at}>
                 <td>{shop.shop_id}</td>
                 <td>{shop.shopname}</td>
                 <td>
@@ -81,18 +90,26 @@ const Shops = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="5">No shops available</td>
+              <td colSpan="4">No shops available</td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Placeholder for pagination (optional) */}
-      <div className="pagination">
-        <button className="page-button">1</button>
-        <button className="page-button">2</button>
-        <button className="page-button">3</button>
-      </div>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          {[...Array(totalPages)].map((_, index) => (
+            <button
+              key={index + 1}
+              className={`page-button ${currentPage === index + 1 ? "active" : ""}`}
+              onClick={() => paginate(index + 1)}
+            >
+              {index + 1}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

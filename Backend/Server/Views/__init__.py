@@ -17,6 +17,7 @@ from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources,TodaysSales,WeeksSales,MonthsSales
 
 
+
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
 
@@ -104,6 +105,7 @@ api.add_resource(SalesResources,'/sale/<int:sales_id>')
 api.add_resource(TodaysSales, '/sales/today')
 api.add_resource(WeeksSales, '/sales/week')
 api.add_resource(MonthsSales, '/sales/month')
+
 
 
 
