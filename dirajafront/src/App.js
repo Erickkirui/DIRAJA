@@ -6,11 +6,10 @@ import Navbar from './Components/Navbar';
 import LoginPage from './Pages/LoginPage';
 import NewShopPage from './Pages/NewShopPage';
 import ExpensePage from './Pages/ExpensePage';
-
 import ShopsPage from './Pages/ShopsPage';
-
 import AddExpensePage from './Pages/AddExpensePage';
 import AddEmployeePage from './Pages/AddEmployeePage';
+import EmployeesPage from './Pages/EmployeesPage';
 
 
 
@@ -58,6 +57,7 @@ function App() {
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
             <Route path='/addemployee' element={<Layout><AddEmployeePage /></Layout>} ></Route>
+            <Route path='/allemployees' element={<Layout><EmployeesPage/></Layout>} ></Route>
             
 
           </Routes>
