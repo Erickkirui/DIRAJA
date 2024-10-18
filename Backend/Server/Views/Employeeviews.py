@@ -22,8 +22,8 @@ def check_role(required_role):
     return wrapper
 
 class AddNewemployee(Resource):
-    # @jwt_required()
-    # @check_role('manager')
+    @jwt_required()
+    @check_role('manager')
     def post(self):
         data = request.get_json()
 
@@ -112,8 +112,9 @@ class AddNewemployee(Resource):
 class GetAllemployees(Resource):
     jwt_required() 
     @check_role('manager')
+    
     def get(self):
-
+    
         employees = Employees.query.all()
 
         all_employess = [ {
@@ -149,6 +150,8 @@ class GetAllemployees(Resource):
 
 
 class Employeeresource(Resource):
+    @jwt_required()
+    @check_role('manager')
     def get(self, employee_id):
         """Get employee details by employee_id"""
         employee = Employees.query.get(employee_id)
@@ -182,7 +185,9 @@ class Employeeresource(Resource):
         }
 
         return make_response(jsonify(employee_data), 200)
-
+    
+    @jwt_required()
+    @check_role('manager')
     def put(self, employee_id):
         """Update employee details by employee_id"""
         data = request.get_json()
@@ -217,7 +222,9 @@ class Employeeresource(Resource):
         db.session.commit()
 
         return {"message": "Employee updated successfully"}, 200
-
+    
+    @jwt_required()
+    @check_role('manager')
     def delete(self, employee_id):
         """Delete an employee by employee_id"""
         employee = Employees.query.get(employee_id)
