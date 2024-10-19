@@ -17,9 +17,12 @@ class Inventory(db.Model):
     totalCost = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
     unitPrice = db.Column (db.Float, nullable=False)
+    BatchNumber = db.Column (db.String ,nullable= False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # shop_stocks = db.relationship('ShopStock', backref='inventory', lazy=True)
+    users = db.relationship('Users' ,backref='expenses', lazy=True)
     
     #validations
     
