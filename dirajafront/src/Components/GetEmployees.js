@@ -86,8 +86,11 @@ const Employees = () => {
                   <td>{employee.work_email}</td>
                   <td>{employee.first_name}</td>
                   <td>{employee.role}</td>
-                  <td>{employee.status}</td>
+                  <td>{employee.account_status}</td>
                   <td>{new Date(employee.created_at).toLocaleString()}</td>
+                  <td>
+                    <a href={`/employee-details/${employee.employee_id}`}>View More</a>
+                  </td>
                 </tr>
               ))}
             </tbody>

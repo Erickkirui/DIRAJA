@@ -110,7 +110,7 @@ class AddNewemployee(Resource):
 
 
 class GetAllemployees(Resource):
-    jwt_required() 
+    @jwt_required() 
     @check_role('manager')
     
     def get(self):
@@ -139,7 +139,8 @@ class GetAllemployees(Resource):
             'department':employee.department,
             'starting_date' : employee.starting_date,
             'contract_termination_date': employee.contract_termination_date,
-            'contract_renewal_date': employee.contract_renewal_date
+            'contract_renewal_date': employee.contract_renewal_date,
+            "created_at": employee.created_at
 
         } for employee in employees ]
 
