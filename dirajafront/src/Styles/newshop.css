@@ -1,0 +1,68 @@
+/* src/components/AddShop.css */
+
+/* Container styling */
+.add-shop-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Form header */
+  .add-shop-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  /* Form groups */
+  .form-group {
+    margin-bottom: 15px;
+  }
+  
+  /* Form labels */
+  .form-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 8px;
+    color: #555;
+  }
+  
+  /* Form inputs */
+  .form-group input[type="text"],
+  .form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  /* Submit button */
+  .add-shop-container button {
+    width: 100%;
+    padding: 10px;
+    background-color: #3190AE;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Hover effect for button */
+  .add-shop-container button:hover {
+    background-color: #28798c;
+  }
+  
+  /* Message display */
+  .message {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #d9534f;
+  }
+  
