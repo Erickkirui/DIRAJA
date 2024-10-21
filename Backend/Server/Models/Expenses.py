@@ -1,4 +1,3 @@
-
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 from sqlalchemy.orm import validates
@@ -17,7 +16,6 @@ class Expenses(db.Model):
     quantity = db.Column (db.Float, nullable=True)
     totalPrice = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
-    updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)  # Ensure this exists
     transfer_id = db.Column(db.Integer, db.ForeignKey('transfers.transfer_id'), nullable=True)
     created_at = db.Column(db.DateTime, nullable=False)
 

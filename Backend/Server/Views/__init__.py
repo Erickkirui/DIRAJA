@@ -7,9 +7,9 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops,CountShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
+# from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources,TodaysExpenses,WeeksExpenses,MonthsExpenses
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
@@ -67,12 +67,12 @@ api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 
 #distribute stock to a specific shop
-api.add_resource(InventoryDistribute, '/inventory/distribute')
+# api.add_resource(InventoryDistribute, '/inventory/distribute')
 api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
 
 #get distribution details
-api.add_resource(GetAllDistributions, '/inventory/distributions')
-api.add_resource(GetDistributionById, '/inventory/distributions/<distribution_id>')
+# api.add_resource(GetAllDistributions, '/inventory/distributions')
+# api.add_resource(GetDistributionById, '/inventory/distributions/<distribution_id>')
 
 
 
@@ -108,7 +108,8 @@ api.add_resource(MonthsSales, '/sales/month')
 
 
 
-
+api.add_resource(NewInventory,'/newinvent')
+api.add_resource(TransferInventory,'/transfer')
 
 ###  Manager dashbord 
 # 1. Total sales 

@@ -19,6 +19,7 @@ class Sales(db.Model):
     amount_paid = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), nullable=False)
+    BatchNumber = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     
     #Relationship
