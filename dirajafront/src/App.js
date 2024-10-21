@@ -10,7 +10,7 @@ import ShopsPage from './Pages/ShopsPage';
 import AddExpensePage from './Pages/AddExpensePage';
 import AddEmployeePage from './Pages/AddEmployeePage';
 import EmployeesPage from './Pages/EmployeesPage';
-
+import InventoryPage from './Pages/InventoryPage';
 
 
 
@@ -58,6 +58,7 @@ function App() {
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
             <Route path='/addemployee' element={<Layout><AddEmployeePage /></Layout>} ></Route>
             <Route path='/allemployees' element={<Layout><EmployeesPage/></Layout>} ></Route>
+            <Route path='/allinventory' element={<Layout><InventoryPage/></Layout>} ></Route>
             
 
           </Routes>

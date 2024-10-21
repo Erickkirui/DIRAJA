@@ -55,7 +55,7 @@ class AddInventory(Resource):
         
         inventory = Inventory(
             itemname=itemname, 
-            initial_quantity=quantity,  # Set initial_quantity
+            quantity=quantity,  # Set initial_quantity
             quantity=quantity,          # Set remaining quantity
             metric=metric, 
             totalCost=totalCost, 
@@ -86,7 +86,7 @@ class GetAllInventory(Resource):
             "totalCost": inventory.totalCost,
             "unitCost": inventory.unitCost,
             "amountPaid": inventory.amountPaid,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
+            "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
         } for inventory in inventories]
 
@@ -104,7 +104,8 @@ class InventoryResourceById(Resource):
             return {
             "inventory_id": inventory.inventory_id,
             "itemname": inventory.itemname,
-            "quantity": inventory.quantity,
+            "initial_quantity": inventory.initial_quantity,
+            "remaining_quantity": inventory.quantity,
             "metric": inventory.metric,
             "totalCost" : inventory.totalCost,
             "unitCost": inventory.unitCost,
@@ -139,7 +140,7 @@ class InventoryResourceById(Resource):
         if 'amountPaid' in data:
             inventory.amountPaid = data['amountPaid']
         if 'unitPrice' in data:
-            inventory.metric = data['unitPrice']
+            inventory.unitPrice = data['unitPrice']
         
         db.session.commit()
         
