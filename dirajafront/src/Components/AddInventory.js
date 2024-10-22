@@ -12,15 +12,25 @@ const AddInventory = () => {
     created_at: ''
   });
   const [message, setMessage] = useState('');
-  
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Convert string inputs to numbers where necessary
+    const numericFormData = {
+      ...formData,
+      quantity: Number(formData.quantity),
+      unitCost: Number(formData.unitCost),
+      amountPaid: Number(formData.amountPaid),
+      unitPrice: Number(formData.unitPrice)
+    };
+
     try {
-      const response = await axios.post('/diraja/newinventory', formData, {
+      const response = await axios.post('/diraja/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

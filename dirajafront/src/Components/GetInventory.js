@@ -50,7 +50,7 @@ const Inventory = () => {
 
   return (
     <div className="inventory-container">
-      <h2>Inventory</h2>
+    
       {inventory.length > 0 ? (
         <>
           <table className="inventory-table">

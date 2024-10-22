@@ -2,10 +2,9 @@
 
 /* Container for the shops */
 .shops-container {
-  width: 100%; /* Utilize full width */
+  width: 100%;
   margin: 0 auto;
-  padding: 10px; /* Reduced padding to minimize white space */
-  box-sizing: border-box;
+  padding: 20px;
 }
 
 /* Header styling */
@@ -29,7 +28,7 @@
   width: 100%;
   border-collapse: collapse;
   margin-top: 15px; /* Reduced margin */
-  table-layout: fixed; /* Evenly distribute column widths */
+  /* table-layout: fixed; Evenly distribute column widths */
 }
 
 .shops-table th,

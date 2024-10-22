@@ -56,8 +56,7 @@ function App() {
             <Route path='/allinventory' element={<Layout><InventoryPage/></Layout>} ></Route>
             <Route path='/addinventory' element={<Layout><AddInventory /></Layout>} ></Route>
             
-            
-
+          
           </Routes>
        
       </Router>
