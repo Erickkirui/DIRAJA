@@ -201,7 +201,7 @@ class AddInventory(Resource):
         inventory = Inventory(
             itemname=itemname, 
             quantity=quantity,  # Set initial_quantity
-            quantity=quantity,          # Set remaining quantity
+            remaining_quantity=quantity,          # Set remaining quantity
             metric=metric, 
             totalCost=totalCost, 
             unitCost=unitCost, 
