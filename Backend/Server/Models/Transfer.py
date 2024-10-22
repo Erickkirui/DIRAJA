@@ -17,12 +17,13 @@ class Transfer(db.Model):
     itemname = db.Column(db.String(100), nullable=False)
     metric = db.Column(db.String)
     amountPaid = db.Column (db.Float, nullable=False)
+    unitCost = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-
+    
     shop = db.relationship('Shops', backref=db.backref('transfers', lazy=True))
     users = db.relationship('Users' ,backref='transfer', lazy=True)
     inventory = db.relationship('Inventory', backref='transfers', lazy=True)
-    expenses = db.relationship('Expenses', back_populates='transfer', uselist=False, lazy=True)
+    
 
 
     def __repr__(self):
