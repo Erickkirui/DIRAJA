@@ -7,9 +7,9 @@
   padding: 20px;
   height: 100vh;
   border-right: 1px solid #ccc;
+  position: sticky;
 }
 
- 
 .body-area{
   padding: 20px;
 }
