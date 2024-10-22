@@ -1,5 +1,6 @@
 import React from 'react'
 import '../Styles/navigation.css'
+import { Link } from 'react-router-dom';
 
 function Navbar() {
   return (
@@ -13,7 +14,7 @@ function Navbar() {
             <ul>
                 <div className='menu-item'>
                     <img src='/images/Dashbord.png' alt='menu-icon' />
-                    <li>Dashbord</li>
+                    <li><Link to="/">Dashbord</Link></li>
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Sales.png' alt='menu-icon' />
@@ -21,11 +22,11 @@ function Navbar() {
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Expenses.png' alt='menu-icon' />
-                    <li>Expenses</li>
+                    <li><Link to="/expenses">Expenses</Link></li>
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Shop.png' alt='menu-icon' />
-                    <li>Shops</li>
+                    <li><Link to="/allshops">Shops</Link></li>
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Customers.png' alt='menu-icon' />

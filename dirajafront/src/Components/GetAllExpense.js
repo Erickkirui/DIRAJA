@@ -58,7 +58,7 @@ const Expenses = () => {
 
   return (
     <div className="expenses-container">
-      <h2>Expenses</h2>
+      
       {expenses.length > 0 ? (
         <>
           <table className="expenses-table">

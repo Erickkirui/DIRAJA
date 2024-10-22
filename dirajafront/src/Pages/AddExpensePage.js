@@ -1,11 +1,14 @@
 import React from 'react'
-import AddEmployee from '../Components/AddEmployee'
+import AddExpense from '../Components/AddExpenses'
+
 
 
 function AddExpensePage() {
   return (
     <div>
-      <AddEmployee />
+    
+     <AddExpense />
+  
     </div>
   )
 }
