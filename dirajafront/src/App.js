@@ -12,6 +12,7 @@ import AddEmployeePage from './Pages/AddEmployeePage';
 import EmployeesPage from './Pages/EmployeesPage';
 import InventoryPage from './Pages/InventoryPage';
 import AddInventory from './Components/AddInventory';
+import ShopStockPage from './Pages/ShopStockPage';
 
 
 
@@ -55,6 +56,7 @@ function App() {
             <Route path='/allemployees' element={<Layout><EmployeesPage/></Layout>} ></Route>
             <Route path='/allinventory' element={<Layout><InventoryPage/></Layout>} ></Route>
             <Route path='/addinventory' element={<Layout><AddInventory /></Layout>} ></Route>
+            <Route path='/shopstock' element={<Layout><ShopStockPage /></Layout>} ></Route>
             
           
           </Routes>

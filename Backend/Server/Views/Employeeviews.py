@@ -251,6 +251,7 @@ class Employeeresource(Resource):
 
 class CountEmployees(Resource):
     @jwt_required()
+    @check_role('superadmin')
     @check_role('manager')
     def get(self):
         countEmployees = Employees.query.count()

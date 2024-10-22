@@ -10,6 +10,7 @@ class Customers(db.Model):
     customer_name = db.Column(db.String(20), nullable=False)
     customer_number = db.Column(db.Integer, nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
+    sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     item = db.Column(db.JSON, unique=False, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
@@ -19,6 +20,7 @@ class Customers(db.Model):
     # relationship 
     shops = db.relationship('Shops' ,backref='customers', lazy=True)
     users = db.relationship('Users', backref='customers', lazy=True)
+    sales = db.relationship('Sales', backref='customers', lazy=True)
    
 
 

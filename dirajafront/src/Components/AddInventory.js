@@ -30,7 +30,7 @@ const AddInventory = () => {
     };
 
     try {
-      const response = await axios.post('/diraja/newinventory', numericFormData, {
+      const response = await axios.post('/diraja/newinvent', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

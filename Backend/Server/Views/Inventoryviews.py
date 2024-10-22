@@ -40,6 +40,12 @@ class DistributeInventory(Resource):
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
+
+        metric = data['metric']
+        total_cost = data['total_cost']
+        batch_number = data['BatchNumber']
+        user_id = data['user_id']
+
         itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
@@ -59,8 +65,14 @@ class DistributeInventory(Resource):
             inventory_id=inventory_id,
             quantity=quantity,
             total_cost=total_cost,
+
             BatchNumber=BatchNumber,
             user_id=current_user_id,
+
+            metric = metric,
+            BatchNumber=batch_number,
+            user_id=user_id,
+
             itemname=itemname,
             amountPaid=amountPaid,
             unitCost=unitCost
@@ -77,6 +89,7 @@ class DistributeInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error creating transfer', 'error': str(e)}), 500
 
+
         # Create new shop stock record
         new_shop_stock = ShopStock(
             shop_id=shop_id,
@@ -88,6 +101,23 @@ class DistributeInventory(Resource):
             BatchNumber=BatchNumber,
             unitPrice=unitCost  # Assuming unit price is the same as unit cost for stock
         )
+
+            # Create a record in the ShopStock table
+            new_shop_stock = ShopStock(
+                shop_id=shop_id,
+                inventory_id=inventory_id,
+                transfer_id=new_transfer.transfer_id,  # Link to the transfer
+                total_cost=total_cost,
+                itemname=itemname,
+                metric=metric,
+                quantity=quantity,
+                BatchNumber=batch_number,
+                unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
+            )
+
+            # Add the new shop stock record to the session
+            db.session.add(new_shop_stock)
+
 
         # Save the shop stock record
         try:
@@ -156,6 +186,48 @@ class AddInventory(Resource):
 
 
     
+# class AddInventory(Resource):
+#     @jwt_required()
+#     @check_role('manager')
+#     def post(self):
+#         data = request.get_json()
+        
+#         required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'totalCost', 'amountPaid', 'unitPrice']
+#         if not all(field in data for field in required_fields):
+#             return {'message': 'Missing itemname, quantity, metric, unitCost, totalCost, amountPaid, or unitPrice'}, 400
+
+#         itemname = data.get('itemname')
+#         quantity = data.get('quantity') 
+#         metric = data.get('metric')
+#         totalCost = data.get('totalCost')
+#         unitCost = data.get('unitCost')
+#         amountPaid = data.get('amountPaid')
+#         unitPrice = data.get('unitPrice')
+        
+        
+         
+#         # Convert the 'created_at' string to a datetime object
+#         created_at = data.get('created_at')
+#         if created_at:
+#             created_at = datetime.strptime(created_at, '%Y-%m-%d')
+        
+#         inventory = Inventory(
+#             itemname=itemname, 
+#             quantity=quantity,  # Set initial_quantity
+#             remaining_quantity=quantity,          # Set remaining quantity
+#             metric=metric, 
+#             totalCost=totalCost, 
+#             unitCost=unitCost, 
+#             amountPaid=amountPaid, 
+#             unitPrice=unitPrice,
+#             created_at=created_at
+#         )
+#         db.session.add(inventory)
+#         db.session.commit()
+        
+#         return {'message': 'Inventory added successfully'}, 201
+
+    
     
 class GetAllInventory(Resource):
     @jwt_required()
@@ -172,6 +244,7 @@ class GetAllInventory(Resource):
             "metric": inventory.metric,
             "totalCost": inventory.totalCost,
             "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
             "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
             "unitPrice": inventory.unitPrice
@@ -195,6 +268,7 @@ class InventoryResourceById(Resource):
             "metric": inventory.metric,
             "totalCost" : inventory.totalCost,
             "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
             "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
             "unitPrice": inventory.unitPrice
