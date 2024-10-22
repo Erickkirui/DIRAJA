@@ -51,9 +51,6 @@ function App() {
             <Route path='/allexpenses' element={<Layout><ExpensePage/></Layout>} ></Route>
 
             <Route path='/allshops' element={<Layout><ShopsPage/></Layout>} ></Route>
-
-
-
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
             <Route path='/addemployee' element={<Layout><AddEmployeePage /></Layout>} ></Route>

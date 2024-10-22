@@ -64,8 +64,8 @@ const Shops = () => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Shop Name</th>
             <th>Employee</th>
+            <th>Shop Name</th>
             <th>Status</th>
             <th>Created At</th>
           </tr>
@@ -75,7 +75,6 @@ const Shops = () => {
             currentShops.map((shop) => (
               <tr key={shop.shop_id + shop.shopname + shop.employee + shop.created_at}>
                 <td>{shop.shop_id}</td>
-                <td>{shop.shopname}</td>
                 <td>
                   <div className="employee-info">
                     <div className="employee-icon">
@@ -84,6 +83,7 @@ const Shops = () => {
                     <span className="employee-name">{shop.employee}</span>
                   </div>
                 </td>
+                <td>{shop.shopname}</td>
                 <td>{shop.shopstatus}</td>
                 <td>{new Date(shop.created_at).toLocaleDateString()}</td>
               </tr>

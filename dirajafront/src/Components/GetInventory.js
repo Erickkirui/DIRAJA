@@ -74,7 +74,7 @@ const Inventory = () => {
                   <td>{inventory.inventory_id}</td>
                   <td>{inventory.itemname}</td>
                   <td>{inventory.initial_quantity} {inventory.metric}</td>
-                  <td>{inventory.quantity} {inventory.metric}</td>
+                  <td>{inventory.remaining_quantity} {inventory.metric}</td>
                   <td>{inventory.unitCost}</td>
                   <td>{inventory.totalCost}</td>
                   <td>{inventory.amountPaid}</td>
