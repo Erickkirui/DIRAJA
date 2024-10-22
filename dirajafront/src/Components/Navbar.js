@@ -21,6 +21,10 @@ function Navbar() {
                     <li>Sales</li>
                 </div>
                 <div className='menu-item'>
+                    <img src='/images/Sales.png' alt='menu-icon' />
+                    <li><Link to="/allinventory">Inventory</Link></li>
+                </div>
+                <div className='menu-item'>
                     <img src='/images/Expenses.png' alt='menu-icon' />
                     <li><Link to="/expenses">Expenses</Link></li>
                 </div>
@@ -34,7 +38,7 @@ function Navbar() {
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Employees.png' alt='menu-icon' />
-                    <li>Employees</li>
+                    <li><Link to="/allemployees">Employees</Link></li>
                 </div>
                 
             </ul>

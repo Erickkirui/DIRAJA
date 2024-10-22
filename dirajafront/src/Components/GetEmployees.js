@@ -58,7 +58,7 @@ const Employees = () => {
 
   return (
     <div className="employees-container">
-      <h2>Employees</h2>
+      
       {employees.length > 0 ? (
         <>
           <table className="employees-table">
