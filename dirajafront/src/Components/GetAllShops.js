@@ -54,7 +54,7 @@ const Shops = () => {
 
   return (
     <div className="shops-container">
-      <h1>All Shops</h1>
+      
 
       {/* Show error message if there is an error */}
       {error && <div className="error-message">{error}</div>}
