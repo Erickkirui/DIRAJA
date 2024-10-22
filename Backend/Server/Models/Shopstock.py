@@ -12,6 +12,7 @@ class ShopStock(db.Model):
     transfer_id = db.Column(db.Integer, db.ForeignKey('transfers.transfer_id'))
     total_cost = db.Column(db.Float, nullable=False)
     itemname = db.Column(db.String(100), nullable=False)
+    metric = db.Column(db.String)
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     BatchNumber = db.Column(db.String(100), nullable=False)

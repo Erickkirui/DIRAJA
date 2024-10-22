@@ -7,7 +7,7 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops,CountShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
 # from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources,TodaysExpenses,WeeksExpenses,MonthsExpenses
@@ -40,9 +40,9 @@ api.add_resource(CountShops, '/countshops')
 
 #stock endpoints
 #Get stock
-api.add_resource(GetShopStock, '/shop_stock')
+api.add_resource(GetShopStock, '/shopstock')
 #Get stock by shopid
-api.add_resource(GetShopStockByShopId, '/shop_stock/shop/<int:shop_id>')  
+api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')  
 #Delete a stock in a specific shop
 # api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:stock_id>')
 # api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
@@ -62,7 +62,7 @@ api.add_resource(Employeeresource, '/employee/<int:employee_id>')
 #Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
 # inventory endpoints 
-api.add_resource(AddInventory, '/newinventory')
+# api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 

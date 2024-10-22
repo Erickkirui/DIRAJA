@@ -40,6 +40,7 @@ class TransferInventory(Resource):
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
+        metric = data['metric']
         total_cost = data['total_cost']
         batch_number = data['BatchNumber']
         user_id = data['user_id']
@@ -55,6 +56,7 @@ class TransferInventory(Resource):
             inventory_id=inventory_id,
             quantity=quantity,
             total_cost=total_cost,
+            metric = metric,
             BatchNumber=batch_number,
             user_id=user_id,
             itemname=itemname,
@@ -83,6 +85,7 @@ class TransferInventory(Resource):
                 transfer_id=new_transfer.transfer_id,  # Link to the transfer
                 total_cost=total_cost,
                 itemname=itemname,
+                metric=metric,
                 quantity=quantity,
                 BatchNumber=batch_number,
                 unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
@@ -173,46 +176,46 @@ class NewInventory(Resource):
             return jsonify({'message': 'Error adding inventory', 'error': str(e)}), 500
 
     
-class AddInventory(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def post(self):
-        data = request.get_json()
+# class AddInventory(Resource):
+#     @jwt_required()
+#     @check_role('manager')
+#     def post(self):
+#         data = request.get_json()
         
-        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'totalCost', 'amountPaid', 'unitPrice']
-        if not all(field in data for field in required_fields):
-            return {'message': 'Missing itemname, quantity, metric, unitCost, totalCost, amountPaid, or unitPrice'}, 400
+#         required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'totalCost', 'amountPaid', 'unitPrice']
+#         if not all(field in data for field in required_fields):
+#             return {'message': 'Missing itemname, quantity, metric, unitCost, totalCost, amountPaid, or unitPrice'}, 400
 
-        itemname = data.get('itemname')
-        quantity = data.get('quantity') 
-        metric = data.get('metric')
-        totalCost = data.get('totalCost')
-        unitCost = data.get('unitCost')
-        amountPaid = data.get('amountPaid')
-        unitPrice = data.get('unitPrice')
+#         itemname = data.get('itemname')
+#         quantity = data.get('quantity') 
+#         metric = data.get('metric')
+#         totalCost = data.get('totalCost')
+#         unitCost = data.get('unitCost')
+#         amountPaid = data.get('amountPaid')
+#         unitPrice = data.get('unitPrice')
         
         
          
-        # Convert the 'created_at' string to a datetime object
-        created_at = data.get('created_at')
-        if created_at:
-            created_at = datetime.strptime(created_at, '%Y-%m-%d')
+#         # Convert the 'created_at' string to a datetime object
+#         created_at = data.get('created_at')
+#         if created_at:
+#             created_at = datetime.strptime(created_at, '%Y-%m-%d')
         
-        inventory = Inventory(
-            itemname=itemname, 
-            quantity=quantity,  # Set initial_quantity
-            remaining_quantity=quantity,          # Set remaining quantity
-            metric=metric, 
-            totalCost=totalCost, 
-            unitCost=unitCost, 
-            amountPaid=amountPaid, 
-            unitPrice=unitPrice,
-            created_at=created_at
-        )
-        db.session.add(inventory)
-        db.session.commit()
+#         inventory = Inventory(
+#             itemname=itemname, 
+#             quantity=quantity,  # Set initial_quantity
+#             remaining_quantity=quantity,          # Set remaining quantity
+#             metric=metric, 
+#             totalCost=totalCost, 
+#             unitCost=unitCost, 
+#             amountPaid=amountPaid, 
+#             unitPrice=unitPrice,
+#             created_at=created_at
+#         )
+#         db.session.add(inventory)
+#         db.session.commit()
         
-        return {'message': 'Inventory added successfully'}, 201
+#         return {'message': 'Inventory added successfully'}, 201
     
     
 class GetAllInventory(Resource):
@@ -230,6 +233,7 @@ class GetAllInventory(Resource):
             "metric": inventory.metric,
             "totalCost": inventory.totalCost,
             "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
             "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
@@ -254,6 +258,7 @@ class InventoryResourceById(Resource):
             "metric": inventory.metric,
             "totalCost" : inventory.totalCost,
             "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
             "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
             "unitPrice": inventory.unitPrice

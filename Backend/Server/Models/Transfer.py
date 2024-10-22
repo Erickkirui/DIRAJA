@@ -15,6 +15,7 @@ class Transfer(db.Model):
     BatchNumber = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     itemname = db.Column(db.String(100), nullable=False)
+    metric = db.Column(db.String)
     amountPaid = db.Column (db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
