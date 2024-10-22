@@ -183,14 +183,25 @@ class GetShopStock(Resource):
             # Serialize the data
             shop_stock_list = []
             for stock in shop_stocks.items:
+                
+                # Fetch username and shop name manually using user_id and shop_id
+                shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
+                
+                # Handle cases where user or shop may not be found
+                shopname = shop.shopname if shop else "Unknown Shop"
+
+                
                 shop_stock_list.append({
+                    "stock_id": stock.stock_id,
                     "shop_id": stock.shop_id,
-                    "shop_name": stock.shop.shopname,  # Adjust attribute if different
+                    "shop_name": shopname,  # Adjust attribute if different
                     "inventory_id": stock.inventory_id,
                     "item_name": stock.inventory.itemname,  # Adjust attribute if different
+                    "batchnumber": stock.BatchNumber,
+                    "metric": stock.inventory.metric,
                     "quantity": stock.quantity,
                     "total_cost": stock.total_cost,
-                    "unit_price": stock.unit_price
+                    "unitPrice": stock.unitPrice
                 })
             
             # Prepare the response with pagination info
@@ -227,12 +238,14 @@ class GetShopStockByShopId(Resource):
             # Serialize the data
             stock_list = [{
                 "shop_id": stock.shop_id,
-                "shop_name": shop.shopname,
+                "shop_name": stock.shop.shopname,
                 "inventory_id": stock.inventory_id,
                 "item_name": stock.inventory.itemname,
+                "batchnumber": stock.BatchNumber,
+                "metric": stock.inventory.metric,
                 "quantity": stock.quantity,
                 "total_cost": stock.total_cost,
-                "unit_price": stock.unit_price
+                "unitPrice": stock.unitPrice
             } for stock in shop_stocks]
             
             # Prepare the response
@@ -265,13 +278,16 @@ class GetAllStock(Resource):
             shop_stock_list = []
             for stock in shop_stocks:
                 shop_stock_list.append({
+                    "stock_id": stock.stock_id,
                     "shop_id": stock.shop_id,
                     "shop_name": stock.shop.shopname,  
                     "inventory_id": stock.inventory_id,
-                    "item_name": stock.inventory.itemname,  
+                    "item_name": stock.inventory.itemname, 
+                    "batchnumber": stock.BatchNumber,
+                    "metric": stock.inventory.metric, 
                     "quantity": stock.quantity,
                     "total_cost": stock.total_cost,
-                    "unit_price": stock.unit_price
+                    "unitPrice": stock.unitPrice
                 })
 
             # Prepare the response

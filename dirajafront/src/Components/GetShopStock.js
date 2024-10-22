@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../Styles/inventory.css';
+import '../Styles/shopStock.css';
 
-const Inventory = () => {
-  const [inventory, setInventory] = useState([]);
+const ShopStock = () => {
+  const [stock, setShopStock] = useState([]);
   const [currentPage, setCurrentPage] = useState(1); // Current page state
   const [error, setError] = useState('');
   const itemsPerPage = 50; // Items per page
 
   useEffect(() => {
-    const fetchInventory = async () => {
+    const fetchShopStock = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
 
@@ -18,20 +18,22 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get('/diraja/allinventories', {
+        const response = await axios.get('/diraja/shopstock', {
           headers: {
             Authorization: `Bearer ${accessToken}`  // Use access token
           }
         });
-
-        setInventory(response.data); // Store the fetched inventory
+        const stock = Array.isArray(response.data) ? response.data : [];
+        setShopStock(stock); // Store the fetched stock
       } catch (err) {
-        setError('Error fetching inventory. Please try again.');
+        setError('Error fetching stock. Please try again.');
       }
     };
 
-    fetchInventory(); // Fetch inventory when component loads
+    fetchShopStock(); // Fetch expenses when component loads
   }, []);
+
+
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber); // Change the current page
@@ -40,48 +42,42 @@ const Inventory = () => {
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentInventory = inventory.slice(indexOfFirstItem, indexOfLastItem);
+  const currentShopStock = stock.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(inventory.length / itemsPerPage);
+  const totalPages = Math.ceil(stock.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
   }
 
   return (
-    <div className="inventory-container">
-    
-      {inventory.length > 0 ? (
+    <div className="stock-container">
+      
+      {stock.length > 0 ? (
         <>
-          <table className="inventory-table">
+          <table className="stock-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Item </th> 
-                <th>Batch No </th>
-                <th>Initial quantity</th> 
-                <th>Remaining quantity</th>
-                <th>Unit cost(ksh)</th>
+                <th>Shop</th> {/* Display Username */}
+                <th>Item</th> {/* Display Shop Name */}
+                <th>Batch</th>
+                <th>Quantity</th>
                 <th>Total cost(ksh)</th>
-                <th>Amount paid(ksh)</th>
-                {/* <th>Balance(ksh)</th> */}
                 <th>Unit price(ksh)</th>
-                <th>Date</th>
               </tr>
             </thead>
             <tbody>
-              {currentInventory.map((inventory) => (
-                <tr key={inventory.inventory_id}>
-                  <td>{inventory.inventory_id}</td>
-                  <td>{inventory.itemname}</td>
-                  <td>{inventory.batchnumber}</td>
-                  <td>{inventory.initial_quantity} {inventory.metric}</td>
-                  <td>{inventory.remaining_quantity} {inventory.metric}</td>
-                  <td>{inventory.unitCost}</td>
-                  <td>{inventory.totalCost}</td>
-                  <td>{inventory.amountPaid}</td>
-                  <td>{inventory.unitPrice}</td>
-                  <td>{new Date(inventory.created_at).toLocaleString()}</td>
+              {currentShopStock.map((stock) => (
+                <tr key={stock.stock_id}>
+                  <td>{stock.stock_id}</td>
+                  <td>{stock.shop_name}</td>
+                  <td>{stock.item_name}</td>
+                  <td>{stock.batchnumber}</td>
+                  <td>{stock.quantity} {stock.metric}</td>
+                  <td>{stock.total_cost}</td>
+                  <td>{stock.unit_Price}</td>
+                  {/* <td>{new Date(expense.created_at).toLocaleString()}</td> */}
                 </tr>
               ))}
             </tbody>
@@ -101,10 +97,10 @@ const Inventory = () => {
           </div>
         </>
       ) : (
-        <p>No inventory found.</p>
+        <p>No stock found.</p>
       )}
     </div>
   );
 };
 
-export default Inventory;
+export default ShopStock;
