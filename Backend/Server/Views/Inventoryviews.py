@@ -12,6 +12,7 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from sqlalchemy.orm import joinedload
+import logging
 
 def check_role(required_role):
     def wrapper(fn):
@@ -40,12 +41,6 @@ class DistributeInventory(Resource):
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
-
-        metric = data['metric']
-        total_cost = data['total_cost']
-        batch_number = data['BatchNumber']
-        user_id = data['user_id']
-
         itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
@@ -65,13 +60,14 @@ class DistributeInventory(Resource):
             inventory_id=inventory_id,
             quantity=quantity,
             total_cost=total_cost,
-
             BatchNumber=BatchNumber,
             user_id=current_user_id,
+
 
             metric = metric,
             # BatchNumber=batch_number,
             # user_id=user_id,
+
 
             itemname=itemname,
             amountPaid=amountPaid,
@@ -89,11 +85,10 @@ class DistributeInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error creating transfer', 'error': str(e)}), 500
 
-
         # Create new shop stock record
         new_shop_stock = ShopStock(
             shop_id=shop_id,
-            transfer_id=new_transfer.transfer_id,  # Now this will have the correct transfer_id
+            transfer_id=new_transfer.transfer_id,  # Ensure you're using the correct attribute for transfer ID
             inventory_id=inventory_id,
             quantity=quantity,
             total_cost=total_cost,
@@ -119,6 +114,7 @@ class DistributeInventory(Resource):
         db.session.add(new_shop_stock)
 
 
+
         # Save the shop stock record
         try:
             db.session.add(new_shop_stock)
@@ -128,16 +124,17 @@ class DistributeInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error creating shop stock', 'error': str(e)}), 500
 
-   
+
+
 class AddInventory(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
         data = request.get_json()
-        current_user_id = get_jwt_identity() 
+        current_user_id = get_jwt_identity()
 
-        # Validate required fields (removed 'totalCost' from required fields)
-        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice', 'created_at']
+        # Validate required fields (including supplier fields)
+        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice', 'Suppliername', 'Supplier_location', 'created_at']
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
 
@@ -148,17 +145,21 @@ class AddInventory(Resource):
         unitCost = data.get('unitCost')
         amountPaid = data.get('amountPaid')
         unitPrice = data.get('unitPrice')
+        Suppliername = data.get('Suppliername')
+        Supplier_location = data.get('Supplier_location')
+        note = data.get('note', '')  # Optional field, default to empty string
         created_at = data.get('created_at')
 
-        # Calculate totalCost by multiplying unitCost and quantity
+        # Calculate totalCost and balance
         totalCost = unitCost * quantity
+        balance = totalCost - amountPaid
 
         # Generate the batch number based on previous records
         last_inventory = Inventory.query.order_by(Inventory.inventory_id.desc()).first()
         next_batch_number = 1 if not last_inventory else last_inventory.inventory_id + 1
 
         # Generate the batch code using the static method
-        batch_code = Inventory.generate_batch_code(itemname, created_at, next_batch_number)
+        batch_code = Inventory.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
 
         # Create new inventory record
         new_inventory = Inventory(
@@ -172,6 +173,10 @@ class AddInventory(Resource):
             unitPrice=unitPrice,
             BatchNumber=batch_code,
             user_id=current_user_id,
+            Suppliername=Suppliername,
+            Supplier_location=Supplier_location,
+            ballance=balance,  # Balance calculated as totalCost - amountPaid
+            note=note,
             created_at=datetime.strptime(created_at, '%Y-%m-%d')
         )
 
@@ -184,50 +189,7 @@ class AddInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error adding inventory', 'error': str(e)}), 500
 
-
-    
-# class AddInventory(Resource):
-#     @jwt_required()
-#     @check_role('manager')
-#     def post(self):
-#         data = request.get_json()
-        
-#         required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'totalCost', 'amountPaid', 'unitPrice']
-#         if not all(field in data for field in required_fields):
-#             return {'message': 'Missing itemname, quantity, metric, unitCost, totalCost, amountPaid, or unitPrice'}, 400
-
-#         itemname = data.get('itemname')
-#         quantity = data.get('quantity') 
-#         metric = data.get('metric')
-#         totalCost = data.get('totalCost')
-#         unitCost = data.get('unitCost')
-#         amountPaid = data.get('amountPaid')
-#         unitPrice = data.get('unitPrice')
-        
-        
-         
-#         # Convert the 'created_at' string to a datetime object
-#         created_at = data.get('created_at')
-#         if created_at:
-#             created_at = datetime.strptime(created_at, '%Y-%m-%d')
-        
-#         inventory = Inventory(
-#             itemname=itemname, 
-#             quantity=quantity,  # Set initial_quantity
-#             remaining_quantity=quantity,          # Set remaining quantity
-#             metric=metric, 
-#             totalCost=totalCost, 
-#             unitCost=unitCost, 
-#             amountPaid=amountPaid, 
-#             unitPrice=unitPrice,
-#             created_at=created_at
-#         )
-#         db.session.add(inventory)
-#         db.session.commit()
-        
-#         return {'message': 'Inventory added successfully'}, 201
-
-    
+   
     
 class GetAllInventory(Resource):
     @jwt_required()

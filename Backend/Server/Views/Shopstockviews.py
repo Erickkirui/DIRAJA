@@ -203,6 +203,7 @@ class GetShopStock(Resource):
             db.session.rollback()
             return {"error": "An error occurred while fetching shop stock data"}, 500
 
+
 # class GetShopStock(Resource):
     
 #     @jwt_required()
@@ -270,6 +271,7 @@ class GetShopStock(Resource):
 #             db.session.rollback()
 #             return {"error": "An error occurred while fetching shop stock data"}, 500
         
+
 #Get shopstock by id
 class GetShopStockByShopId(Resource):
     @jwt_required()

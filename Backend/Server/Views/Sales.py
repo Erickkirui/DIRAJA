@@ -3,10 +3,10 @@ from flask_restful import Resource
 from Server.Models.Sales import Sales
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
 from flask import jsonify,request,make_response
 from Server.Models.Shopstock import ShopStock
-from Server.Models.Inventory import Inventory 
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from flask import jsonify, request
@@ -25,82 +25,93 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
 class AddSale(Resource):
     @jwt_required()
     def post(self):
-        data = request.get_json()  # Get the JSON data from the request
+        data = request.get_json()
         current_user_id = get_jwt_identity()
 
+        # Validate required fields for sale
+        required_fields = [
+            'shop_id', 'customer_name', 'customer_number', 'item_name', 
+            'quantity', 'metric', 'unit_price', 'amount_paid', 
+            'payment_method', 'BatchNumber', 'stock_id'
+        ]
+        if not all(field in data for field in required_fields):
+            return jsonify({'message': 'Missing required fields'}), 400
+
+        # Extract data
+        shop_id = data.get('shop_id')
+        customer_name = data.get('customer_name')
+        customer_number = data.get('customer_number')
+        item_name = data.get('item_name')
+        quantity = data.get('quantity')
+        metric = data.get('metric')
+        unit_price = data.get('unit_price')
+        amount_paid = data.get('amount_paid')
+        payment_method = data.get('payment_method')
+        batch_number = data.get('BatchNumber')
+        stock_id = data.get('stock_id')  # Use stock_id from shop stock
+        status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
+        created_at = datetime.utcnow()
+
+        # Calculate total price based on unit price and quantity
+        total_price = unit_price * quantity
+        
+        # Calculate balance
+        balance = amount_paid - total_price  # Calculate balance based on amount paid and total price
+
+        # Create new sale record
+        new_sale = Sales(
+            user_id=current_user_id,
+            shop_id=shop_id,
+            customer_name=customer_name,
+            customer_number=customer_number,
+            item_name=item_name,
+            quantity=quantity,
+            metric=metric,
+            unit_price=unit_price,
+            amount_paid=amount_paid,
+            total_price=total_price,  # Use calculated total_price
+            payment_method=payment_method,
+            BatchNumber=batch_number,
+            stock_id=stock_id,  # Include stock_id in the sales record
+            ballance=balance,  # Store calculated balance
+            status=status,
+            created_at=created_at
+        )
+
+        # Check inventory availability
+        shop_stock_item = ShopStock.query.filter_by(stock_id=stock_id).first()
+        if not shop_stock_item or shop_stock_item.quantity < quantity:
+            return {'message': 'Insufficient inventory quantity'}, 400
+
+        # Update the shop stock quantity
+        shop_stock_item.quantity -= quantity  # Subtract sold quantity from shop stock
+
+        # Create new customer record
+        new_customer = Customers(
+            customer_name=customer_name,
+            customer_number=customer_number,
+            shop_id=shop_id,
+            sales_id=new_sale.sales_id,  # Link the sale to the customer
+            user_id=current_user_id,
+            item={"item_name": item_name, "quantity": quantity, "unit_price": unit_price},  # Store item details as JSON
+            amount_paid=amount_paid,
+            payment_method=payment_method,
+            created_at=created_at
+        )
+
         try:
-            # Validate and extract data
-            shop_id = data.get('shop_id')
-            customer_name = data.get('customer_name')
-            status = data.get('status', 'unpaid')  # Default to 'unpaid'
-            customer_number = data.get('customer_number')
-            inventory_id = data.get('inventory_id')  # Assuming you select items by inventory_id
-            quantity = data.get('quantity')
-            amount_paid = data.get('amount_paid')
-            payment_method = data.get('payment_method')
-
-            created_at = data.get('created_at')
-            if created_at:
-                created_at = datetime.strptime(created_at, '%Y-%m-%d')
-
-            # Ensure required fields are present
-            if not all([shop_id, customer_name, customer_number, inventory_id, quantity, amount_paid, payment_method]):
-                return {"error": "Missing required fields"}, 400
-
-            # Fetch the shop's stock information based on shop_id and inventory_id
-            shop_stock = ShopStock.query.filter_by(shop_id=shop_id, inventory_id=inventory_id).first()
-            if not shop_stock:
-                return {"error": "Item not available in the shop"}, 400
-
-            # Fetch the item name and unit cost from the Inventory table based on inventory_id
-            inventory_item = Inventory.query.filter_by(inventory_id=inventory_id).first()
-            if not inventory_item:
-                return {"error": "Inventory item not found"}, 400
-
-            # Check if enough stock is available in the shop's stock
-            if shop_stock.quantity < quantity:
-                return {"error": "Not enough stock available"}, 400
-
-            # Update the stock quantity in ShopStock
-            shop_stock.quantity -= quantity
-
-            unit_price = shop_stock.unit_price
-            total_price = quantity * unit_price
-
-            # Update total_cost in ShopStock based on remaining quantity
-            shop_stock.total_cost = shop_stock.quantity * inventory_item.unitCost
-
-            # Create a new Sale object
-            new_sale = Sales(
-                user_id=current_user_id,
-                shop_id=shop_id,
-                customer_name=customer_name,
-                status=status,
-                customer_number=customer_number,
-                item_name=inventory_item.itemname,  # Use item name from the Inventory table
-                quantity=quantity,
-                metric=inventory_item.metric,  # Assuming metric is stored in ShopStock
-                unit_price=unit_price,
-                amount_paid=amount_paid,
-                total_price=total_price,
-                payment_method=payment_method,
-                created_at=created_at
-            )
-
-            # Add the new sale to the database
+            # Save both sale and customer to the database
             db.session.add(new_sale)
+            db.session.add(new_customer)
             db.session.commit()
-
-            return {"message": "Sale added successfully"}, 201
-
+            return {'message': 'Sale and customer added successfully'}, 201
         except Exception as e:
             db.session.rollback()
-            return {"error": str(e)}, 500
-
-
+            return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
         
 class GetSales(Resource):
     @jwt_required()
