@@ -10,7 +10,7 @@ from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopSt
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 
-from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 
 from Server.Views.Bankviews import AddBank, BankResourceById
 # from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
@@ -66,7 +66,7 @@ api.add_resource(Employeeresource, '/employee/<int:employee_id>')
 #Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
 # inventory endpoints 
-# api.add_resource(AddInventory, '/newinventory')
+api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 

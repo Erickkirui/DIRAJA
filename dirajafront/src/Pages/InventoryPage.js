@@ -6,7 +6,7 @@ function InventoryPage() {
   return (
     <div>
         <h1>Inventory</h1>
-        <button><Link to="/addinventory">Add inventory</Link></button>
+        <button><Link to="/newinventory">Add inventory</Link></button>
         <Inventory/>
     </div>
   )

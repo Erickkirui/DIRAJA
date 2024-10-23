@@ -70,8 +70,8 @@ class DistributeInventory(Resource):
             user_id=current_user_id,
 
             metric = metric,
-            BatchNumber=batch_number,
-            user_id=user_id,
+            # BatchNumber=batch_number,
+            # user_id=user_id,
 
             itemname=itemname,
             amountPaid=amountPaid,
@@ -102,21 +102,21 @@ class DistributeInventory(Resource):
             unitPrice=unitCost  # Assuming unit price is the same as unit cost for stock
         )
 
-            # Create a record in the ShopStock table
-            new_shop_stock = ShopStock(
-                shop_id=shop_id,
-                inventory_id=inventory_id,
-                transfer_id=new_transfer.transfer_id,  # Link to the transfer
-                total_cost=total_cost,
-                itemname=itemname,
-                metric=metric,
-                quantity=quantity,
-                BatchNumber=batch_number,
-                unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
-            )
+        # Create a record in the ShopStock table
+        new_shop_stock = ShopStock(
+            shop_id=shop_id,
+            inventory_id=inventory_id,
+            transfer_id=new_transfer.transfer_id,  # Link to the transfer
+            total_cost=total_cost,
+            itemname=itemname,
+            metric=metric,
+            quantity=quantity,
+            BatchNumber=batch_number,
+            unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
+        )
 
-            # Add the new shop stock record to the session
-            db.session.add(new_shop_stock)
+        # Add the new shop stock record to the session
+        db.session.add(new_shop_stock)
 
 
         # Save the shop stock record

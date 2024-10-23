@@ -1,10 +1,10 @@
-.stock-container {
+.shopStocks-container {
     width: 98%;
     margin: 0 auto;
     padding: 20px;
   }
   
- .stock-container h2 {
+ .shopStocks-container h2 {
     text-align: left;
     margin-bottom: 20px;
     font-weight: 400;
@@ -15,20 +15,20 @@
     text-align: center;
   }
   
-  .stock-table {
+  .shopStocks-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
   }
   
-  .stock-table th, .expenses-table td {
+  .shopStocks-table th, .expenses-table td {
     border-bottom: 1px solid #ccc;
     padding: 10px;
     text-align: left;
     font-size: 14px;
   }
   
-  .stock-table th {
+  .shopStocks-table th {
     font-size: 14px;
     background-color: var(--background);
   }
