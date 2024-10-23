@@ -9,6 +9,9 @@ const AddInventory = () => {
     unitCost: '',
     amountPaid: '',
     unitPrice: '',
+    Suppliername: '',
+    Supplier_location: '',
+    note: '',
     created_at: ''
   });
   const [message, setMessage] = useState('');
@@ -30,14 +33,14 @@ const AddInventory = () => {
     };
 
     try {
-      const response = await axios.post('/diraja/newinvent', numericFormData, {
+      const response = await axios.post('/diraja/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
       });
       setMessage(response.data.message);
     } catch (error) {
-      setMessage('Error adding inventory: ' + error.response?.data?.message || error.message);
+      setMessage('Error adding inventory: ' + (error.response?.data?.message || error.message));
     }
   };
 
@@ -103,6 +106,34 @@ const AddInventory = () => {
             value={formData.unitPrice}
             onChange={handleChange}
             required
+          />
+        </div>
+        <div>
+          <label>Supplier Name</label>
+          <input
+            type="text"
+            name="Suppliername"
+            value={formData.Suppliername}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Supplier Location</label>
+          <input
+            type="text"
+            name="Supplier_location"
+            value={formData.Supplier_location}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <label>Note</label>
+          <textarea
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
           />
         </div>
         <div>
