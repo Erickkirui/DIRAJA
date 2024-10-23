@@ -3,6 +3,7 @@ from flask_restful import Resource
 from Server.Models.Sales import Sales
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
 from flask import jsonify,request,make_response
 from Server.Models.Shopstock import ShopStock
@@ -25,18 +26,17 @@ def check_role(required_role):
     return wrapper
 
 
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Validate required fields
+        # Validate required fields for sale
         required_fields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
             'quantity', 'metric', 'unit_price', 'amount_paid', 
-            'total_price', 'payment_method', 'BatchNumber', 'stock_id'
+            'payment_method', 'BatchNumber', 'stock_id'
         ]
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
@@ -50,13 +50,15 @@ class AddSale(Resource):
         metric = data.get('metric')
         unit_price = data.get('unit_price')
         amount_paid = data.get('amount_paid')
-        total_price = data.get('total_price')
         payment_method = data.get('payment_method')
         batch_number = data.get('BatchNumber')
         stock_id = data.get('stock_id')  # Use stock_id from shop stock
         status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
         created_at = datetime.utcnow()
 
+        # Calculate total price based on unit price and quantity
+        total_price = unit_price * quantity
+        
         # Calculate balance
         balance = amount_paid - total_price  # Calculate balance based on amount paid and total price
 
@@ -71,7 +73,7 @@ class AddSale(Resource):
             metric=metric,
             unit_price=unit_price,
             amount_paid=amount_paid,
-            total_price=total_price,
+            total_price=total_price,  # Use calculated total_price
             payment_method=payment_method,
             BatchNumber=batch_number,
             stock_id=stock_id,  # Include stock_id in the sales record
@@ -80,7 +82,7 @@ class AddSale(Resource):
             created_at=created_at
         )
 
-        # Check inventory availability (if needed)
+        # Check inventory availability
         shop_stock_item = ShopStock.query.filter_by(stock_id=stock_id).first()
         if not shop_stock_item or shop_stock_item.quantity < quantity:
             return {'message': 'Insufficient inventory quantity'}, 400
@@ -88,16 +90,28 @@ class AddSale(Resource):
         # Update the shop stock quantity
         shop_stock_item.quantity -= quantity  # Subtract sold quantity from shop stock
 
+        # Create new customer record
+        new_customer = Customers(
+            customer_name=customer_name,
+            customer_number=customer_number,
+            shop_id=shop_id,
+            sales_id=new_sale.sales_id,  # Link the sale to the customer
+            user_id=current_user_id,
+            item={"item_name": item_name, "quantity": quantity, "unit_price": unit_price},  # Store item details as JSON
+            amount_paid=amount_paid,
+            payment_method=payment_method,
+            created_at=created_at
+        )
+
         try:
-            # Save to database
+            # Save both sale and customer to the database
             db.session.add(new_sale)
+            db.session.add(new_customer)
             db.session.commit()
-            return {'message': 'Sale added successfully'}, 201
+            return {'message': 'Sale and customer added successfully'}, 201
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error adding sale', 'error': str(e)}, 500
-
-
+            return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
         
 class GetSales(Resource):
     @jwt_required()
