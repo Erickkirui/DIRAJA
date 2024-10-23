@@ -21,11 +21,14 @@ class Sales(db.Model):
     payment_method = db.Column(db.String(20), nullable=False)
     BatchNumber = db.Column(db.String(100), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
+    stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
+    ballance = db.Column(db.Float)
+    note = db.Column(db.String)
     
     #Relationship
     users = db.relationship('Users', backref='sales', lazy=True)
     shops = db.relationship('Shops', backref='sales_for_shop', lazy=True, foreign_keys=[shop_id])
-    
+    shop_stock = db.relationship('ShopStock', backref='sales', lazy=True)
     
     #Validations
     @validates('status')
