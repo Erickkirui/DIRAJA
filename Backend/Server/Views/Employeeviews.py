@@ -101,7 +101,7 @@ class AddNewemployee(Resource):
         if date_str:
             try:
                 # Try parsing the full datetime format first
-                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                return datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
@@ -241,7 +241,7 @@ class Employeeresource(Resource):
         """Helper method to parse a date string into a datetime object"""
         if date_str:
             try:
-                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                return datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
                 try:
                     return datetime.strptime(date_str, '%Y-%m-%d')

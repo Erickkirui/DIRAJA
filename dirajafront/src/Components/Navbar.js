@@ -34,7 +34,7 @@ function Navbar() {
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Customers.png' alt='menu-icon' />
-                    <li>Customers</li>
+                    <li><Link to="/allcustomers">Customers</Link></li>
                 </div>
                 <div className='menu-item'>
                     <img src='/images/Employees.png' alt='menu-icon' />

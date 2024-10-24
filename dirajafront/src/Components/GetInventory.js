@@ -64,7 +64,8 @@ const Inventory = () => {
                 <th>Unit cost(ksh)</th>
                 <th>Total cost(ksh)</th>
                 <th>Amount paid(ksh)</th>
-                {/* <th>Balance(ksh)</th> */}
+                <th>Balance(ksh)</th> 
+                <th>Comments</th>
                 <th>Unit price(ksh)</th>
                 <th>Date</th>
               </tr>
@@ -80,8 +81,11 @@ const Inventory = () => {
                   <td>{inventory.unitCost}</td>
                   <td>{inventory.totalCost}</td>
                   <td>{inventory.amountPaid}</td>
+                  <td>{inventory.balance}</td>
+                  <td>{inventory.note}</td>
                   <td>{inventory.unitPrice}</td>
-                  <td>{new Date(inventory.created_at).toLocaleString()}</td>
+                  {/* <td>{new Date(inventory.created_at).toLocaleString()}</td> */}
+                  <td>{inventory.created_at}</td>
                 </tr>
               ))}
             </tbody>
