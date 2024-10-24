@@ -9,7 +9,14 @@
   border-right: 1px solid #ccc;
   position: sticky;
 }
-
 .body-area{
-  padding: 20px;
+  width: 100%;
+}
+.body-header{
+  
+  border-bottom: 1px solid #ccc;
+
+}
+.page-area{
+  padding: 10px;
 }

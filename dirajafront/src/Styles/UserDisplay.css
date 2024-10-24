@@ -1,0 +1,79 @@
+.user-display {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin: 10px;
+  position: relative; /* Required for dropdown alignment */
+}
+
+.user-display span {
+  opacity: 50%;
+}
+
+.circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: var(--primary); /* Circle background color */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.username {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.dropdown-container {
+  position: relative;
+}
+
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: calc(100% + 178px);
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 1;
+  border-radius: 3px;
+  margin-top: 10px;
+
+  /* Start with hidden state */
+  opacity: 0;
+  height: 0;
+  overflow: hidden;
+  transition: opacity 0.3s ease, height 0.3s ease;
+}
+
+.dropdown-container.active .dropdown-menu {
+  /* Dropdown open state */
+  opacity: 1;
+  height: auto;
+}
+
+.dropdown-menu button {
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  padding: 5px 10px;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-menu button:hover {
+  background-color: #f0f0f0;
+}
