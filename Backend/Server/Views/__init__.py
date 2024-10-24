@@ -20,7 +20,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources,TodaysSales,WeeksSales,MonthsSales
-
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
@@ -86,7 +86,6 @@ api.add_resource(AddExpence,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
-api.add_resource(TodaysExpenses, '/expenses/today')
 api.add_resource(WeeksExpenses, '/expenses/week')
 api.add_resource(MonthsExpenses, '/expenses/month')
 
@@ -107,7 +106,6 @@ api.add_resource(AddSale, '/newsale')
 api.add_resource(GetSales, '/allsales')
 api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
 api.add_resource(SalesResources,'/sale/<int:sales_id>')
-api.add_resource(TodaysSales, '/sales/today')
 api.add_resource(WeeksSales, '/sales/week')
 api.add_resource(MonthsSales, '/sales/month')
 
@@ -125,6 +123,13 @@ api.add_resource(DistributeInventory,'/transfer')
 # 6. Current date expenses 
 # 7. Check items that are close >-10 0 - out of stock 
 
+#manager dashbord
+api.add_resource(CountEmployees, '/totalshops')
+api.add_resource(TodaysSales, '/sales/today')
+api.add_resource(CountEmployees,'/totalemployess')
+api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
+api.add_resource(TotalAmountPaidSales,'/totalsales')
+api.add_resource(TodaysExpenses, '/expenses/today')
 
 ## clerak Dashbord
 # 1.sales for shop for the day

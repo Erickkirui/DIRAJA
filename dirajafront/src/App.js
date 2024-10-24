@@ -12,8 +12,13 @@ import AddEmployeePage from './Pages/AddEmployeePage';
 import EmployeesPage from './Pages/EmployeesPage';
 import InventoryPage from './Pages/InventoryPage';
 import AddInventory from './Components/AddInventory';
+
+import ShopStockPage from './Pages/ShopStockPage';
+import UserDisplay from './Components/UserDisplay';
+
 import ShopStock from './Pages/ShopStockPage';
 import SingleEmployeePage from './Pages/SingleEmployeePage';
+
 
 
 
@@ -28,7 +33,15 @@ const Layout = ({ children }) => {
         <Navbar/>
       </div>
       <div className='body-area'>
+        <div className='body-header'>
+        <UserDisplay />
+
+        </div>
+        <div className='page-area'>
         {children}
+        </div>
+       
+        
       </div>
     
     </div>
