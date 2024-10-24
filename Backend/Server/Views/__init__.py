@@ -8,6 +8,11 @@ from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLo
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops,CountShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
+
+
+# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+
+
 from Server.Views.Bankviews import AddBank, BankResourceById
 # from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources,TodaysExpenses,WeeksExpenses,MonthsExpenses

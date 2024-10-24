@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import '../Styles/shopstock.css';
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);

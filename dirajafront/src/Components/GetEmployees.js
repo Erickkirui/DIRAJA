@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+// import { Link } from 'react-router-dom';
 import '../Styles/employees.css';
 
 const Employees = () => {
@@ -89,7 +90,7 @@ const Employees = () => {
                   <td>{employee.account_status}</td>
                   <td>{new Date(employee.created_at).toLocaleString()}</td>
                   <td>
-                    <a href={`/employee-details/${employee.employee_id}`}>View More</a>
+                    <a href={`/employee/${employee.employee_id}`}>View More</a>
                   </td>
                 </tr>
               ))}
