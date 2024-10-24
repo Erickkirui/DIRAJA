@@ -97,7 +97,8 @@ class AddSale(Resource):
             shop_id=shop_id,
             sales_id=new_sale.sales_id,  # Link the sale to the customer
             user_id=current_user_id,
-            item={"item_name": item_name, "quantity": quantity, "unit_price": unit_price},  # Store item details as JSON
+            # item={"item_name": item_name, "quantity": quantity, "unit_price": unit_price},  # Store item details as JSON
+            item=item_name,
             amount_paid=amount_paid,
             payment_method=payment_method,
             created_at=created_at

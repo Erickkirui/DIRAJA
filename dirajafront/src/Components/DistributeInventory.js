@@ -85,6 +85,16 @@ const DistributeInventory = () => {
           />
         </div>
         <div>
+          <label>Metric</label>
+          <input
+            type="text"
+            name="metric"
+            value={formData.metric}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
           <label>Unit Cost</label>
           <input
             type="number"

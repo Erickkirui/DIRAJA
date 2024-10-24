@@ -41,6 +41,7 @@ class DistributeInventory(Resource):
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
+        metric = data ['metric']
         itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
@@ -59,12 +60,13 @@ class DistributeInventory(Resource):
             shop_id=shop_id,
             inventory_id=inventory_id,
             quantity=quantity,
+            metric = metric,
             total_cost=total_cost,
             BatchNumber=BatchNumber,
             user_id=current_user_id,
 
 
-            metric = metric,
+            
             # BatchNumber=batch_number,
             # user_id=user_id,
 
@@ -106,7 +108,7 @@ class DistributeInventory(Resource):
             itemname=itemname,
             metric=metric,
             quantity=quantity,
-            BatchNumber=batch_number,
+            BatchNumber=BatchNumber,
             unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
         )
 
@@ -196,7 +198,7 @@ class GetAllInventory(Resource):
     @check_role('manager')
     def get(self):
     
-        inventories = Inventory.query.all()
+        inventories = Inventory.query.order_by(Inventory.created_at.desc()).all()
 
         all_inventory = [{
             "inventory_id": inventory.inventory_id,
@@ -208,7 +210,9 @@ class GetAllInventory(Resource):
             "unitCost": inventory.unitCost,
             "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
+            "balance":inventory.ballance,
+            "note":inventory.note,
+            "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
             "unitPrice": inventory.unitPrice
         } for inventory in inventories]
 
@@ -232,7 +236,9 @@ class InventoryResourceById(Resource):
             "unitCost": inventory.unitCost,
             "batchnumber": inventory.BatchNumber,
             "amountPaid": inventory.amountPaid,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
+            "balance":inventory.ballance,
+            "note":inventory.note,
+            "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
             "unitPrice": inventory.unitPrice
         }, 200
         else:
