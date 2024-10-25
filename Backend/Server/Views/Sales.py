@@ -128,15 +128,27 @@ class GetSales(Resource):
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
+                
+                # Fetch username and shop name manually using user_id and shop_id
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+                
+                # Handle cases where user or shop may not be found
+                username = user.username if user else "Unknown User"
+                shopname = shop.shopname if shop else "Unknown Shop"
                 sales_data.append({
-                    "sale_id": sale.sale_id,  # Assuming `sale_id` is the primary key
+                    "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                     "user_id": sale.user_id,
+                    "username": username,
                     "shop_id": sale.shop_id,
+                    "shop_name": shopname,
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
+                    "batchnumber": sale.BatchNumber,
+                    "balance": sale.ballance,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
@@ -146,10 +158,10 @@ class GetSales(Resource):
                 })
 
             # Return the list of sales
-            return jsonify({"sales": sales_data}), 200
+            return make_response(jsonify(sales_data), 200)
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return ({"error": str(e)}), 500
         
 
 class GetSalesByShop(Resource):
@@ -166,15 +178,28 @@ class GetSalesByShop(Resource):
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
+                
+               # Fetch username and shop name manually using user_id and shop_id
+                user = Users.query.filter_by(users_id=sales.user_id).first()
+                shop = Shops.query.filter_by(shops_id=sales.shop_id).first()
+                
+                # Handle cases where user or shop may not be found
+                username = user.username if user else "Unknown User"
+                shopname = shop.shopname if shop else "Unknown Shop"
+                
                 sales_data.append({
-                    "sale_id": sale.sale_id,  # Assuming `sale_id` is the primary key
+                    "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                     "user_id": sale.user_id,
+                    "username": username,
                     "shop_id": sale.shop_id,
+                    "shop_name": shopname,
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
+                    "batchnumber": sale.BatchNumber,
+                    "balance": sale.ballance,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
@@ -184,10 +209,10 @@ class GetSalesByShop(Resource):
                 })
 
             # Return the list of sales
-            return jsonify({"sales": sales_data}), 200
+            return ({"sales": sales_data}), 200
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return ({"error": str(e)}), 500
         
 
 class SalesResources(Resource):
@@ -202,7 +227,7 @@ class SalesResources(Resource):
 
             # Prepare sale data
             sale_data = {
-                "sale_id": sale.sale_id,  # Assuming `sale_id` is the primary key
+                "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                 "user_id": sale.user_id,
                 "shop_id": sale.shop_id,
                 "customer_name": sale.customer_name,
@@ -210,6 +235,8 @@ class SalesResources(Resource):
                 "customer_number": sale.customer_number,
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
+                "batchnumber": sale.BatchNumber,
+                "balance": sale.ballance,
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "amount_paid": sale.amount_paid,
@@ -218,10 +245,10 @@ class SalesResources(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
             }
 
-            return jsonify({"sale": sale_data}), 200
+            return ({"sale": sale_data}), 200
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return ({"error": str(e)}), 500
 
     @jwt_required()
     def put(self, sales_id):
@@ -257,7 +284,7 @@ class SalesResources(Resource):
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({"error": str(e)}), 500
+            return ({"error": str(e)}), 500
 
     @jwt_required()
     def delete(self, sales_id):
