@@ -198,28 +198,3 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
         
-
-
-class TodaysExpenses(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        expenses = get_expenses_filtered('today').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
-
-class WeeksExpenses(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        expenses = get_expenses_filtered('week').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
-
-class MonthsExpenses(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        expenses = get_expenses_filtered('month').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
