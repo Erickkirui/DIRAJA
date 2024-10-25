@@ -276,29 +276,5 @@ class SalesResources(Resource):
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
 
-
-class TodaysSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('today').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
-
-class WeeksSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('week').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
-
-class MonthsSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('month').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
     
     

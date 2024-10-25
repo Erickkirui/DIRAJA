@@ -5,21 +5,15 @@ api_endpoint = Blueprint
 
 # add all file inputs 
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
-from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops,CountShops
+from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
-
-
-# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
-
-
 from Server.Views.Bankviews import AddBank, BankResourceById
-# from Server.Views.Distributionsview import InventoryDistribute, GetAllDistributions, GetDistributionById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources,TodaysExpenses,WeeksExpenses,MonthsExpenses
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources,TodaysSales,WeeksSales,MonthsSales
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops
 
 
@@ -40,7 +34,7 @@ api.add_resource(UserLogin, '/login')
 api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
 api.add_resource(GetAllShops, '/allshops')
-api.add_resource(CountShops, '/countshops')
+
 
 
 #stock endpoints
@@ -106,9 +100,6 @@ api.add_resource(AddSale, '/newsale')
 api.add_resource(GetSales, '/allsales')
 api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
 api.add_resource(SalesResources,'/sale/<int:sales_id>')
-api.add_resource(WeeksSales, '/sales/week')
-api.add_resource(MonthsSales, '/sales/month')
-
 
 
 
@@ -124,9 +115,8 @@ api.add_resource(DistributeInventory,'/transfer')
 # 7. Check items that are close >-10 0 - out of stock 
 
 #manager dashbord
-api.add_resource(CountEmployees, '/totalshops')
-api.add_resource(TodaysSales, '/sales/today')
-api.add_resource(CountEmployees,'/totalemployess')
+api.add_resource(CountShops, '/totalshops')
+api.add_resource(CountEmployees,'/totalemployees')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSales,'/totalsales')
 api.add_resource(TodaysExpenses, '/expenses/today')
