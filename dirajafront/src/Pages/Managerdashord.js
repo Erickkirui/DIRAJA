@@ -7,12 +7,25 @@ import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidS
 function Managerdashord() {
   return (
     <>
-      <div className='test'>
+      <div className='metrix-card-container'>
+        <div className='metrix-pair'>
+          <div>
+            <TotalAmountPaidSales />
+          </div>
+          <div>
+          <TotalAmountPaidExpenses />
+          </div>
+        </div>
    
-        <CountShops />
-        <CountEmployees />
-        <TotalAmountPaidExpenses />
-        <TotalAmountPaidSales />
+         <div className='metrix-pair'>
+          <div>
+            <CountShops />
+
+          </div>
+          <div>
+            <CountEmployees />
+          </div>
+        </div>
       </div>
     </>
   )

@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {  faPeopleGroup } from '@fortawesome/free-solid-svg-icons';
+import '../../Styles/dashbord.css'
+import { Link } from 'react-router-dom';
 
 const CountEmployees = () => {
   const [totalEmployees, setTotalEmployees] = useState(null);
@@ -24,13 +28,15 @@ const CountEmployees = () => {
   }, []);
 
   return (
-    <div>
-      <h2>Total Employees</h2>
+    <div className='metrix-container'>
+      <FontAwesomeIcon  className="metric-icon" icon={faPeopleGroup} size="1x"  />
+      <h5>Total Employees</h5>
       {error ? (
         <p>{error}</p>
       ) : (
-        <p>{totalEmployees !== null ? ` ${totalEmployees}` : 'Loading...'}</p>
+        <h1>{totalEmployees !== null ? ` ${totalEmployees}` : 'Loading...'}</h1>
       )}
+      <Link to="/allemployees">View Employees</Link>
     </div>
   );
 };

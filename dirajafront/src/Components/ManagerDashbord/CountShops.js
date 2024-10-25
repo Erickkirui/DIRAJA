@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {  faStore } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
+import '../../Styles/dashbord.css'
 
 const CountShops = () => {
   const [totalShops, setTotalShops] = useState(null);
@@ -24,13 +28,15 @@ const CountShops = () => {
   }, []);
 
   return (
-    <div>
-      <h2>Total Shops</h2>
+    <div className='metrix-container'>
+       <FontAwesomeIcon  className="metric-icon" icon={faStore} size="1x"  />
+      <h5>Total Shops</h5>
       {error ? (
         <p>{error}</p>
       ) : (
-        <p>{totalShops !== null ? ` ${totalShops}` : 'Loading...'}</p>
+        <h1>{totalShops !== null ? ` ${totalShops}` : 'Loading...'}</h1>
       )}
+      <Link to="/allshops">View Shops</Link>
     </div>
   );
 };

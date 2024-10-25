@@ -1,0 +1,27 @@
+/* dashbord Page */
+
+.metrix-pair{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+
+.metrix-container{
+    border:  1px solid #ccc;
+    padding: 10px;
+    border-radius: 8px;
+    width: 250px;
+   
+ 
+}
+
+.metric-icon {
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 8px;
+}
+.metric-top{
+    display: flex;
+    justify-content: space-between;
+}
