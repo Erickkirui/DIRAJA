@@ -13,7 +13,7 @@ import EmployeesPage from './Pages/EmployeesPage';
 import InventoryPage from './Pages/InventoryPage';
 import AddInventory from './Components/AddInventory';
 
-import ShopStockPage from './Pages/ShopStockPage';
+// import ShopStockPage from './Pages/ShopStockPage';
 import UserDisplay from './Components/UserDisplay';
 
 import ShopStock from './Pages/ShopStockPage';
