@@ -129,7 +129,7 @@ class GetSales(Resource):
             sales_data = []
             for sale in sales:
                 sales_data.append({
-                    "sale_id": sale.sale_id,  # Assuming `sale_id` is the primary key
+                    "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                     "user_id": sale.user_id,
                     "shop_id": sale.shop_id,
                     "customer_name": sale.customer_name,
@@ -138,6 +138,7 @@ class GetSales(Resource):
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
                     "metric": sale.metric,
+                    "BatchNumber":sale.BatchNumber,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,
@@ -146,10 +147,10 @@ class GetSales(Resource):
                 })
 
             # Return the list of sales
-            return jsonify({"sales": sales_data}), 200
+            return {"sales": sales_data}, 200
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            return {"error": str(e)}, 500
         
 
 class GetSalesByShop(Resource):

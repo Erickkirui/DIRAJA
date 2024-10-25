@@ -9,7 +9,7 @@ from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources,TodaysExpenses,WeeksExpenses,MonthsExpenses
+from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
@@ -80,8 +80,7 @@ api.add_resource(AddExpence,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
-api.add_resource(WeeksExpenses, '/expenses/week')
-api.add_resource(MonthsExpenses, '/expenses/month')
+
 
 
 # banks endpoint
@@ -117,11 +116,8 @@ api.add_resource(DistributeInventory,'/transfer')
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')
-api.add_resource(TodaysSales, '/sales/today')
-api.add_resource(CountEmployees,'/totalemployess')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSales,'/totalsales')
-api.add_resource(TodaysExpenses, '/expenses/today')
 
 ## clerak Dashbord
 # 1.sales for shop for the day
