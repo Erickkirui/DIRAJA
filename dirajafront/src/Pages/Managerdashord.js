@@ -1,11 +1,18 @@
 import React from 'react'
-import CountTotalSales from '../Components/CountTotalSales'
+import CountShops from '../Components/ManagerDashbord/CountShops'
+import CountEmployees from '../Components/ManagerDashbord/CountEmployees'
+import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses'
+import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales'
 
 function Managerdashord() {
   return (
     <>
       <div className='test'>
-        <CountTotalSales />
+   
+        <CountShops />
+        <CountEmployees />
+        <TotalAmountPaidExpenses />
+        <TotalAmountPaidSales />
       </div>
     </>
   )

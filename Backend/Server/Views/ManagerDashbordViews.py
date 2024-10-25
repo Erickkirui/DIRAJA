@@ -8,6 +8,7 @@ from Server.Models.Expenses import Expenses
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
+from datetime import datetime, timedelta
 
 def check_role(required_role):
     def wrapper(fn):
@@ -29,29 +30,67 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
-class CountShops(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        countUsers =Shops.query.count()
-        return {"total employees": countUsers}, 200
 
 class TotalAmountPaidSales(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Query the total amount paid
-        total_amount = db.session.query(db.func.sum(Sales.amount_paid)).scalar() or 0
-        
-        
-        return jsonify({"total_amount_paid": total_amount})
+        # Get the period parameter to filter results
+        period = request.args.get('period', 'today')
+        today = datetime.utcnow()
+
+        # Set the start date based on the selected period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        # Query the sum of amount_paid where created_at >= start_date
+        total_amount = (
+            db.session.query(db.func.sum(Sales.amount_paid))
+            .filter(Sales.created_at >= start_date)
+            .scalar() or 0
+        )
+
+        return {"total_amount_paid": total_amount}, 200
     
+
 class TotalAmountPaidExpenses(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Query the total amount paid
-        total_amount = db.session.query(db.func.sum(Expenses.amountPaid)).scalar() or 0
+        period = request.args.get('period', 'today')
+        today = datetime.utcnow()
         
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
+        total_amount = (
+            db.session.query(db.func.sum(Expenses.amountPaid))
+            .filter(Expenses.created_at >= start_date)
+            .scalar() or 0
+        )
         
-        return jsonify({"total_amount_paid": total_amount})
+        return {"total_amount_paid": total_amount}, 200
+    
+
+
+class CountShops(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        countShops = Shops.query.count()
+        return {"total shops": countShops}, 200      
+         

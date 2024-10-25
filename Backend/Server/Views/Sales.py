@@ -150,6 +150,7 @@ class GetSales(Resource):
                     "batchnumber": sale.BatchNumber,
                     "balance": sale.ballance,
                     "metric": sale.metric,
+                    "BatchNumber":sale.BatchNumber,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,
@@ -158,10 +159,17 @@ class GetSales(Resource):
                 })
 
             # Return the list of sales
+
             return make_response(jsonify(sales_data), 200)
 
         except Exception as e:
             return ({"error": str(e)}), 500
+
+            return {"sales": sales_data}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
         
 
 class GetSalesByShop(Resource):
@@ -304,29 +312,5 @@ class SalesResources(Resource):
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
 
-
-class TodaysSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('today').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
-
-class WeeksSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('week').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
-
-class MonthsSales(Resource):
-
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        sales = get_sales_filtered('month').all()
-        return make_response(jsonify(serialize_sales(sales)), 200)
     
     
