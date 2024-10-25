@@ -40,7 +40,7 @@ api.add_resource(UserLogin, '/login')
 api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
 api.add_resource(GetAllShops, '/allshops')
-api.add_resource(CountShops, '/countshops')
+# api.add_resource(CountShops, '/countshops')
 
 
 #stock endpoints
@@ -124,7 +124,7 @@ api.add_resource(DistributeInventory,'/transfer')
 # 7. Check items that are close >-10 0 - out of stock 
 
 #manager dashbord
-api.add_resource(CountEmployees, '/totalshops')
+api.add_resource(CountShops, '/totalshops')
 api.add_resource(TodaysSales, '/sales/today')
 api.add_resource(CountEmployees,'/totalemployess')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
