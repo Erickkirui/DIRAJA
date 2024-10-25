@@ -29,12 +29,6 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
-class CountShops(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        countUsers =Shops.query.count()
-        return {"total employees": countUsers}, 200
 
 class TotalAmountPaidSales(Resource):
     @jwt_required()
@@ -55,3 +49,12 @@ class TotalAmountPaidExpenses(Resource):
         
         
         return jsonify({"total_amount_paid": total_amount})
+    
+
+class CountShops(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        countShops = Shops.query.count()
+        return {"total shops": countShops}, 200      
+         

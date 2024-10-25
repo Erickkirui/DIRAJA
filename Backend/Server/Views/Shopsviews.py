@@ -122,13 +122,7 @@ class GetAllShops(Resource):
 
         return make_response(jsonify(all_shops), 200)
 
-class CountShops(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        countShops = Shops.query.count()
-        return {"total shops": countShops}, 200      
-         
+
     
 
 
