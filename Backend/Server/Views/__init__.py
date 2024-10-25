@@ -117,6 +117,8 @@ api.add_resource(DistributeInventory,'/transfer')
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')
+api.add_resource(TodaysSales, '/sales/today')
+api.add_resource(CountEmployees,'/totalemployess')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSales,'/totalsales')
 api.add_resource(TodaysExpenses, '/expenses/today')
