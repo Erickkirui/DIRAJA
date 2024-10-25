@@ -7,7 +7,16 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
+
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer
+
+
+# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+
+
+
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
+
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById
@@ -103,6 +112,9 @@ api.add_resource(SalesResources,'/sale/<int:sales_id>')
 
 
 api.add_resource(DistributeInventory,'/transfer')
+api.add_resource(GetTransfer,'/alltransfers')
+
+
 
 ###  Manager dashbord 
 # 1. Total sales 
