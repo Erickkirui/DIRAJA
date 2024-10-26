@@ -1,63 +1,125 @@
+/* Container for shop stocks */
 .shopStocks-container {
-    width: 98%;
-    margin: 0 auto;
-    padding: 20px;
-  }
-  
- .shopStocks-container h2 {
-    text-align: left;
-    margin-bottom: 20px;
-    font-weight: 400;
-  }
-  
-  .error-message {
-    color: red;
-    text-align: center;
-  }
-  
-  .shopStocks-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-  }
-  
-  .shopStocks-table th, .expenses-table td {
-    border-bottom: 1px solid #ccc;
-    padding: 10px;
-    text-align: left;
-    font-size: 14px;
-  }
-  
-  .shopStocks-table th {
-    font-size: 14px;
-    background-color: var(--background);
-  }
-  
+  width: 98%;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
 
-  
-  .pagination {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
+/* Header styling */
+.shopStocks-container h2 {
+  text-align: left;
+  margin-bottom: 20px;
+  font-weight: 400;
+  color: #333;
+}
+
+/* Error message styling */
+.error-message {
+  color: red;
+  text-align: center;
+  font-size: 16px;
+}
+
+/* Table styling */
+.shopStocks-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.shopStocks-table th, 
+.shopStocks-table td {
+  border-bottom: 1px solid #ccc;
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 14px;
+}
+
+/* Header row styling */
+.shopStocks-table th {
+  font-size: 14px;
+  background-color: #3190AE; /* Adjustable background color */
+  color: #fff;
+  text-transform: uppercase;
+}
+
+/* Row hover effect */
+.shopStocks-table tr:hover {
+  background-color: #f1f1f1;
+}
+
+/* Pagination styling */
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+/* Individual page button */
+.page-button {
+  border: 1px solid #3498db;
+  background-color: #fff;
+  border-radius: 50%;
+  color: #3498db;
+  padding: 10px 15px;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Active page button */
+.page-button.active {
+  background-color: #3498db;
+  color: #fff;
+}
+
+/* Hover effect for page buttons */
+.page-button:hover {
+  background-color: #3498db;
+  color: #fff;
+}
+
+/* Responsive styling for smaller screens */
+@media (max-width: 768px) {
+  .shopStocks-table, 
+  .shopStocks-table thead, 
+  .shopStocks-table tbody, 
+  .shopStocks-table th, 
+  .shopStocks-table td, 
+  .shopStocks-table tr {
+      display: block;
+      width: 100%;
   }
-  
-  .page-button {
-    border: 1px solid #3498db;
-    background-color: #fff;
-    border-radius: 50%;
-    color: #3498db;
-    padding: 10px 15px;
-    margin: 0 5px;
-    cursor: pointer;
+
+  .shopStocks-table thead {
+      display: none;
   }
-  
-  .page-button.active {
-    background-color: #3498db;
-    color: #fff;
+
+  .shopStocks-table tr {
+      margin-bottom: 15px;
+      border-bottom: 2px solid #ddd;
   }
-  
-  .page-button:hover {
-    background-color: #3498db;
-    color: #fff;
+
+  .shopStocks-table td {
+      text-align: right;
+      padding-left: 50%;
+      position: relative;
   }
-  
+
+  .shopStocks-table td:before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      width: 50%;
+      padding-left: 15px;
+      font-weight: bold;
+      text-align: left;
+      background-color: #f9f9f9;
+  }
+}

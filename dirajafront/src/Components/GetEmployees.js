@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-// import { Link } from 'react-router-dom';
+import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
+import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
 import '../Styles/employees.css';
 
 const Employees = () => {
@@ -21,8 +22,8 @@ const Employees = () => {
 
         const response = await axios.get('/diraja/allemployees', {
           headers: {
-            Authorization: `Bearer ${accessToken}`  // Use access token
-          }
+            Authorization: `Bearer ${accessToken}`,  // Use access token
+          },
         });
 
         setEmployees(response.data); // Store the fetched employees
@@ -34,17 +35,11 @@ const Employees = () => {
     fetchEmployees(); // Fetch employees when component loads
   }, []);
 
-  const getFirstName = (username) => {
-    return username.split(' ')[0]; // Return only the first name
-  };
+  const getFirstName = (username) => username.split(' ')[0]; // Return only the first name
 
-  const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase(); // Return the first letter capitalized
-  };
+  const getFirstLetter = (username) => username.charAt(0).toUpperCase(); // Return the first letter capitalized
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber); // Change the current page
-  };
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber); // Change the current page
 
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -59,10 +54,9 @@ const Employees = () => {
 
   return (
     <div className="employees-container">
-      
       {employees.length > 0 ? (
         <>
-          <table className="employees-table">
+          <table id="employees-table" className="employees-table">
             <thead>
               <tr>
                 <th>ID</th>
@@ -89,7 +83,6 @@ const Employees = () => {
                   <td>{employee.role}</td>
                   <td>{employee.account_status}</td>
                   <td>{new Date(employee.created_at).toLocaleString()}</td>
-                  {/* <td>{employee.created_at}</td> */}
                   <td>
                     <a href={`/employee/${employee.employee_id}`}>View More</a>
                   </td>
@@ -97,6 +90,12 @@ const Employees = () => {
               ))}
             </tbody>
           </table>
+
+          {/* Export to Excel and PDF */}
+          <div className="export-buttons">
+            <ExportExcel data={employees} fileName="EmployeesData" />
+            <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
+          </div>
 
           {/* Pagination */}
           <div className="pagination">

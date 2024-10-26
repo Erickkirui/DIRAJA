@@ -90,10 +90,10 @@ const Sales = () => {
                       <span className="employee-name">{getFirstName(sale.username)}</span>
                     </div>
                   </td>
-                  <td>{sale.shop_name}</td>
+                  <td>{sale.shopname}</td>
                   <td>{sale.item_name}</td>
                   <td>{sale.batchnumber}</td>
-                  <td>{sale.quantity}</td>
+                  <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.customer_name}</td>
                   <td>{sale.customer_number}</td>
                   <td>{sale.unit_price}</td>
