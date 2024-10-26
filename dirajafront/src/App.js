@@ -19,6 +19,9 @@ import UserDisplay from './Components/UserDisplay';
 import ShopStock from './Pages/ShopStockPage';
 import SingleEmployeePage from './Pages/SingleEmployeePage';
 import CustomersPage from './Pages/CustomersPage';
+import TransfersPage from './Pages/TransfersPage';
+import PurchasesPage from './Pages/PurchasesPage';
+import SalesPage from './Pages/SalesPage';
 
 
 
@@ -74,6 +77,9 @@ function App() {
             <Route path='/shopstock' element={<Layout><ShopStock /></Layout>} ></Route>
             <Route path='/employee/:employee_id' element={<Layout><SingleEmployeePage /></Layout>} />
             <Route path='/allcustomers' element={<Layout><CustomersPage/></Layout>} ></Route>
+            <Route path='/alltransfers' element={<Layout><TransfersPage/></Layout>} ></Route>
+            <Route path='/purchases' element={<Layout><PurchasesPage/></Layout>} ></Route>
+            <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
 
             
           
