@@ -1,59 +1,77 @@
-.login-container {
-    max-width: 400px;
+.login-container { 
     margin: 0 auto;
+    width: 25%;
     padding: 20px;
-  }
-  
-  .login-title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  
-  .error-message {
-    color: red;
-    font-size: 14px;
-    text-align: center;
-    margin-bottom: 10px;
-  }
-  
-  .login-form {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .form-group {
-    margin-bottom: 15px;
-  }
-  
-  .form-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 14px;
-    font-weight: 600;
-  }
-  
-  .input-field {
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 8px;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    text-align: left;
+}
+
+.login-form p{
+    font-size: 10px;  
   }
+
+.login-form{
+  display: flex;
+  flex-direction: column;
+}
+.login-form input{
   
-  .submit-button {
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-  }
-  
-  .submit-button:hover {
-    background-color: #0056b3;
-  }
-  
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+
+}
+.login-form label{
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.submit-button{
+  background-color: var(--primary);
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid #ffffff;
+  font-size: 18px;
+  color: #ffffff;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Full-screen center */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.password-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-field {
+  width: 92%;
+  padding-right: 0px; /* Adjust padding to allow room for the button */
+}
+
+.show-hide-button {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: none;
+  border: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 14px;
+}

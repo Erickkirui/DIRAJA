@@ -47,6 +47,9 @@
     object-fit: contain;
 }
 
+.accounting-menu{
+    border-top: 1px solid #ccc ;
+}
 /* Active Link Styling */
 .active {
     background-color: var(--primary);
