@@ -74,7 +74,7 @@ class GetAllCustomers(Resource):
     @jwt_required()
     def get(self):
         try:
-            customers = Customers.query.order_by(Customers.created_at.desc()).all()
+            customers = Customers.query.all()
 
             customer_list = []
             for customer in customers:

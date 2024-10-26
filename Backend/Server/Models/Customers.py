@@ -12,7 +12,7 @@ class Customers(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    item = db.Column(db.JSON, unique=False, nullable=False)
+    item = db.Column(db.String, unique=False, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
     payment_method = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

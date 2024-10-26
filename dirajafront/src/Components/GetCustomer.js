@@ -74,7 +74,7 @@ const Customers = () => {
                   <td>{customer.customer_name}</td>
                   <td>{customer.customer_number}</td>
                   <td>{customer.shop_id}</td>
-                  <td>{customer.item_name}</td>
+                  <td>{customer.item}</td>
                   {/* <td>{customer.item_name}</td>
                   <td>{customer.quantity}</td>
                   <td>{customer.unit_price}</td> */}
