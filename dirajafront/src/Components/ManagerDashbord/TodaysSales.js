@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-
 const TodaysSales = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,7 +13,7 @@ const TodaysSales = () => {
 
         if (!accessToken) {
           setError("No access token found, please log in.");
-          setLoading(false); // Stop loading if no token is found
+          setLoading(false);
           return;
         }
 
@@ -22,8 +21,11 @@ const TodaysSales = () => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
+        // Ensure response.data and response.data.sales exist
+        const salesData = response.data.sales || [];
+        
         const today = new Date().toISOString().split('T')[0];
-        const todaySales = response.data.sales.filter(sale => sale.created_at === today);
+        const todaySales = salesData.filter(sale => sale.created_at === today);
 
         setSales(todaySales);
       } catch (err) {

@@ -83,7 +83,7 @@ const Login = () => {
 
         <button type="submit" className="submit-button">
           <span>Login</span>
-          <FontAwesomeIcon className="metric-icon" icon={faRightToBracket} size="0x" />
+          <FontAwesomeIcon  icon={faRightToBracket} size="0x" />
         </button>
       </form>
     </div>

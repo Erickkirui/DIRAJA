@@ -21,7 +21,7 @@
 }
 .login-form input{
   
-  padding: 10px;
+  padding: 15px;
   margin-bottom: 20px;
   border-radius: 3px;
   border: 1px solid #ccc;
@@ -29,12 +29,12 @@
 }
 .login-form label{
   margin-bottom: 10px;
-  font-size: 12px;
+ 
 }
 
 .submit-button{
   background-color: var(--primary);
-  padding: 8px;
+  padding: 10px;
   border-radius: 16px;
   border: 1px solid #ffffff;
   font-size: 18px;
@@ -68,7 +68,7 @@
 .show-hide-button {
   position: absolute;
   right: 8px;
-  top: 8px;
+  top: 15px;
   background: none;
   border: none;
   color: var(--primary);
