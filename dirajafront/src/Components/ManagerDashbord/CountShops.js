@@ -30,7 +30,7 @@ const CountShops = () => {
   return (
     <div className='metrix-container'>
        <FontAwesomeIcon  className="metric-icon" icon={faStore} size="1x"  />
-      <h5>Total Shops</h5>
+      <h5>Number of Shops</h5>
       {error ? (
         <p>{error}</p>
       ) : (
