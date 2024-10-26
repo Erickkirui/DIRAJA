@@ -123,11 +123,12 @@ class GetSales(Resource):
 
             # If no sales found
             if not sales:
-                return jsonify({"message": "No sales found"}), 404
+                return {"message": "No sales found"}, 404
 
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
+
                 
                 # Fetch username and shop name manually using user_id and shop_id
                 user = Users.query.filter_by(users_id=sale.user_id).first()
@@ -136,12 +137,13 @@ class GetSales(Resource):
                 # Handle cases where user or shop may not be found
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
+
                 sales_data.append({
                     "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
-                    "shop_name": shopname,
+                    "shopname": shopname,
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
@@ -150,7 +152,7 @@ class GetSales(Resource):
                     "batchnumber": sale.BatchNumber,
                     "balance": sale.ballance,
                     "metric": sale.metric,
-                    "BatchNumber":sale.BatchNumber,
+                    "BatchNumber": sale.BatchNumber,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,

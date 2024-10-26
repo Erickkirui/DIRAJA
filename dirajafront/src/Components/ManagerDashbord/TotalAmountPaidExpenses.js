@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
 
 const TotalAmountPaidExpenses = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
@@ -31,21 +34,24 @@ const TotalAmountPaidExpenses = () => {
   };
 
   return (
-    <div>
-      <h2>Total Amount Paid in Expenses</h2>
-      <div>
-        <label htmlFor="period">Select Period:</label>
+    <div className='metrix-container'>
+       <div className='metric-top'>
+        <FontAwesomeIcon  className="metric-icon" icon={faChartSimple} size="1x"  />
+
         <select id="period" value={period} onChange={handlePeriodChange}>
           <option value="today">Today</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
         </select>
       </div>
+      <h5>Total Expenses</h5>
+  
       {error ? (
         <p>{error}</p>
       ) : (
-        <p>{totalAmountPaid !== null ? `Total amount paid: $${totalAmountPaid}` : 'Loading...'}</p>
+        <h1>{totalAmountPaid !== null ? `Ksh ${totalAmountPaid}` : 'Loading...'}</h1>
       )}
+      <Link to="/allemployees">View Employees</Link>
     </div>
   );
 };
