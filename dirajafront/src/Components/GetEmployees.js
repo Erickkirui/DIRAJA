@@ -7,6 +7,7 @@ import '../Styles/employees.css';
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
   const itemsPerPage = 50; // Items per page
 
@@ -41,12 +42,20 @@ const Employees = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber); // Change the current page
 
+  // Search filtering
+  const filteredEmployees = employees.filter(
+    (employee) =>
+      employee.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.work_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.role.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentEmployees = employees.slice(indexOfFirstItem, indexOfLastItem);
+  const currentEmployees = filteredEmployees.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(employees.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -54,14 +63,23 @@ const Employees = () => {
 
   return (
     <div className="employees-container">
-      {employees.length > 0 ? (
+      {/* Search Bar */}
+      <input
+        type="text"
+        placeholder="Search by name, email, or role"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-bar"
+      />
+
+      {filteredEmployees.length > 0 ? (
         <>
           <table id="employees-table" className="employees-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Name</th> {/* Display Username */}
-                <th>Mail</th> {/* Display Shop Name */}
+                <th>Mail</th> {/* Display Email */}
                 <th>Username</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -75,7 +93,10 @@ const Employees = () => {
                   <td>
                     <div className="employee-info">
                       <div className="employee-icon">{getFirstLetter(employee.first_name)}</div>
-                      <span className="employee-name">{getFirstName(employee.first_name)}</span>
+                      {/* Make the employee's name a clickable link */}
+                      <a href={`/employee/${employee.employee_id}`} className="employee-name-link">
+                        <span className="employee-name">{getFirstName(employee.first_name)}</span>
+                      </a>
                     </div>
                   </td>
                   <td>{employee.work_email}</td>
@@ -83,9 +104,6 @@ const Employees = () => {
                   <td>{employee.role}</td>
                   <td>{employee.account_status}</td>
                   <td>{new Date(employee.created_at).toLocaleString()}</td>
-                  <td>
-                    <a href={`/employee/${employee.employee_id}`}>View More</a>
-                  </td>
                 </tr>
               ))}
             </tbody>
