@@ -9,6 +9,16 @@
     margin-bottom: 20px;
     font-weight: 400;
   }
+
+  .employee-name-link {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .employee-name-link:hover {
+    text-decoration: underline;
+  }
+  
   
   .error-message {
     color: red;
