@@ -219,14 +219,17 @@ const AddEmployee = () => {
 
         <div>
           <label htmlFor="role">Role</label>
-          <input
-            type="text"
+          <select
             name="role"
             value={employeeData.role}
             onChange={handleChange}
             className="border p-2 w-full"
-          />
-        </div>
+          >
+            <option value="">Select Role</option>
+            <option value="manager">Manager</option>
+            <option value="clerk">Clerk</option>
+          </select>
+      </div>
 
         <div>
           <label htmlFor="personal_email">Personal Email</label>
