@@ -1,5 +1,6 @@
 from  flask_restful import Resource
 from Server.Models.Users import Users
+from Server.Models.Employees import Employees
 from app import db
 import bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -57,7 +58,6 @@ class UserLogin(Resource):
         email = request.json.get("email", None)
         password = request.json.get("password", None)
 
-
         user = Users.query.filter_by(email=email).one_or_none()
 
         if not user:
@@ -67,17 +67,22 @@ class UserLogin(Resource):
             return make_response(jsonify({"error": "Wrong password"}), 401)
         
         username = user.username
-
-        # Include the role in the response
-        access_token = create_access_token(identity=user.users_id, additional_claims={'roles': [user.role]})
-        refresh_token = create_refresh_token(identity=user.users_id)
-
-        return make_response(jsonify({
-            "access_token": access_token,
-            "refresh_token": refresh_token,
+        user_role = user.role
+        response_data = {
+            "access_token": create_access_token(identity=user.users_id, additional_claims={'roles': [user_role]}),
+            "refresh_token": create_refresh_token(identity=user.users_id),
             "username": username,
-            "role": user.role
-        }), 200)
+            "role": user_role
+        }
+
+        # Check if the user is a clerk and include shop_id if so
+        if user_role == "clerk":
+            employee = Employees.query.filter_by(work_email=email).one_or_none()
+            if employee:
+                response_data["shop_id"] = employee.shop_id
+
+        return make_response(jsonify(response_data), 200)
+
 
 
 class UsersResourceById(Resource):

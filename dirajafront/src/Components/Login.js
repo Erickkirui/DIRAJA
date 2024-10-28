@@ -35,7 +35,7 @@ const Login = () => {
       if (role === 'manager') {
         window.location.href = '/';
       } else if (role === 'clerk') {
-        window.location.href = '/clerkDashboard';
+        window.location.href = '/clerk';
       }
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {

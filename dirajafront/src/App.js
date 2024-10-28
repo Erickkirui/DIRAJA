@@ -21,6 +21,7 @@ import CustomersPage from './Pages/CustomersPage';
 import TransfersPage from './Pages/TransfersPage';
 import PurchasesPage from './Pages/PurchasesPage';
 import SalesPage from './Pages/SalesPage';
+import ClerkDashbord from './Pages/ClerkDashbord';
 
 
 const Layout = ({ children }) => {
@@ -73,6 +74,7 @@ function App() {
             <Route path='/alltransfers' element={<Layout><TransfersPage/></Layout>} ></Route>
             <Route path='/purchases' element={<Layout><PurchasesPage/></Layout>} ></Route>
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
+            <Route path='/clerk' element={<ClerkDashbord/>}></Route>
 
             
           

@@ -39,6 +39,18 @@ function Navbar() {
             <img src='/images/Employees.png' alt='menu-icon' />
             <li>Employees</li>
           </NavLink>
+          <NavLink exact to="/purchases" className="menu-item" activeClassName="active">
+            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <li>Purchases</li>
+          </NavLink>
+          <NavLink exact to="/alltransfers" className="menu-item" activeClassName="active">
+            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <li>Transefer</li>
+          </NavLink>
+          <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
+            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <li>Shop Stock</li>
+          </NavLink>
         </ul>
       </div>
 

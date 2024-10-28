@@ -20,4 +20,6 @@
 .page-area{
   padding: 20px;
 }
-
+.clerk-page-continer{
+  display: flex;
+}

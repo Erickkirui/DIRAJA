@@ -173,7 +173,6 @@ class GetSales(Resource):
             return {"error": str(e)}, 500
 
         
-
 class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
@@ -188,17 +187,16 @@ class GetSalesByShop(Resource):
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
-                
-               # Fetch username and shop name manually using user_id and shop_id
-                user = Users.query.filter_by(users_id=sales.user_id).first()
-                shop = Shops.query.filter_by(shops_id=sales.shop_id).first()
+                # Fetch username and shop name manually using user_id and shop_id
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
                 
                 # Handle cases where user or shop may not be found
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
                 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
+                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -219,11 +217,11 @@ class GetSalesByShop(Resource):
                 })
 
             # Return the list of sales
-            return ({"sales": sales_data}), 200
+            return {"sales": sales_data}, 200
 
         except Exception as e:
-            return ({"error": str(e)}), 500
-        
+            return jsonify({"error": str(e)}), 500
+
 
 class SalesResources(Resource):
     @jwt_required()
