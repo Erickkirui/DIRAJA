@@ -1,11 +1,14 @@
 /* src/components/GetAllShops.css */
 
 /* Container for the shops */
-.shops-container {
-  width: 100%;
-  margin: 0 auto;
-  padding: 20px;
+
+  .shops-container {
+    width: 100%;
+    margin: 0 auto;
+
+    padding-top: 20px;
 }
+
 
 /* Header styling */
 .shops-container h1 {
@@ -134,4 +137,47 @@
     padding: 6px 10px;
     margin: 0 3px;
   }
+}
+
+
+/* Add shopss styles */
+
+.add-shop-container form{
+  display: flex;
+  gap: 10px;
+}
+
+.add-shop-container input {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid  #ccc;
+
+
+}
+.add-shop-container select{
+  border-radius: 6px;
+  border: 1px solid  #ccc;
+  padding: 10px;
+
+}
+.add-shop-container button{
+  background-color: var(--primary);
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  color: #fff;
+
+
+}
+.message {
+  font-size: 1em;
+  padding: 10px;
+}
+
+.message.success {
+  color: green;
+}
+
+.message.error {
+  color: red;
 }

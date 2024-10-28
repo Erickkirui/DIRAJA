@@ -4,9 +4,11 @@ import '../Styles/sales.css';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const itemsPerPage = 50; // Items per page
+  const [searchQuery, setSearchQuery] = useState(''); // Search query state
+  const [selectedDate, setSelectedDate] = useState(''); // Selected date state
+  const itemsPerPage = 50;
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -20,37 +22,43 @@ const Sales = () => {
 
         const response = await axios.get('/diraja/allsales', {
           headers: {
-            Authorization: `Bearer ${accessToken}`  // Use access token
+            Authorization: `Bearer ${accessToken}`
           }
         });
 
-        setSales(response.data); // Store the fetched expenses
+        setSales(response.data);
       } catch (err) {
-        setError('Error fetching expenses. Please try again.');
+        setError('Error fetching sales. Please try again.');
       }
     };
 
-    fetchSales(); // Fetch expenses when component loads
+    fetchSales();
   }, []);
 
-  const getFirstName = (username) => {
-    return username.split(' ')[0]; // Return only the first name
-  };
+  const getFirstName = (username) => username.split(' ')[0];
+  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
 
-  const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase(); // Return the first letter capitalized
-  };
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber); // Change the current page
-  };
+  // Filter sales based on search query and selected date
+  const filteredSales = sales.filter((sale) => {
+    const matchesSearch = sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDate = selectedDate
+      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
+
+    return matchesSearch && matchesDate;
+  });
 
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = sales.slice(indexOfFirstItem, indexOfLastItem);
+  const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(sales.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -58,25 +66,42 @@ const Sales = () => {
 
   return (
     <div className="sales-container">
-      
-      {sales.length > 0 ? (
+      {/* Search and Date Filter */}
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item, shop, or employee"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <input
+          type="date"
+          className="date-filter"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      {filteredSales.length > 0 ? (
         <>
           <table className="sales-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Employee</th> 
+                <th>Employee</th>
                 <th>Shop</th>
                 <th>Item</th>
-                <th>Batch</th>
                 <th>Quantity</th>
-                <th>Customer</th>
-                <th>Customer No.</th>
                 <th>Unit Cost (ksh)</th>
-                <th>Total Cost (ksh)</th>
                 <th>Amount Paid (ksh)</th>
                 <th>Payment Method</th>
-                <th>Balance (ksh)</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -92,15 +117,10 @@ const Sales = () => {
                   </td>
                   <td>{sale.shopname}</td>
                   <td>{sale.item_name}</td>
-                  <td>{sale.batchnumber}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.customer_name}</td>
-                  <td>{sale.customer_number}</td>
                   <td>{sale.unit_price}</td>
-                  <td>{sale.total_price}</td>
                   <td>{sale.amount_paid}</td>
                   <td>{sale.payment_method}</td>
-                  <td>{sale.balance}</td>
                   <td>{new Date(sale.created_at).toLocaleString()}</td>
                 </tr>
               ))}
@@ -121,7 +141,7 @@ const Sales = () => {
           </div>
         </>
       ) : (
-        <p>No sale found.</p>
+        <p>No sales found.</p>
       )}
     </div>
   );
