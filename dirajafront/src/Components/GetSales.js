@@ -7,6 +7,7 @@ const Sales = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState(''); // Search query state
+  const [selectedDate, setSelectedDate] = useState(''); // Selected date state
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -39,12 +40,18 @@ const Sales = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Filter sales based on search query
-  const filteredSales = sales.filter((sale) =>
-    sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    sale.username.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filter sales based on search query and selected date
+  const filteredSales = sales.filter((sale) => {
+    const matchesSearch = sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDate = selectedDate
+      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
+
+    return matchesSearch && matchesDate;
+  });
 
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -59,17 +66,28 @@ const Sales = () => {
 
   return (
     <div className="sales-container">
-      {/* Search Bar */}
-      <input
-        type="text"
-        placeholder="Search by item, shop, or employee"
-        className="search-bar"
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setCurrentPage(1); // Reset to first page on new search
-        }}
-      />
+      {/* Search and Date Filter */}
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item, shop, or employee"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <input
+          type="date"
+          className="date-filter"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
 
       {filteredSales.length > 0 ? (
         <>
@@ -77,7 +95,7 @@ const Sales = () => {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Employee</th> 
+                <th>Employee</th>
                 <th>Shop</th>
                 <th>Item</th>
                 <th>Quantity</th>
