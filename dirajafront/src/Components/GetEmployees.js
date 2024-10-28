@@ -11,6 +11,7 @@ const Employees = () => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -56,7 +57,7 @@ const Employees = () => {
 
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
-    
+
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedEmployees.map((employeeId) =>
@@ -67,17 +68,25 @@ const Employees = () => {
           })
         )
       );
-      setEmployees((prev) => prev.filter((employee) => !selectedEmployees.includes(employee.employee_id)));
+      setEmployees((prev) =>
+        prev.filter((employee) => !selectedEmployees.includes(employee.employee_id))
+      );
       setSelectedEmployees([]);
       setSelectedAction('');
     }
   };
 
-  const filteredEmployees = employees.filter((employee) =>
-    employee.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.work_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter((employee) => {
+    const matchesSearchTerm =
+      employee.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.work_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.role.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDate =
+      selectedDate === '' || new Date(employee.created_at).toISOString().split('T')[0] === selectedDate;
+
+    return matchesSearchTerm && matchesDate;
+  });
 
   const currentEmployees = filteredEmployees.slice(
     (currentPage - 1) * itemsPerPage,
@@ -105,6 +114,7 @@ const Employees = () => {
         </select>
         <button onClick={handleAction} className="action-button">Apply</button>
       </div>
+
       <input
         type="text"
         placeholder="Search by name, email, or role"
@@ -112,6 +122,15 @@ const Employees = () => {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="search-input"
       />
+
+      {/* Single date picker */}
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="date-picker"
+      />
+
       <table id="employees-table" className="employees-table">
         <thead>
           <tr>
