@@ -1,31 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ExportExcel from '../Components/Download/ExportExcel'; // Correct path
+import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct path
 import '../Styles/shops.css';
-
 
 const Shops = () => {
   const [shops, setShops] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [shopsPerPage] = useState(10); // Adjust as needed
+  const [shopsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedAction, setSelectedAction] = useState('');
+  const [selectedShops, setSelectedShops] = useState([]);
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const accessToken = localStorage.getItem('access_token'); // Assuming the token is stored in localStorage
-        
+        const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
           setError('No access token found, please log in.');
           return;
         }
-        
         const response = await axios.get('/diraja/allshops', {
-          headers: {
-            Authorization: `Bearer ${accessToken}` // Passing the token in Authorization header
-          }
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-
         setShops(response.data);
         setLoading(false);
       } catch (err) {
@@ -33,20 +33,60 @@ const Shops = () => {
         setLoading(false);
       }
     };
-
     fetchShops();
   }, []);
 
-    // Get current shops
+  const handleCheckboxChange = (shopId) => {
+    setSelectedShops((prevSelected) =>
+      prevSelected.includes(shopId)
+        ? prevSelected.filter((id) => id !== shopId)
+        : [...prevSelected, shopId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedShops.length === shops.length) {
+      setSelectedShops([]);
+    } else {
+      setSelectedShops(shops.map((shop) => shop.shop_id));
+    }
+  };
+
+  const handleAction = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    if (selectedAction === 'delete') {
+      await Promise.all(
+        selectedShops.map((shopId) =>
+          axios.delete(`/diraja/shop/${shopId}`, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+        )
+      );
+      setShops((prev) => prev.filter((shop) => !selectedShops.includes(shop.shop_id)));
+      setSelectedShops([]);
+      setSelectedAction('');
+    }
+  };
+
+  // Filtering shops based on search term and date
+  const filteredShops = shops.filter((shop) => {
+    const searchString = searchTerm.toLowerCase();
+    const matchesSearch =
+      shop.shopname.toLowerCase().includes(searchString) ||
+      shop.employee.toLowerCase().includes(searchString);
+    const matchesDate =
+      selectedDate === '' || new Date(shop.created_at).toISOString().split('T')[0] === selectedDate;
+    return matchesSearch && matchesDate;
+  });
+
+  // Pagination logic
   const indexOfLastShop = currentPage * shopsPerPage;
   const indexOfFirstShop = indexOfLastShop - shopsPerPage;
-  const currentShops = shops.slice(indexOfFirstShop, indexOfLastShop);
+  const currentShops = filteredShops.slice(indexOfFirstShop, indexOfLastShop);
 
-  // Change page
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Calculate total pages
-  const totalPages = Math.ceil(shops.length / shopsPerPage);
+  const totalPages = Math.ceil(filteredShops.length / shopsPerPage);
 
   if (loading) {
     return <p>Loading shops...</p>;
@@ -54,15 +94,44 @@ const Shops = () => {
 
   return (
     <div className="shops-container">
-      
+      <div className="actions">
+        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+          <option value="">With selected, choose an action</option>
+          <option value="delete">Delete</option>
+        </select>
+        <button onClick={handleAction} className="action-button">
+          Apply
+        </button>
+      </div>
 
-      {/* Show error message if there is an error */}
+      <input
+        type="text"
+        placeholder="Search by shop name or employee"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-input"
+      />
+
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="date-picker"
+      />
+
+      {/* Display error message */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Table for displaying all shops */}
       <table className="shops-table">
         <thead>
           <tr>
+            <th>
+              <input
+                type="checkbox"
+                onChange={handleSelectAll}
+                checked={selectedShops.length === shops.length}
+              />
+            </th>
             <th>ID</th>
             <th>Employee</th>
             <th>Shop Name</th>
@@ -73,7 +142,14 @@ const Shops = () => {
         <tbody>
           {currentShops.length > 0 ? (
             currentShops.map((shop) => (
-              <tr key={shop.shop_id + shop.shopname + shop.employee + shop.created_at}>
+              <tr key={shop.shop_id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedShops.includes(shop.shop_id)}
+                    onChange={() => handleCheckboxChange(shop.shop_id)}
+                  />
+                </td>
                 <td>{shop.shop_id}</td>
                 <td>
                   <div className="employee-info">
@@ -90,11 +166,17 @@ const Shops = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="4">No shops available</td>
+              <td colSpan="6">No shops available</td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Export to Excel/PDF functionality */}
+      <div className="export-buttons">
+        <ExportExcel data={shops} fileName="ShopsData" />
+        <DownloadPDF tableId="shops-table" fileName="ShopsData" />
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -102,8 +184,8 @@ const Shops = () => {
           {[...Array(totalPages)].map((_, index) => (
             <button
               key={index + 1}
-              className={`page-button ${currentPage === index + 1 ? "active" : ""}`}
-              onClick={() => paginate(index + 1)}
+              className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
+              onClick={() => setCurrentPage(index + 1)}
             >
               {index + 1}
             </button>
