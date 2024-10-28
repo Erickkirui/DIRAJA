@@ -1,12 +1,13 @@
 import React from 'react'
 import Shops from '../Components/GetAllShops'
-import { Link } from 'react-router-dom'
+import AddShop from '../Components/Shops'
 
 function ShopsPage() {
   return (
     <div>
-      <h1>All Shops</h1>
-      <button><Link to="/newshop">Add Shop</Link></button>
+      <h1>Shops</h1>
+      <p>Add a new shop</p>
+      <AddShop />
         <Shops/>
     </div>
   )

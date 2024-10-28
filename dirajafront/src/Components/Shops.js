@@ -1,7 +1,7 @@
 // src/components/AddShop.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import "../Styles/newshop.css";
+import "../Styles/shops.css";
 
 const AddShop = () => {
   const [shopname, setShopname] = useState('');
@@ -53,30 +53,27 @@ const AddShop = () => {
 
   return (
     <div className='add-shop-container'>
-      <h2>Add Shop</h2>
+    
       <form onSubmit={handleSubmit}>
-        <div className='form-group'>
-          <label htmlFor="shopname">Shop Name:</label>
           <input
             type="text"
+            placeholder='Enter shop name'
             id="shopname"
             value={shopname}
             onChange={(e) => setShopname(e.target.value)}
             required
           />
-        </div>
-        <div className='form-group'>
-          <label htmlFor="employee">Employee:</label>
+         
           <input
             type="text"
+            placeholder='Employee incharge'
             id="employee"
             value={employee}
             onChange={(e) => setEmployee(e.target.value)}
             required
           />
-        </div>
-        <div className='form-group'>
-          <label htmlFor="shopstatus">Shop Status:</label>
+       
+      
           <select
             id="shopstatus"
             value={shopstatus}
@@ -86,7 +83,7 @@ const AddShop = () => {
             <option value="active">active</option>
             <option value="inactive">inactive</option>
           </select>
-        </div>
+        
         <button type="submit">Add Shop</button>
       </form>
       {message && <p className='message'>{message}</p>}

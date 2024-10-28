@@ -4,7 +4,6 @@ import Managerdashord from './Pages/Managerdashord';
 import ScrollTotop from './Components/ScrollTotop';
 import Navbar from './Components/Navbar';
 import LoginPage from './Pages/LoginPage';
-import NewShopPage from './Pages/NewShopPage';
 import ExpensePage from './Pages/ExpensePage';
 import ShopsPage from './Pages/ShopsPage';
 import AddExpensePage from './Pages/AddExpensePage';
@@ -22,11 +21,6 @@ import CustomersPage from './Pages/CustomersPage';
 import TransfersPage from './Pages/TransfersPage';
 import PurchasesPage from './Pages/PurchasesPage';
 import SalesPage from './Pages/SalesPage';
-
-
-
-
-
 
 
 const Layout = ({ children }) => {
@@ -65,7 +59,6 @@ function App() {
 
             <Route path='/login' element={<LoginPage/>} ></Route>
             <Route path='/' element={<Layout><Managerdashord/></Layout>} ></Route>
-            <Route path='/newshop' element={<Layout><NewShopPage/></Layout>} ></Route>
             <Route path='/allexpenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/allshops' element={<Layout><ShopsPage/></Layout>} ></Route>
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
