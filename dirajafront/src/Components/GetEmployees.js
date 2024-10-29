@@ -107,20 +107,14 @@ const Employees = () => {
 
   return (
     <div className="employees-container">
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">Apply</button>
-      </div>
+      
 
       <input
         type="text"
         placeholder="Search by name, email, or role"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
+        className="search-bar"
       />
 
       {/* Single date picker */}
@@ -130,6 +124,21 @@ const Employees = () => {
         onChange={(e) => setSelectedDate(e.target.value)}
         className="date-picker"
       />
+      <div className='actions-container' >
+      <div className="actions">
+        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+          <option value="">With selected, choose an action</option>
+          <option value="delete">Delete</option>
+        </select>
+        <button onClick={handleAction} className="action-button">Apply</button>
+      </div>
+       {/* Export to Excel and PDF */}
+       
+        <ExportExcel data={employees} fileName="EmployeesData" />
+        <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
+      
+
+      </div>
 
       <table id="employees-table" className="employees-table">
         <thead>
@@ -179,12 +188,7 @@ const Employees = () => {
         </tbody>
       </table>
 
-      {/* Export to Excel and PDF */}
-      <div className="export-buttons">
-        <ExportExcel data={employees} fileName="EmployeesData" />
-        <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
-      </div>
-
+     
       {/* Pagination */}
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredEmployees.length / itemsPerPage) }, (_, index) => (
