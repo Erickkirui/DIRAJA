@@ -124,11 +124,9 @@ class GetTransfer(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-    
         transfers = Transfer.query.all()
-
         all_transfers = []
-        
+
         for transfer in transfers:
             # Fetch username and shop name manually using user_id and shop_id
             user = Users.query.filter_by(users_id=transfer.user_id).first()
@@ -138,26 +136,25 @@ class GetTransfer(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
         
-        # Append the data
-        all_transfers.append({
-            "transfer_id": transfer.transfer_id,
-            "shop_id": transfer.shop_id,
-            "inventory_id": transfer.inventory_id,      
-            "quantity": transfer.quantity,             
-            "metric": transfer.metric,
-            "totalCost": transfer.total_cost,
-            "batchnumber": transfer.BatchNumber,
-            "user_id": transfer.user_id,
-            "username": username,
-            "shop_name": shopname,
-            "itemname":transfer.itemname,
-            "amountPaid": transfer.amountPaid,
-            "unitCost":transfer.unitCost,
-            "created_at": transfer.created_at.strftime('%Y-%m-%d') if transfer.created_at else None,
-        })
+            # Append the data for each transfer
+            all_transfers.append({
+                "transfer_id": transfer.transfer_id,
+                "shop_id": transfer.shop_id,
+                "inventory_id": transfer.inventory_id,      
+                "quantity": transfer.quantity,             
+                "metric": transfer.metric,
+                "totalCost": transfer.total_cost,
+                "batchnumber": transfer.BatchNumber,
+                "user_id": transfer.user_id,
+                "username": username,
+                "shop_name": shopname,
+                "itemname": transfer.itemname,
+                "amountPaid": transfer.amountPaid,
+                "unitCost": transfer.unitCost,
+                "created_at": transfer.created_at.strftime('%Y-%m-%d') if transfer.created_at else None,
+            })
 
         return make_response(jsonify(all_transfers), 200)
-
 
 
 

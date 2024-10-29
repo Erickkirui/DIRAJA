@@ -57,7 +57,8 @@ const DistributeInventoryModal = ({
             metric: inventoryItem.metric,
             itemname: inventoryItem.itemname,
             unitCost: inventoryItem.unitCost,
-            amountPaid: inventoryItem.amountPaid,
+            // Calculate amountPaid as unitCost * quantity
+            amountPaid: inventoryItem.unitCost * parseInt(quantity),
             BatchNumber: inventoryItem.batchnumber,
           };
           await axios.post('/diraja/transfer', requestData, {
