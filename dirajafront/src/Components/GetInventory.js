@@ -1,7 +1,9 @@
+// Inventory.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
+import DistributeInventoryModal from '../Components/DistributeInventoryModal';
 import '../Styles/inventory.css';
 
 const Inventory = () => {
@@ -12,30 +14,25 @@ const Inventory = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedInventory, setSelectedInventory] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const itemsPerPage = 50;
 
   useEffect(() => {
     const fetchInventory = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
           setError('No access token found, please log in.');
           return;
         }
-
         const response = await axios.get('/diraja/allinventories', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-
         setInventory(response.data);
       } catch (err) {
         setError('Error fetching inventory. Please try again.');
       }
     };
-
     fetchInventory();
   }, []);
 
@@ -48,45 +45,46 @@ const Inventory = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedInventory.length === inventory.length) {
-      setSelectedInventory([]);
-    } else {
-      setSelectedInventory(inventory.map((inventory) => inventory.inventory_id));
+    setSelectedInventory(
+      selectedInventory.length === inventory.length ? [] : inventory.map((inv) => inv.inventory_id)
+    );
+  };
+
+  const handleAction = () => {
+    if (selectedAction === 'distribute') {
+      setShowModal(true); // Open modal to input shop_id and quantity
+    } else if (selectedAction === 'delete') {
+      handleDelete();
     }
   };
 
-  const handleAction = async () => {
+  const handleDelete = async () => {
     const accessToken = localStorage.getItem('access_token');
-
-    if (selectedAction === 'delete') {
-      await Promise.all(
-        selectedInventory.map((inventoryId) =>
-          axios.delete(`/diraja/inventory/${inventoryId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-        )
-      );
-      setInventory((prev) =>
-        prev.filter((inventory) => !selectedInventory.includes(inventory.inventory_id))
-      );
-      setSelectedInventory([]);
-      setSelectedAction('');
-    }
+    await Promise.all(
+      selectedInventory.map((inventoryId) =>
+        axios.delete(`/diraja/inventory/${inventoryId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+      )
+    );
+    setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
+    setSelectedInventory([]);
+    setSelectedAction('');
   };
 
-  // Filter inventory based on the search query and date range
+  const handleDistributeSuccess = () => {
+    setSelectedInventory([]);
+    setSelectedAction('');
+  };
+
   const filteredInventory = inventory.filter((inventoryItem) => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch =
       inventoryItem.itemname.toLowerCase().includes(searchString) ||
       inventoryItem.batchnumber.toLowerCase().includes(searchString) ||
       inventoryItem.note.toLowerCase().includes(searchString);
-
     const matchesDateRange =
       selectedDate === '' || new Date(inventoryItem.created_at).toISOString().split('T')[0] === selectedDate;
-
     return matchesSearch && matchesDateRange;
   });
 
@@ -101,35 +99,51 @@ const Inventory = () => {
     setCurrentPage(pageNumber);
   };
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
   return (
     <div className="inventory-container">
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">Apply</button>
-      </div>
-
+      {/* Action Selection and Buttons */}
       <input
-        type="text"
-        placeholder="Search by item, batch number, or note"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
-      />
+            type="text"
+            placeholder="Search by item, batch number, or note"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-bar"
+          />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="date-picker"
+          />
 
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        className="date-picker"
-      />
-      
+     <div className='actions-container'>
+        <div className="actions">
+            <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+              <option value="">With selected, choose an action</option>
+              <option value="distribute">Distribute</option>
+              <option value="delete">Delete</option>
+              
+            </select>
+            <button onClick={handleAction} className="action-button">Apply</button>
+          </div>
+
+          {/* Search and Date Filter */}
+          
+        <ExportExcel inventory={inventory} /> 
+        <DownloadPDF inventory={inventory} />
+     </div>
+
+      {/* Distribute Inventory Modal */}
+      {showModal && (
+        <DistributeInventoryModal 
+          selectedInventory={selectedInventory}
+          inventory={inventory}
+          onClose={() => setShowModal(false)}
+          onDistributeSuccess={handleDistributeSuccess}
+        />
+      )}
+
+      {/* Inventory Table */}
       <table className="inventory-table">
         <thead>
           <tr>
@@ -175,29 +189,27 @@ const Inventory = () => {
               <td>{inventoryItem.balance}</td>
               <td>{inventoryItem.note}</td>
               <td>{inventoryItem.unitPrice}</td>
-              <td>{new Date(inventoryItem.created_at).toLocaleString()}</td>
+              <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      <div className="export-buttons">
-        <ExportExcel data={inventory} fileName="InventoryData" />
-        <DownloadPDF tableId="inventory-table" fileName="InventoryData" />
-      </div>
-
+      
       {/* Pagination */}
       <div className="pagination">
-        {Array.from({ length: totalPages }, (_, index) => (
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
           <button
-            key={index}
-            className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-            onClick={() => handlePageChange(index + 1)}
+            key={pageNumber}
+            onClick={() => handlePageChange(pageNumber)}
+            className={currentPage === pageNumber ? 'active' : ''}
           >
-            {index + 1}
+            {pageNumber}
           </button>
         ))}
       </div>
+
+      {/* Download Buttons */}
+      
     </div>
   );
 };

@@ -36,8 +36,27 @@ const ExportExcel = ({ data, fileName, sheetName = "Sheet1" }) => {
   };
 
   return (
-    <button onClick={exportToExcel} style={{ marginTop: "20px", padding: "10px", cursor: "pointer" }}>
-      Export to Excel
+    <button
+      onClick={exportToExcel}
+      style={{
+        backgroundColor: 'transparent', // No background color
+        padding: '10px', // Padding of 10px
+        border: '1px solid #ccc', // 1px solid border with color #cc
+        display: 'flex', // Flex to align items
+        alignItems: 'center', // Center items vertically
+        borderRadius: '5px', 
+      }}
+    >
+      Export to Excel 
+      <img 
+        src='/images/office365.png' 
+        alt="Export Icon"
+        style={{
+          width: '20px', // Width of 20px
+          height: '20px', // Height of 20px
+          marginLeft: '5px', // Margin to space the image from the text
+        }} 
+      />
     </button>
   );
 };
