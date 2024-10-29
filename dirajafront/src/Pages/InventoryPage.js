@@ -6,8 +6,10 @@ import { Link } from 'react-router-dom';
 function InventoryPage() {
   return (
     <div>
+        <div className='header-container'>
         <h1>Inventory</h1>
-        <button><Link to="/newinventory">Add inventory</Link></button>
+        <button className='add-button'><Link to="/newinventory">Add inventory</Link></button>
+        </div>
         <Inventory/>
         
     </div>

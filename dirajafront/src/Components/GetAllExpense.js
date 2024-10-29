@@ -107,6 +107,11 @@ const Expenses = () => {
 
   return (
     <div className="expenses-container">
+      <div className="export-buttons">
+        <ExportExcel data={expenses} fileName="ExpensesData" />
+        <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
+      </div>
+      
       <div className="actions">
         <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
           <option value="">With selected, choose an action</option>
@@ -180,10 +185,7 @@ const Expenses = () => {
         </tbody>
       </table>
           
-      <div className="export-buttons">
-        <ExportExcel data={expenses} fileName="ExpensesData" />
-        <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-      </div>
+      
 
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredExpenses.length / itemsPerPage) }, (_, index) => (

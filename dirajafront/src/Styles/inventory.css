@@ -1,7 +1,50 @@
-.inventory-container {
-    width: 98%;
-    margin: 0 auto;
-  }
+.header-container{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.date-picker{
+
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+
+}
+.actions select {
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+
+}
+.actions button {
+  margin-left: 10px;
+  background-color: var(--primary);
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  color: #fff;
+}
+.actions-container{
+  display: flex;
+  gap: 30px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.add-button{
+  background-color: var(--primary);
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  color: #fff;
+}
+.header-container a{
+  text-decoration: none;
+  color: #fff;
+}
+.header-container h1{
+  margin: 0;
+}
   
  .inventory-container h2 {
     text-align: left;

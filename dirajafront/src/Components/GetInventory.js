@@ -102,30 +102,38 @@ const Inventory = () => {
   return (
     <div className="inventory-container">
       {/* Action Selection and Buttons */}
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-          <option value="distribute">Distribute</option>
-        </select>
-        <button onClick={handleAction} className="action-button">Apply</button>
-      </div>
-
-      {/* Search and Date Filter */}
       <input
-        type="text"
-        placeholder="Search by item, batch number, or note"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
-      />
+            type="text"
+            placeholder="Search by item, batch number, or note"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-bar"
+          />
 
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        className="date-picker"
-      />
+     <div className='actions-container'>
+        <div className="actions">
+            <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+              <option value="">With selected, choose an action</option>
+              <option value="distribute">Distribute</option>
+              <option value="delete">Delete</option>
+              
+            </select>
+            <button onClick={handleAction} className="action-button">Apply</button>
+          </div>
+
+          {/* Search and Date Filter */}
+          
+
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="date-picker"
+          />
+        
+        <ExportExcel inventory={inventory} /> 
+        <DownloadPDF inventory={inventory} />
+     </div>
 
       {/* Distribute Inventory Modal */}
       {showModal && (
@@ -203,8 +211,7 @@ const Inventory = () => {
       </div>
 
       {/* Download Buttons */}
-      <ExportExcel inventory={inventory} />
-      <DownloadPDF inventory={inventory} />
+      
     </div>
   );
 };
