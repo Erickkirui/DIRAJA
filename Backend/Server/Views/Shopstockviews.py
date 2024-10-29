@@ -204,72 +204,7 @@ class GetShopStock(Resource):
             return {"error": "An error occurred while fetching shop stock data"}, 500
 
 
-# class GetShopStock(Resource):
-    
-#     @jwt_required()
-    
-#     def get(self):
-#         try:
-#             # Pagination parameters
-#             page = request.args.get('page', 1, type=int)
-#             per_page = request.args.get('per_page', 10, type=int)
-            
-#             # Optional filters
-#             shop_id = request.args.get('shop_id', type=int)
-#             inventory_id = request.args.get('inventory_id', type=int)
-            
-#             # Base query
-#             query = ShopStock.query
-            
-#             if shop_id:
-#                 query = query.filter_by(shop_id=shop_id)
-#             if inventory_id:
-#                 query = query.filter_by(inventory_id=inventory_id)
-            
-#             # Eager load related models to optimize queries
-#             shop_stocks = query.options(
-#                 joinedload(ShopStock.shop),
-#                 joinedload(ShopStock.inventory)
-#             ).paginate(page=page, per_page=per_page, error_out=False)
-            
-#             # Serialize the data
-#             shop_stock_list = []
-#             for stock in shop_stocks.items:
-                
-#                 # Fetch username and shop name manually using user_id and shop_id
-#                 shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
-                
-#                 # Handle cases where user or shop may not be found
-#                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                
-#                 shop_stock_list.append({
-#                     "stock_id": stock.stock_id,
-#                     "shop_id": stock.shop_id,
-#                     "shop_name": shopname,  # Adjust attribute if different
-#                     "inventory_id": stock.inventory_id,
-#                     "item_name": stock.inventory.itemname,  # Adjust attribute if different
-#                     "batchnumber": stock.BatchNumber,
-#                     "metric": stock.inventory.metric,
-#                     "quantity": stock.quantity,
-#                     "total_cost": stock.total_cost,
-#                     "unitPrice": stock.unitPrice
-#                 })
-            
-#             # Prepare the response with pagination info
-#             response = {
-#                 "total_shop_stocks": shop_stocks.total,
-#                 "page": shop_stocks.page,
-#                 "per_page": shop_stocks.per_page,
-#                 "pages": shop_stocks.pages,
-#                 "shop_stocks": shop_stock_list
-#             }
-            
-#             return make_response(jsonify(response), 200)
-        
-#         except SQLAlchemyError:
-#             db.session.rollback()
-#             return {"error": "An error occurred while fetching shop stock data"}, 500
         
 
 #Get shopstock by id
@@ -354,3 +289,36 @@ class GetAllStock(Resource):
         except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching all shop stock data"}, 500
+        
+        
+# Get items by shop ID
+class GetItemsByShopId(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self, shop_id):
+        try:
+            # Fetch items associated with the shop
+            items = ShopStock.query.filter_by(shop_id=shop_id).options(joinedload(ShopStock.inventory)).all()
+            
+            # Serialize the data
+            item_list = []
+            for stock in items:
+                item_list.append({
+                    "itemname": stock.inventory.itemname,
+                    "BatchNumber": stock.BatchNumber,
+                    "metric": stock.inventory.metric,
+                    "unitPrice": stock.unitPrice,
+                    "stock_id": stock.stock_id
+                })
+            
+            # Prepare the response
+            response = {
+                "shop_id": shop_id,
+                "items": item_list
+            }
+            
+            return make_response(jsonify(response), 200)
+        
+        except SQLAlchemyError:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching items for the shop"}, 500

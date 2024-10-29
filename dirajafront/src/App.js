@@ -11,6 +11,7 @@ import AddEmployeePage from './Pages/AddEmployeePage';
 import EmployeesPage from './Pages/EmployeesPage';
 import InventoryPage from './Pages/InventoryPage';
 import AddInventory from './Components/AddInventory';
+import AddSale from './Components/AddSale';
 
 // import ShopStockPage from './Pages/ShopStockPage';
 import UserDisplay from './Components/UserDisplay';
@@ -68,6 +69,7 @@ function App() {
             <Route path='/allemployees' element={<Layout><EmployeesPage/></Layout>} ></Route>
             <Route path='/allinventory' element={<Layout><InventoryPage/></Layout>} ></Route>
             <Route path='/newinventory' element={<Layout><AddInventory /></Layout>} ></Route>
+            <Route path='/newsale' element={<Layout><AddSale /></Layout>} ></Route>
             <Route path='/shopstock' element={<Layout><ShopStock /></Layout>} ></Route>
             <Route path='/employee/:employee_id' element={<Layout><SingleEmployeePage /></Layout>} />
             <Route path='/allcustomers' element={<Layout><CustomersPage/></Layout>} ></Route>

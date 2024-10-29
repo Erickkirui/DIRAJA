@@ -113,6 +113,7 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
+
         
 class GetSales(Resource):
     @jwt_required()
