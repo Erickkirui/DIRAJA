@@ -1,7 +1,9 @@
+// Inventory.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
+import DistributeInventoryModal from '../Components/DistributeInventoryModal';
 import '../Styles/inventory.css';
 
 const Inventory = () => {
@@ -13,8 +15,6 @@ const Inventory = () => {
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedInventory, setSelectedInventory] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [shopId, setShopId] = useState('');
-  const [quantity, setQuantity] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -72,38 +72,9 @@ const Inventory = () => {
     setSelectedAction('');
   };
 
-  const handleDistribute = async (e) => {
-    e.preventDefault();
-    const accessToken = localStorage.getItem('access_token');
-    try {
-      await Promise.all(
-        selectedInventory.map(async (inventoryId) => {
-          const inventoryItem = inventory.find((item) => item.inventory_id === inventoryId);
-          const requestData = {
-            shop_id: parseInt(shopId),
-            inventory_id: inventoryItem.inventory_id,
-            quantity: parseInt(quantity),
-            metric: inventoryItem.metric,
-            itemname: inventoryItem.itemname,
-            unitCost: inventoryItem.unitCost,
-            amountPaid: inventoryItem.amountPaid,
-            BatchNumber: inventoryItem.batchnumber,
-          };
-          await axios.post('/diraja/transfer', requestData, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-        })
-      );
-      alert('Inventory distributed successfully');
-      setSelectedInventory([]);
-      setShowModal(false);
-      setSelectedAction('');
-      setShopId('');
-      setQuantity('');
-    } catch (error) {
-      console.error('Error distributing inventory:', error);
-      alert('Error distributing inventory. Please try again.');
-    }
+  const handleDistributeSuccess = () => {
+    setSelectedInventory([]);
+    setSelectedAction('');
   };
 
   const filteredInventory = inventory.filter((inventoryItem) => {
@@ -130,6 +101,7 @@ const Inventory = () => {
 
   return (
     <div className="inventory-container">
+      {/* Action Selection and Buttons */}
       <div className="actions">
         <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
           <option value="">With selected, choose an action</option>
@@ -139,6 +111,7 @@ const Inventory = () => {
         <button onClick={handleAction} className="action-button">Apply</button>
       </div>
 
+      {/* Search and Date Filter */}
       <input
         type="text"
         placeholder="Search by item, batch number, or note"
@@ -154,33 +127,17 @@ const Inventory = () => {
         className="date-picker"
       />
 
-      {/* Popup Modal */}
+      {/* Distribute Inventory Modal */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Distribute Inventory</h3>
-            <form onSubmit={handleDistribute}>
-              <label>Shop ID</label>
-              <input
-                type="number"
-                value={shopId}
-                onChange={(e) => setShopId(e.target.value)}
-                required
-              />
-              <label>Quantity to Transfer</label>
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                required
-              />
-              <button type="submit">Distribute</button>
-              <button type="button" onClick={() => setShowModal(false)}>Cancel</button>
-            </form>
-          </div>
-        </div>
+        <DistributeInventoryModal 
+          selectedInventory={selectedInventory}
+          inventory={inventory}
+          onClose={() => setShowModal(false)}
+          onDistributeSuccess={handleDistributeSuccess}
+        />
       )}
 
+      {/* Inventory Table */}
       <table className="inventory-table">
         <thead>
           <tr>
@@ -226,28 +183,28 @@ const Inventory = () => {
               <td>{inventoryItem.balance}</td>
               <td>{inventoryItem.note}</td>
               <td>{inventoryItem.unitPrice}</td>
-              <td>{new Date(inventoryItem.created_at).toLocaleString()}</td>
+              <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
             </tr>
           ))}
         </tbody>
       </table>
-
-      <div className="export-buttons">
-        <ExportExcel data={inventory} fileName="InventoryData" />
-        <DownloadPDF tableId="inventory-table" fileName="InventoryData" />
-      </div>
-
+      
+      {/* Pagination */}
       <div className="pagination">
-        {Array.from({ length: totalPages }, (_, index) => (
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
           <button
-            key={index}
-            className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-            onClick={() => handlePageChange(index + 1)}
+            key={pageNumber}
+            onClick={() => handlePageChange(pageNumber)}
+            className={currentPage === pageNumber ? 'active' : ''}
           >
-            {index + 1}
+            {pageNumber}
           </button>
         ))}
       </div>
+
+      {/* Download Buttons */}
+      <ExportExcel inventory={inventory} />
+      <DownloadPDF inventory={inventory} />
     </div>
   );
 };
