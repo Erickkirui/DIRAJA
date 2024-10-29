@@ -13,6 +13,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 
 # from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 
+from Server.Views.Shopstockviews import GetItemsByShopId
 
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
@@ -137,3 +138,4 @@ api.add_resource(TotalAmountPaidSales,'/totalsales')
 #4.Customesrs for customners
 # 5.stock 
 
+api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')

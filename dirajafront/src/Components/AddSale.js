@@ -2,26 +2,26 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 const AddSale = () => {
-    // State to hold form data
-    const [shops, setShops] = useState([]); // List of shops
-    const [shopId, setShopId] = useState(''); // Selected shop
-    const [item, setItem] = useState(''); // Manually entered item
-    const [quantity, setQuantity] = useState(''); // Quantity of the item
-    const [customerName, setCustomerName] = useState(''); // Customer name
-    const [customerNumber, setCustomerNumber] = useState(''); // Customer phone number
-    const [amountPaid, setAmountPaid] = useState(''); // Amount paid by the customer
-    const [paymentMethod, setPaymentMethod] = useState('cash'); // Payment method (default to cash)
-    const [shopError, setShopError] = useState(false); // Handle shop errors
+    const [saleData, setSaleData] = useState({
+        shop_id: '',
+        item_name: '',
+        customer_name: '',
+        customer_number: '',
+        quantity: 0,
+        payment_method: '',
+        amount_paid: 0,
+        batchNumber: '',
+        metric: '',
+        unitPrice: '',
+        stock_id: ''
+    });
 
-    // State for additional fields derived from shop stock
-    const [metric, setMetric] = useState('');
-    const [unitPrice, setUnitPrice] = useState(0);
-    const [batchNumber, setBatchNumber] = useState('');
-    const [stockId, setStockId] = useState('');
+    const [shops, setShops] = useState([]);
+    const [items, setItems] = useState([]);
+    const [message, setMessage] = useState({ type: '', text: '' });
+    const [shopError, setShopError] = useState(false);
+    const [itemError, setItemError] = useState(false);
 
-    const token = localStorage.getItem('token'); // Assuming the token is stored in localStorage
-
-    // Fetch shops when the component mounts
     useEffect(() => {
         const fetchShops = async () => {
             try {
@@ -31,7 +31,6 @@ const AddSale = () => {
                     }
                 });
                 setShops(response.data);
-
                 if (response.data.length === 0) {
                     setShopError(true);
                 }
@@ -44,128 +43,128 @@ const AddSale = () => {
         fetchShops();
     }, []);
 
-    // Fetch shop stock data when shopId changes
-    useEffect(() => {
-        const fetchShopStock = async () => {
-            if (shopId) {
-                try {
-                    const response = await axios.get(`/diraja/shopstock/${shopId}`, {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                        }
-                    });
+    const handleShopChange = async (e) => {
+        const selectedShopId = e.target.value;
+        setSaleData(prevData => ({ ...prevData, shop_id: selectedShopId }));
 
-                    // Assuming response.data contains the required fields
-                    if (response.data) {
-                        setMetric(response.data.metric);
-                        setUnitPrice(response.data.unit_price);
-                        setBatchNumber(response.data.BatchNumber);
-                        setStockId(response.data.stock_id);
+        if (selectedShopId) {
+            try {
+                const response = await axios.get(`/diraja/items/${selectedShopId}`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
                     }
-                } catch (error) {
-                    console.error('Error fetching shop stock:', error);
-                }
-            } else {
-                // Reset derived fields if no shop is selected
-                setMetric('');
-                setUnitPrice(0);
-                setBatchNumber('');
-                setStockId('');
+                });
+                setItems(response.data.items);
+                setShopError(false); // Reset error state
+            } catch (error) {
+                console.error('Error fetching items:', error);
             }
-        };
-
-        fetchShopStock();
-    }, [shopId]);
-
-    // Form submission handler
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-    
-        const token = localStorage.getItem('access_token');
-        if (!token) {
-            alert('Authentication error: Token missing.');
-            return;
-        }
-    
-        // Fetch stock details from backend based on selected shop and item
-        try {
-            const stockResponse = await axios.get(`/diraja/shopstock`, {
-                params: {
-                    shop_id: parseInt(shopId, 10),
-                    item_name: item
-                },
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-    
-            const stockData = stockResponse.data;
-            
-            if (!stockData) {
-                alert('No stock data available for the selected item and shop.');
-                return;
-            }
-    
-            const { BatchNumber, unit_price, metric, stock_id } = stockData;  // Extract necessary fields from stock data
-    
-            // Now prepare the sale data
-            const saleData = {
-                shop_id: parseInt(shopId, 10),  // Convert shopId to integer
-                customer_name: customerName,
-                customer_number: customerNumber,
-                item_name: item,
-                quantity: parseFloat(quantity, 10),
-                amount_paid: parseFloat(amountPaid),
-                payment_method: paymentMethod,
-                metric: metric,             // Derived from shop stock
-                unit_price: unit_price,      // Derived from shop stock
-                BatchNumber: BatchNumber,    // Derived from shop stock
-                stock_id: stock_id           // Derived from shop stock
-            };
-    
-            console.log('Data being sent to backend:', saleData);
-    
-            const response = await axios.post('/diraja/newsale', saleData, {
-                headers: {
-                    Authorization: `Bearer ${token}` // use the token from localStorage
-                },
-            });
-    
-            console.log(response.data);
-            alert('Sale added successfully!');
-            
-            // Clear form fields after submission
-            setShopId('');
-            setItem('');
-            setQuantity('');
-            setCustomerName('');
-            setCustomerNumber('');
-            setAmountPaid('');
-            setPaymentMethod('cash');
-            // Reset derived fields
-            setMetric('');
-            setUnitPrice(0);
-            setBatchNumber('');
-            setStockId('');
-        } catch (error) {
-            console.error('Error adding sale:', error);
-            alert('Failed to add sale. Please try again.');
         }
     };
-    
-    
+
+    const handleItemChange = (e) => {
+        const selectedItemId = e.target.value;
+
+        if (selectedItemId) {
+            const selectedItem = items.find(item => item.stock_id === selectedItemId);
+
+            if (selectedItem) {
+                setSaleData(prevData => ({
+                    ...prevData,
+                    item_name: selectedItem.itemname, // Update item_name here
+                    batchNumber: selectedItem.BatchNumber,
+                    metric: selectedItem.metric,
+                    unitPrice: selectedItem.unitPrice,
+                    stock_id: selectedItem.stock_id
+                }));
+
+                console.log("Selected item:", selectedItem); // Debugging statement
+                setItemError(false); // Reset error state
+            }
+        } else {
+            // Reset item-specific fields if no item is selected
+            setSaleData(prevData => ({
+                ...prevData,
+                item_name: '',
+                batchNumber: '',
+                metric: '',
+                unitPrice: '',
+                stock_id: ''
+            }));
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setSaleData(prevData => ({
+            ...prevData,
+            [name]: name === 'quantity' || name === 'amount_paid' ? Number(value) : value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!saleData.shop_id) {
+            setShopError(true);
+            return;
+        }
+        if (!saleData.stock_id) {
+            setItemError(true);
+            return;
+        }
+
+        console.log('Submitting sale data:', saleData); // Ensure this is logged before submission
+
+        try {
+            const response = await axios.post('/diraja/newsale', saleData, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`
+                }
+            });
+
+            if (response.status === 201) {
+                setMessage({ type: 'success', text: 'Sale added successfully' });
+                setSaleData({
+                    shop_id: '',
+                    item_name: '',
+                    customer_name: '',
+                    customer_number: '',
+                    quantity: 0,
+                    payment_method: '',
+                    amount_paid: 0,
+                    batchNumber: '',
+                    metric: '',
+                    unitPrice: '',
+                    stock_id: ''
+                });
+            }
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to add sale' });
+            console.error('Error adding sale:', error);
+        }
+    };
 
     return (
         <div>
+            {message.text && (
+                <div
+                    className={`p-4 mb-4 ${
+                        message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}
+                >
+                    {message.text}
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                     <label htmlFor="shop_id">Shop</label>
                     <select
-                        name="shop_id" 
-                        value={shopId}
-                        onChange={(e) => setShopId(e.target.value)}
-                        className={`border p-2 w-full ${shopId ? 'text-black' : 'text-red-500'}`}
-                        required
+                        name="shop_id"
+                        value={saleData.shop_id}
+                        onChange={handleShopChange}
+                        className={`border p-2 w-full ${saleData.shop_id ? 'text-black' : 'text-red-500'}`}
                     >
                         <option value="">Select a shop</option>
                         {shops.length > 0 ? (
@@ -181,66 +180,86 @@ const AddSale = () => {
                     {shopError && <p className="text-red-500 mt-1">No shops available</p>}
                 </div>
 
-                {/* Item Input */}
-                <label>Item</label>
-                <input
-                    type="text"
-                    value={item}
-                    onChange={(e) => setItem(e.target.value)}
-                    placeholder="Enter item name"
-                    required
-                />
+                <div>
+                    <label htmlFor="item_name">Item</label>
+                    <select
+                        name="item_name"
+                        value={saleData.item_name || ''} // Bind to item_name
+                        onChange={handleItemChange}
+                        className={`border p-2 w-full ${saleData.item_name ? 'text-black' : 'text-red-500'}`}
+                    >
+                        <option value="">Select an item</option>
+                        {items.length > 0 ? (
+                            items.map((item) => (
+                                <option key={item.stock_id} value={item.stock_id}>
+                                    {item.itemname}
+                                </option>
+                            ))
+                        ) : (
+                            <option disabled>No items available</option>
+                        )}
+                    </select>
+                    {itemError && <p className="text-red-500 mt-1">Please select an item.</p>}
+                </div>
 
-                {/* Quantity Input */}
-                <label>Quantity</label>
-                <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    placeholder="Enter quantity"
-                    required
-                />
+                <div>
+                    <label>Customer Name</label>
+                    <input
+                        type="text"
+                        name="customer_name"
+                        value={saleData.customer_name}
+                        onChange={handleChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
 
-                {/* Customer Name */}
-                <label>Customer Name</label>
-                <input
-                    type="text"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    placeholder="Enter customer name"
-                    required
-                />
+                <div>
+                    <label>Customer Number</label>
+                    <input
+                        type="text"
+                        name="customer_number"
+                        value={saleData.customer_number}
+                        onChange={handleChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
 
-                {/* Customer Phone Number */}
-                <label>Customer Phone Number</label>
-                <input
-                    type="tel"
-                    value={customerNumber}
-                    onChange={(e) => setCustomerNumber(e.target.value)}
-                    placeholder="Enter customer phone number"
-                    required
-                />
+                <div>
+                    <label>Quantity</label>
+                    <input
+                        type="number"
+                        name="quantity"
+                        value={saleData.quantity}
+                        onChange={handleChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
 
-                {/* Amount Paid */}
-                <label>Amount Paid</label>
-                <input
-                    type="number"
-                    value={amountPaid}
-                    onChange={(e) => setAmountPaid(e.target.value)}
-                    placeholder="Enter amount paid"
-                    required
-                />
+                <div>
+                    <label>Payment Method</label>
+                    <input
+                        type="text"
+                        name="payment_method"
+                        value={saleData.payment_method}
+                        onChange={handleChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
 
-                {/* Payment Method */}
-                <label>Payment Method</label>
-                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} required>
-                    <option value="cash">Cash</option>
-                    <option value="Bank">Bank</option>
-                    <option value="mobile">Mobile Money</option>
-                </select>
+                <div>
+                    <label>Amount Paid</label>
+                    <input
+                        type="number"
+                        name="amount_paid"
+                        value={saleData.amount_paid}
+                        onChange={handleChange}
+                        className="border p-2 w-full"
+                    />
+                </div>
 
-                {/* Submit Button */}
-                <button type="submit">Add Sale</button>
+                <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+                    Add Sale
+                </button>
             </form>
         </div>
     );
