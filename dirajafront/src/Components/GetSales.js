@@ -78,6 +78,7 @@ const Sales = () => {
             setCurrentPage(1);
           }}
         />
+        
         <input
           type="date"
           className="date-filter"

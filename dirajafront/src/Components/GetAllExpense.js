@@ -107,20 +107,13 @@ const Expenses = () => {
 
   return (
     <div className="expenses-container">
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">Apply</button>
-      </div>
-
+  
       <input
         type="text"
         placeholder="Search by employee name, shop name, or item"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
+        className="search-bar"
       />
 
       <input
@@ -129,6 +122,23 @@ const Expenses = () => {
         onChange={(e) => setSelectedDate(e.target.value)}
         className="date-picker"
       />
+      
+      <div className='actions-container'>
+        <div className="actions">
+          <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <option value="">With selected, choose an action</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button onClick={handleAction} className="action-button">Apply</button>
+        </div>
+
+        
+          <ExportExcel data={expenses} fileName="ExpensesData" />
+          <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
+        
+
+      </div>
+      
 
       <table className="expenses-table">
         <thead>
@@ -180,10 +190,7 @@ const Expenses = () => {
         </tbody>
       </table>
           
-      <div className="export-buttons">
-        <ExportExcel data={expenses} fileName="ExpensesData" />
-        <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-      </div>
+      
 
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredExpenses.length / itemsPerPage) }, (_, index) => (
