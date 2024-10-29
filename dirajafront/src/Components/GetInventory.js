@@ -109,6 +109,12 @@ const Inventory = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-bar"
           />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="date-picker"
+          />
 
      <div className='actions-container'>
         <div className="actions">
@@ -123,14 +129,6 @@ const Inventory = () => {
 
           {/* Search and Date Filter */}
           
-
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-picker"
-          />
-        
         <ExportExcel inventory={inventory} /> 
         <DownloadPDF inventory={inventory} />
      </div>
