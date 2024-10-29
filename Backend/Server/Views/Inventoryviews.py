@@ -64,13 +64,6 @@ class DistributeInventory(Resource):
             total_cost=total_cost,
             BatchNumber=BatchNumber,
             user_id=current_user_id,
-
-
-            
-            # BatchNumber=batch_number,
-            # user_id=user_id,
-
-
             itemname=itemname,
             amountPaid=amountPaid,
             unitCost=unitCost

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../Styles/sales.css';
 
-const Sales = () => {
+
+const ShopSales = () => {
   const [sales, setSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
@@ -14,17 +14,17 @@ const Sales = () => {
     const fetchSales = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
+        const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken) {
+        if (!accessToken || !shopId ) {
           setError('No access token found, please log in.');
           return;
         }
 
-        const response = await axios.get('/diraja/allsales', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
-        });
+        const response = await axios.get(`/diraja/sales/shop/${shopId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+  
 
         setSales(response.data);
       } catch (err) {
@@ -78,7 +78,6 @@ const Sales = () => {
             setCurrentPage(1);
           }}
         />
-        
         <input
           type="date"
           className="date-filter"
@@ -148,4 +147,4 @@ const Sales = () => {
   );
 };
 
-export default Sales;
+export default ShopSales;

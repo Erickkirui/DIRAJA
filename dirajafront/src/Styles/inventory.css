@@ -1,8 +1,50 @@
-.inventory-container {
-    width: 98%;
-    margin: 0 auto;
-    padding: 20px;
-  }
+.header-container{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.date-picker{
+
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+
+}
+.actions select {
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+
+}
+.actions button {
+  margin-left: 10px;
+  background-color: var(--primary);
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  color: #fff;
+}
+.actions-container{
+  display: flex;
+  gap: 30px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+.add-button{
+  background-color: var(--primary);
+  padding: 10px;
+  border: 1px solid  #ccc;
+  border-radius: 6px;
+  color: #fff;
+}
+.header-container a{
+  text-decoration: none;
+  color: #fff;
+}
+.header-container h1{
+  margin: 0;
+}
   
  .inventory-container h2 {
     text-align: left;
@@ -59,5 +101,38 @@
   .page-button:hover {
     background-color: #3498db;
     color: #fff;
+  }
+  
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    width: 300px;
+    text-align: center;
+  }
+  .modal-content label {
+    display: block;
+    margin: 10px 0 5px;
+  }
+  .modal-content input {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 15px;
+  }
+  .modal-content button {
+    margin: 0 5px;
   }
   
