@@ -94,6 +94,23 @@ const Shops = () => {
 
   return (
     <div className="shops-container">
+     
+
+      <input
+        type="text"
+        placeholder="Search by shop name or employee"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-bar"
+      />
+
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="date-picker"
+      />
+      <div className='actions-container'>
       <div className="actions">
         <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
           <option value="">With selected, choose an action</option>
@@ -103,21 +120,14 @@ const Shops = () => {
           Apply
         </button>
       </div>
+       {/* Export to Excel/PDF functionality */}
+       
+        <ExportExcel data={shops} fileName="ShopsData" />
+        <DownloadPDF tableId="shops-table" fileName="ShopsData" />
+     
 
-      <input
-        type="text"
-        placeholder="Search by shop name or employee"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
-      />
-
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        className="date-picker"
-      />
+      </div>
+     
 
       {/* Display error message */}
       {error && <div className="error-message">{error}</div>}
@@ -172,11 +182,7 @@ const Shops = () => {
         </tbody>
       </table>
 
-      {/* Export to Excel/PDF functionality */}
-      <div className="export-buttons">
-        <ExportExcel data={shops} fileName="ShopsData" />
-        <DownloadPDF tableId="shops-table" fileName="ShopsData" />
-      </div>
+      
 
       {/* Pagination */}
       {totalPages > 1 && (
