@@ -129,8 +129,8 @@ const Inventory = () => {
 
           {/* Search and Date Filter */}
           
-        <ExportExcel inventory={inventory} /> 
-        <DownloadPDF inventory={inventory} />
+        <ExportExcel data={inventory} fileName="InventoryData" />
+        <DownloadPDF tableId="inventory-table" fileName="InventoryData" />
      </div>
 
       {/* Distribute Inventory Modal */}
@@ -144,7 +144,7 @@ const Inventory = () => {
       )}
 
       {/* Inventory Table */}
-      <table className="inventory-table">
+      <table id="inventory-table" className="inventory-table">
         <thead>
           <tr>
             <th>

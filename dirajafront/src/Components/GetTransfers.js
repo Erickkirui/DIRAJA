@@ -61,7 +61,7 @@ const Transfers = () => {
       
       {transfers.length > 0 ? (
         <>
-          <table className="transfers-table">
+          <table id="transfers-table" className="transfers-table">
             <thead>
               <tr>
                 <th>ID</th>

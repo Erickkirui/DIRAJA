@@ -61,7 +61,7 @@ const Purchases = () => {
       
       {purchases.length > 0 ? (
         <>
-          <table className="purchases-table">
+          <table id="purchases-table" className="purchases-table">
             <thead>
               <tr>
                 <th>ID</th>

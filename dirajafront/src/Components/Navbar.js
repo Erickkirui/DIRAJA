@@ -15,13 +15,13 @@ function Navbar() {
             <img src='/images/Dashbord.png' alt='menu-icon' />
             <li>Dashboard</li>
           </NavLink>
-          <NavLink to="/sales" className="menu-item" activeClassName="active">
-            <img src='/images/Sales.png' alt='menu-icon' />
-            <li>Sales</li>
-          </NavLink>
           <NavLink to="/allinventory" className="menu-item" activeClassName="active">
             <img src='/images/Sales.png' alt='menu-icon' />
             <li>Inventory</li>
+          </NavLink>
+          <NavLink to="/sales" className="menu-item" activeClassName="active">
+            <img src='/images/Sales.png' alt='menu-icon' />
+            <li>Sales</li>
           </NavLink>
           <NavLink to="/expenses" className="menu-item" activeClassName="active">
             <img src='/images/Expenses.png' alt='menu-icon' />

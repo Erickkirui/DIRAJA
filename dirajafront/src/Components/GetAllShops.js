@@ -132,7 +132,7 @@ const Shops = () => {
       {/* Display error message */}
       {error && <div className="error-message">{error}</div>}
 
-      <table className="shops-table">
+      <table id="shops-table" className="shops-table">
         <thead>
           <tr>
             <th>

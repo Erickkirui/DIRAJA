@@ -128,7 +128,7 @@ const Customers = () => {
 
       {customers.length > 0 ? (
         <>
-          <table className="customers-table">
+          <table id="customers-table" className="customers-table">
             <thead>
               <tr>
                 <th>
