@@ -5,11 +5,14 @@ const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDate, setSelectedDate] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 50;
 
     useEffect(() => {
         const fetchShopStockData = async () => {
             try {
-                // Get the access token from localStorage
                 const accessToken = localStorage.getItem('access_token');
 
                 if (!accessToken) {
@@ -18,10 +21,9 @@ const Shopstock = () => {
                     return;
                 }
 
-                // API call to get shop stock data with Authorization header
                 const response = await fetch('/diraja/shopstock', {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`, // Include the access token in the Authorization header
+                        'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
                 });
@@ -31,7 +33,7 @@ const Shopstock = () => {
                 }
 
                 const data = await response.json();
-                setShopStocks(data.shop_stocks); // Assuming the response has a shop_stocks field
+                setShopStocks(data.shop_stocks);
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
@@ -40,7 +42,25 @@ const Shopstock = () => {
         };
 
         fetchShopStockData();
-    }, []); // Empty dependency array ensures the fetch runs only once
+    }, []);
+
+    // Filter shop stocks based on search query and selected date
+    const filteredShopsStock = shopStocks.filter((stock) => {
+        const matchesSearch = stock.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              stock.shop_id.toString().includes(searchQuery);
+        const matchesDate = !selectedDate || stock.date === selectedDate;
+        return matchesSearch && matchesDate;
+    });
+
+    // Pagination logic
+    const totalPages = Math.ceil(filteredShopsStock.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedStocks = filteredShopsStock.slice(startIndex, startIndex + itemsPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
 
     if (loading) {
         return <p>Loading...</p>;
@@ -51,40 +71,72 @@ const Shopstock = () => {
     }
 
     return (
-        <div>
-            <h2>Shop Stock List</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Stock ID</th>
-                        <th>Shop ID</th>
-                        <th>Shop Name</th>
-                        <th>Inventory ID</th>
-                        <th>Item Name</th>
-                        <th>Batch Number</th>
-                        <th>Metric</th>
-                        <th>Quantity</th>
-                        <th>Total Cost</th>
-                        <th>Unit Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {shopStocks.map((stock) => (
-                        <tr key={stock.stock_id}>
-                            <td>{stock.stock_id}</td>
-                            <td>{stock.shop_id}</td>
-                            <td>{stock.shop_name}</td>
-                            <td>{stock.inventory_id}</td>
-                            <td>{stock.item_name}</td>
-                            <td>{stock.batchnumber}</td>
-                            <td>{stock.metric}</td>
-                            <td>{stock.quantity}</td>
-                            <td>{stock.total_cost}</td>
-                            <td>{stock.unitPrice}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+        <div className="shopStocks-container">
+            {/* Search and Date Filter */}
+            <div className="filter-container">
+                <input
+                    type="text"
+                    placeholder="Search by item, shop, or employee"
+                    className="search-bar"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                
+                <input
+                    type="date"
+                    className="date-filter"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                />
+            </div>
+
+            {filteredShopsStock.length > 0 ? (
+                <>
+                    <table id="shopStocks-table" className="shopStocks-table">
+                        <thead>
+                            <tr>
+                                <th>Stock ID</th>
+                                <th>Shop Name</th>
+                                <th>Item Name</th>
+                                <th>Batch Number</th>
+                                <th>Quantity</th>
+                                <th>Total Cost</th>
+                                <th>Unit Price</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {paginatedStocks.map((stock) => (
+                                <tr key={stock.stock_id}>
+                                    <td>{stock.stock_id}</td>
+                                    <td>{stock.shop_name}</td>
+                                    <td>{stock.item_name}</td>
+                                    <td>{stock.batchnumber}</td>
+                                    <td>{stock.quantity} {stock.metric}</td>
+                                    <td>{stock.total_cost}</td>
+                                    <td>{stock.unitPrice}</td>
+                                    <td>{new Date(stock.created_at).toLocaleString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+
+                    {/* Pagination */}
+                    <div className="pagination">
+                        {Array.from({ length: totalPages }, (_, index) => (
+                            <button
+                                key={index}
+                                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
+                                onClick={() => handlePageChange(index + 1)}
+                            >
+                                {index + 1}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <p>No shop stocks found.</p>
+            )}
         </div>
     );
 };

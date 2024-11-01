@@ -140,7 +140,7 @@ const Expenses = () => {
       </div>
       
 
-      <table className="expenses-table">
+      <table id="expenses-table" className="expenses-table">
         <thead>
           <tr>
             <th>

@@ -1,267 +1,191 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AddSale = () => {
-    const [saleData, setSaleData] = useState({
-        shop_id: '',
-        item_name: '',
-        customer_name: '',
-        customer_number: '',
-        quantity: 0,
-        payment_method: '',
-        amount_paid: 0,
-        batchNumber: '',
-        metric: '',
-        unitPrice: '',
-        stock_id: ''
-    });
-
     const [shops, setShops] = useState([]);
     const [items, setItems] = useState([]);
-    const [message, setMessage] = useState({ type: '', text: '' });
-    const [shopError, setShopError] = useState(false);
-    const [itemError, setItemError] = useState(false);
+    const [selectedShop, setSelectedShop] = useState('');
+    const [selectedItem, setSelectedItem] = useState('');
+    const [quantity, setQuantity] = useState(0);
+    const [customerName, setCustomerName] = useState('');
+    const [customerNumber, setCustomerNumber] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('');
+    const [amountPaid, setAmountPaid] = useState(0);
+    const [formErrors, setFormErrors] = useState({});
+    const token = localStorage.getItem('jwt_token'); // Assuming you store your token in local storage
 
     useEffect(() => {
         const fetchShops = async () => {
             try {
                 const response = await axios.get('/diraja/allshops', {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${token}`, // Include token in header
+                    },
                 });
                 setShops(response.data);
-                if (response.data.length === 0) {
-                    setShopError(true);
-                }
             } catch (error) {
                 console.error('Error fetching shops:', error);
-                setShopError(true);
+                // Handle error (e.g., show alert)
             }
         };
 
         fetchShops();
-    }, []);
+    }, [token]);
 
-    const handleShopChange = async (e) => {
-        const selectedShopId = e.target.value;
-        setSaleData(prevData => ({ ...prevData, shop_id: selectedShopId }));
+    useEffect(() => {
+        if (selectedShop) {
+            const fetchItems = async () => {
+                try {
+                    const response = await axios.get(`/diraja/items/${selectedShop}`, {
+                        headers: {
+                            Authorization: `Bearer ${token}`, // Include token in header
+                        },
+                    });
+                    setItems(response.data.items);
+                } catch (error) {
+                    console.error('Error fetching items:', error);
+                    // Handle error (e.g., show alert)
+                }
+            };
 
-        if (selectedShopId) {
-            try {
-                const response = await axios.get(`/diraja/items/${selectedShopId}`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
-                });
-                setItems(response.data.items);
-                setShopError(false); // Reset error state
-            } catch (error) {
-                console.error('Error fetching items:', error);
-            }
+            fetchItems();
         }
-    };
+    }, [selectedShop, token]);
 
-    const handleItemChange = (e) => {
-        const selectedItemId = e.target.value;
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        
+        // Basic validation
+        const errors = {};
+        if (!selectedShop) errors.selectedShop = 'Shop is required';
+        if (!selectedItem) errors.selectedItem = 'Item is required';
+        if (quantity <= 0) errors.quantity = 'Quantity must be greater than zero';
+        if (!customerName) errors.customerName = 'Customer name is required';
+        if (!customerNumber) errors.customerNumber = 'Customer number is required';
+        if (!paymentMethod) errors.paymentMethod = 'Payment method is required';
+        if (amountPaid <= 0) errors.amountPaid = 'Amount paid must be greater than zero';
 
-        if (selectedItemId) {
-            const selectedItem = items.find(item => item.stock_id === selectedItemId);
+        setFormErrors(errors);
 
-            if (selectedItem) {
-                setSaleData(prevData => ({
-                    ...prevData,
-                    item_name: selectedItem.itemname, // Update item_name here
-                    batchNumber: selectedItem.BatchNumber,
-                    metric: selectedItem.metric,
-                    unitPrice: selectedItem.unitPrice,
-                    stock_id: selectedItem.stock_id
-                }));
+        if (Object.keys(errors).length > 0) return; // Stop submission if errors exist
 
-                console.log("Selected item:", selectedItem); // Debugging statement
-                setItemError(false); // Reset error state
-            }
-        } else {
-            // Reset item-specific fields if no item is selected
-            setSaleData(prevData => ({
-                ...prevData,
-                item_name: '',
-                batchNumber: '',
-                metric: '',
-                unitPrice: '',
-                stock_id: ''
-            }));
-        }
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setSaleData(prevData => ({
-            ...prevData,
-            [name]: name === 'quantity' || name === 'amount_paid' ? Number(value) : value
-        }));
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (!saleData.shop_id) {
-            setShopError(true);
-            return;
-        }
-        if (!saleData.stock_id) {
-            setItemError(true);
-            return;
-        }
-
-        console.log('Submitting sale data:', saleData); // Ensure this is logged before submission
+        const saleData = {
+            shop_id: selectedShop,
+            item_id: selectedItem,
+            quantity: quantity,
+            customer_name: customerName,
+            customer_number: customerNumber,
+            payment_method: paymentMethod,
+            amount_paid: amountPaid,
+        };
 
         try {
             const response = await axios.post('/diraja/newsale', saleData, {
                 headers: {
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                }
+                    Authorization: `Bearer ${token}`, // Include token in header
+                },
             });
-
-            if (response.status === 201) {
-                setMessage({ type: 'success', text: 'Sale added successfully' });
-                setSaleData({
-                    shop_id: '',
-                    item_name: '',
-                    customer_name: '',
-                    customer_number: '',
-                    quantity: 0,
-                    payment_method: '',
-                    amount_paid: 0,
-                    batchNumber: '',
-                    metric: '',
-                    unitPrice: '',
-                    stock_id: ''
-                });
-            }
+            alert('Sale added successfully');
+            // Reset form
+            setSelectedShop('');
+            setSelectedItem('');
+            setQuantity(0);
+            setCustomerName('');
+            setCustomerNumber('');
+            setPaymentMethod('');
+            setAmountPaid(0);
         } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to add sale' });
-            console.error('Error adding sale:', error);
+            console.error('There was an error adding the sale!', error);
+            alert('Failed to add sale');
         }
     };
 
     return (
-        <div>
-            {message.text && (
-                <div
-                    className={`p-4 mb-4 ${
-                        message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}
+        <form onSubmit={handleSubmit}>
+            <div>
+                <label htmlFor="shop">Shop:</label>
+                <select
+                    id="shop"
+                    value={selectedShop}
+                    onChange={(e) => setSelectedShop(e.target.value)}
                 >
-                    {message.text}
-                </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="shop_id">Shop</label>
-                    <select
-                        name="shop_id"
-                        value={saleData.shop_id}
-                        onChange={handleShopChange}
-                        className={`border p-2 w-full ${saleData.shop_id ? 'text-black' : 'text-red-500'}`}
-                    >
-                        <option value="">Select a shop</option>
-                        {shops.length > 0 ? (
-                            shops.map((shop) => (
-                                <option key={shop.shop_id} value={shop.shop_id}>
-                                    {shop.shopname}
-                                </option>
-                            ))
-                        ) : (
-                            <option disabled>No shops available</option>
-                        )}
-                    </select>
-                    {shopError && <p className="text-red-500 mt-1">No shops available</p>}
-                </div>
-
-                <div>
-                    <label htmlFor="item_name">Item</label>
-                    <select
-                        name="item_name"
-                        value={saleData.item_name || ''} // Bind to item_name
-                        onChange={handleItemChange}
-                        className={`border p-2 w-full ${saleData.item_name ? 'text-black' : 'text-red-500'}`}
-                    >
-                        <option value="">Select an item</option>
-                        {items.length > 0 ? (
-                            items.map((item) => (
-                                <option key={item.stock_id} value={item.stock_id}>
-                                    {item.itemname}
-                                </option>
-                            ))
-                        ) : (
-                            <option disabled>No items available</option>
-                        )}
-                    </select>
-                    {itemError && <p className="text-red-500 mt-1">Please select an item.</p>}
-                </div>
-
-                <div>
-                    <label>Customer Name</label>
-                    <input
-                        type="text"
-                        name="customer_name"
-                        value={saleData.customer_name}
-                        onChange={handleChange}
-                        className="border p-2 w-full"
-                    />
-                </div>
-
-                <div>
-                    <label>Customer Number</label>
-                    <input
-                        type="text"
-                        name="customer_number"
-                        value={saleData.customer_number}
-                        onChange={handleChange}
-                        className="border p-2 w-full"
-                    />
-                </div>
-
-                <div>
-                    <label>Quantity</label>
-                    <input
-                        type="number"
-                        name="quantity"
-                        value={saleData.quantity}
-                        onChange={handleChange}
-                        className="border p-2 w-full"
-                    />
-                </div>
-
-                <div>
-                    <label>Payment Method</label>
-                    <input
-                        type="text"
-                        name="payment_method"
-                        value={saleData.payment_method}
-                        onChange={handleChange}
-                        className="border p-2 w-full"
-                    />
-                </div>
-
-                <div>
-                    <label>Amount Paid</label>
-                    <input
-                        type="number"
-                        name="amount_paid"
-                        value={saleData.amount_paid}
-                        onChange={handleChange}
-                        className="border p-2 w-full"
-                    />
-                </div>
-
-                <button type="submit" className="bg-blue-500 text-white p-2 rounded">
-                    Add Sale
-                </button>
-            </form>
-        </div>
+                    <option value="">Select a shop</option>
+                    {shops.map((shop) => (
+                        <option key={shop.id} value={shop.id}>
+                            {shop.name}
+                        </option>
+                    ))}
+                </select>
+                {formErrors.selectedShop && <span>{formErrors.selectedShop}</span>}
+            </div>
+            <div>
+                <label htmlFor="item">Item:</label>
+                <select
+                    id="item"
+                    value={selectedItem}
+                    onChange={(e) => setSelectedItem(e.target.value)}
+                >
+                    <option value="">Select an item</option>
+                    {items.map((item) => (
+                        <option key={item.id} value={item.id}>
+                            {item.name}
+                        </option>
+                    ))}
+                </select>
+                {formErrors.selectedItem && <span>{formErrors.selectedItem}</span>}
+            </div>
+            <div>
+                <label htmlFor="quantity">Quantity:</label>
+                <input
+                    type="number"
+                    id="quantity"
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                />
+                {formErrors.quantity && <span>{formErrors.quantity}</span>}
+            </div>
+            <div>
+                <label htmlFor="customerName">Customer Name:</label>
+                <input
+                    type="text"
+                    id="customerName"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                />
+                {formErrors.customerName && <span>{formErrors.customerName}</span>}
+            </div>
+            <div>
+                <label htmlFor="customerNumber">Customer Number:</label>
+                <input
+                    type="text"
+                    id="customerNumber"
+                    value={customerNumber}
+                    onChange={(e) => setCustomerNumber(e.target.value)}
+                />
+                {formErrors.customerNumber && <span>{formErrors.customerNumber}</span>}
+            </div>
+            <div>
+                <label htmlFor="paymentMethod">Payment Method:</label>
+                <input
+                    type="text"
+                    id="paymentMethod"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                />
+                {formErrors.paymentMethod && <span>{formErrors.paymentMethod}</span>}
+            </div>
+            <div>
+                <label htmlFor="amountPaid">Amount Paid:</label>
+                <input
+                    type="number"
+                    id="amountPaid"
+                    value={amountPaid}
+                    onChange={(e) => setAmountPaid(e.target.value)}
+                />
+                {formErrors.amountPaid && <span>{formErrors.amountPaid}</span>}
+            </div>
+            <button type="submit">Add Sale</button>
+        </form>
     );
 };
 

@@ -92,7 +92,7 @@ const Sales = () => {
 
       {filteredSales.length > 0 ? (
         <>
-          <table className="sales-table">
+          <table id="sales-table" className="sales-table">
             <thead>
               <tr>
                 <th>ID</th>
