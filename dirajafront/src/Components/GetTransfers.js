@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/transfers.css';
 
 const Transfers = () => {
   const [transfers, setTransfers] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const itemsPerPage = 50; // Items per page
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const itemsPerPage = 50;
 
   useEffect(() => {
     const fetchTransfers = async () => {
@@ -20,37 +24,49 @@ const Transfers = () => {
 
         const response = await axios.get('/diraja/alltransfers', {
           headers: {
-            Authorization: `Bearer ${accessToken}`  // Use access token
+            Authorization: `Bearer ${accessToken}`
           }
         });
 
-        setTransfers(response.data); // Store the fetched expenses
+        setTransfers(response.data);
       } catch (err) {
         setError('Error fetching transfers. Please try again.');
       }
     };
 
-    fetchTransfers(); // Fetch transfers when component loads
+    fetchTransfers();
   }, []);
 
   const getFirstName = (username) => {
-    return username.split(' ')[0]; // Return only the first name
+    return username.split(' ')[0];
   };
 
   const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase(); // Return the first letter capitalized
+    return username.charAt(0).toUpperCase();
   };
 
   const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber); // Change the current page
+    setCurrentPage(pageNumber);
   };
 
-  // Calculate the current items to display
+  const filteredTransfers = transfers.filter((transfer) => {
+    const matchesSearch =
+      transfer.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transfer.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      transfer.username.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesDate = selectedDate
+      ? new Date(transfer.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
+
+    return matchesSearch && matchesDate;
+  });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentTransfers = transfers.slice(indexOfFirstItem, indexOfLastItem);
+  const currentTransfers = filteredTransfers.slice(indexOfFirstItem, indexOfLastItem);
 
-  const totalPages = Math.ceil(transfers.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -58,15 +74,42 @@ const Transfers = () => {
 
   return (
     <div className="transfers-container">
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item, shop, or employee"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        
+        <input
+          type="date"
+          className="date-filter"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
       
-      {transfers.length > 0 ? (
+      <div className="export-buttons">
+        <ExportExcel data={filteredTransfers} fileName="TransfersData" />
+        <DownloadPDF tableId="transfers-table" fileName="TransfersData" />
+      </div>
+      
+      {filteredTransfers.length > 0 ? (
         <>
           <table id="transfers-table" className="transfers-table">
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Employee</th> 
-                <th>Shop</th> {/* Display Shop Name */}
+                <th>Employee</th>
+                <th>Shop</th>
                 <th>Item</th>
                 <th>Batch</th>
                 <th>Quantity</th>
@@ -99,7 +142,6 @@ const Transfers = () => {
             </tbody>
           </table>
 
-          {/* Pagination */}
           <div className="pagination">
             {Array.from({ length: totalPages }, (_, index) => (
               <button

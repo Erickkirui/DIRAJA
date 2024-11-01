@@ -6,8 +6,9 @@ const Sales = () => {
   const [sales, setSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // Search query state
-  const [selectedDate, setSelectedDate] = useState(''); // Selected date state
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -29,6 +30,8 @@ const Sales = () => {
         setSales(response.data);
       } catch (err) {
         setError('Error fetching sales. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -42,9 +45,10 @@ const Sales = () => {
 
   // Filter sales based on search query and selected date
   const filteredSales = sales.filter((sale) => {
-    const matchesSearch = sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = 
+      sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sale.username.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
       ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
@@ -57,8 +61,11 @@ const Sales = () => {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
+
+  if (loading) {
+    return <div className="loading-message">Loading sales...</div>;
+  }
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -104,6 +111,7 @@ const Sales = () => {
                 <th>Amount Paid (ksh)</th>
                 <th>Payment Method</th>
                 <th>Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -123,6 +131,9 @@ const Sales = () => {
                   <td>{sale.amount_paid}</td>
                   <td>{sale.payment_method}</td>
                   <td>{new Date(sale.created_at).toLocaleString()}</td>
+                  <td>
+                    <a href={`/sale/${sale.sale_id}`}>View more</a>
+                  </td>
                 </tr>
               ))}
             </tbody>

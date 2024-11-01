@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/purchases.css';
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1); // Current page state
+  const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const itemsPerPage = 50; // Items per page
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const itemsPerPage = 50;
 
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
           setError('No access token found, please log in.');
           return;
@@ -20,37 +23,40 @@ const Purchases = () => {
 
         const response = await axios.get('/diraja/alltransfers', {
           headers: {
-            Authorization: `Bearer ${accessToken}`  // Use access token
-          }
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
-
-        setPurchases(response.data); // Store the fetched purchases
+        setPurchases(response.data);
       } catch (err) {
         setError('Error fetching purchases. Please try again.');
       }
     };
 
-    fetchPurchases(); // Fetch purchases when component loads
+    fetchPurchases();
   }, []);
 
-  const getFirstName = (username) => {
-    return username.split(' ')[0]; // Return only the first name
-  };
+  const getFirstName = (username) => username.split(' ')[0];
+  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
 
-  const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase(); // Return the first letter capitalized
-  };
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  const handlePageChange = (pageNumber) => {
-    setCurrentPage(pageNumber); // Change the current page
-  };
+  const filteredPurchases = purchases.filter((purchase) => {
+    const matchesSearch =
+      purchase.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.username.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // Calculate the current items to display
+    const matchesDate = selectedDate
+      ? new Date(purchase.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
+
+    return matchesSearch && matchesDate;
+  });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPurchases = purchases.slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalPages = Math.ceil(purchases.length / itemsPerPage);
+  const currentPurchases = filteredPurchases.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -58,15 +64,42 @@ const Purchases = () => {
 
   return (
     <div className="purchases-container">
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item, shop, or employee"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        
+        <input
+          type="date"
+          className="date-filter"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
       
-      {purchases.length > 0 ? (
+      <div className="export-buttons">
+        <ExportExcel data={filteredPurchases} fileName="PurchasesData" />
+        <DownloadPDF tableId="purchases-table" fileName="PurchasesData" />
+      </div>
+
+      {filteredPurchases.length > 0 ? (
         <>
           <table id="purchases-table" className="purchases-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Employee</th> 
-                <th>Shop</th> {/* Display Shop Name */}
+                <th>Shop</th>
                 <th>Item</th>
                 <th>Batch</th>
                 <th>Quantity</th>
@@ -99,7 +132,6 @@ const Purchases = () => {
             </tbody>
           </table>
 
-          {/* Pagination */}
           <div className="pagination">
             {Array.from({ length: totalPages }, (_, index) => (
               <button
