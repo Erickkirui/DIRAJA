@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom'; // Assuming you're using React Router for navigation
-// import '../Styles/singleemployee.css';
+import { useParams } from 'react-router-dom';
 
 const SingleSale = () => {
-  const { sale_id } = useParams(); // Get the sale ID from the URL
+  const { sale_id } = useParams();
   const [sale, setSale] = useState(null);
+  const [shopname, setShopname] = useState(null);
+  const [username, setUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,33 +13,42 @@ const SingleSale = () => {
     // Function to fetch sale details
     const fetchSale = async () => {
       try {
-        const accessToken = localStorage.getItem('access_token');
-
-        if (!accessToken) {
-          setError('No access token found, please log in.');
-          setLoading(false);
-          return;
-        }
-
         const response = await fetch(`/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}` // Assuming token is stored in localStorage
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
         });
 
         if (!response.ok) {
-          const errorData = await response.json(); // Try to get error details from the response
-          throw new Error(errorData.message || 'Failed to fetch sale data'); // Use message from the response if available
+          throw new Error('Failed to fetch sale data');
         }
 
         const data = await response.json();
-        setSale(data); // Set sale data
+        setSale(data.sale);
+
+        // Fetch shop name
+        if (data.sale.shop_id) {
+          const shopResponse = await fetch(`/diraja/shop/${data.sale.shop_id}`);
+          if (shopResponse.ok) {
+            const shopData = await shopResponse.json();
+            setShopname(shopData.name); // Assuming the shop data has a `name` field
+          }
+        }
+
+        // Fetch user name
+        if (data.sale.user_id) {
+          const userResponse = await fetch(`/diraja/user/${data.sale.user_id}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setUsername(userData.username); // Assuming user data has a `username` field
+          }
+        }
       } catch (err) {
-        setError(err.message); // Handle error
+        setError(err.message);
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -53,45 +63,27 @@ const SingleSale = () => {
     return <div>Error: {error}</div>;
   }
 
-  // Destructure sale details
-  const {
-    sale_id: saleId,
-    username,
-    shopname,
-    customer_name,
-    customer_number,
-    item_name,
-    quantity,
-    metric,
-    batchnumber,
-    total_price,
-    amount_paid,
-    payment_method,
-    balance,
-    created_at
-  } = sale || {}; // Use optional chaining
-
   return (
     <div>
       {sale ? (
         <div>
-          <h2>Sales Details</h2>
-          <p><strong>Sale ID:</strong> {saleId}</p>
-          <p><strong>Employee:</strong> {username}</p>
-          <p><strong>Shop Name:</strong> {shopname}</p>
-          <p><strong>Customer Name:</strong> {customer_name}</p>
-          <p><strong>Customer Number:</strong> {customer_number}</p>
-          <p><strong>Item:</strong> {item_name}</p>
-          <p><strong>Quantity:</strong> {quantity} {metric}</p>
-          <p><strong>Batch:</strong> {batchnumber}</p>
-          <p><strong>Total Price:</strong> {total_price}</p>
-          <p><strong>Amount Paid:</strong> {amount_paid}</p>
-          <p><strong>Payment Method:</strong> {payment_method}</p>
-          <p><strong>Balance:</strong> {balance}</p>
-          <p><strong>Date:</strong> {new Date(created_at).toLocaleDateString()}</p>
+          <h2>Sale Details</h2>
+          <p><strong>Sale ID:</strong> {sale.sale_id}</p>
+          <p><strong>Employee:</strong> {sale.username }</p>
+          <p><strong>Shop Name:</strong> {sale.shop_name}</p>
+          <p><strong>Customer Name:</strong> {sale.customer_name}</p>
+          <p><strong>Customer Number:</strong> {sale.customer_number}</p>
+          <p><strong>Item:</strong> {sale.item_name}</p>
+          <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
+          <p><strong>Batch:</strong> {sale.batchnumber}</p>
+          <p><strong>Total Price:</strong> {sale.total_price}</p>
+          <p><strong>Amount Paid:</strong> {sale.amount_paid}</p>
+          <p><strong>Payment Method:</strong> {sale.payment_method}</p>
+          <p><strong>Balance:</strong> {sale.balance}</p>
+          <p><strong>Date:</strong> {new Date(sale.created_at).toLocaleDateString()}</p>
         </div>
       ) : (
-        <p>No sales details found.</p>
+        <p>No sale found.</p>
       )}
     </div>
   );

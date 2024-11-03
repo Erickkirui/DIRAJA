@@ -168,10 +168,6 @@ class GetSales(Resource):
         except Exception as e:
             return ({"error": str(e)}), 500
 
-            return {"sales": sales_data}, 200
-
-        except Exception as e:
-            return {"error": str(e)}, 500
 
         
 class GetSalesByShop(Resource):
@@ -232,20 +228,30 @@ class SalesResources(Resource):
             sale = Sales.query.get(sales_id)
 
             if not sale:
-                return jsonify({"message": "Sale not found"}), 404
+                return {"message": "Sale not found"}, 404
+            
+            # Fetch username and shop name using user_id and shop_id
+            user = Users.query.filter_by(users_id=sale.user_id).first()
+            shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+            
+            # Handle cases where user or shop may not be found
+            username = user.username if user else "Unknown User"
+            shopname = shop.shopname if shop else "Unknown Shop"
 
             # Prepare sale data
             sale_data = {
                 "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
                 "user_id": sale.user_id,
+                "username": username,
                 "shop_id": sale.shop_id,
+                "shop_name": shopname,
                 "customer_name": sale.customer_name,
                 "status": sale.status,
                 "customer_number": sale.customer_number,
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
-                "batchnumber": sale.BatchNumber,
-                "balance": sale.ballance,
+                "batchnumber": sale.BatchNumber,  # Ensure attribute name matches your model
+                "balance": sale.ballance,          # Correct spelling if necessary
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "amount_paid": sale.amount_paid,
@@ -254,10 +260,10 @@ class SalesResources(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
             }
 
-            return ({"sale": sale_data}), 200
+            return {"sale": sale_data}, 200
 
         except Exception as e:
-            return ({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
     @jwt_required()
     def put(self, sales_id):
