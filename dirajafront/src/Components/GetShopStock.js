@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../Styles/shopstock.css';
+import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
+import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
@@ -82,13 +84,9 @@ const Shopstock = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
                 
-                <input
-                    type="date"
-                    className="date-filter"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                />
             </div>
+            <ExportExcel data={shopStocks} fileName="ShopstocksData" />
+            <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
 
             {filteredShopsStock.length > 0 ? (
                 <>
@@ -102,7 +100,6 @@ const Shopstock = () => {
                                 <th>Quantity</th>
                                 <th>Total Cost</th>
                                 <th>Unit Price</th>
-                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -115,7 +112,6 @@ const Shopstock = () => {
                                     <td>{stock.quantity} {stock.metric}</td>
                                     <td>{stock.total_cost}</td>
                                     <td>{stock.unitPrice}</td>
-                                    <td>{new Date(stock.created_at).toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>

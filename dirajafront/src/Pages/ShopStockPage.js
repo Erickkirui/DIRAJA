@@ -4,9 +4,11 @@ import ShopStock from '../Components/GetShopStock'
 function ShopStockPage() {
   return (
     <div>
-        <ShopStock/>
-
+    <div className='header-container'>
+    <h1>Shopstock</h1>
     </div>
+      <ShopStock />
+  </div>
   )
 }
 
