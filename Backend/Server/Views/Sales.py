@@ -25,7 +25,6 @@ def check_role(required_role):
         return decorator
     return wrapper
 
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
@@ -41,20 +40,25 @@ class AddSale(Resource):
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
 
-        # Extract data
+        # Extract and convert data
         shop_id = data.get('shop_id')
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
         item_name = data.get('item_name')
-        quantity = data.get('quantity')
-        metric = data.get('metric')
-        unit_price = data.get('unit_price')
-        amount_paid = data.get('amount_paid')
-        payment_method = data.get('payment_method')
-        batch_number = data.get('BatchNumber')
-        stock_id = data.get('stock_id')  # Use stock_id from shop stock
-        status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
-        created_at = datetime.utcnow()
+        
+        # Convert to float or int where necessary
+        try:
+            quantity = int(data.get('quantity', 0))  # Default to 0 if not provided
+            metric = data.get('metric')
+            unit_price = float(data.get('unit_price', 0.0))  # Default to 0.0 if not provided
+            amount_paid = float(data.get('amount_paid', 0.0))  # Default to 0.0 if not provided
+            payment_method = data.get('payment_method')
+            batch_number = data.get('BatchNumber')
+            stock_id = data.get('stock_id')  # Use stock_id from shop stock
+            status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
+            created_at = datetime.utcnow()
+        except ValueError:
+            return jsonify({'message': 'Invalid input for quantity, unit price, or amount paid'}), 400
 
         # Calculate total price based on unit price and quantity
         total_price = unit_price * quantity
@@ -97,7 +101,6 @@ class AddSale(Resource):
             shop_id=shop_id,
             sales_id=new_sale.sales_id,  # Link the sale to the customer
             user_id=current_user_id,
-            # item={"item_name": item_name, "quantity": quantity, "unit_price": unit_price},  # Store item details as JSON
             item=item_name,
             amount_paid=amount_paid,
             payment_method=payment_method,
@@ -114,7 +117,6 @@ class AddSale(Resource):
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
 
-        
 class GetSales(Resource):
     @jwt_required()
     def get(self):
