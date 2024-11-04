@@ -69,6 +69,38 @@ class AddCustomer(Resource):
                 'details': str(e)
             }, 500
 
+class GetCustomersByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id):
+        try:
+            # Query the Customers table for customers related to the given shop_id
+            customers = Customers.query.filter_by(shop_id=shop_id).all()
+
+            # Prepare the list of customer data
+            customer_list = []
+            for customer in customers:
+                customer_data = {
+                    "customer_id": customer.customer_id,
+                    "customer_name": customer.customer_name,
+                    "customer_number": customer.customer_number,
+                    "shop_id": customer.shop_id,
+                    "user_id": customer.user_id,
+                    "item": customer.item,
+                    "amount_paid": customer.amount_paid,
+                    "payment_method": customer.payment_method,
+                    "created_at": customer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Format datetime as string
+                }
+                customer_list.append(customer_data)
+
+            # If no customers found for the shop
+            if not customer_list:
+                return jsonify({"message": "No customers found for this shop"}), 404
+
+            return make_response(jsonify(customer_list), 200)
+        
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"error": "An error occurred while fetching customers"}), 500
 
 class GetAllCustomers(Resource):
     @jwt_required()
