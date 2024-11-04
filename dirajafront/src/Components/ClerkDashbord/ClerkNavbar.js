@@ -15,7 +15,7 @@ function ClerkNavbar() {
             <img src='/images/Dashbord.png' alt='menu-icon' />
             <li>Dashboard</li>
           </NavLink>
-          <NavLink to="/sales" className="menu-item" activeClassName="active">
+          <NavLink to="/shopsales" className="menu-item" activeClassName="active">
             <img src='/images/Sales.png' alt='menu-icon' />
             <li>Sales</li>
           </NavLink>

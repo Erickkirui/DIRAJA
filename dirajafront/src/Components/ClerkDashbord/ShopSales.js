@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
-
 const ShopSales = () => {
-  const [sales, setSales] = useState([]);
+  const [sales, setSales] = useState([]); // Initialize sales as an array
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState(''); // Search query state
@@ -16,18 +15,26 @@ const ShopSales = () => {
         const accessToken = localStorage.getItem('access_token');
         const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId ) {
+        if (!accessToken || !shopId) {
           setError('No access token found, please log in.');
           return;
         }
 
         const response = await axios.get(`/diraja/sales/shop/${shopId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` }
-          });
-  
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
 
-        setSales(response.data);
+        // Log the response to check its structure
+        console.log('Sales data fetched:', response.data);
+
+        // Check if the response contains the sales data
+        if (response.data && response.data.sales) {
+          setSales(response.data.sales); // Update to match the response structure
+        } else {
+          setError('Unexpected data format received.'); // Set error if not in expected format
+        }
       } catch (err) {
+        console.error('Error fetching sales:', err); // Log the error
         setError('Error fetching sales. Please try again.');
       }
     };
