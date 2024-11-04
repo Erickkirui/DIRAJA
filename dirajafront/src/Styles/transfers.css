@@ -17,7 +17,7 @@
     margin-top: 20px;
   }
   
-  .transfers-table th, .expenses-table td {
+  .transfers-table th, .transfers-table td {
     border-bottom: 1px solid #ccc;
     padding: 10px;
     text-align: left;

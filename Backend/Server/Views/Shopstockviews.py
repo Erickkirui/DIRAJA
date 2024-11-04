@@ -29,6 +29,32 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
+class BatchDetailsResource(Resource):
+    def get(self):
+        # Retrieve the batch number from the request arguments
+        batch_number = request.args.get('BatchNumber')
+        
+        if not batch_number:
+            return {'message': 'Batch number is required'}, 400
+        
+        # Query the ShopStock table for the given batch number
+        shop_stock_item = ShopStock.query.filter_by(BatchNumber=batch_number).first()
+        
+        if not shop_stock_item:
+            return {'message': 'Batch number not found'}, 404
+
+        # Prepare the sales details based on the selected batch number
+        sales_details = {
+            'itemname':shop_stock_item.itemname,
+            'metric': shop_stock_item.metric,
+            'unit_price': shop_stock_item.unitPrice,
+            'BatchNumber': shop_stock_item.BatchNumber,
+            'stock_id': shop_stock_item.stock_id
+        }
+        
+        return sales_details, 200
+    
 # Delete a shop stock (one that aligns with the route)
 # This deletes an item from a specific shop and returns the item to the central inventory
 class ShopStockDelete(Resource):

@@ -16,7 +16,7 @@
     margin-top: 20px;
   }
   
-  .purchases-table th, .expenses-table td {
+  .purchases-table th, .purchases-table td {
     border-bottom: 1px solid #ccc;
     padding: 10px;
     text-align: left;

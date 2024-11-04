@@ -85,9 +85,12 @@ const Shopstock = () => {
                 />
                 
             </div>
-            <ExportExcel data={shopStocks} fileName="ShopstocksData" />
-            <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
+            <div className='actions-container' >
+                <ExportExcel data={shopStocks} fileName="ShopstocksData" />
+                <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
 
+            </div>
+         
             {filteredShopsStock.length > 0 ? (
                 <>
                     <table id="shopStocks-table" className="shopStocks-table">

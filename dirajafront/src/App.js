@@ -24,6 +24,7 @@ import PurchasesPage from './Pages/PurchasesPage';
 import SalesPage from './Pages/SalesPage';
 import ClerkDashbord from './Pages/ClerkDashbord';
 import SingleSalePage from './Pages/SingleSalePage';
+import ShopSales from './Components/ClerkDashbord/ShopSales';
 
 
 const Layout = ({ children }) => {
@@ -79,6 +80,7 @@ function App() {
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
+            <Route path='/shopsales' element={<ShopSales/>}></Route>
 
             
           

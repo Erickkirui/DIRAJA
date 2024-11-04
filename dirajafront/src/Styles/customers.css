@@ -16,11 +16,12 @@
     margin-top: 20px;
   }
   
-  .customers-table th, .expenses-table td {
+  .customers-table th, .customers-table td {
     border-bottom: 1px solid #ccc;
     padding: 10px;
     text-align: left;
     font-size: 14px;
+
   }
   
   .customers-table th {

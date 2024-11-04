@@ -88,7 +88,7 @@ const Transfers = () => {
         
         <input
           type="date"
-          className="date-filter"
+          className="date-picker"
           value={selectedDate}
           onChange={(e) => {
             setSelectedDate(e.target.value);
@@ -97,7 +97,7 @@ const Transfers = () => {
         />
       </div>
       
-      <div className="export-buttons">
+      <div className="actions-container">
         <ExportExcel data={filteredTransfers} fileName="TransfersData" />
         <DownloadPDF tableId="transfers-table" fileName="TransfersData" />
       </div>

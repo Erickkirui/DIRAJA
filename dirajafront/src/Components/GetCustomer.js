@@ -101,6 +101,23 @@ const Customers = () => {
 
   return (
     <div className="customers-container">
+
+
+      <input
+        type="text"
+        placeholder="Search by name, number, or shop"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-bar"
+      />
+
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="date-picker"
+      />
+      <div className='actions-container' >
       <div className="actions">
         <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
           <option value="">With selected, choose an action</option>
@@ -110,21 +127,13 @@ const Customers = () => {
           Apply
         </button>
       </div>
+        <ExportExcel data={customers} fileName="CustomersData" />
+        <DownloadPDF tableId="customers-table" fileName="CustomersData" />
 
-      <input
-        type="text"
-        placeholder="Search by name, number, or shop"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="search-input"
-      />
 
-      <input
-        type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
-        className="date-picker"
-      />
+      </div>
+
+ 
 
       {customers.length > 0 ? (
         <>
@@ -171,11 +180,7 @@ const Customers = () => {
             </tbody>
           </table>
 
-          <div className="export-buttons">
-            <ExportExcel data={customers} fileName="CustomersData" />
-            <DownloadPDF tableId="customers-table" fileName="CustomersData" />
-          </div>
-
+          
           <div className="pagination">
             {Array.from({ length: totalPages }, (_, index) => (
               <button
