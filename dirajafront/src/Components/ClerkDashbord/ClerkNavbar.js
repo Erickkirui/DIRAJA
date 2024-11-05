@@ -20,7 +20,7 @@ function ClerkNavbar() {
             <li>Sales</li>
           </NavLink>
 
-          <NavLink to="/allcustomers" className="menu-item" activeClassName="active">
+          <NavLink to="/shopcustomers" className="menu-item" activeClassName="active">
             <img src='/images/Customers.png' alt='menu-icon' />
             <li>Customers</li>
           </NavLink>
@@ -28,14 +28,7 @@ function ClerkNavbar() {
         </ul>
       </div>
 
-      <div className='accounting-menu'>
-        <h4>ACCOUNTING</h4>
-        <ul>
-          <li>Balance Sheet</li>
-          <li>Cash Flow</li>
-          <li>Profit and Loss</li>
-        </ul>
-      </div>
+    
     </div>
   );
 }
