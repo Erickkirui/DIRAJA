@@ -73,6 +73,7 @@ const ShopSales = () => {
 
   return (
     <div className="sales-container">
+      <h1>Sales</h1>
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
@@ -87,7 +88,7 @@ const ShopSales = () => {
         />
         <input
           type="date"
-          className="date-filter"
+          className="date-picker"
           value={selectedDate}
           onChange={(e) => {
             setSelectedDate(e.target.value);
@@ -103,7 +104,7 @@ const ShopSales = () => {
               <tr>
                 <th>ID</th>
                 <th>Employee</th>
-                <th>Shop</th>
+              
                 <th>Item</th>
                 <th>Quantity</th>
                 <th>Unit Cost (ksh)</th>
@@ -122,7 +123,7 @@ const ShopSales = () => {
                       <span className="employee-name">{getFirstName(sale.username)}</span>
                     </div>
                   </td>
-                  <td>{sale.shopname}</td>
+                  
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.unit_price}</td>

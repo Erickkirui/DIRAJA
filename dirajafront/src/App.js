@@ -25,6 +25,8 @@ import SalesPage from './Pages/SalesPage';
 import ClerkDashbord from './Pages/ClerkDashbord';
 import SingleSalePage from './Pages/SingleSalePage';
 import ShopSales from './Components/ClerkDashbord/ShopSales';
+import ClerkNavbar from './Components/ClerkDashbord/ClerkNavbar';
+import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
 
 
 const Layout = ({ children }) => {
@@ -52,6 +54,32 @@ const Layout = ({ children }) => {
   );
 
 };
+const ClerkLayout = ({ children }) => {
+  return(
+    <>
+    <div className='Page-continer'>
+      <div className='navigation'>
+        <ClerkNavbar />
+      </div>
+      <div className='body-area'>
+        <div className='body-header'>
+        <UserDisplay />
+
+        </div>
+        <div className='page-area'>
+        {children}
+        </div>
+       
+        
+      </div>
+    
+    </div>
+    </>
+
+  );
+
+};
+
 
 
 function App() {
@@ -80,7 +108,8 @@ function App() {
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
-            <Route path='/shopsales' element={<ShopSales/>}></Route>
+            <Route path='/shopsales' element={<ClerkLayout><ShopSales/></ClerkLayout>}></Route>
+            <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
 
             
           

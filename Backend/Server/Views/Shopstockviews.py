@@ -30,6 +30,17 @@ def check_role(required_role):
     return wrapper
 
 
+class AvailableBatchesResource(Resource):
+    def get(self):
+        # Query for batch numbers with quantity greater than zero
+        batches = db.session.query(ShopStock.BatchNumber).filter(ShopStock.quantity > 0).all()
+
+        # Extract BatchNumber values into a list
+        batch_numbers = [batch.BatchNumber for batch in batches]
+
+        # Return the batch numbers as a JSON response
+        return jsonify(batch_numbers)
+    
 class BatchDetailsResource(Resource):
     def get(self):
         # Retrieve the batch number from the request arguments

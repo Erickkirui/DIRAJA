@@ -9,6 +9,7 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
 from datetime import datetime, timedelta
+from sqlalchemy.exc import SQLAlchemyError
 
 def check_role(required_role):
     def wrapper(fn):
@@ -32,31 +33,42 @@ class CountEmployees(Resource):
 
 
 class TotalAmountPaidSales(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        # Get the period parameter to filter results
-        period = request.args.get('period', 'today')
-        today = datetime.utcnow()
+        @jwt_required()
+    # @check_role('manager')
+        def get(self):
+        # Get period and shop_id from query parameters
+            period = request.args.get('period', 'today')
+            shop_id = request.args.get('shop_id')
 
-        # Set the start date based on the selected period
-        if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
-        elif period == 'week':
-            start_date = today - timedelta(days=7)
-        elif period == 'month':
-            start_date = today - timedelta(days=30)
-        else:
-            return {"message": "Invalid period specified"}, 400
+            # Validate shop_id
+            if not shop_id:
+                return {"message": "Shop ID is required"}, 400
 
-        # Query the sum of amount_paid where created_at >= start_date
-        total_amount = (
-            db.session.query(db.func.sum(Sales.amount_paid))
-            .filter(Sales.created_at >= start_date)
-            .scalar() or 0
-        )
+            today = datetime.utcnow()
+            
+            # Set the start date based on the requested period
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+            else:
+                return {"message": "Invalid period specified"}, 400
 
-        return {"total_amount_paid": total_amount}, 200
+            try:
+                # Query for the sum of `amountPaid` from `Sales` where `created_at` >= `start_date` and `shop_id` matches
+                total_sales = (
+                    db.session.query(db.func.sum(Sales.amount_paid))
+                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                    .scalar() or 0
+                )
+                
+                return {"total_sales_amount_paid": total_sales}, 200
+
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                return {"error": "An error occurred while fetching the total sales amount"}, 500
     
 
 class TotalAmountPaidExpenses(Resource):

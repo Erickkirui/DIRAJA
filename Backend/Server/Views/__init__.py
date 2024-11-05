@@ -13,7 +13,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 
 # from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource
 
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
@@ -57,6 +57,7 @@ api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')
 # api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
 api.add_resource(BatchDetailsResource, '/batch-details')
+api.add_resource(AvailableBatchesResource, '/batches/available')
 
 api.add_resource(GetAllStock, '/allstock')
 
@@ -103,7 +104,7 @@ api.add_resource(BankResourceById, '/bank/<int:bank_id>')
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomersByShop, '/customers/<shop_id>')
-api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
+# api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
 
 
 #Sales 

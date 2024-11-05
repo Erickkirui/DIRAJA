@@ -16,7 +16,9 @@ const AddSale = () => {
         stock_id: '',
     });
     const [shops, setShops] = useState([]);
+    const [batchNumbers, setBatchNumbers] = useState([]);
     const [shopError, setShopError] = useState(false);
+    const [batchError, setBatchError] = useState(false);
 
     useEffect(() => {
         const fetchShops = async () => {
@@ -38,6 +40,28 @@ const AddSale = () => {
         };
 
         fetchShops();
+    }, []);
+
+    useEffect(() => {
+        const fetchBatchNumbers = async () => {
+            try {
+                const response = await axios.get('/diraja/batches/available', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+                    }
+                });
+                setBatchNumbers(response.data);
+
+                if (response.data.length === 0) {
+                    setBatchError(true);
+                }
+            } catch (error) {
+                console.error('Error fetching batch numbers:', error);
+                setBatchError(true);
+            }
+        };
+
+        fetchBatchNumbers();
     }, []);
 
     useEffect(() => {
@@ -75,20 +99,24 @@ const AddSale = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
+        // Check if all required fields are filled
         const requiredFields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
             'quantity', 'metric', 'unit_price', 'amount_paid', 
             'payment_method', 'BatchNumber', 'stock_id'
         ];
-
+    
         for (const field of requiredFields) {
             if (!formData[field]) {
                 alert(`Please fill out the ${field} field.`);
                 return;
             }
         }
-
+    
+        // Log formData to verify the data being sent
+        console.log("Data being sent for sale:", formData);
+    
         try {
             const response = await axios.post('/diraja/newsale', formData, {
                 headers: {
@@ -96,9 +124,10 @@ const AddSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`
                 }
             });
-
+    
             if (response.status === 201) {
                 alert(response.data.message);
+                // Reset form after successful submission
                 setFormData({
                     shop_id: '',
                     customer_name: '',
@@ -120,6 +149,7 @@ const AddSale = () => {
             alert('An error occurred. Please try again.');
         }
     };
+    
 
     return (
         <div>
@@ -135,12 +165,24 @@ const AddSale = () => {
                             </option>
                         ))}
                     </select>
+                    
                     <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
                     <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number" />
                     <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantity" />
 
-                    {/* Display Batch Number and fetched details */}
-                    <input name="BatchNumber" value={formData.BatchNumber} onChange={handleChange} placeholder="Batch Number" />
+                    {/* Batch Number Dropdown */}
+                    {batchError ? (
+                        <p>Error loading batch numbers. Please try again later.</p>
+                    ) : (
+                        <select name="BatchNumber" value={formData.BatchNumber} onChange={handleChange}>
+                            <option value="">Select Batch Number</option>
+                            {batchNumbers.map((batch, index) => (
+                                <option key={index} value={batch}>
+                                    {batch}
+                                </option>
+                            ))}
+                        </select>
+                    )}
                     
                     <div>
                         <label>Item Name:</label>
