@@ -27,6 +27,7 @@ import SingleSalePage from './Pages/SingleSalePage';
 import ShopSales from './Components/ClerkDashbord/ShopSales';
 import ClerkNavbar from './Components/ClerkDashbord/ClerkNavbar';
 import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
+import SingleShopSale from './Components/ClerkDashbord/SingleShopSale';
 
 
 const Layout = ({ children }) => {
@@ -110,9 +111,10 @@ function App() {
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ShopSales/></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
+            <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
+            <Route path='/shopsale' element={<ClerkLayout><SingleShopSale /></ClerkLayout>} ></Route>
+ 
 
-            
-          
           </Routes>
        
       </Router>
