@@ -30,7 +30,30 @@ def check_role(required_role):
     return wrapper
 
 
+class AvailableBatchesByShopResource(Resource):
+    @jwt_required()
+    def get(self):
+        # Get the shop_id from query parameters
+        shop_id = request.args.get('shop_id')
+
+        # Check if shop_id is provided
+        if not shop_id:
+            return jsonify({"error": "shop_id parameter is required"}), 400
+
+        # Query for batch numbers with quantity > 0 and matching shop_id
+        batches = db.session.query(ShopStock.BatchNumber).filter(
+            ShopStock.shop_id == shop_id,
+            ShopStock.quantity > 0
+        ).all()
+
+        # Extract BatchNumber values into a list
+        batch_numbers = [batch.BatchNumber for batch in batches]
+
+        # Return the batch numbers as a JSON response
+        return jsonify(batch_numbers)
+    
 class AvailableBatchesResource(Resource):
+    @jwt_required()
     def get(self):
         # Query for batch numbers with quantity greater than zero
         batches = db.session.query(ShopStock.BatchNumber).filter(ShopStock.quantity > 0).all()

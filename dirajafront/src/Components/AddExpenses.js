@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../Styles/expenses.css'
 
 const AddExpense = () => {
   const [expenseData, setExpenseData] = useState({
-    shop_id: '',  // Updated field name to match the backend
+    shop_id: '',
     item: '',
     description: '',
     quantity: '',
@@ -40,14 +41,9 @@ const AddExpense = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    console.log(`Changing field: ${name}, Value: ${value}`);
-
-    // Convert shop_id to an integer and validate
     const parsedValue = name === 'shop_id' ? parseInt(value, 10) : value;
 
     if (name === 'shop_id' && isNaN(parsedValue)) {
-      console.log("Invalid shop ID selected.");
       return;
     }
 
@@ -65,8 +61,6 @@ const AddExpense = () => {
       return;
     }
 
-    console.log('Posting expense data:', JSON.stringify(expenseData, null, 2));
-
     try {
       const response = await axios.post('/diraja/newexpense', expenseData, {
         headers: {
@@ -77,7 +71,7 @@ const AddExpense = () => {
       if (response.status === 201) {
         setMessage({ type: 'success', text: 'Expense added successfully' });
         setExpenseData({
-          shop_id: '',  // Reset after success
+          shop_id: '',
           item: '',
           description: '',
           quantity: '',
@@ -94,29 +88,25 @@ const AddExpense = () => {
 
   return (
     <div>
+      <h1>Add Expenses</h1>
       {message.text && (
-        <div
-          className={`p-4 mb-4 ${
-            message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}
-        >
+        <div className={`message ${message.type === 'success' ? 'success' : 'error'}`}>
           {message.text}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="form">
         <div>
-          <label htmlFor="shop_id">Shop</label>
           <select
-            name="shop_id"  // Updated to match the backend field name
+            name="shop_id"
             value={expenseData.shop_id}
             onChange={handleChange}
-            className={`border p-2 w-full ${expenseData.shop_id ? 'text-black' : 'text-red-500'}`}
+            className={`select ${expenseData.shop_id ? 'valid' : 'invalid'}`}
           >
             <option value="">Select a shop</option>
             {shops.length > 0 ? (
               shops.map((shop) => (
-                <option key={shop.shop_id} value={shop.shop_id || ''}>  {/* Use shop_id */}
+                <option key={shop.shop_id} value={shop.shop_id || ''}>
                   {shop.shopname}
                 </option>
               ))
@@ -124,77 +114,77 @@ const AddExpense = () => {
               <option disabled>No shops available</option>
             )}
           </select>
-          {shopError && <p className="text-red-500 mt-1">No shops available</p>}
+          {shopError && <p className="error-text">No shops available</p>}
         </div>
 
         {/* Other form fields */}
         <div>
-          <label htmlFor="item">Item</label>
           <input
             type="text"
             name="item"
             value={expenseData.item}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Item"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="description">Description</label>
           <input
             type="text"
             name="description"
             value={expenseData.description}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Description"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="quantity">Quantity</label>
           <input
             type="number"
             name="quantity"
             value={expenseData.quantity}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Quantity"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="totalPrice">Total Price</label>
           <input
             type="number"
             name="totalPrice"
             value={expenseData.totalPrice}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Total Price"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="amountPaid">Amount Paid</label>
           <input
             type="number"
             name="amountPaid"
             value={expenseData.amountPaid}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Amount Paid"
+            className="input"
           />
         </div>
 
         <div>
-          <label htmlFor="created_at">Created At</label>
           <input
             type="date"
             name="created_at"
             value={expenseData.created_at}
             onChange={handleChange}
-            className="border p-2 w-full"
+            placeholder="Created At"
+            className="input"
           />
         </div>
 
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
+        <button type="submit" className="button">
           Add Expense
         </button>
       </form>

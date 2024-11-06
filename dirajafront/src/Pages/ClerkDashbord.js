@@ -4,6 +4,7 @@ import UserDisplay from '../Components/UserDisplay'
 
 import ShopTodaySales from '../Components/ClerkDashbord/ShopTodaySales'
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop'
+import { Link } from 'react-router-dom'
 
 
 function ClerkDashbord() {
@@ -17,10 +18,17 @@ function ClerkDashbord() {
                 <UserDisplay />
 
             </div>
+            
             <div className='page-area'>
-                <ShopTodaySales />
-                <TotalShopSales />
-             
+                <button className='button'><Link to='/shopsale'> New Sale</Link></button>
+                <div className='analytics-clerk'>
+                    <TotalShopSales />
+                    <ShopTodaySales />
+                    
+                </div>
+                
+                
+              
 
             </div>
 

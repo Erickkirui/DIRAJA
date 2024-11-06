@@ -23,3 +23,8 @@
 .clerk-page-continer{
   display: flex;
 }
+.analytics-clerk{
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}

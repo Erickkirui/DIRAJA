@@ -47,7 +47,7 @@ const ShopTodaySales = () => {
       <table className="sales-table">
         <thead>
           <tr>
-            <th>Shop Name</th>
+            
             <th>Item Name</th>
             <th>Amount Paid</th>
           </tr>
@@ -56,7 +56,7 @@ const ShopTodaySales = () => {
           {sales.length > 0 ? (
             sales.map(sale => (
               <tr key={sale.sale_id}>
-                <td>{sale.shopname}</td>
+               
                 <td>{sale.item_name}</td>
                 <td>{sale.amount_paid}</td>
               </tr>
