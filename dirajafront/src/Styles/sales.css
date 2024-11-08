@@ -89,3 +89,29 @@
   border-radius: 3px;
   border: 1px solid #ccc;
 }
+
+.item-details {
+  display: flex;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 40%;
+ 
+}
+.return-data{
+  display: flex;
+  margin: auto;
+  width: 30%;
+}
+
+.item-details .label {
+  font-weight: 300;
+  color: #888;
+  margin-right: 10px;
+}
+
+.item-details .value {
+  font-weight: 500;
+  color: #333;
+}

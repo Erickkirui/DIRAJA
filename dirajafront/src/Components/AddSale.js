@@ -232,10 +232,35 @@ const AddSale = () => {
                     {fieldErrors.form && <p className="error">{fieldErrors.form}</p>}
                 </form>
             )}
-            {formData.item_name && <span>Item Name: {formData.item_name}</span>}
-            {formData.metric && <span>Metric: {formData.metric}</span>}
-            {formData.unit_price && <span>Unit Price: {formData.unit_price}</span>}
-            {formData.stock_id && <span>Stock ID: {formData.stock_id}</span>}
+            {formData.item_name && (
+    <div className="item-details">
+        <span className="label">Item Name:</span>
+        <span className="value">{formData.item_name}</span>
+    </div>
+)}
+
+
+    {formData.metric && (
+        <div className="item-details">
+            <span className="label">Metric:</span>
+            <span className="value">{formData.metric}</span>
+        </div>
+    )}
+
+    {formData.unit_price && (
+        <div className="item-details">
+            <span className="label">Unit Price:</span>
+            <span className="value">{formData.unit_price}</span>
+        </div>
+    )}
+
+    {formData.stock_id && (
+        <div className="item-details">
+            <span className="label">Stock ID:</span>
+            <span className="value">{formData.stock_id}</span>
+        </div>
+    )}
+
         </div>
     );
 };
