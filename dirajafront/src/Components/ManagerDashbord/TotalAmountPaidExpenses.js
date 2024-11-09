@@ -11,7 +11,7 @@ const TotalAmountPaidExpenses = () => {
 
   const fetchTotalAmountPaid = async (selectedPeriod) => {
     try {
-      const response = await axios.get(`/diraja/totalexpenses?period=${selectedPeriod}`, {
+      const response = await axios.get(`http://16.171.22.129/diraja/totalexpenses?period=${selectedPeriod}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

@@ -13,7 +13,7 @@ const TotalAmountPaidSales = () => {
   useEffect(() => {
     const fetchTotalAmountPaid = async () => {
       try {
-        const response = await axios.get('/diraja/totalsales', {
+        const response = await axios.get('http://16.171.22.129/diraja/totalsales', {
           params: { period },
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
