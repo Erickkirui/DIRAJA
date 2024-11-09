@@ -1,8 +1,9 @@
 {
   "name": "dirajafront",
   "version": "0.1.0",
+  "homepage": "https://test.kulima.co.ke/",
   "private": true,
-  "proxy": "http://127.0.0.1:5000",
+  "proxy": "http://16.171.22.129/",
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
@@ -13,6 +14,7 @@
     "bootstrap": "^5.3.3",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
+    "moments": "^0.0.2",
     "react": "^18.3.1",
     "react-bootstrap": "^2.10.5",
     "react-dom": "^18.3.1",

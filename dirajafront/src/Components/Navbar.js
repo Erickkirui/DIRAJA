@@ -40,7 +40,7 @@ function Navbar() {
             <li>Employees</li>
           </NavLink>
           <NavLink exact to="/purchases" className="menu-item" activeClassName="active">
-            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <img src='/images/Expenses.png' alt='menu-icon' />
             <li>Purchases</li>
           </NavLink>
           <NavLink exact to="/alltransfers" className="menu-item" activeClassName="active">
@@ -48,7 +48,7 @@ function Navbar() {
             <li>Transefer</li>
           </NavLink>
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
-            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <img src='/images/Shop.png' alt='menu-icon' />
             <li>Shop Stock</li>
           </NavLink>
         </ul>

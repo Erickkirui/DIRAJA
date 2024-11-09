@@ -39,6 +39,21 @@ const AddInventory = () => {
         }
       });
       setMessage(response.data.message);
+
+      // Clear the form data after successful submission
+      setFormData({
+        itemname: '',
+        quantity: '',
+        metric: '',
+        unitCost: '',
+        amountPaid: '',
+        unitPrice: '',
+        Suppliername: '',
+        Supplier_location: '',
+        note: '',
+        created_at: ''
+      });
+
     } catch (error) {
       setMessage('Error adding inventory: ' + (error.response?.data?.message || error.message));
     }
@@ -47,6 +62,7 @@ const AddInventory = () => {
   return (
     <div>
       <h2>Add New Inventory</h2>
+      {message && <p>{message}</p>}
       <form onSubmit={handleSubmit} className="form">
         <div>
           <input

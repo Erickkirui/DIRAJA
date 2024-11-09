@@ -1,30 +1,27 @@
-.Page-continer{
+.Page-continer {
   display: flex;
+  height: 100vh;
+  overflow-y: auto; /* Allows the sticky element to work within the viewport */
 }
 
-.navigation{
+.navigation {
   width: 15%;
   padding: 20px;
   height: 100vh;
   border-right: 1px solid #ccc;
   position: sticky;
+  top: 0; /* Keeps it at the top while scrolling */
+  align-self: flex-start; /* Helps maintain sticky position within flex layout */
 }
-.body-area{
-  width: 100%;
-}
-.body-header{
-  
-  border-bottom: 1px solid #ccc;
 
+.body-area {
+  width: 85%; /* Adjusts the width to avoid overflow issues */
 }
-.page-area{
+
+.body-header {
+  border-bottom: 1px solid #ccc;
+}
+
+.page-area {
   padding: 20px;
-}
-.clerk-page-continer{
-  display: flex;
-}
-.analytics-clerk{
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
 }

@@ -5,8 +5,6 @@ import '../Styles/Singlesale.css';
 const SingleSale = () => {
   const { sale_id } = useParams();
   const [sale, setSale] = useState(null);
-  const [shopname, setShopname] = useState(null);
-  const [username, setUsername] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -28,22 +26,6 @@ const SingleSale = () => {
         const data = await response.json();
         setSale(data.sale);
         setFormData(data.sale); // Initialize form data
-
-        if (data.sale.shop_id) {
-          const shopResponse = await fetch(`/diraja/shop/${data.sale.shop_id}`);
-          if (shopResponse.ok) {
-            const shopData = await shopResponse.json();
-            setShopname(shopData.name);
-          }
-        }
-
-        if (data.sale.user_id) {
-          const userResponse = await fetch(`/diraja/user/${data.sale.user_id}`);
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            setUsername(userData.username);
-          }
-        }
       } catch (err) {
         setError(err.message);
       } finally {
@@ -172,7 +154,6 @@ const SingleSale = () => {
         </div>
       )}
     </div>
-    
   );
 };
 
