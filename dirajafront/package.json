@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "homepage": "https://test.kulima.co.ke/",
   "private": true,
-  "proxy": "http://16.171.22.129/",
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
