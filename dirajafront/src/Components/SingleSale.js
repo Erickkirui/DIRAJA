@@ -9,6 +9,8 @@ const SingleSale = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [shopname, setShopname] = useState(''); // New state for shop name
+  const [username, setUsername] = useState(''); // New state for username
 
   useEffect(() => {
     const fetchSale = async () => {
@@ -26,7 +28,6 @@ const SingleSale = () => {
         const data = await response.json();
         setSale(data.sale);
         setFormData(data.sale); // Initialize form data
-
 
         if (data.sale.shop_id) {
           const shopResponse = await fetch(`http://16.171.22.129/diraja/shop/${data.sale.shop_id}`);
@@ -93,8 +94,8 @@ const SingleSale = () => {
         <h2 className="single-sale-title">Single Sale</h2>
         <div className="single-sale-details">
           <p><strong>Sale ID:</strong> {sale.sale_id}</p>
-          <p><strong>Employee:</strong> {sale.username}</p>
-          <p><strong>Shop Name:</strong> {sale.shop_name}</p>
+          <p><strong>Employee:</strong> {username}</p> {/* Updated to use username */}
+          <p><strong>Shop Name:</strong> {shopname}</p> {/* Updated to use shopname */}
           <p><strong>Item:</strong> {sale.item_name}</p>
           <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
           <p><strong>Unit Price:</strong> {sale.unit_price} ksh</p>
