@@ -22,7 +22,7 @@ const AddShop = () => {
 
     try {
       const response = await axios.post(
-        '/diraja/newshop',
+        'http://16.171.22.129/diraja/newshop',
         {
           shopname,
           employee,

@@ -22,8 +22,8 @@ def check_role(required_role):
     return wrapper
 
 class AddNewemployee(Resource):
-    @jwt_required()
-    @check_role('manager')
+    # @jwt_required()
+    # @check_role('manager')
     def post(self):
         data = request.get_json()
 

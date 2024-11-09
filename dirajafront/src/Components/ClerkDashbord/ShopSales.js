@@ -20,7 +20,7 @@ const ShopSales = () => {
           return;
         }
 
-        const response = await axios.get(`/diraja/sales/shop/${shopId}`, {
+        const response = await axios.get(`http://16.171.22.129/diraja/sales/shop/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
