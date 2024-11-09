@@ -24,7 +24,9 @@ const Employees = () => {
           return;
         }
 
-        const response = await axios.get('http://16.171.22.129/diraja/allemployees', {
+
+        const response = await axios.get('/api/diraja/allemployees', {
+
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
