@@ -13,13 +13,17 @@ const TotalAmountPaidSales = () => {
   useEffect(() => {
     const fetchTotalAmountPaid = async () => {
       try {
+
         const response = await axios.get('http://16.171.22.129/diraja/totalsales', {
+
+        const response = await axios.get('/diraja/allshopstotal', {
+
           params: { period },
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-        setTotalAmountPaid(response.data.total_amount_paid);
+        setTotalAmountPaid(response.data.total_sales_amount_paid);
       } catch (error) {
         console.error('Error fetching total amount paid:', error);
         setError('Could not fetch total amount paid');

@@ -21,12 +21,20 @@ const TodaysSales = () => {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
-        // Ensure response.data and response.data.sales exist
-        const salesData = response.data.sales || [];
-        
-        const today = new Date().toISOString().split('T')[0];
-        const todaySales = salesData.filter(sale => sale.created_at === today);
+        // Log the response to verify the sales data
+        console.log("API Response:", response.data);
 
+        const salesData = response.data.sales || [];
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Filter sales by today's date, using only the date portion of `created_at`
+        const todaySales = salesData.filter(sale => {
+          const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+          return saleDate === today;
+        });
+
+        console.log("Today's Sales:", todaySales); // Log filtered sales for today
         setSales(todaySales);
       } catch (err) {
         setError(`Error fetching sales: ${err.message}`);

@@ -116,270 +116,268 @@ const AddEmployee = () => {
 
   return (
     <div>
-      {message.text && (
-        <div
-          className={`p-4 mb-4 ${
-            message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}
+    {message.text && (
+      <div
+        className={`message ${message.type === 'success' ? 'success' : 'error'}`}
+      >
+        {message.text}
+      </div>
+    )}
+
+    <form onSubmit={handleSubmit} className="form">
+      {/* Shop Selection */}
+      <div className="form-group">
+        <label htmlFor="shop_id">Shop</label>
+        <select
+          name="shop_id"
+          value={employeeData.shop_id}
+          onChange={handleChange}
+          className={`select ${employeeData.shop_id ? 'valid' : 'invalid'}`}
         >
-          {message.text}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Shop Selection */}
-        <div>
-          <label htmlFor="shop_id">Shop</label>
-          <select
-            name="shop_id"
-            value={employeeData.shop_id}
-            onChange={handleChange}
-            className={`border p-2 w-full ${employeeData.shop_id ? 'text-black' : 'text-red-500'}`}
-          >
-            <option value="">Select a shop</option>
-            {shops.length > 0 ? (
-              shops.map((shop) => (
-                <option key={shop.shop_id} value={shop.shop_id}>
-                  {shop.shopname}
-                </option>
-              ))
-            ) : (
-              <option disabled>No shops available</option>
-            )}
-          </select>
-          {shopError && <p className="text-red-500 mt-1">No shops available</p>}
-        </div>
-
-        {/* Employee Fields */}
-        <div>
-          <label htmlFor="first_name">First Name</label>
-          <input
-            type="text"
-            name="first_name"
-            value={employeeData.first_name}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="middle_name">Middle Name</label>
-          <input
-            type="text"
-            name="middle_name"
-            value={employeeData.middle_name}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="surname">Surname</label>
-          <input
-            type="text"
-            name="surname"
-            value={employeeData.surname}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="phone_number">Phone Number</label>
-          <input
-            type="text"
-            name="phone_number"
-            value={employeeData.phone_number}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="work_email">Work Email</label>
-          <input
-            type="email"
-            name="work_email"
-            value={employeeData.work_email}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="account_status">Account Status</label>
-          <input
-            type="text"
-            name="account_status"
-            value={employeeData.account_status}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="role">Role</label>
-          <select
-            name="role"
-            value={employeeData.role}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          >
-            <option value="">Select Role</option>
-            <option value="manager">Manager</option>
-            <option value="clerk">Clerk</option>
-          </select>
+          <option value="">Select a shop</option>
+          {shops.length > 0 ? (
+            shops.map((shop) => (
+              <option key={shop.shop_id} value={shop.shop_id}>
+                {shop.shopname}
+              </option>
+            ))
+          ) : (
+            <option disabled>No shops available</option>
+          )}
+        </select>
+        {shopError && <p className="error-text">No shops available</p>}
       </div>
 
-        <div>
-          <label htmlFor="personal_email">Personal Email</label>
-          <input
-            type="email"
-            name="personal_email"
-            value={employeeData.personal_email}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      {/* Employee Fields */}
+      <div className="form-group">
+        <label htmlFor="first_name">First Name</label>
+        <input
+          type="text"
+          name="first_name"
+          value={employeeData.first_name}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="designation">Designation</label>
-          <input
-            type="text"
-            name="designation"
-            value={employeeData.designation}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="middle_name">Middle Name</label>
+        <input
+          type="text"
+          name="middle_name"
+          value={employeeData.middle_name}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="national_id_number">National ID Number</label>
-          <input
-            type="text"
-            name="national_id_number"
-            value={employeeData.national_id_number}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="surname">Surname</label>
+        <input
+          type="text"
+          name="surname"
+          value={employeeData.surname}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="kra_pin">KRA PIN</label>
-          <input
-            type="text"
-            name="kra_pin"
-            value={employeeData.kra_pin}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="phone_number">Phone Number</label>
+        <input
+          type="text"
+          name="phone_number"
+          value={employeeData.phone_number}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="monthly_gross_salary">Monthly Gross Salary</label>
-          <input
-            type="number"
-            name="monthly_gross_salary"
-            value={employeeData.monthly_gross_salary}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="work_email">Work Email</label>
+        <input
+          type="email"
+          name="work_email"
+          value={employeeData.work_email}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="payment_method">Payment Method</label>
-          <input
-            type="text"
-            name="payment_method"
-            value={employeeData.payment_method}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="account_status">Account Status</label>
+        <input
+          type="text"
+          name="account_status"
+          value={employeeData.account_status}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="bank_account_number">Bank Account Number</label>
-          <input
-            type="text"
-            name="bank_account_number"
-            value={employeeData.bank_account_number}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="role">Role</label>
+        <select
+          name="role"
+          value={employeeData.role}
+          onChange={handleChange}
+          className="select"
+        >
+          <option value="">Select Role</option>
+          <option value="manager">Manager</option>
+          <option value="clerk">Clerk</option>
+        </select>
+      </div>
 
-        <div>
-          <label htmlFor="bank_name">Bank Name</label>
-          <input
-            type="text"
-            name="bank_name"
-            value={employeeData.bank_name}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="personal_email">Personal Email</label>
+        <input
+          type="email"
+          name="personal_email"
+          value={employeeData.personal_email}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="department">Department</label>
-          <input
-            type="text"
-            name="department"
-            value={employeeData.department}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="designation">Designation</label>
+        <input
+          type="text"
+          name="designation"
+          value={employeeData.designation}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="date_of_birth">Date of Birth</label>
-          <input
-            type="date"
-            name="date_of_birth"
-            value={employeeData.date_of_birth}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="national_id_number">National ID Number</label>
+        <input
+          type="text"
+          name="national_id_number"
+          value={employeeData.national_id_number}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="starting_date">Starting Date</label>
-          <input
-            type="date"
-            name="starting_date"
-            value={employeeData.starting_date}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="kra_pin">KRA PIN</label>
+        <input
+          type="text"
+          name="kra_pin"
+          value={employeeData.kra_pin}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="contract_termination_date">Contract Termination Date</label>
-          <input
-            type="date"
-            name="contract_termination_date"
-            value={employeeData.contract_termination_date}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="monthly_gross_salary">Monthly Gross Salary</label>
+        <input
+          type="number"
+          name="monthly_gross_salary"
+          value={employeeData.monthly_gross_salary}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        <div>
-          <label htmlFor="contract_renewal_date">Contract Renewal Date</label>
-          <input
-            type="date"
-            name="contract_renewal_date"
-            value={employeeData.contract_renewal_date}
-            onChange={handleChange}
-            className="border p-2 w-full"
-          />
-        </div>
+      <div className="form-group">
+        <label htmlFor="payment_method">Payment Method</label>
+        <input
+          type="text"
+          name="payment_method"
+          value={employeeData.payment_method}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
 
-        {/* Submit Button */}
-        <button type="submit" className="bg-blue-500 text-white px-4 py-2">
-          Add Employee
-        </button>
-      </form>
-    </div>
+      <div className="form-group">
+        <label htmlFor="bank_account_number">Bank Account Number</label>
+        <input
+          type="text"
+          name="bank_account_number"
+          value={employeeData.bank_account_number}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="bank_name">Bank Name</label>
+        <input
+          type="text"
+          name="bank_name"
+          value={employeeData.bank_name}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="department">Department</label>
+        <input
+          type="text"
+          name="department"
+          value={employeeData.department}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="date_of_birth">Date of Birth</label>
+        <input
+          type="date"
+          name="date_of_birth"
+          value={employeeData.date_of_birth}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="starting_date">Starting Date</label>
+        <input
+          type="date"
+          name="starting_date"
+          value={employeeData.starting_date}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="contract_termination_date">Contract Termination Date</label>
+        <input
+          type="date"
+          name="contract_termination_date"
+          value={employeeData.contract_termination_date}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="contract_renewal_date">Contract Renewal Date</label>
+        <input
+          type="date"
+          name="contract_renewal_date"
+          value={employeeData.contract_renewal_date}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      {/* Submit Button */}
+      <button type="submit" className="submit-button">
+        Add Employee
+      </button>
+    </form>
+  </div>
   );
 };
 

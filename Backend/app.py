@@ -37,7 +37,7 @@ def create_app(config_name):
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     
     #JWT SETUP KEY
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = "Soweto@2024"
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 86000))
     
     #Initialize DB with app

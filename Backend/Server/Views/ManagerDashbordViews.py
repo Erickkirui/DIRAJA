@@ -31,7 +31,39 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
+class TotalAmountPaidAllSales(Resource):
+    @jwt_required()
+    def get(self):
+        # Get period from query parameters
+        period = request.args.get('period', 'today')
 
+        today = datetime.utcnow()
+        
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
+            total_sales = (
+                db.session.query(db.func.sum(Sales.amount_paid))
+                .filter(Sales.created_at >= start_date)
+                .scalar() or 0
+            )
+            
+            return {"total_sales_amount_paid": total_sales}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total sales amount"}, 500
+        
+        
 class TotalAmountPaidSales(Resource):
         @jwt_required()
     # @check_role('manager')

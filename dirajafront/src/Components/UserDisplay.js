@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom'; // If using react-router
 import "../Styles/UserDisplay.css"; // Your CSS file for styling
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {  faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 const UserDisplay = () => {
   const [username, setUsername] = useState(null);
@@ -15,9 +15,15 @@ const UserDisplay = () => {
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
     const storedRole = localStorage.getItem('role');
-    setUsername(storedUsername);
-    setRole(storedRole);
-  }, []);
+    
+    if (!storedUsername || !storedRole) {
+      // If no username or role found, redirect to login page
+      navigate('/login');
+    } else {
+      setUsername(storedUsername);
+      setRole(storedRole);
+    }
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -42,7 +48,7 @@ const UserDisplay = () => {
   }, []);
 
   if (!username || !role) {
-    return null;
+    return null; // Redirect happens in useEffect, so this part is just a safety net.
   }
 
   const firstLetter = username.charAt(0).toUpperCase();
@@ -54,7 +60,7 @@ const UserDisplay = () => {
         <p className="username">{username} <span>({role})</span></p>
       </div>
       <div className={`dropdown-container ${showDropdown ? 'active' : ''}`} ref={dropdownRef}>
-        <FontAwesomeIcon onClick={toggleDropdown} className="dropdown-button" icon={faChevronDown} size="1x"  />
+        <FontAwesomeIcon onClick={toggleDropdown} className="dropdown-button" icon={faChevronDown} size="1x" />
         <div className="dropdown-menu">
           <button onClick={handleLogout}>Logout</button>
         </div>

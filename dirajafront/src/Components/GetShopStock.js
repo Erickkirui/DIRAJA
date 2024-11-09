@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../Styles/shopstock.css';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
+import ExportExcel from '../Components/Download/ExportExcel'; // Ensure correct import path
+import DownloadPDF from '../Components/Download/DownloadPDF'; // Ensure correct import path
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
@@ -83,12 +83,18 @@ const Shopstock = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                
+                <input
+                    type="date"
+                    className="date-filter"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                />
             </div>
-            <div className='actions-container' >
+
+            {/* Export Actions */}
+            <div className='actions-container'>
                 <ExportExcel data={shopStocks} fileName="ShopstocksData" />
                 <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
-
             </div>
          
             {filteredShopsStock.length > 0 ? (

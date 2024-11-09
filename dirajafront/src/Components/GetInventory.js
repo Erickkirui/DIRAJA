@@ -1,4 +1,3 @@
-// Inventory.js
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
@@ -9,7 +8,7 @@ import '../Styles/inventory.css';
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // Display error messages
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
@@ -101,37 +100,38 @@ const Inventory = () => {
 
   return (
     <div className="inventory-container">
+      {/* Display Error Message */}
+      {error && <div className="error-message">{error}</div>}
+
       {/* Action Selection and Buttons */}
       <input
-            type="text"
-            placeholder="Search by item, batch number, or note"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-bar"
-          />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="date-picker"
-          />
+        type="text"
+        placeholder="Search by item, batch number, or note"
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="search-bar"
+      />
+      <input
+        type="date"
+        value={selectedDate}
+        onChange={(e) => setSelectedDate(e.target.value)}
+        className="date-picker"
+      />
 
-     <div className='actions-container'>
+      <div className='actions-container'>
         <div className="actions">
-            <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-              <option value="">With selected, choose an action</option>
-              <option value="distribute">Distribute</option>
-              <option value="delete">Delete</option>
-              
-            </select>
-            <button onClick={handleAction} className="action-button">Apply</button>
-          </div>
+          <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <option value="">With selected, choose an action</option>
+            <option value="distribute">Distribute</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button onClick={handleAction} className="action-button">Apply</button>
+        </div>
 
-          {/* Search and Date Filter */}
-          
+        {/* Export Buttons */}
         <ExportExcel data={inventory} fileName="InventoryData" />
         <DownloadPDF tableId="inventory-table" fileName="InventoryData" />
-     </div>
+      </div>
 
       {/* Distribute Inventory Modal */}
       {showModal && (
@@ -207,9 +207,6 @@ const Inventory = () => {
           </button>
         ))}
       </div>
-
-      {/* Download Buttons */}
-      
     </div>
   );
 };
