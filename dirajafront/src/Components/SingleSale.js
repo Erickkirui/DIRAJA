@@ -9,11 +9,13 @@ const SingleSale = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
+  const [shopname, setShopname] = useState(''); // New state for shop name
+  const [username, setUsername] = useState(''); // New state for username
 
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await fetch(`/diraja/sale/${sale_id}`, {
+        const response = await fetch(`http://16.171.22.129/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -26,6 +28,23 @@ const SingleSale = () => {
         const data = await response.json();
         setSale(data.sale);
         setFormData(data.sale); // Initialize form data
+
+        if (data.sale.shop_id) {
+          const shopResponse = await fetch(`http://16.171.22.129/diraja/shop/${data.sale.shop_id}`);
+          if (shopResponse.ok) {
+            const shopData = await shopResponse.json();
+            setShopname(shopData.name);
+          }
+        }
+
+        if (data.sale.user_id) {
+          const userResponse = await fetch(`http://16.171.22.129/diraja/user/${data.sale.user_id}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setUsername(userData.username);
+          }
+        }
+
       } catch (err) {
         setError(err.message);
       } finally {
@@ -46,7 +65,7 @@ const SingleSale = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/diraja/sale/${sale_id}`, {
+      const response = await fetch(`http://16.171.22.129/diraja/sale/${sale_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -75,8 +94,8 @@ const SingleSale = () => {
         <h2 className="single-sale-title">Single Sale</h2>
         <div className="single-sale-details">
           <p><strong>Sale ID:</strong> {sale.sale_id}</p>
-          <p><strong>Employee:</strong> {sale.username}</p>
-          <p><strong>Shop Name:</strong> {sale.shop_name}</p>
+          <p><strong>Employee:</strong> {username}</p> {/* Updated to use username */}
+          <p><strong>Shop Name:</strong> {shopname}</p> {/* Updated to use shopname */}
           <p><strong>Item:</strong> {sale.item_name}</p>
           <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
           <p><strong>Unit Price:</strong> {sale.unit_price} ksh</p>

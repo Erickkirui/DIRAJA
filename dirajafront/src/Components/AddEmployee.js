@@ -33,7 +33,7 @@ const AddEmployee = () => {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('/diraja/allshops', {
+        const response = await axios.get('http://16.171.22.129/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
@@ -76,7 +76,7 @@ const AddEmployee = () => {
     console.log('Posting employee data:', JSON.stringify(employeeData, null, 2));
 
     try {
-      const response = await axios.post('/diraja/newemployee', employeeData, {
+      const response = await axios.post('http://16.171.22.129/diraja/newemployee', employeeData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

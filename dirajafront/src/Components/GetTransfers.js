@@ -22,7 +22,7 @@ const Transfers = () => {
           return;
         }
 
-        const response = await axios.get('/diraja/alltransfers', {
+        const response = await axios.get('http://16.171.22.129/diraja/alltransfers', {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
