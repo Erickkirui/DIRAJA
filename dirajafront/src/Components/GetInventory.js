@@ -24,7 +24,7 @@ const Inventory = () => {
           setError('No access token found, please log in.');
           return;
         }
-        const response = await axios.get('/diraja/allinventories', {
+        const response = await axios.get('/api/diraja/allinventories', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventory(response.data);
@@ -61,7 +61,7 @@ const Inventory = () => {
     const accessToken = localStorage.getItem('access_token');
     await Promise.all(
       selectedInventory.map((inventoryId) =>
-        axios.delete(`/diraja/inventory/${inventoryId}`, {
+        axios.delete(`/api/diraja/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
       )

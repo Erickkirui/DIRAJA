@@ -17,7 +17,7 @@ const DistributeInventoryModal = ({
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('/diraja/allshops', {
+        const response = await axios.get('/api/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
@@ -61,7 +61,7 @@ const DistributeInventoryModal = ({
             amountPaid: inventoryItem.unitCost * parseInt(quantity),
             BatchNumber: inventoryItem.batchnumber,
           };
-          await axios.post('/diraja/transfer', requestData, {
+          await axios.post('/api/diraja/transfer', requestData, {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
         })
