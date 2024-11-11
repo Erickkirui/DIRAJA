@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/sales.css';
 
 const Sales = () => {
@@ -95,6 +97,11 @@ const Sales = () => {
             setCurrentPage(1);
           }}
         />
+      </div>
+
+      <div className='actions-container' >
+        <ExportExcel data={filteredSales} fileName="SalesData" />
+        <DownloadPDF tableId="sales-table" fileName="SalesData" />
       </div>
 
       {filteredSales.length > 0 ? (
