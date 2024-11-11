@@ -13,7 +13,7 @@ const SingleSale = () => {
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await fetch(`/diraja/sale/${sale_id}`, {
+        const response = await fetch(`/api/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ const SingleSale = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/diraja/sale/${sale_id}`, {
+      const response = await fetch(`/api/diraja/sale/${sale_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -8,7 +8,7 @@ const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
@@ -24,7 +24,7 @@ const Customers = () => {
           return;
         }
 
-        const response = await axios.get('/diraja/allcustomers', {
+        const response = await axios.get('/api/diraja/allcustomers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -61,7 +61,7 @@ const Customers = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedCustomers.map((customerId) =>
-          axios.delete(`/diraja/allcustomers/${customerId}`, {
+          axios.delete(`/api/diraja/allcustomers/${customerId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -77,22 +77,19 @@ const Customers = () => {
   };
 
   const filteredCustomers = customers.filter((customer) => {
-    const searchString = searchTerm.toLowerCase();
     const matchesSearch =
-      customer.customer_name.toLowerCase().includes(searchString) ||
-      customer.customer_number.toLowerCase().includes(searchString) ||
-      customer.shop_id.toLowerCase().includes(searchString);
+      customer.customer_name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDateRange =
-      selectedDate === '' || new Date(customer.created_at).toISOString().split('T')[0] === selectedDate;
+      const matchesDate = selectedDate
+      ? new Date(customer.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
 
-    return matchesSearch && matchesDateRange;
+    return matchesSearch && matchesDate;
   });
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentCustomers = filteredCustomers.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
 
   if (error) {
@@ -101,22 +98,30 @@ const Customers = () => {
 
   return (
     <div className="customers-container">
-
-
+      <div className="filter-container">
       <input
         type="text"
         placeholder="Search by name, number, or shop"
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
         className="search-bar"
+        value={searchQuery}
+        onChange={(e) => {
+          setSearchQuery(e.target.value);
+          setCurrentPage(1);
+          }}
+        
       />
 
       <input
         type="date"
-        value={selectedDate}
-        onChange={(e) => setSelectedDate(e.target.value)}
         className="date-picker"
+        value={selectedDate}
+        onChange={(e) => {
+          setSelectedDate(e.target.value);
+          setCurrentPage(1);
+          }}  
       />
+      </div>
+
       <div className='actions-container' >
       <div className="actions">
         <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
@@ -135,7 +140,7 @@ const Customers = () => {
 
  
 
-      {customers.length > 0 ? (
+      {filteredCustomers.length > 0 ? (
         <>
           <table id="customers-table" className="customers-table">
             <thead>

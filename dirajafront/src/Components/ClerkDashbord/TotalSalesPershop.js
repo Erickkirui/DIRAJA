@@ -20,7 +20,7 @@ const TotalShopSales = () => {
           return;
         }
 
-        const response = await axios.get('/diraja/totalsales', {
+        const response = await axios.get('/api/diraja/totalsales', {
           params: { period, shop_id: shopId },
           headers: {
             Authorization: `Bearer ${accessToken}`,

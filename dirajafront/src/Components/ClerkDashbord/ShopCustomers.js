@@ -19,7 +19,7 @@ const ShopCustomers = () => {
           return;
         }
 
-        const response = await axios.get(`/diraja/customers/${shopId}`, {
+        const response = await axios.get(`/api/diraja/customers/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
