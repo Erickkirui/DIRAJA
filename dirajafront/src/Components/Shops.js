@@ -5,6 +5,7 @@ import "../Styles/shops.css";
 
 const AddShop = () => {
   const [shopname, setShopname] = useState('');
+  const [location, setLocation] = useState('');
   const [employee, setEmployee] = useState('');
   const [shopstatus, setShopstatus] = useState('active'); // Default to 'active'
   const [message, setMessage] = useState('');
@@ -25,6 +26,7 @@ const AddShop = () => {
         '/api/diraja/newshop',
         {
           shopname,
+          location,
           employee,
           shopstatus,
         },
@@ -39,6 +41,7 @@ const AddShop = () => {
         setMessage('Shop added successfully');
         // Clear the form
         setShopname('');
+        setLocation('');
         setEmployee('');
         setShopstatus('active');
       }
@@ -70,6 +73,15 @@ const AddShop = () => {
             id="employee"
             value={employee}
             onChange={(e) => setEmployee(e.target.value)}
+            required
+          />
+
+          <input
+            type="text"
+            placeholder='Shop location'
+            id="location"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
             required
           />
        

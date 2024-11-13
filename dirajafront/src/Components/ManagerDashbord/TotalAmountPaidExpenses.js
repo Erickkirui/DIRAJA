@@ -51,7 +51,7 @@ const TotalAmountPaidExpenses = () => {
       ) : (
         <h1>{totalAmountPaid !== null ? `Ksh ${totalAmountPaid}` : 'Loading...'}</h1>
       )}
-      <Link to="/allemployees">View Employees</Link>
+      <Link to="/allexpenses">View Expenses</Link>
     </div>
   );
 };
