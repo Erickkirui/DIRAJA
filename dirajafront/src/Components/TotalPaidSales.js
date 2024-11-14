@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
@@ -9,7 +9,7 @@ const TotalPaidSales = ({ shopIds }) => {
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('today');
 
-  const fetchShopSales = async (selectedPeriod) => {
+  const fetchShopSales = useCallback(async (selectedPeriod) => {
     try {
       const salesData = await Promise.all(
         shopIds.map(async (shopId) => {
@@ -29,11 +29,11 @@ const TotalPaidSales = ({ shopIds }) => {
       setError('Error fetching shop sales');
       setShopSales([]);
     }
-  };
+  }, [shopIds]);
 
   useEffect(() => {
     fetchShopSales(period);
-  }, [period, shopIds]);
+  }, [period, fetchShopSales]);
 
   const handlePeriodChange = (e) => {
     setPeriod(e.target.value);
