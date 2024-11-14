@@ -8,7 +8,7 @@ import TodaysSales from '../Components/ManagerDashbord/TodaysSales'
 function Managerdashord() {
   return (
     <>
-    <h2>Dashbord</h2>
+    <h2>Dashboard</h2>
     <p>Analytics</p>
       <div className='top-row'>
         <div className='metrix-card-container'>
