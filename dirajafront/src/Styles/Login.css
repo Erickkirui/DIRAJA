@@ -1,38 +1,37 @@
+/* General styles remain unchanged */
+
 .login-container { 
-    margin: 0 auto;
-    width: 25%;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    text-align: center;
-    padding: 20px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    text-align: left;
+  margin: 0 auto;
+  width: 25%;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: left;
 }
 
-.login-form p{
-    font-size: 10px;  
-  }
+.login-form p {
+  font-size: 10px;  
+}
 
-.login-form{
+.login-form {
   display: flex;
   flex-direction: column;
 }
-.login-form input{
-  
+
+.login-form input {
   padding: 15px;
   margin-bottom: 20px;
   border-radius: 3px;
   border: 1px solid #ccc;
-
 }
-.login-form label{
+
+.login-form label {
   margin-bottom: 10px;
- 
 }
 
-.submit-button{
+.submit-button {
   background-color: var(--primary);
   padding: 10px;
   border-radius: 16px;
@@ -61,8 +60,8 @@
 }
 
 .input-field {
-  width: 92%;
-  padding-right: 0px; /* Adjust padding to allow room for the button */
+  width: 90%;
+ 
 }
 
 .show-hide-button {
@@ -74,4 +73,41 @@
   color: var(--primary);
   cursor: pointer;
   font-size: 14px;
+}
+
+/* Media Queries for Responsiveness */
+@media (max-width: 768px) {
+  .login-container {
+      width: 50%; /* Adjust width for tablets */
+      padding: 15px;
+  }
+
+  .submit-button {
+      font-size: 16px;
+      padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-page{
+    min-height: 80vh;
+  }
+  .login-container {
+      width: 80%; /* Adjust width for small screens */
+      padding: 10px;
+      
+  }
+
+  .login-form input {
+      padding: 10px; /* Smaller padding for inputs */
+  }
+
+  .submit-button {
+      font-size: 14px;
+      padding: 6px;
+  }
+
+  .show-hide-button {
+      font-size: 12px; /* Adjust button size for smaller screens */
+  }
 }

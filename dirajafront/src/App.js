@@ -28,6 +28,7 @@ import ShopSales from './Components/ClerkDashbord/ShopSales';
 import ClerkNavbar from './Components/ClerkDashbord/ClerkNavbar';
 import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
 import SingleShopSale from './Components/ClerkDashbord/SingleShopSale';
+import NotFound from './Components/NotFound';
 
 
 const Layout = ({ children }) => {
@@ -113,6 +114,7 @@ function App() {
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopsale' element={<ClerkLayout><SingleShopSale /></ClerkLayout>} ></Route>
+            <Route path="*" element={<NotFound />} />
  
           </Routes>
        
