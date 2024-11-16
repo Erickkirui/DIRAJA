@@ -5,24 +5,22 @@ import TotalPaidSales from '../Components/TotalPaidSales';
 
 function SalesPage() {
   return (
-    <>
+    <><h1>Sales</h1>
       <p>Analytics</p>
       <div className="top-row">
         <div className="metrix-card-container">
+          {/* Analytics Section */}
           <div className="metrix-pair">
-            <div>
-              <TotalPaidSales />
-            </div>
-            <div>
-              <div className="header-container">
-                <h1>Sales</h1>
-                <button className="add-button">
-                  <Link to="/newsale">Add Sale ＋</Link>
-                </button>
-              </div>
-              <Sales />
-            </div>
+            <TotalPaidSales />
           </div>
+
+          {/* Sales Table Section */}
+          <div className="header-container">
+            <button className="add-button">
+              <Link to="/newsale">Add Sale ＋</Link>
+            </button>
+          </div>
+          <Sales />
         </div>
       </div>
     </>

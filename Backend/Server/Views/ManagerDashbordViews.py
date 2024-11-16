@@ -171,15 +171,11 @@ class TotalAmountPaidPerShop(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Get period and shop_id from query parameters
+        # Get the period from query parameters
         period = request.args.get('period', 'today')
-        shop_id = request.args.get('shop_id')
-        
-        if not shop_id:
-            return {"message": "Shop ID is required"}, 400
 
         today = datetime.utcnow()
-        
+
         # Set the start date based on the requested period
         if period == 'today':
             start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -191,15 +187,26 @@ class TotalAmountPaidPerShop(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amount_paid` for the specific `shop_id`
-            total_sales = (
-                db.session.query(db.func.sum(Sales.amount_paid))
-                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
-                .scalar() or 0
-            )
-            
-            return {"shop_id": shop_id, "total_sales_amount_paid": total_sales}, 200
+            # Query for all shop IDs
+            shops = Shops.query.all()
+
+            # Calculate total sales for each shop
+            results = []
+            for shop in shops:
+                shop_id = shop.shops_id
+                total_sales = (
+                    db.session.query(db.func.sum(Sales.amount_paid))
+                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                    .scalar() or 0
+                )
+                results.append({
+                    "shop_id": shop_id,
+                    "shop_name": shop.shopname,
+                    "total_sales_amount_paid": total_sales
+                })
+
+            return {"total_sales_per_shop": results}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total sales amount for the shop"}, 500
+            return {"error": "An error occurred while fetching total sales amounts for all shops"}, 500

@@ -107,7 +107,6 @@ const Shopstock = () => {
                                 <th>Item Name</th>
                                 <th>Batch Number</th>
                                 <th>Quantity</th>
-                                <th>Total Cost</th>
                                 <th>Unit Price</th>
                             </tr>
                         </thead>
@@ -119,7 +118,6 @@ const Shopstock = () => {
                                     <td>{stock.item_name}</td>
                                     <td>{stock.batchnumber}</td>
                                     <td>{stock.quantity} {stock.metric}</td>
-                                    <td>{stock.total_cost}</td>
                                     <td>{stock.unitPrice}</td>
                                 </tr>
                             ))}

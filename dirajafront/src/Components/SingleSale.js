@@ -76,6 +76,8 @@ const SingleSale = () => {
         <div className="single-sale-details">
           <p><strong>Sale ID:</strong> {sale.sale_id}</p>
           <p><strong>Employee:</strong> {sale.username}</p>
+          <p><strong>Customer:</strong> {sale.customer_name}</p>
+          <p><strong>Customer tell:</strong> {sale.customer_number}</p>
           <p><strong>Shop Name:</strong> {sale.shop_name}</p>
           <p><strong>Item:</strong> {sale.item_name}</p>
           <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>

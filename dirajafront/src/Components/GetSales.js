@@ -50,6 +50,7 @@ const Sales = () => {
     const matchesSearch = 
       sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.username.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
@@ -79,7 +80,7 @@ const Sales = () => {
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item, shop, or employee"
+          placeholder="Search by item, shop, customer's name or employee"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -111,6 +112,7 @@ const Sales = () => {
               <tr>
                 <th>ID</th>
                 <th>Employee</th>
+                <th>Customer</th>
                 <th>Shop</th>
                 <th>Item</th>
                 <th>Quantity</th>
@@ -131,6 +133,7 @@ const Sales = () => {
                       <span className="employee-name">{getFirstName(sale.username)}</span>
                     </div>
                   </td>
+                  <td>{sale.customer_name}</td>
                   <td>{sale.shopname}</td>
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>

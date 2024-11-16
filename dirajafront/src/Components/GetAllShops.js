@@ -175,7 +175,7 @@ const Shops = () => {
                 <td>{shop.shopstatus}</td>
                 <td>{new Date(shop.created_at).toLocaleDateString()}</td>
                 <td>
-                  <a href="https://drive.google.com/https://drive.google.com/drive/folders/168rAjIvTJebWYt1MYqR2du0MIQJdFHZw?usp=sharing" target="_blank" rel="noopener noreferrer">
+                  <a href="https://drive.google.com/drive/folders/168rAjIvTJebWYt1MYqR2du0MIQJdFHZw?usp=sharing" target="_blank" rel="noopener noreferrer">
                     Shop images
                   </a>
                 </td>
