@@ -25,7 +25,7 @@ const AddSale = () => {
         const fetchShops = async () => {
             try {
 
-                const response = await axios.get('/api/diraja/allshops', {
+                const response = await axios.get('/diraja/allshops', {
 
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -46,7 +46,7 @@ const AddSale = () => {
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
-                const response = await axios.get('/api/diraja/batches/available', {
+                const response = await axios.get('/diraja/batches/available', {
 
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -70,7 +70,7 @@ const AddSale = () => {
 
             try {
 
-                const response = await axios.get('/api/diraja/batch-details', {
+                const response = await axios.get('/diraja/batch-details', {
 
                     params: { BatchNumber: formData.BatchNumber },
                     headers: {
@@ -124,7 +124,7 @@ const AddSale = () => {
 
         try {
 
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            const response = await axios.post('/diraja/newsale', formData, {
 
                 headers: {
                     'Content-Type': 'application/json',

@@ -25,7 +25,7 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allinventories', {
+        const response = await axios.get('/diraja/allinventories', {
 
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -64,7 +64,7 @@ const Inventory = () => {
     await Promise.all(
       selectedInventory.map((inventoryId) =>
 
-        axios.delete(`/api/diraja/inventory/${inventoryId}`, {
+        axios.delete(`/diraja/inventory/${inventoryId}`, {
 
           headers: { Authorization: `Bearer ${accessToken}` },
         })

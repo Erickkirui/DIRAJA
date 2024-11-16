@@ -21,7 +21,7 @@ const AddExpense = () => {
     const fetchShops = async () => {
       try {
 
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('/diraja/allshops', {
 
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -64,7 +64,7 @@ const AddExpense = () => {
     }
 
     try {
-      const response = await axios.post('/api/diraja/newexpense', expenseData, {
+      const response = await axios.post('/diraja/newexpense', expenseData, {
 
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
