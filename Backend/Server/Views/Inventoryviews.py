@@ -41,26 +41,30 @@ class DistributeInventory(Resource):
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
-        metric = data ['metric']
+        metric = data['metric']
         itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
 
-        # Calculate total cost
-        total_cost = unitCost * quantity
-
-        # Check if there is enough quantity in inventory
+        # Fetch inventory item to check quantity and get unitPrice
         inventory_item = Inventory.query.get(inventory_id)
-        if not inventory_item or inventory_item.quantity < quantity:
+        if not inventory_item:
+            return jsonify({'message': 'Inventory item not found'}), 404
+
+        if inventory_item.quantity < quantity:
             return jsonify({'message': 'Insufficient inventory quantity'}), 400
+
+        # Calculate total cost and get the unit price from inventory
+        total_cost = unitCost * quantity
+        unitPrice = inventory_item.unitPrice  # Use the inventory's unit price
 
         # Create new transfer record
         new_transfer = Transfer(
             shop_id=shop_id,
             inventory_id=inventory_id,
             quantity=quantity,
-            metric = metric,
+            metric=metric,
             total_cost=total_cost,
             BatchNumber=BatchNumber,
             user_id=current_user_id,
@@ -70,7 +74,7 @@ class DistributeInventory(Resource):
         )
 
         # Update the inventory quantity
-        inventory_item.quantity -= quantity  # Subtract the transferred quantity
+        inventory_item.quantity -= quantity
 
         # Save the transfer record first
         try:
@@ -83,32 +87,15 @@ class DistributeInventory(Resource):
         # Create new shop stock record
         new_shop_stock = ShopStock(
             shop_id=shop_id,
-            transfer_id=new_transfer.transfer_id,  # Ensure you're using the correct attribute for transfer ID
+            transfer_id=new_transfer.transfer_id,
             inventory_id=inventory_id,
             quantity=quantity,
-            total_cost=total_cost,
-            itemname=itemname,
-            BatchNumber=BatchNumber,
-            unitPrice=unitCost  # Assuming unit price is the same as unit cost for stock
-        )
-
-        # Create a record in the ShopStock table
-        new_shop_stock = ShopStock(
-            shop_id=shop_id,
-            inventory_id=inventory_id,
-            transfer_id=new_transfer.transfer_id,  # Link to the transfer
             total_cost=total_cost,
             itemname=itemname,
             metric=metric,
-            quantity=quantity,
             BatchNumber=BatchNumber,
-            unitPrice=total_cost / quantity if quantity else 0  # Calculate unit price if quantity > 0
+            unitPrice=unitPrice  # Use the inventory's unit price
         )
-
-        # Add the new shop stock record to the session
-        db.session.add(new_shop_stock)
-
-
 
         # Save the shop stock record
         try:
@@ -118,6 +105,7 @@ class DistributeInventory(Resource):
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': 'Error creating shop stock', 'error': str(e)}), 500
+
 
 
 class GetTransfer(Resource):

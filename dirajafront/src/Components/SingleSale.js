@@ -94,8 +94,8 @@ const SingleSale = () => {
         <h2 className="single-sale-title">Single Sale</h2>
         <div className="single-sale-details">
           <p><strong>Sale ID:</strong> {sale.sale_id}</p>
-          <p><strong>Employee:</strong> {username}</p> {/* Updated to use username */}
-          <p><strong>Shop Name:</strong> {shopname}</p> {/* Updated to use shopname */}
+          <p><strong>Employee:</strong> {sale.username}</p>
+          <p><strong>Shop Name:</strong> {sale.shop_name}</p>
           <p><strong>Item:</strong> {sale.item_name}</p>
           <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
           <p><strong>Unit Price:</strong> {sale.unit_price} ksh</p>

@@ -45,7 +45,7 @@ function Navbar() {
           </NavLink>
           <NavLink exact to="/alltransfers" className="menu-item" activeClassName="active">
             <img src='/images/Dashbord.png' alt='menu-icon' />
-            <li>Transefer</li>
+            <li>Transfer</li>
           </NavLink>
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />

@@ -253,7 +253,7 @@ class SalesResources(Resource):
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
                 "batchnumber": sale.BatchNumber,  # Ensure attribute name matches your model
-                "balance": sale.ballance,          # Correct spelling if necessary
+                "balance": sale.ballance,          
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "amount_paid": sale.amount_paid,

@@ -4,14 +4,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 
-const TotalAmountPaidExpenses = () => {
+const TotalAmountPaidPurchases = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('today');
 
   const fetchTotalAmountPaid = async (selectedPeriod) => {
     try {
-      const response = await axios.get(`/diraja/totalexpenses?period=${selectedPeriod}`, {
+      const response = await axios.get(`/api/diraja/totalpurchases?period=${selectedPeriod}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -44,16 +44,16 @@ const TotalAmountPaidExpenses = () => {
           <option value="month">This Month</option>
         </select>
       </div>
-      <h5>Total Expenses</h5>
+      <h5>Total Purchases</h5>
   
       {error ? (
         <p>{error}</p>
       ) : (
         <h1>{totalAmountPaid !== null ? `Ksh ${totalAmountPaid}` : 'Loading...'}</h1>
       )}
-      <Link to="/allexpenses">View Expenses</Link>
+      <Link to="/alltransfers">View Purchases</Link>
     </div>
   );
 };
 
-export default TotalAmountPaidExpenses;
+export default TotalAmountPaidPurchases;
