@@ -145,6 +145,7 @@ const Shops = () => {
             <th>ID</th>
             <th>Employee</th>
             <th>Shop Name</th>
+            <th>Location</th>
             <th>Status</th>
             <th>Created At</th>
           </tr>
@@ -170,8 +171,15 @@ const Shops = () => {
                   </div>
                 </td>
                 <td>{shop.shopname}</td>
+                <td>{shop.location}</td>
                 <td>{shop.shopstatus}</td>
                 <td>{new Date(shop.created_at).toLocaleDateString()}</td>
+                <td>
+                  <a href="https://drive.google.com/drive/folders/168rAjIvTJebWYt1MYqR2du0MIQJdFHZw?usp=sharing" target="_blank" rel="noopener noreferrer">
+                    Shop images
+                  </a>
+                </td>
+
               </tr>
             ))
           ) : (

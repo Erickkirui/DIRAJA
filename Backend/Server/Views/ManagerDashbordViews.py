@@ -1,5 +1,6 @@
 from  flask_restful import Resource
 from app import db
+from Server.Models.Transfer import Transfer
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.Sales import Sales
@@ -128,6 +129,33 @@ class TotalAmountPaidExpenses(Resource):
         )
         
         return {"total_amount_paid": total_amount}, 200
+
+
+class TotalAmountPaidPurchases(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        period = request.args.get('period', 'today')
+        today = datetime.utcnow()
+        
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
+        total_amount = (
+            db.session.query(db.func.sum(Transfer.amountPaid))
+            .filter(Transfer.created_at >= start_date)
+            .scalar() or 0
+        )
+        
+        return {"total_amount_paid": total_amount}, 200
     
 
 
@@ -137,4 +165,48 @@ class CountShops(Resource):
     def get(self):
         countShops = Shops.query.count()
         return {"total shops": countShops}, 200      
-         
+
+
+class TotalAmountPaidPerShop(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        # Get the period from query parameters
+        period = request.args.get('period', 'today')
+
+        today = datetime.utcnow()
+
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Query for all shop IDs
+            shops = Shops.query.all()
+
+            # Calculate total sales for each shop
+            results = []
+            for shop in shops:
+                shop_id = shop.shops_id
+                total_sales = (
+                    db.session.query(db.func.sum(Sales.amount_paid))
+                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                    .scalar() or 0
+                )
+                results.append({
+                    "shop_id": shop_id,
+                    "shop_name": shop.shopname,
+                    "total_sales_amount_paid": total_sales
+                })
+
+            return {"total_sales_per_shop": results}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching total sales amounts for all shops"}, 500

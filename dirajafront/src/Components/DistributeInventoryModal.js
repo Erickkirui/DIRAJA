@@ -56,6 +56,7 @@ const DistributeInventoryModal = ({
             quantity: parseInt(quantity),
             metric: inventoryItem.metric,
             itemname: inventoryItem.itemname,
+            unitPrice: inventoryItem.unitPrice,
             unitCost: inventoryItem.unitCost,
             // Calculate amountPaid as unitCost * quantity
             amountPaid: inventoryItem.unitCost * parseInt(quantity),

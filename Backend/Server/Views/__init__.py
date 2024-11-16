@@ -24,10 +24,10 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
 
@@ -136,6 +136,7 @@ api.add_resource(CountEmployees,'/totalemployees')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSales,'/totalsales')
 api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
+api.add_resource(TotalAmountPaidPurchases,"/totalpurchases")
 
 ## clerak Dashbord
 # 1.sales for shop for the day
@@ -144,3 +145,6 @@ api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
 # 5.stock 
 
 api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
+
+# Sales dashboard
+api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
