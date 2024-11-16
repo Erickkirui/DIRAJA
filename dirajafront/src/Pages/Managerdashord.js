@@ -5,6 +5,7 @@ import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPa
 import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales'
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases'
 import TodaysSales from '../Components/ManagerDashbord/TodaysSales'
+import LowStockAlert from '../Components/StockAlert'
 
 function Managerdashord() {
   return (
@@ -40,7 +41,9 @@ function Managerdashord() {
         </div>
       </div>
      
-        
+      <div>
+        <LowStockAlert />
+      </div>
     
     </>
   )
