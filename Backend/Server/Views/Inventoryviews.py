@@ -235,6 +235,7 @@ class GetAllInventory(Resource):
         } for inventory in inventories]
 
         return make_response(jsonify(all_inventory), 200)
+    
 
 
 class InventoryResourceById(Resource):
