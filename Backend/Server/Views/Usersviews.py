@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask import jsonify,request,make_response
 from functools import wraps
 from flask_jwt_extended import jwt_required,get_jwt_identity
+from werkzeug.security import generate_password_hash
 
 def check_role(required_role):
     def wrapper(fn):
@@ -116,6 +117,44 @@ class UsersResourceById(Resource):
             return {"message": f"User with id {users_id} deleted successfully"}, 200
         else:
             return {"error": "User not found"}, 404
+
+    @jwt_required()
+    @check_role('manager')
+    def put(self, users_id):
+        user = Users.query.get(users_id)
+
+        if not user:
+            return {"error": "User not found"}, 404
+
+        data = request.get_json()
+
+        # Validate input data
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role")
+
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = generate_password_hash(password)  # Hash the password before saving
+        if role:
+            user.role = role
+
+        # Save changes to the database
+        db.session.commit()
+
+        return {
+            "message": f"User with id {users_id} updated successfully",
+            "user": {
+                "users_id": user.users_id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role
+            }
+        }, 200
 
    
 class GetAllUsers(Resource):
