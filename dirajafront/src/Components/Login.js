@@ -13,7 +13,9 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://16.171.22.129/diraja/login', { email, password });
+
+      const response = await axios.post('/api/diraja/login', { email, password });
+
 
       const { access_token, refresh_token, username, role, shop_id } = response.data;
 

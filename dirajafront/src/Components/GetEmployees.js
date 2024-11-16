@@ -24,7 +24,8 @@ const Employees = () => {
           return;
         }
 
-        const response = await axios.get('http://16.171.22.129/diraja/allemployees', {
+        const response = await axios.get('/api/diraja/allemployees', {
+
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -61,7 +62,8 @@ const Employees = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedEmployees.map((employeeId) =>
-          axios.delete(`http://16.171.22.129/diraja/employee/${employeeId}`, {
+          axios.delete(`/api/diraja/employee/${employeeId}`, {
+
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
