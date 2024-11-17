@@ -22,9 +22,18 @@ def check_role(required_role):
     return wrapper
 
 class AddNewemployee(Resource):
-    # @jwt_required()
-    # @check_role('manager')
+    @jwt_required()
+    @check_role('manager')
     def post(self):
+        current_user_id = get_jwt_identity()  # Get the current user's ID
+        # Query the database to get the user's details
+        current_user = Users.query.get(current_user_id)
+
+        if not current_user:
+            return {"error": "Current user not found."}, 404
+
+        current_user_role = current_user.role  # Extract the role of the current user
+
         data = request.get_json()
 
         first_name = data.get('first_name')
@@ -34,7 +43,7 @@ class AddNewemployee(Resource):
         work_email = data.get('work_email')
         account_status = data.get('account_status')
         shop_id = data.get('shop_id')
-        role = data.get('role')
+        role = data.get('role')  # Role of the new employee
         personal_email = data.get('personal_email')
         designation = data.get('designation')
         national_id_number = data.get('national_id_number')
@@ -44,6 +53,10 @@ class AddNewemployee(Resource):
         bank_account_number = data.get('bank_account_number')
         bank_name = data.get('bank_name')
         department = data.get('department')
+
+        # Check if the current user has the right to add a manager
+        if role == 'manager' and current_user_role != 'super_admin':
+            return {"error": "Only users with the role 'super_admin' can add an employee with the role 'manager'."}, 403
 
         # Parse the date fields safely
         date_of_birth = self.parse_date(data.get('date_of_birth'))
@@ -83,7 +96,7 @@ class AddNewemployee(Resource):
         new_user = Users(
             username=first_name,  # Use first name as username
             email=work_email,  # Use work email
-            role=role if role else 'manager',  # Set role to 'employee' if not provided
+            role=role if role else 'manager',  # Set role to 'manager' if not provided
             password=default_password,  # Set a default password, or use a password hash function
             employee_id=new_employee.employee_id  # Link to the newly created employee
         )
@@ -106,7 +119,6 @@ class AddNewemployee(Resource):
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
         return None
-
 
 
 class GetAllemployees(Resource):

@@ -7,7 +7,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask import jsonify,request,make_response
 from functools import wraps
 from flask_jwt_extended import jwt_required,get_jwt_identity
-from werkzeug.security import generate_password_hash
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -119,7 +119,6 @@ class UsersResourceById(Resource):
             return {"error": "User not found"}, 404
 
     @jwt_required()
-    @check_role('manager')
     def put(self, users_id):
         user = Users.query.get(users_id)
 
@@ -139,7 +138,7 @@ class UsersResourceById(Resource):
         if email:
             user.email = email
         if password:
-            user.password = generate_password_hash(password)  # Hash the password before saving
+            user.password = password
         if role:
             user.role = role
 
