@@ -24,7 +24,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
@@ -137,6 +137,8 @@ api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSales,'/totalsales')
 api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
 api.add_resource(TotalAmountPaidPurchases,"/totalpurchases")
+api.add_resource(StockAlert,"/checkstock")
+
 
 ## clerak Dashbord
 # 1.sales for shop for the day
