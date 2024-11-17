@@ -242,69 +242,125 @@ class InventoryResourceById(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self, inventory_id):
-
+        # Fetch inventory by ID
         inventory = Inventory.query.get(inventory_id)
    
-        if inventory :
+        if inventory:
             return {
-            "inventory_id": inventory.inventory_id,
-            "itemname": inventory.itemname,
-            "quantity": inventory.quantity,
-            "metric": inventory.metric,
-            "totalCost" : inventory.totalCost,
-            "unitCost": inventory.unitCost,
-            "batchnumber": inventory.BatchNumber,
-            "amountPaid": inventory.amountPaid,
-            "balance":inventory.ballance,
-            "note":inventory.note,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
-            "unitPrice": inventory.unitPrice
-        }, 200
+                "inventory_id": inventory.inventory_id,
+                "itemname": inventory.itemname,
+                "quantity": inventory.quantity,
+                "metric": inventory.metric,
+                "totalCost": inventory.totalCost,
+                "unitCost": inventory.unitCost,
+                "batchnumber": inventory.BatchNumber,
+                "amountPaid": inventory.amountPaid,
+                "balance": inventory.balance,  # Corrected typo from 'ballance'
+                "note": inventory.note,
+                "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+                "unitPrice": inventory.unitPrice,
+                "Suppliername": inventory.Suppliername,
+                "Supplier_location": inventory.Supplier_location
+            }, 200
         else:
-             return {"error": "Inventory not found"}, 400
-
+            return {"error": "Inventory not found"}, 404
 
     @jwt_required()
     @check_role('manager')
     def put(self, inventory_id):
+        data = request.get_json()
+
+        # Fetch inventory by ID
         inventory = Inventory.query.get(inventory_id)
         if not inventory:
-            return {"error": "Item not found"}, 404
-        
-        data = request.get_json()
-        
-        # Update the shop's fields
-        if 'itemname' in data:
-            inventory.itemname = data['itemname']
-        if 'quantity' in data:
-            inventory.quantity = data['quantity']
-        if 'metric' in data:
-            inventory.metric = data['metric']
-        if 'unitCost' in data:
-            inventory.unitCost = data['unitCost']
-        if 'totalCost' in data:
-            inventory.totalcost = data['totalCost']
-        if 'amountPaid' in data:
-            inventory.amountPaid = data['amountPaid']
-        if 'unitPrice' in data:
-            inventory.metric = data['unitPrice']
-        
-        db.session.commit()
-        
-        return {"message": "Invemtory updated successfully"}, 200
-    
+            return jsonify({'error': 'Inventory not found'}), 404
+
+        # Extract data to update
+        itemname = data.get('itemname')
+        quantity = data.get('quantity')
+        metric = data.get('metric')
+        unitCost = data.get('unitCost')
+        amountPaid = data.get('amountPaid')
+        unitPrice = data.get('unitPrice')
+        Suppliername = data.get('Suppliername')
+        Supplier_location = data.get('Supplier_location')
+        note = data.get('note')
+        created_at = data.get('created_at')
+
+        # Update fields if provided
+        if itemname:
+            inventory.itemname = itemname
+        if quantity is not None:
+            inventory.quantity = quantity
+            inventory.initial_quantity = quantity  # Optional: Reset initial quantity
+        if metric:
+            inventory.metric = metric
+        if unitCost:
+            inventory.unitCost = unitCost
+        if amountPaid is not None:
+            inventory.amountPaid = amountPaid
+        if unitPrice:
+            inventory.unitPrice = unitPrice
+        if Suppliername:
+            inventory.Suppliername = Suppliername
+        if Supplier_location:
+            inventory.Supplier_location = Supplier_location
+        if note is not None:
+            inventory.note = note
+        if created_at:
+            try:
+                inventory.created_at = datetime.strptime(created_at, '%Y-%m-%d')
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+
+        # Recalculate totalCost and balance if necessary
+        if unitCost is not None or quantity is not None:
+            inventory.totalCost = inventory.unitCost * inventory.quantity
+        if amountPaid is not None or unitCost is not None or quantity is not None:
+            inventory.balance = inventory.totalCost - inventory.amountPaid
+
+        # Save changes to the database
+        try:
+            db.session.commit()
+            return {
+                'message': 'Inventory updated successfully',
+                'inventory': {
+                    'inventory_id': inventory.inventory_id,
+                    'itemname': inventory.itemname,
+                    'quantity': inventory.quantity,
+                    'metric': inventory.metric,
+                    'unitCost': inventory.unitCost,
+                    'totalCost': inventory.totalCost,
+                    'amountPaid': inventory.amountPaid,
+                    'unitPrice': inventory.unitPrice,
+                    'BatchNumber': inventory.BatchNumber,
+                    'Suppliername': inventory.Suppliername,
+                    'Supplier_location': inventory.Supplier_location,
+                    'balance': inventory.balance,
+                    'note': inventory.note,
+                    'created_at': inventory.created_at.strftime('%Y-%m-%d'),
+                }
+            }, 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': 'Error updating inventory', 'details': str(e)}), 500
 
     @jwt_required()
     @check_role('manager')
     def delete(self, inventory_id):
-
+        # Fetch inventory by ID
         inventory = Inventory.query.get(inventory_id)
         
         if inventory:
-            db.session.delete(inventory)  
-            db.session.commit()  
-            return {"message": "item deleted successfully"}, 200
+            try:
+                db.session.delete(inventory)
+                db.session.commit()
+                return {"message": "Inventory deleted successfully"}, 200
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'error': 'Error deleting inventory', 'details': str(e)}), 500
         else:
-            return {"error": "item not found"}, 404
+            return {"error": "Inventory not found"}, 404
+
 
 

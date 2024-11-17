@@ -1,13 +1,11 @@
 /* Container */
 .low-stock-container {
-    width: 100%;
-    max-width: 600px;
-    margin: 20px auto;
+    border: 1px solid #ccc;
     padding: 20px;
     background-color: #ffffff;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-family: Arial, sans-serif;
+    width: 400px;
 }
 
 /* Title */
