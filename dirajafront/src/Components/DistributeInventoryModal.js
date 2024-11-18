@@ -91,10 +91,10 @@ const DistributeInventoryModal = ({
           <div>
             <label>Shop</label>
             <select
+              className="modal-select"
               name="shop_id"
               value={shopId}
               onChange={(e) => setShopId(e.target.value)}
-              className={`border p-2 w-full ${shopId ? 'text-black' : 'text-red-500'}`}
               required
             >
               <option value="">Select a shop</option>
