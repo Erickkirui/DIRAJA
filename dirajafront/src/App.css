@@ -25,3 +25,38 @@
 .page-area {
   padding: 20px;
 }
+
+/* page not found */
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  background-color: #f8f9fa;
+  color: #343a40;
+  font-family: Arial, sans-serif;
+}
+
+.error-code {
+  font-size: 10rem;
+  margin: 0;
+}
+
+
+
+.home-link {
+  padding: 10px 20px;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  text-decoration: none;
+  color: var(--primary);
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
+.home-link:hover {
+  background-color: var(--primary);
+  color: #fff;
+}

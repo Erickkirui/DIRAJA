@@ -4,7 +4,7 @@ import CountEmployees from '../Components/ManagerDashbord/CountEmployees'
 import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses'
 import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales'
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases'
-import TodaysSales from '../Components/ManagerDashbord/TodaysSales'
+
 import LowStockAlert from '../Components/StockAlert'
 
 function Managerdashord() {
@@ -21,29 +21,31 @@ function Managerdashord() {
             <div>
             <TotalAmountPaidPurchases />
             </div>
-            <div>
-            <TotalAmountPaidExpenses />
-            </div>
+            
+            
           </div>
     
           <div className='metrix-pair'>
             <div>
               <CountShops />
+              <TotalAmountPaidExpenses />
 
             </div>
             <div>
               <CountEmployees />
             </div>
+            
           </div>
+          
         </div>
+        
         <div>
-          <TodaysSales />
-        </div>
+              <LowStockAlert />
+          </div>
+        
       </div>
      
-      <div>
-        <LowStockAlert />
-      </div>
+     
     
     </>
   )

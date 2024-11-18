@@ -12,7 +12,7 @@ const CountShops = () => {
   useEffect(() => {
     const fetchShopCount = async () => {
       try {
-        const response = await axios.get('/api/diraja/totalshops', {
+        const response = await axios.get('/diraja/totalshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }

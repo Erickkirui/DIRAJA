@@ -23,7 +23,9 @@ const Shops = () => {
           setError('No access token found, please log in.');
           return;
         }
-        const response = await axios.get('/api/diraja/allshops', {
+
+        const response = await axios.get('/diraja/allshops', {
+
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setShops(response.data);
@@ -57,7 +59,9 @@ const Shops = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedShops.map((shopId) =>
-          axios.delete(`/api/diraja/shop/${shopId}`, {
+
+          axios.delete(`/diraja/shop/${shopId}`, {
+
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },

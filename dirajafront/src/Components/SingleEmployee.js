@@ -14,7 +14,9 @@ const SingleEmployee = () => {
     // Function to fetch employee details
     const fetchEmployee = async () => {
       try {
-        const response = await fetch(`/api/diraja/employee/${employee_id}`, {
+
+        const response = await fetch(`/diraja/employee/${employee_id}`, {
+
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

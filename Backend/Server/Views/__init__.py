@@ -27,7 +27,7 @@ from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
 
 

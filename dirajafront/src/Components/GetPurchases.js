@@ -21,7 +21,9 @@ const Purchases = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/alltransfers', {
+
+        const response = await axios.get('/diraja/alltransfers', {
+
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

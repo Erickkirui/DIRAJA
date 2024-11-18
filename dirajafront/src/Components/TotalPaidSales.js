@@ -11,7 +11,7 @@ const TotalPaidSales = () => {
 
   const fetchShopSales = async (selectedPeriod) => {
     try {
-      const response = await axios.get('/api/diraja/totalsalespershop', {
+      const response = await axios.get('/diraja/totalsalespershop', {
         params: { period: selectedPeriod },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,

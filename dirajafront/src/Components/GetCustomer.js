@@ -24,7 +24,9 @@ const Customers = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allcustomers', {
+
+        const response = await axios.get('/diraja/allcustomers', {
+
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -61,7 +63,9 @@ const Customers = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedCustomers.map((customerId) =>
-          axios.delete(`/api/diraja/allcustomers/${customerId}`, {
+
+          axios.delete(`/diraja/allcustomers/${customerId}`, {
+
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },

@@ -3,17 +3,19 @@ import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
 import DistributeInventoryModal from '../Components/DistributeInventoryModal';
+import UpdateInventory from './updateInventory';
 import '../Styles/inventory.css';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState(''); // Display error messages
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedInventory, setSelectedInventory] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingInventoryId, setEditingInventoryId] = useState(null); // Track editing inventory
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -24,7 +26,8 @@ const Inventory = () => {
           setError('No access token found, please log in.');
           return;
         }
-        const response = await axios.get('/api/diraja/allinventories', {
+
+        const response = await axios.get('/diraja/allinventories', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventory(response.data);
@@ -51,7 +54,7 @@ const Inventory = () => {
 
   const handleAction = () => {
     if (selectedAction === 'distribute') {
-      setShowModal(true); // Open modal to input shop_id and quantity
+      setShowModal(true);
     } else if (selectedAction === 'delete') {
       handleDelete();
     }
@@ -61,7 +64,7 @@ const Inventory = () => {
     const accessToken = localStorage.getItem('access_token');
     await Promise.all(
       selectedInventory.map((inventoryId) =>
-        axios.delete(`/api/diraja/inventory/${inventoryId}`, {
+        axios.delete(`/diraja/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         })
       )
@@ -98,6 +101,10 @@ const Inventory = () => {
     setCurrentPage(pageNumber);
   };
 
+  const handleEditClick = (inventoryId) => {
+    setEditingInventoryId(inventoryId); // Set editing inventory
+  };
+
   return (
     <div className="inventory-container">
       {/* Display Error Message */}
@@ -118,7 +125,7 @@ const Inventory = () => {
         className="date-picker"
       />
 
-      <div className='actions-container'>
+      <div className="actions-container">
         <div className="actions">
           <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
             <option value="">With selected, choose an action</option>
@@ -135,11 +142,20 @@ const Inventory = () => {
 
       {/* Distribute Inventory Modal */}
       {showModal && (
-        <DistributeInventoryModal 
+        <DistributeInventoryModal
           selectedInventory={selectedInventory}
           inventory={inventory}
           onClose={() => setShowModal(false)}
           onDistributeSuccess={handleDistributeSuccess}
+        />
+      )}
+
+      {/* Update Inventory Modal */}
+      {editingInventoryId && (
+        <UpdateInventory
+          inventoryId={editingInventoryId}
+          onClose={() => setEditingInventoryId(null)} // Close the modal
+          onUpdateSuccess={() => setEditingInventoryId(null)} // Refresh inventory on update
         />
       )}
 
@@ -166,6 +182,7 @@ const Inventory = () => {
             <th>Comments</th>
             <th>Unit Price (Ksh)</th>
             <th>Date</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -190,11 +207,14 @@ const Inventory = () => {
               <td>{inventoryItem.note}</td>
               <td>{inventoryItem.unitPrice}</td>
               <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
+              <td>
+                <button onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
-      
+
       {/* Pagination */}
       <div className="pagination">
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (

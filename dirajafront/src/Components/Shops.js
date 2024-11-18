@@ -23,7 +23,8 @@ const AddShop = () => {
 
     try {
       const response = await axios.post(
-        '/api/diraja/newshop',
+        '/diraja/newshop',
+
         {
           shopname,
           location,
