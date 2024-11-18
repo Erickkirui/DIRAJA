@@ -30,7 +30,7 @@ const SingleSale = () => {
         setFormData(data.sale); // Initialize form data
 
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`http://16.171.22.129/diraja/shop/${data.sale.shop_id}`);
+          const shopResponse = await fetch(`/diraja/shop/${data.sale.shop_id}`);
           if (shopResponse.ok) {
             const shopData = await shopResponse.json();
             setShopname(shopData.name);
@@ -38,7 +38,7 @@ const SingleSale = () => {
         }
 
         if (data.sale.user_id) {
-          const userResponse = await fetch(`http://16.171.22.129/diraja/user/${data.sale.user_id}`);
+          const userResponse = await fetch(`/diraja/user/${data.sale.user_id}`);
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUsername(userData.username);
