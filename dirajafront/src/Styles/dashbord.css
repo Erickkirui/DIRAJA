@@ -13,12 +13,16 @@
 
 
 /* dashbord elements  */
+.single-card{
+    margin-top: 10px;
 
+}
 .metrix-container{
     border:  1px solid #ccc;
     padding: 10px;
     border-radius: 8px;
     width: 250px;
+    
 
 }
 

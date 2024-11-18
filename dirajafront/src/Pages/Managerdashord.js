@@ -28,7 +28,10 @@ function Managerdashord() {
           <div className='metrix-pair'>
             <div>
               <CountShops />
-              <TotalAmountPaidExpenses />
+              <div className='single-card'>
+                <TotalAmountPaidExpenses />
+              </div>
+              
 
             </div>
             <div>

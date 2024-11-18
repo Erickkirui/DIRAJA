@@ -51,7 +51,7 @@ const TotalAmountPaidPurchases = () => {
       ) : (
         <h1>{totalAmountPaid !== null ? `Ksh ${totalAmountPaid}` : 'Loading...'}</h1>
       )}
-      <Link to="/alltransfers">View Purchases</Link>
+      <Link to="/purchases">View Purchases</Link>
     </div>
   );
 };
