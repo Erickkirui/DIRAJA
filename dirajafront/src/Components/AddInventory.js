@@ -5,7 +5,7 @@ const AddInventory = () => {
   const [formData, setFormData] = useState({
     itemname: '',
     quantity: '',
-    metric: '',
+    metric: 'kg', // Default to "litres"
     unitCost: '',
     amountPaid: '',
     unitPrice: '',
@@ -34,7 +34,6 @@ const AddInventory = () => {
 
     try {
       const response = await axios.post('/diraja/newinventory', numericFormData, {
-
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -45,7 +44,7 @@ const AddInventory = () => {
       setFormData({
         itemname: '',
         quantity: '',
-        metric: '',
+        metric: 'kg', // Reset to default value
         unitCost: '',
         amountPaid: '',
         unitPrice: '',
@@ -88,15 +87,16 @@ const AddInventory = () => {
           />
         </div>
         <div>
-          <input
-            type="text"
+          <select
             name="metric"
             value={formData.metric}
             onChange={handleChange}
-            placeholder="Metric"
             className="input"
             required
-          />
+          >
+            <option value="kg">Kilograms</option>
+            <option value="litres">Litres</option>
+          </select>
         </div>
         <div>
           <input
