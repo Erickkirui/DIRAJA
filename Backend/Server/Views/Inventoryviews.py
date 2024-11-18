@@ -255,7 +255,7 @@ class InventoryResourceById(Resource):
                 "unitCost": inventory.unitCost,
                 "batchnumber": inventory.BatchNumber,
                 "amountPaid": inventory.amountPaid,
-                "balance": inventory.balance,  # Corrected typo from 'ballance'
+                "balance": inventory.ballance,  # Corrected typo from 'ballance'
                 "note": inventory.note,
                 "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
                 "unitPrice": inventory.unitPrice,

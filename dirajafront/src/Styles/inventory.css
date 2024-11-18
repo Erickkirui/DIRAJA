@@ -103,6 +103,7 @@
     color: #fff;
   }
   
+
   .modal-overlay {
     position: fixed;
     top: 0;
@@ -121,14 +122,18 @@
     padding: 20px;
     border-radius: 5px;
     width: 300px;
-    text-align: center;
+   
   }
+  .modal-select{
+    padding: 5px;
+    width: 50%;
+  }
+
   .modal-content label {
     display: block;
     margin: 10px 0 5px;
   }
   .modal-content input {
-    width: 100%;
     padding: 5px;
     margin-bottom: 15px;
   }

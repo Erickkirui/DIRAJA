@@ -10,6 +10,7 @@ import LowStockAlert from '../Components/StockAlert'
 function Managerdashord() {
   return (
     <>
+    
     <h2>Dashboard</h2>
     <p>Analytics</p>
       <div className='top-row'>
