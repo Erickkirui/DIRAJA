@@ -218,7 +218,7 @@ class TotalAmountPaidPerShop(Resource):
 class StockAlert(Resource):
     @jwt_required()
     def get(self):
-        low_stock_threshold = 20
+        low_stock_threshold = 10
         out_of_stock_threshold = 0
         shop_name = request.args.get('shop')  # Filter by shop name if provided
 
