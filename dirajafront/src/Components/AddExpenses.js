@@ -23,14 +23,14 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchShopsAndCategories = async () => {
       try {
-        const shopResponse = await axios.get('/diraja/allshops', {
+        const shopResponse = await axios.get('/api/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
         setShops(shopResponse.data);
 
-        const categoryResponse = await axios.get('/diraja/expensecategory', {
+        const categoryResponse = await axios.get('/api/diraja/expensecategory', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -75,7 +75,7 @@ const AddExpense = () => {
 
     try {
       const response = await axios.post(
-        '/diraja/newexpensecategory',
+        '/api/diraja/newexpensecategory',
         { categoryname: newCategory.trim() },
         {
           headers: {
@@ -124,7 +124,7 @@ const AddExpense = () => {
     }
 
     try {
-      const response = await axios.post('/diraja/newexpense', expenseData, {
+      const response = await axios.post('/api/diraja/newexpense', expenseData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

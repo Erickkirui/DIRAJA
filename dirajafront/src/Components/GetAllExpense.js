@@ -25,7 +25,7 @@ const Expenses = () => {
         }
 
 
-        const response = await axios.get('/diraja/allexpenses', {
+        const response = await axios.get('/api/diraja/allexpenses', {
 
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -64,7 +64,7 @@ const Expenses = () => {
       await Promise.all(
         selectedExpenses.map((expenseId) =>
 
-          axios.delete(`/diraja/expense/${expenseId}`, {
+          axios.delete(`/api/diraja/expense/${expenseId}`, {
 
             headers: {
               Authorization: `Bearer ${accessToken}`,

@@ -19,7 +19,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 
 from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Expenses import AllExpenses,AddExpence,GetShopExpenses,ExpensesResources
+from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
@@ -28,7 +28,7 @@ from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmoun
 from Server.Views.ExpenseCategoryviews import AddExpenseCategory, ExpenseCategoryResource
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/api')
 api = Api(api_endpoint)
 
 
@@ -90,7 +90,7 @@ api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
 
 
 # expenses endpoint 
-api.add_resource(AddExpence,'/newexpense')
+api.add_resource(AddExpense,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
