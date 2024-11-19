@@ -12,6 +12,7 @@ class Expenses(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     item = db.Column(db.String(100), unique=False, nullable=False)
+    category = db.Column(db.String, nullable=False)
     description = db.Column(db.String(100), nullable=False)
     quantity = db.Column (db.Float, nullable=True)
     totalPrice = db.Column (db.Float, nullable=False)

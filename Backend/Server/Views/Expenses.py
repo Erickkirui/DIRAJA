@@ -35,6 +35,7 @@ class AddExpence(Resource):
         item = data.get('item')
         description = data.get('description')
         quantity = data.get('quantity')
+        category = data.get('category')
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
 
@@ -48,6 +49,7 @@ class AddExpence(Resource):
             item=item,
             description=description,
             quantity=quantity,
+            category=category,
             totalPrice=totalPrice,
             amountPaid=amountPaid,
             created_at=created_at,
@@ -88,6 +90,7 @@ class AllExpenses(Resource):
                 "item": expense.item,
                 "description": expense.description,
                 "quantity": expense.quantity,
+                "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
                 "created_at": expense.created_at
@@ -112,6 +115,7 @@ class GetShopExpenses(Resource):
             "shop_id" :expense.shop_id,
             "item":expense.item,
             "description" : expense.description,
+            "category": expense.category,
             "quantity" : expense.quantity,
             "totalPrice" : expense.totalPrice,
             "amountPaid" : expense.amountPaid,
@@ -139,6 +143,7 @@ class ExpensesResources(Resource):
                 "shop_id": expense.shop_id,
                 "item": expense.item,
                 "description": expense.description,
+                "category": expense.category,
                 "quantity": expense.quantity,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
@@ -178,6 +183,7 @@ class ExpensesResources(Resource):
             # Update the expense with the provided data
             expense.item = data.get('item', expense.item)
             expense.description = data.get('description', expense.description)
+            expense.category = data.get('category', expense.category)
             expense.quantity = data.get('quantity', expense.quantity)
             expense.totalPrice = data.get('totalPrice', expense.totalPrice)
             expense.amountPaid = data.get('amountPaid', expense.amountPaid)
