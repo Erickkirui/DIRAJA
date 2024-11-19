@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
-import { Link } from 'react-router-dom';
+
 
 const TotalPaidSales = () => {
   const [shopSales, setShopSales] = useState([]);
@@ -36,9 +34,9 @@ const TotalPaidSales = () => {
   };
 
   return (
-    <div className="metrix-container">
+    <div>
       <div className="metric-top">
-        <FontAwesomeIcon className="metric-icon" icon={faChartSimple} size="1x" />
+        
         <select id="period" value={period} onChange={handlePeriodChange}>
           <option value="today">Today</option>
           <option value="week">This Week</option>
@@ -50,13 +48,13 @@ const TotalPaidSales = () => {
       {error ? (
         <p>{error}</p>
       ) : (
-        <div className="shop-sales-cards">
+        <div className="shop-cards-container">
           {shopSales.length > 0 ? (
             shopSales.map((shop) => (
               <div key={shop.shop_id} className="shop-sales-cards">
                 <h4>{shop.shop_name || `Shop ${shop.shop_id}`}</h4>
                 <h1>{`Ksh ${shop.total_sales_amount_paid}`}</h1>
-                <Link to={`/sales/shop/${shop.shop_id}`}>View Sales</Link>
+               
               </div>
             ))
           ) : (

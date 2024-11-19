@@ -115,3 +115,18 @@
   font-weight: 500;
   color: #333;
 }
+
+/* sales analytics */
+.shop-cards-container{
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+
+
+}
+.shop-sales-cards{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 200px;
+}
