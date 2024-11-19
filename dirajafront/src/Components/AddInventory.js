@@ -23,7 +23,7 @@ const AddInventory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Convert string inputs to numbers where necessary
+    // Convert String inputs to numbers where necessary
     const numericFormData = {
       ...formData,
       quantity: Number(formData.quantity),

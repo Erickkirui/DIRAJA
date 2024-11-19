@@ -167,7 +167,7 @@ class AddInventory(Resource):
         unitPrice = data.get('unitPrice')
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
-        note = data.get('note', '')  # Optional field, default to empty string
+        note = data.get('note', '')  # Optional field, default to empty String
         created_at = data.get('created_at')
 
         # Calculate totalCost and balance

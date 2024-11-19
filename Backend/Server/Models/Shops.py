@@ -10,10 +10,10 @@ class Shops(db.Model):
     
     #Table columns
     shops_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    shopname = db.Column(db.String, unique=True, nullable=False)
-    location = db.Column(db.String, nullable=False)
+    shopname = db.Column(db.String(50), unique=True, nullable=False)
+    location = db.Column(db.String(50), nullable=False)
     employee = db.Column(db.JSON, unique=True, nullable=False)
-    shopstatus = db.Column(db.String, default="active", nullable=False)
+    shopstatus = db.Column(db.String(50), default="active", nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     
 

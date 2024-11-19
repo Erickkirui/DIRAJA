@@ -7,14 +7,14 @@ class Customers(db.Model):
     __tablename__= "customers"
 
     customer_id = db.Column(db.Integer, primary_key=True , autoincrement=True)
-    customer_name = db.Column(db.String(20), nullable=False)
+    customer_name = db.Column(db.String(50), nullable=False)
     customer_number = db.Column(db.Integer, nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    item = db.Column(db.String, unique=False, nullable=False)
+    item = db.Column(db.String(50), unique=False, nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
-    payment_method = db.Column(db.String(20), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     # relationship 

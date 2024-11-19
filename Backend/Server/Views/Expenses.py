@@ -38,7 +38,7 @@ class AddExpence(Resource):
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
 
-        # Convert the 'created_at' string to a datetime object
+        # Convert the 'created_at' String to a datetime object
         created_at = data.get('created_at')
         if created_at:
             created_at = datetime.strptime(created_at, '%Y-%m-%d')
@@ -157,7 +157,7 @@ class ExpensesResources(Resource):
                 "quantity": expense.quantity,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
-                # Convert datetime object to string
+                # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             }, 200
         else:
@@ -198,7 +198,7 @@ class ExpensesResources(Resource):
             expense.totalPrice = data.get('totalPrice', expense.totalPrice)
             expense.amountPaid = data.get('amountPaid', expense.amountPaid)
             
-            # Convert created_at from string to datetime, handling both formats
+            # Convert created_at from String to datetime, handling both formats
             if 'created_at' in data:
                 try:
                     # Try parsing the full datetime first

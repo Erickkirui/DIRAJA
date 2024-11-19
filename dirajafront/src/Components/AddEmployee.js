@@ -75,7 +75,7 @@ const AddEmployee = () => {
     }
 
     // Log the employee data being sent to the server
-    console.log('Posting employee data:', JSON.stringify(employeeData, null, 2));
+    console.log('Posting employee data:', JSON.Stringify(employeeData, null, 2));
 
     try {
 

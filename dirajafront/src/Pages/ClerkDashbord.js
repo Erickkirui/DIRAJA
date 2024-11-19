@@ -4,6 +4,7 @@ import UserDisplay from '../Components/UserDisplay'
 
 import ShopTodaySales from '../Components/ClerkDashbord/ShopTodaySales'
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop'
+import '../Styles/clerkpage.css'
 import { Link } from 'react-router-dom'
 
 
@@ -20,7 +21,11 @@ function ClerkDashbord() {
             </div>
             
             <div className='page-area'>
-                <button className='button'><Link to='/shopsale'> New Sale</Link></button>
+                <div className='nav-phone'>
+                <button className='button'> <Link  to='/shopsale'> New Sale</Link></button>
+                <button className='button'> <Link  to='/shopcustomers'> View Customers</Link></button>
+                <button className='button'> <Link  to='/shopsales'> View Sales</Link></button>
+                </div>
                 <div className='analytics-clerk'>
                     <TotalShopSales />
                     <ShopTodaySales />

@@ -42,8 +42,7 @@ const ShopSales = () => {
     fetchSales();
   }, []);
 
-  const getFirstName = (username) => username.split(' ')[0];
-  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
+
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -103,13 +102,9 @@ const ShopSales = () => {
             <thead>
               <tr>
                 <th>ID</th>
-                <th>Employee</th>
-              
-                <th>Item</th>
+                <th>Clerk</th>
                 <th>Quantity</th>
-                <th>Unit Cost (ksh)</th>
-                <th>Amount Paid (ksh)</th>
-                <th>Payment Method</th>
+                <th>Amount</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -117,19 +112,11 @@ const ShopSales = () => {
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
                   <td>{sale.sale_id}</td>
-                  <td>
-                    <div className="employee-info">
-                      <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                      <span className="employee-name">{getFirstName(sale.username)}</span>
-                    </div>
-                  </td>
-                  
-                  <td>{sale.item_name}</td>
+                  <td>{sale.username}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.unit_price}</td>
-                  <td>{sale.amount_paid}</td>
-                  <td>{sale.payment_method}</td>
-                  <td>{new Date(sale.created_at).toLocaleString()}</td>
+                  <td>{sale.amount_paid} Ksh</td>
+                  {/* Format the date to show only the date (without time) */}
+                  <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

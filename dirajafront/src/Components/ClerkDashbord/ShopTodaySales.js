@@ -5,6 +5,8 @@ const ShopTodaySales = () => {
   const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -25,7 +27,10 @@ const ShopTodaySales = () => {
         const salesData = response.data.sales || [];
         
         const today = new Date().toISOString().split('T')[0];
-        const todaySales = salesData.filter(sale => sale.created_at === today);
+        const todaySales = salesData.filter(sale => {
+          const saleDate = new Date(sale.created_at).toISOString().split('T')[0];
+          return saleDate === today;
+        });
 
         setSales(todaySales);
       } catch (err) {
@@ -38,6 +43,14 @@ const ShopTodaySales = () => {
     fetchSales();
   }, []);
 
+  const totalPages = Math.ceil(sales.length / itemsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const currentSales = sales.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   if (loading) return <p className="loading-message">Loading sales...</p>;
   if (error) return <p className="error-message">{error}</p>;
 
@@ -47,27 +60,45 @@ const ShopTodaySales = () => {
       <table className="sales-table">
         <thead>
           <tr>
-            
             <th>Item Name</th>
             <th>Amount Paid</th>
           </tr>
         </thead>
         <tbody>
-          {sales.length > 0 ? (
-            sales.map(sale => (
+          {currentSales.length > 0 ? (
+            currentSales.map(sale => (
               <tr key={sale.sale_id}>
-               
                 <td>{sale.item_name}</td>
                 <td>{sale.amount_paid}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="3">No sales recorded for today</td>
+              <td colSpan="2">No sales recorded for today</td>
             </tr>
           )}
         </tbody>
       </table>
+
+      <div className="pagination">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="prev-page"
+        >
+          Previous
+        </button>
+        
+        <span>Page {currentPage} of {totalPages}</span>
+        
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="next-page"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
