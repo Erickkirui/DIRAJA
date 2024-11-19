@@ -25,6 +25,7 @@ from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeere
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
+from Server.Views.ExpenseCategoryviews import AddExpenseCategory, ExpenseCategoryResource
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
@@ -93,6 +94,9 @@ api.add_resource(AddExpence,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
+api.add_resource(ExpenseCategoryResource,'/expensecategory')
+api.add_resource(AddExpenseCategory,'/newexpensecategory')
+
 
 
 
