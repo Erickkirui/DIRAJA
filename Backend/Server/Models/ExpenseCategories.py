@@ -4,8 +4,8 @@ from datetime import datetime
 
 class ExpenseCategory(db.Model):
     __tablename__ = 'categories'  # Naming convention adjusted for readability
-
-    category_id = db.Column(db.Integer, primary_key=True)
+    
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     categoryname = db.Column(db.String(100), nullable=False, unique=True)
     
     def __init__(self, categoryname):
