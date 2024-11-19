@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import jsPDF from 'jspdf';
-import '../Styles/sales.css'
+import '../Styles/sales.css';
 
 const SingleSale = () => {
   const { sale_id } = useParams();
@@ -10,8 +10,8 @@ const SingleSale = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
-  const [shopname, setShopname] = useState(''); // New state for shop name
-  const [username, setUsername] = useState(''); // New state for username
+  const [shopname, setShopname] = useState(''); // State for shop name
+  const [username, setUsername] = useState(''); // State for username
 
   useEffect(() => {
     const fetchSale = async () => {
@@ -30,6 +30,7 @@ const SingleSale = () => {
         setSale(data.sale);
         setFormData(data.sale); // Initialize form data
 
+        // Fetch shop name
         if (data.sale.shop_id) {
           const shopResponse = await fetch(`/diraja/shop/${data.sale.shop_id}`);
           if (shopResponse.ok) {
@@ -38,6 +39,7 @@ const SingleSale = () => {
           }
         }
 
+        // Fetch username
         if (data.sale.user_id) {
           const userResponse = await fetch(`/diraja/user/${data.sale.user_id}`);
           if (userResponse.ok) {
@@ -45,7 +47,6 @@ const SingleSale = () => {
             setUsername(userData.username);
           }
         }
-
       } catch (err) {
         setError(err.message);
       } finally {
@@ -72,7 +73,7 @@ const SingleSale = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
-        body: JSON.Stringify(formData),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) throw new Error('Failed to update sale');
@@ -88,53 +89,31 @@ const SingleSale = () => {
 
   const downloadReceipt = () => {
     const doc = new jsPDF();
-  
     const saleDetails = document.querySelector('.sale-details');
-  
-    // Apply custom styles to the saleDetails content
-    const customStyles = `
-      .sale-details h1 {
-        font-size: 10px !important;
-        text-align: center;
-      }
-      .sale-details p, .sale-details span, .sale-details li {
-        font-size: 12px !important;
-      }
-    `;
-  
-    // Create a style tag and append custom styles
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = customStyles;
-    document.head.appendChild(styleTag);
-  
-    // Centering the content by adding margin and setting alignment
     const content = saleDetails.innerHTML;
-    const centeredContent = `<div style="text-align: center;">${content}</div>`;
-  
-    // Use html() to capture the content and apply styles
-    doc.html(centeredContent, {
+
+    doc.html(content, {
       callback: function (doc) {
-        doc.save('receipt.pdf'); // Save the document as PDF
+        doc.save('receipt.pdf');
       },
       x: 10,
       y: 10,
-      width: 180, // You can adjust the width for better layout
-      autoPaging: true, // Auto page break if content exceeds the page
+      width: 180,
+      autoPaging: true,
     });
   };
-  
+
   if (loading) return <div>Loading sale details...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="single-sale-container">
-     
-      <div className='sale-details'>
-        <div className='sale-top-part'>
-          <h1>{sale.shop_name}</h1>
-          <p><strong>Invoice Number: </strong>{sale.sale_id} </p>
-          <p><strong>Clerk: </strong>{sale.username} </p>
-          <p><strong>Invoice Status :</strong> {sale.status} </p>
+      <div className="sale-details">
+        <div className="sale-top-part">
+          <h1>{shopname}</h1>
+          <p><strong>Invoice Number:</strong> {sale.sale_id}</p>
+          <p><strong>Clerk:</strong> {username}</p>
+          <p><strong>Invoice Status:</strong> {sale.status}</p>
         </div>
 
         {/* Table for Sale Details */}
@@ -156,7 +135,7 @@ const SingleSale = () => {
             </tr>
           </tbody>
         </table>
-        <p>Amount paid : <strong>{sale.amount_paid} ksh</strong> </p>
+        <p>Amount paid: <strong>{sale.amount_paid} ksh</strong></p>
       </div>
 
       <div className="edit-sale-button">
