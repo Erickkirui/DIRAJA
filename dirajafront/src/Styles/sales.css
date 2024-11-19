@@ -115,3 +115,33 @@
   font-weight: 500;
   color: #333;
 }
+
+/* sales analytics */
+.shop-cards-container{
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+
+
+}
+.shop-sales-cards{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 200px;
+}
+
+/* SingleSale.css */
+
+.sale-details-table {
+  width: 50%;
+
+}
+.sale-details-table th{
+  text-align: left;
+  padding: 5px;
+  background-color: var(--background);
+}
+.sale-details-table td{
+  padding: 5px;
+}

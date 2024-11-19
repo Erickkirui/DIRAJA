@@ -5,7 +5,6 @@ function AddSalePage() {
   return (
     <div>
         <AddSale />
-
     </div>
   )
 }
