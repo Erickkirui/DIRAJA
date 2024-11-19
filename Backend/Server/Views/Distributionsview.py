@@ -76,7 +76,7 @@
 #                 distribution = Distribution(
 #                     inventory_id=inventory_id,
 #                     remaining_quantity=inventory_item.quantity,
-#                     # Convert the 'created_at' string to a datetime object
+#                     # Convert the 'created_at' String to a datetime object
 #                     distributed_at=datetime.utcnow(),
 #                     # distributed_by=distributed_by
 #                 )

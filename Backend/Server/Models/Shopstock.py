@@ -11,11 +11,11 @@ class ShopStock(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
     transfer_id = db.Column(db.Integer, db.ForeignKey('transfers.transfer_id'))
     total_cost = db.Column(db.Float, nullable=False)
-    itemname = db.Column(db.String(100), nullable=False)
-    metric = db.Column(db.String)
+    itemname = db.Column(db.String(50), nullable=False)
+    metric = db.Column(db.String(50))
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
-    BatchNumber = db.Column(db.String(100), nullable=False)
+    BatchNumber = db.Column(db.String(50), nullable=False)
     unitPrice = db.Column (db.Float, nullable=False)
 
 

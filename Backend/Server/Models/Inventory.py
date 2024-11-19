@@ -11,23 +11,23 @@ class Inventory(db.Model):
 
     # Table columns
     inventory_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    itemname = db.Column(db.String(100), nullable=False)
+    itemname = db.Column(db.String(50), nullable=False)
     initial_quantity = db.Column(db.Integer)
     quantity = db.Column(db.Float, nullable=False)
-    metric = db.Column(db.String)
+    metric = db.Column(db.String(50))
     unitCost = db.Column(db.Float, nullable=False)
     totalCost = db.Column(db.Float, nullable=False)
     amountPaid = db.Column(db.Float, nullable=False)
     unitPrice = db.Column(db.Float, nullable=False)
-    BatchNumber = db.Column(db.String(100), nullable=False)
+    BatchNumber = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
     
     # Correct these lines
-    Suppliername = db.Column(db.String(100), nullable=False)  # Corrected
-    Supplier_location = db.Column(db.String(100), nullable=False)  # Corrected
+    Suppliername = db.Column(db.String(50), nullable=False)  # Corrected
+    Supplier_location = db.Column(db.String(50), nullable=False)  # Corrected
 
     ballance = db.Column(db.Float)
-    note = db.Column(db.String)
+    note = db.Column(db.String(50))
     
     users = db.relationship('Users', backref='inventory', lazy=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

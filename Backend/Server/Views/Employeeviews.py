@@ -108,7 +108,7 @@ class AddNewemployee(Resource):
 
     def parse_date(self, date_str):
         """
-        Helper method to parse a date string into a datetime object.
+        Helper method to parse a date String into a datetime object.
         Handles both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' formats.
         """
         if date_str:
@@ -250,7 +250,7 @@ class Employeeresource(Resource):
         return {"message": "Employee deleted successfully"}, 200
 
     def parse_date(self, date_str, original_date):
-        """Helper method to parse a date string into a datetime object"""
+        """Helper method to parse a date String into a datetime object"""
         if date_str:
             try:
                 return datetime.strptime(date_str, '%Y-%m-%d')

@@ -37,7 +37,7 @@ class AddCustomer(Resource):
         item = data.get('item')
         amount_paid = data.get('amount_paid')
         payment_method = data.get('payment_method')
-         # Convert the 'created_at' string to a datetime object
+         # Convert the 'created_at' String to a datetime object
         created_at = data.get('created_at')
         if created_at:
             created_at = datetime.strptime(created_at, '%Y-%m-%d')
@@ -88,7 +88,7 @@ class GetCustomersByShop(Resource):
                     "item": customer.item,
                     "amount_paid": customer.amount_paid,
                     "payment_method": customer.payment_method,
-                    "created_at": customer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Format datetime as string
+                    "created_at": customer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Format datetime as String
                 }
                 customer_list.append(customer_data)
 

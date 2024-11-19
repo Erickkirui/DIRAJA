@@ -160,7 +160,7 @@ class GetSales(Resource):
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,
                     "payment_method": sale.payment_method,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to String
                 })
 
             # Return the list of sales
@@ -212,7 +212,7 @@ class GetSalesByShop(Resource):
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,
                     "payment_method": sale.payment_method,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to String
                 })
 
             # Return the list of sales
@@ -259,7 +259,7 @@ class SalesResources(Resource):
                 "amount_paid": sale.amount_paid,
                 "total_price": sale.total_price,
                 "payment_method": sale.payment_method,
-                "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to String
             }
 
             return {"sale": sale_data}, 200

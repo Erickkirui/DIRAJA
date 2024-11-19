@@ -72,7 +72,7 @@ const SingleSale = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.Stringify(formData),
       });
 
       if (!response.ok) throw new Error('Failed to update sale');

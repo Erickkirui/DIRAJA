@@ -12,10 +12,10 @@ class Transfer(db.Model):
     inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     total_cost = db.Column(db.Float, nullable=False)  # New Field
-    BatchNumber = db.Column(db.String(100), nullable=False)
+    BatchNumber = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    itemname = db.Column(db.String(100), nullable=False)
-    metric = db.Column(db.String)
+    itemname = db.Column(db.String(50), nullable=False)
+    metric = db.Column(db.String(50))
     amountPaid = db.Column (db.Float, nullable=False)
     unitCost = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
