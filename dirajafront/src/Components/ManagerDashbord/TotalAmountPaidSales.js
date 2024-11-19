@@ -49,7 +49,7 @@ const TotalAmountPaidSales = () => {
       ) : (
         <p>Loading...</p>
       )}
-      <Link to='/sales'>View Sales</Link>
+      <Link to='/analytics'>View Sales</Link>
     </div>
   );
 };
