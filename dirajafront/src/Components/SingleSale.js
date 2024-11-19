@@ -86,22 +86,43 @@ const SingleSale = () => {
     }
   };
 
-  // Function to download the sale receipt as a PDF
   const downloadReceipt = () => {
     const doc = new jsPDF();
-
+  
     const saleDetails = document.querySelector('.sale-details');
-
-    // Capture the content of the sale details section
-    doc.html(saleDetails, {
+  
+    // Apply custom styles to the saleDetails content
+    const customStyles = `
+      .sale-details h1 {
+        font-size: 10px !important;
+        text-align: center;
+      }
+      .sale-details p, .sale-details span, .sale-details li {
+        font-size: 12px !important;
+      }
+    `;
+  
+    // Create a style tag and append custom styles
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = customStyles;
+    document.head.appendChild(styleTag);
+  
+    // Centering the content by adding margin and setting alignment
+    const content = saleDetails.innerHTML;
+    const centeredContent = `<div style="text-align: center;">${content}</div>`;
+  
+    // Use html() to capture the content and apply styles
+    doc.html(centeredContent, {
       callback: function (doc) {
         doc.save('receipt.pdf'); // Save the document as PDF
       },
-      margin: [10, 10, 10, 10], // You can adjust margins
-      autoPaging: true, // Add auto paging if content exceeds the page size
+      x: 10,
+      y: 10,
+      width: 180, // You can adjust the width for better layout
+      autoPaging: true, // Auto page break if content exceeds the page
     });
   };
-
+  
   if (loading) return <div>Loading sale details...</div>;
   if (error) return <div>Error: {error}</div>;
 

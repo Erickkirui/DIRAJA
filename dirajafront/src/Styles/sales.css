@@ -132,10 +132,11 @@
 }
 
 /* SingleSale.css */
-/* .sale-details-table {
+
+.sale-details-table {
   width: 50%;
 
-} */
+}
 .sale-details-table th{
   text-align: left;
   padding: 5px;
