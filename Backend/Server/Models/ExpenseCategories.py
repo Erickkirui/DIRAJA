@@ -4,11 +4,10 @@ from datetime import datetime
 
 class ExpenseCategory(db.Model):
 
-    __tablename__ = 'expenseCategories'
+    __tablename__ = 'categories'
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
-    category_id = db.Column(db.Integer, primary_key=True)
+   
+    category_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     categoryname = db.Column(db.String(100), nullable=False, unique=True)
     
     def __init__(self, categoryname):
