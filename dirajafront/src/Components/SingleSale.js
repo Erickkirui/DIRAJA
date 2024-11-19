@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import '../Styles/Singlesale.css';
+import jsPDF from 'jspdf';
+import '../Styles/sales.css'
 
 const SingleSale = () => {
   const { sale_id } = useParams();
@@ -85,31 +86,66 @@ const SingleSale = () => {
     }
   };
 
+  // Function to download the sale receipt as a PDF
+  const downloadReceipt = () => {
+    const doc = new jsPDF();
+
+    const saleDetails = document.querySelector('.sale-details');
+
+    // Capture the content of the sale details section
+    doc.html(saleDetails, {
+      callback: function (doc) {
+        doc.save('receipt.pdf'); // Save the document as PDF
+      },
+      margin: [10, 10, 10, 10], // You can adjust margins
+      autoPaging: true, // Add auto paging if content exceeds the page size
+    });
+  };
+
   if (loading) return <div>Loading sale details...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="single-sale-container">
-      <div className="single-sale-card">
-        <h2 className="single-sale-title">Single Sale</h2>
-        <div className="single-sale-details">
-          <p><strong>Sale ID:</strong> {sale.sale_id}</p>
-          <p><strong>Employee:</strong> {sale.username}</p>
-          <p><strong>Shop Name:</strong> {sale.shop_name}</p>
-          <p><strong>Item:</strong> {sale.item_name}</p>
-          <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
-          <p><strong>Unit Price:</strong> {sale.unit_price} ksh</p>
-          <p><strong>Total Price:</strong> {sale.total_price} ksh</p>
-          <p><strong>Amount Paid:</strong> {sale.amount_paid} ksh</p>
-          <p><strong>Invoice Status:</strong> {sale.status}</p>
+     
+      <div className='sale-details'>
+        <div className='sale-top-part'>
+          <h1>{sale.shop_name}</h1>
+          <p><strong>Invoice Number: </strong>{sale.sale_id} </p>
+          <p><strong>Clerk: </strong>{sale.username} </p>
+          <p><strong>Invoice Status :</strong> {sale.status} </p>
         </div>
-        <div className="edit-sale-button">
-          <button onClick={handleEditClick}>Edit Sale</button>
-        </div>
+
+        {/* Table for Sale Details */}
+        <table className="sale-details-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Total Price</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{sale.item_name}</td>
+              <td>{sale.quantity} {sale.metric}</td>
+              <td>{sale.unit_price} ksh</td>
+              <td>{sale.total_price} ksh</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>Amount paid : <strong>{sale.amount_paid} ksh</strong> </p>
       </div>
-      <div className="download-invoice-button">
-          <button disabled>Download Invoice</button>
-        </div>
+
+      <div className="edit-sale-button">
+        <button onClick={handleEditClick}>Edit Sale</button>
+      </div>
+
+      {/* Download Receipt Button */}
+      <div className="download-receipt-button">
+        <button onClick={downloadReceipt}>Download Receipt</button>
+      </div>
 
       {isEditing && (
         <div className="modal">

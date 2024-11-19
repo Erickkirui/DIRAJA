@@ -130,3 +130,17 @@
   border-radius: 8px;
   width: 200px;
 }
+
+/* SingleSale.css */
+/* .sale-details-table {
+  width: 50%;
+
+} */
+.sale-details-table th{
+  text-align: left;
+  padding: 5px;
+  background-color: var(--background);
+}
+.sale-details-table td{
+  padding: 5px;
+}

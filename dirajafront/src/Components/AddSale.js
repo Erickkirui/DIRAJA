@@ -1,32 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import BatchDetails from './BatchDetails';
 
 const AddSale = () => {
     const [formData, setFormData] = useState({
         shop_id: '',
         customer_name: '',
         customer_number: '',
-        item_name: '',
         quantity: '',
-        metric: '',
-        unit_price: '',
         amount_paid: '',
         payment_method: '',
         BatchNumber: '',
-        stock_id: '',
+        item_name: '',
+        metric: '',
+        unit_price: '',
+        stock_id: ''
     });
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [shopError, setShopError] = useState(false);
     const [batchError, setBatchError] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
+    const [message, setMessage] = useState({ text: '', type: '' }); // For success/error messages
+
+    const validPaymentMethods = ['bank', 'cash', 'mpesa']; // Valid payment methods
 
     useEffect(() => {
         const fetchShops = async () => {
             try {
-
                 const response = await axios.get('/diraja/allshops', {
-
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -47,7 +49,6 @@ const AddSale = () => {
         const fetchBatchNumbers = async () => {
             try {
                 const response = await axios.get('/diraja/batches/available', {
-
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -64,48 +65,27 @@ const AddSale = () => {
         fetchBatchNumbers();
     }, []);
 
-    useEffect(() => {
-        const fetchBatchDetails = async () => {
-            if (!formData.BatchNumber) return;
-
-            try {
-
-                const response = await axios.get('/diraja/batch-details', {
-
-                    params: { BatchNumber: formData.BatchNumber },
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
-                });
-
-                const { itemname, metric, unit_price, stock_id } = response.data;
-
-                setFormData((prevData) => ({
-                    ...prevData,
-                    item_name: itemname || '',
-                    metric: metric || '',
-                    unit_price: unit_price || '',
-                    stock_id: stock_id || '',
-                }));
-            } catch (error) {
-                console.error('Error fetching batch details:', error);
-            }
-        };
-        fetchBatchDetails();
-    }, [formData.BatchNumber]);
-
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
         setFieldErrors({ ...fieldErrors, [e.target.name]: '' });
+    };
+
+    const handleBatchDetailsFetched = (details) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            item_name: details.itemname,
+            metric: details.metric,
+            unit_price: details.unit_price,
+            stock_id: details.stock_id
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         const requiredFields = [
-            'shop_id', 'BatchNumber', 'customer_name', 'customer_number', 'item_name',
-            'quantity', 'metric', 'unit_price', 'amount_paid',
-            'payment_method', 'stock_id'
+            'shop_id', 'BatchNumber', 'customer_name', 'customer_number',
+            'quantity', 'amount_paid', 'payment_method', 'item_name', 'stock_id'
         ];
 
         const newErrors = {};
@@ -115,17 +95,18 @@ const AddSale = () => {
             }
         });
 
+        // Payment method validation
+        if (formData.payment_method && !validPaymentMethods.includes(formData.payment_method)) {
+            newErrors.payment_method = `Invalid Payment Method. Must be one of: ${validPaymentMethods.join(', ')}`;
+        }
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
 
-        console.log("Data being sent for sale:", formData);
-
         try {
-
             const response = await axios.post('/diraja/newsale', formData, {
-
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -133,33 +114,46 @@ const AddSale = () => {
             });
 
             if (response.status === 201) {
-                alert(response.data.message);
+                setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
                     shop_id: '',
                     customer_name: '',
                     customer_number: '',
-                    item_name: '',
                     quantity: '',
-                    metric: '',
-                    unit_price: '',
                     amount_paid: '',
                     payment_method: '',
                     BatchNumber: '',
-                    stock_id: '',
+                    item_name: '',
+                    metric: '',
+                    unit_price: '',
+                    stock_id: ''
                 });
                 setFieldErrors({});
             } else {
-                setFieldErrors({ form: 'Failed to add sale' });
+                setMessage({ text: 'Failed to add sale', type: 'error' });
             }
         } catch (error) {
             console.error('Error:', error);
-            setFieldErrors({ form: 'An error occurred. Please try again.' });
+            setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
         }
     };
 
     return (
         <div>
             <h1>Add Sale</h1>
+            {/* General Error Alert */}
+            {Object.keys(fieldErrors).length > 0 && (
+                <div className="alert alert-error">
+                    
+                    {Object.values(fieldErrors).join(' ')} {/* Display all error messages */}
+                </div>
+            )}
+            {message.text && (
+                <div className={`message ${message.type === 'success' ? 'success' : 'error'}`}>
+                    {message.text}
+                </div>
+            )}
+
             {shopError ? (
                 <p>Error loading shops. Please try again later.</p>
             ) : (
@@ -172,7 +166,6 @@ const AddSale = () => {
                             </option>
                         ))}
                     </select>
-                    {fieldErrors.shop_id && <p className="error">{fieldErrors.shop_id}</p>}
 
                     {batchError ? (
                         <p>Error loading batch numbers. Please try again later.</p>
@@ -186,7 +179,7 @@ const AddSale = () => {
                             ))}
                         </select>
                     )}
-                    {fieldErrors.BatchNumber && <p className="error">{fieldErrors.BatchNumber}</p>}
+                    <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
 
                     <input
                         name="customer_name"
@@ -195,7 +188,6 @@ const AddSale = () => {
                         placeholder="Customer Name"
                         className="input"
                     />
-                    {fieldErrors.customer_name && <p className="error">{fieldErrors.customer_name}</p>}
 
                     <input
                         name="customer_number"
@@ -204,7 +196,6 @@ const AddSale = () => {
                         placeholder="Customer Number"
                         className="input"
                     />
-                    {fieldErrors.customer_number && <p className="error">{fieldErrors.customer_number}</p>}
 
                     <input
                         name="quantity"
@@ -214,7 +205,6 @@ const AddSale = () => {
                         placeholder="Quantity"
                         className="input"
                     />
-                    {fieldErrors.quantity && <p className="error">{fieldErrors.quantity}</p>}
 
                     <input
                         name="amount_paid"
@@ -224,50 +214,24 @@ const AddSale = () => {
                         placeholder="Amount Paid"
                         className="input"
                     />
-                    {fieldErrors.amount_paid && <p className="error">{fieldErrors.amount_paid}</p>}
 
-                    <input
+                    <select
                         name="payment_method"
                         value={formData.payment_method}
                         onChange={handleChange}
-                        placeholder="Payment Method"
                         className="input"
-                    />
-                    {fieldErrors.payment_method && <p className="error">{fieldErrors.payment_method}</p>}
+                    >
+                        <option value="">Select Payment Method</option>
+                        {validPaymentMethods.map((method) => (
+                            <option key={method} value={method}>
+                                {method.charAt(0).toUpperCase() + method.slice(1)} {/* Capitalize method */}
+                            </option>
+                        ))}
+                    </select>
 
                     <button type="submit" className="button">Add Sale</button>
-                    {fieldErrors.form && <p className="error">{fieldErrors.form}</p>}
                 </form>
             )}
-            {formData.item_name && (
-    <div className="item-details">
-        <span className="label">Item Name:</span>
-        <span className="value">{formData.item_name}</span>
-    </div>
-)}
-
-
-    {formData.metric && (
-        <div className="item-details">
-            <span className="label">Metric:</span>
-            <span className="value">{formData.metric}</span>
-        </div>
-    )}
-
-    {formData.unit_price && (
-        <div className="item-details">
-            <span className="label">Unit Price:</span>
-            <span className="value">{formData.unit_price}</span>
-        </div>
-    )}
-
-    {formData.stock_id && (
-        <div className="item-details">
-            <span className="label">Stock ID:</span>
-            <span className="value">{formData.stock_id}</span>
-        </div>
-    )}
-
         </div>
     );
 };

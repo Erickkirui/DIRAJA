@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Sales from '../Components/GetSales';
-import TotalPaidSales from '../Components/TotalPaidSales'; 
+
 
 function SalesPage() {
   return (
