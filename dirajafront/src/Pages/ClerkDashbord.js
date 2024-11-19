@@ -4,6 +4,7 @@ import UserDisplay from '../Components/UserDisplay'
 
 import ShopTodaySales from '../Components/ClerkDashbord/ShopTodaySales'
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop'
+import '../Styles/clerkpage.css'
 import { Link } from 'react-router-dom'
 
 

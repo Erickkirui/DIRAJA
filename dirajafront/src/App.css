@@ -62,3 +62,13 @@
   background-color: var(--primary);
   color: #fff;
 }
+
+@media (max-width: 768px) {
+  .navigation{
+    display: none;
+  }
+  .body-area{
+    width: 100%;
+  }
+
+}
