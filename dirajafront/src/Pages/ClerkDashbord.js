@@ -21,7 +21,11 @@ function ClerkDashbord() {
             </div>
             
             <div className='page-area'>
-                <button className='button'><Link to='/shopsale'> New Sale</Link></button>
+                <div className='nav-phone'>
+                <button className='button'> <Link  to='/shopsale'> New Sale</Link></button>
+                <button className='button'> <Link  to='/shopcustomers'> View Customers</Link></button>
+                <button className='button'> <Link  to='/shopsales'> View Sales</Link></button>
+                </div>
                 <div className='analytics-clerk'>
                     <TotalShopSales />
                     <ShopTodaySales />

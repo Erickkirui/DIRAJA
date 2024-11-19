@@ -84,12 +84,10 @@ const ShopCustomers = () => {
           <table className="customers-table">
             <thead>
               <tr>
-                <th>Customer ID</th>
+                <th>ID</th>
                 <th>Name</th>
-                <th>Contact Number</th>
+                <th>Phone</th>
                 <th>Item</th>
-                <th>Amount Paid (ksh)</th>
-                <th>Payment Method</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -100,9 +98,8 @@ const ShopCustomers = () => {
                   <td>{customer.customer_name}</td>
                   <td>{customer.customer_number}</td>
                   <td>{customer.item}</td>
-                  <td>{customer.amount_paid}</td>
-                  <td>{customer.payment_method}</td>
-                  <td>{new Date(customer.created_at).toLocaleString()}</td>
+                  {/* Show only the date (without time) */}
+                  <td>{new Date(customer.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ const SingleShopSale = () => {
     });
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [batchError, setBatchError] = useState(false);
+    const [message, setMessage] = useState(''); // For displaying messages
+    const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
     useEffect(() => {
         const fetchBatchNumbers = async () => {
@@ -85,7 +88,8 @@ const SingleShopSale = () => {
     
         for (const field of requiredFields) {
             if (!formData[field]) {
-                alert(`Please fill out the ${field} field.`);
+                setMessageType('error');
+                setMessage(`Please fill out the ${field} field.`);
                 return;
             }
         }
@@ -101,7 +105,8 @@ const SingleShopSale = () => {
             });
     
             if (response.status === 201) {
-                alert(response.data.message);
+                setMessageType('success');
+                setMessage(response.data.message);
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',  // Reset with shop_id from local storage
                     customer_name: '',
@@ -116,17 +121,27 @@ const SingleShopSale = () => {
                     stock_id: '',
                 });
             } else {
-                alert('Failed to add sale');
+                setMessageType('error');
+                setMessage('Failed to add sale');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('An error occurred. Please try again.');
+            setMessageType('error');
+            setMessage('An error occurred. Please try again.');
         }
     };
 
     return (
         <div>
-            <form onSubmit={handleSubmit}>
+            {/* Display the message above the form */}
+            {message && (
+                <div className={`message ${messageType === 'success' ? 'success' : 'error'}`}>
+                    {message}
+                </div>
+            )}
+            
+            <h1>Record a sale</h1>
+            <form onSubmit={handleSubmit} className="clerk-sale">
                 <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
                 <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number" />
                 <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantity" />
@@ -165,8 +180,10 @@ const SingleShopSale = () => {
                 <input name="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} placeholder="Amount Paid" />
                 <input name="payment_method" value={formData.payment_method} onChange={handleChange} placeholder="Payment Method" />
                 
-                <button type="submit">Add Sale</button>
+                <button className="button" type="submit">Add Sale</button>
+                
             </form>
+            <Link  to='/clerk'>Home</Link>
         </div>
     );
 };
