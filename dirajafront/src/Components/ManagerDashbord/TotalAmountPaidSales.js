@@ -13,7 +13,7 @@ const TotalAmountPaidSales = () => {
   useEffect(() => {
     const fetchTotalAmountPaid = async () => {
       try {
-        const response = await axios.get('/diraja/allshopstotal', {
+        const response = await axios.get('/api/diraja/allshopstotal', {
           params: { period },
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,

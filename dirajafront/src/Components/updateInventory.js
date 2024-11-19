@@ -21,7 +21,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
     const fetchInventory = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await axios.get(`/diraja/inventory/${inventoryId}`, {
+        const response = await axios.get(`/api/diraja/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventoryData(response.data);
@@ -42,7 +42,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
     e.preventDefault();
     try {
       const accessToken = localStorage.getItem('access_token');
-      await axios.put(`/diraja/inventory/${inventoryId}`, inventoryData, {
+      await axios.put(`/api/diraja/inventory/${inventoryId}`, inventoryData, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       setSuccess('Inventory updated successfully.');

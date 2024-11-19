@@ -16,7 +16,7 @@ const SingleSale = () => {
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await fetch(`/diraja/sale/${sale_id}`, {
+        const response = await fetch(`/api/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ const SingleSale = () => {
 
         // Fetch shop name
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`/diraja/shop/${data.sale.shop_id}`);
+          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`);
           if (shopResponse.ok) {
             const shopData = await shopResponse.json();
             setShopname(shopData.name);
@@ -41,7 +41,7 @@ const SingleSale = () => {
 
         // Fetch username
         if (data.sale.user_id) {
-          const userResponse = await fetch(`/diraja/user/${data.sale.user_id}`);
+          const userResponse = await fetch(`/api/diraja/user/${data.sale.user_id}`);
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setUsername(userData.username);
@@ -67,7 +67,7 @@ const SingleSale = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/diraja/sale/${sale_id}`, {
+      const response = await fetch(`/api/diraja/sale/${sale_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

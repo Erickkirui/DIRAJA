@@ -23,7 +23,7 @@ const Shopstock = () => {
                     return;
                 }
 
-                const response = await fetch('/diraja/shopstock', {
+                const response = await fetch('/api/diraja/shopstock', {
 
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,

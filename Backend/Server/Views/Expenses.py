@@ -22,7 +22,7 @@ def check_role(required_role):
         return decorator
     return wrapper
 
-class AddExpence(Resource):
+class AddExpense(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
