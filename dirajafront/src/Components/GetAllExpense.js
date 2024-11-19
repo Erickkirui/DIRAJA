@@ -158,6 +158,7 @@ const Expenses = () => {
             <th>Employee</th>
             <th>Shop Name</th>
             <th>Item</th>
+            <th>Category</th>
             <th>Description</th>
             <th>Quantity</th>
             <th>Total Price (Ksh)</th>
@@ -184,6 +185,7 @@ const Expenses = () => {
               </td>
               <td>{expense.shop_name}</td>
               <td>{expense.item}</td>
+              <td>{expense.category}</td>
               <td>{expense.description}</td>
               <td>{expense.quantity}</td>
               <td>{expense.totalPrice}</td>
