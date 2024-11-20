@@ -84,7 +84,8 @@ const Expenses = () => {
     const matchesSearchTerm =
       expense.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.shop_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.item.toLowerCase().includes(searchTerm.toLowerCase());
+      expense.item.toLowerCase().includes(searchTerm.toLowerCase())||
+      expense.category.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDate =
       selectedDate === '' || new Date(expense.created_at).toISOString().split('T')[0] === selectedDate;
