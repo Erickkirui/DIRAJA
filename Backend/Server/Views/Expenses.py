@@ -1,9 +1,7 @@
 from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
-from Server.Models.ExpenseCategories import ExpenseCategory
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
-from Server.Utils import get_expenses_filtered, serialize_expenses
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
@@ -34,7 +32,7 @@ class AddExpense(Resource):
         item = data.get('item')
         description = data.get('description')
         quantity = data.get('quantity')
-        category_name = data.get('categoryname')  # Get the category name or identifier
+        category = data.get('category')  # Directly accept the category from the request
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
 
@@ -43,20 +41,13 @@ class AddExpense(Resource):
         if created_at:
             created_at = datetime.strptime(created_at, '%Y-%m-%d')
 
-        # Fetch the category_id based on category name (or other criteria)
-        category = ExpenseCategory.query.filter_by(categoryname=category_name).first()
-
-        if category:
-            category_id = category.category_id
-        else:
-            return {"error": "Category not found"}, 400
-
+        # Create a new expense entry
         new_expense = Expenses(
             shop_id=shop_id,
             item=item,
             description=description,
             quantity=quantity,
-            category_id=category_id,  # Use category_id instead of category
+            category=category,  # Directly use the provided category
             totalPrice=totalPrice,
             amountPaid=amountPaid,
             created_at=created_at,
@@ -67,6 +58,7 @@ class AddExpense(Resource):
         db.session.commit()
 
         return {"message": "Expense added successfully"}, 201
+
 
 
 
@@ -83,12 +75,10 @@ class AllExpenses(Resource):
             # Fetch username and shop name manually using user_id and shop_id
             user = Users.query.filter_by(users_id=expense.user_id).first()
             shop = Shops.query.filter_by(shops_id=expense.shop_id).first()
-            category = ExpenseCategory.query.filter_by(category_id=expense.category_id).first()
 
             # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
-            expensecategory = category.expensecategory if category else "Unknown Category"
 
             # Append the data
             all_expenses.append({
@@ -100,7 +90,7 @@ class AllExpenses(Resource):
                 "item": expense.item,
                 "description": expense.description,
                 "quantity": expense.quantity,
-                "category": expensecategory,
+                "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
                 "created_at": expense.created_at
@@ -125,7 +115,7 @@ class GetShopExpenses(Resource):
             "shop_id" :expense.shop_id,
             "item":expense.item,
             "description" : expense.description,
-            "category_id": expense.category_id,
+            "category": expense.category,
             "quantity" : expense.quantity,
             "totalPrice" : expense.totalPrice,
             "amountPaid" : expense.amountPaid,
@@ -153,7 +143,7 @@ class ExpensesResources(Resource):
                 "shop_id": expense.shop_id,
                 "item": expense.item,
                 "description": expense.description,
-                "category_id": expense.category_id,
+                "category": expense.category,
                 "quantity": expense.quantity,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,

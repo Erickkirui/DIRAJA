@@ -13,7 +13,7 @@ class Expenses(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     item = db.Column(db.String(50), unique=False, nullable=False)
     description = db.Column(db.String(50), nullable=False) 
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.category_id'))
+    category = db.Column(db.String(50), nullable=False) 
     quantity = db.Column (db.Float, nullable=True)
     totalPrice = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
@@ -22,14 +22,12 @@ class Expenses(db.Model):
     #relationship 
 
     users = db.relationship('Users' ,backref='expenses', lazy=True)
-    shops = db.relationship('Shops' ,backref='expenses', lazy=True)
-    categories = db.relationship('ExpenseCategory' ,backref='expenses', lazy=True)
-   
+    shops = db.relationship('Shops' ,backref='expenses', lazy=True)   
 
 
     
 
     def __repr__(self):
         return (f"Expense (expense_id={self.expense_id}, user_id='{self.user_id}', "
-            f"shop_id='{self.shop_id}', category_id='{self.category_id}', item='{self.item}', description='{self.description}', "
+            f"shop_id='{self.shop_id}', category='{self.category}', item='{self.item}', description='{self.description}', "
             f"quantity='{self.quantity}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')")

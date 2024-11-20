@@ -13,7 +13,7 @@ jwt = JWTManager()
 
 def initialize_models():
     from Server.Models.Users import Users
-    from Server.Models.ExpenseCategories import ExpenseCategory
+    
     from Server.Models.Shops import Shops
     from Server.Models.Sales import Sales
     from Server.Models.Bank import Bank
@@ -37,11 +37,11 @@ def initialize_views():
 
 def create_app(config_name):
     app.config.from_object(config_name)
-    # app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
+    app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
     # MySQL database configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = (
-        "mysql+pymysql://root:@localhost/Diraja"
-    )
+    # app.config["SQLALCHEMY_DATABASE_URI"] = (
+    #     "mysql+pymysql://root:@localhost/Diraja"
+    # )
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     

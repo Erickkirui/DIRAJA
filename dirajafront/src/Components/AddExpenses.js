@@ -5,7 +5,7 @@ import '../Styles/expenses.css';
 const AddExpense = () => {
   const [expenseData, setExpenseData] = useState({
     shop_id: '',
-    category_id: '',
+    category: '',
     item: '',
     description: '',
     quantity: '',
@@ -15,9 +15,8 @@ const AddExpense = () => {
   });
 
   const [shops, setShops] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [newCategory, setNewCategory] = useState('');
-  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [categorySuggestions, setCategorySuggestions] = useState([]);
+  const [filteredCategories, setFilteredCategories] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
@@ -30,29 +29,18 @@ const AddExpense = () => {
         });
         setShops(shopResponse.data);
 
-        const categoryResponse = await axios.get('/api/diraja/expensecategory', {
+        const expenseResponse = await axios.get('/api/diraja/allexpenses', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-
-        console.log("Categories API response:", categoryResponse.data);
-
-        const categoryData = Array.isArray(categoryResponse.data.categories)
-          ? categoryResponse.data.categories.map((category) => ({
-              category_id: category.category_id, // Ensure correct key mapping
-              categoryname: category.categoryname, // Ensure correct key mapping
-            }))
-          : [];
-
-        setCategories(categoryData);
-
-        if (categoryData.length === 0) {
-          console.warn("No categories available!");
-        }
+        const categories = [
+          ...new Set(expenseResponse.data.map((expense) => expense.category))
+        ];
+        setCategorySuggestions(categories);
       } catch (error) {
-        console.error("Error fetching categories:", error);
-        setCategories([]);
+        console.error("Error fetching data:", error);
+        setCategorySuggestions([]);
       }
     };
 
@@ -67,43 +55,29 @@ const AddExpense = () => {
     });
   };
 
-  const handleAddCategory = async () => {
-    if (!newCategory.trim()) {
-      alert('Category name cannot be empty.');
-      return;
-    }
-
-    try {
-      const response = await axios.post(
-        '/api/diraja/newexpensecategory',
-        { categoryname: newCategory.trim() },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`
-          }
-        }
+  const handleCategoryInput = (e) => {
+    const value = e.target.value;
+    setExpenseData({ ...expenseData, category: value });
+    if (value) {
+      setFilteredCategories(
+        categorySuggestions.filter((suggestion) =>
+          suggestion.toLowerCase().includes(value.toLowerCase())
+        )
       );
-
-      // Add the new category to the dropdown and reset the form
-      setCategories([...categories, { category_id: response.data.category_id, categoryname: response.data.categoryname }]);
-      setNewCategory('');
-      setShowAddCategory(false);
-      setMessage({ type: 'success', text: 'Category added successfully' });
-    } catch (error) {
-      console.error('Error adding category:', error.response || error.message);
-      setMessage({
-        type: 'error',
-        text:
-          error.response?.data?.message ||
-          'Failed to add category. Please try again.'
-      });
+    } else {
+      setFilteredCategories([]);
     }
+  };
+
+  const handleCategorySelect = (suggestion) => {
+    setExpenseData({ ...expenseData, category: suggestion });
+    setFilteredCategories([]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!expenseData.shop_id || !expenseData.category_id) {
+    if (!expenseData.shop_id || !expenseData.category) {
       setMessage({ type: 'error', text: 'Please select both a shop and a category' });
       return;
     }
@@ -134,7 +108,7 @@ const AddExpense = () => {
         setMessage({ type: 'success', text: 'Expense added successfully' });
         setExpenseData({
           shop_id: '',
-          category_id: '',
+          category: '',
           item: '',
           description: '',
           quantity: '',
@@ -176,45 +150,29 @@ const AddExpense = () => {
           </select>
         </div>
 
-        {/* Category Dropdown */}
-        <div>
-          <select
-            name="category_id"
-            value={expenseData.category_id}
-            onChange={handleChange}
-            className={`select ${expenseData.category_id ? 'valid' : 'invalid'}`}
-          >
-            <option value="">Select a category</option>
-            {categories.map((category) => (
-              <option key={category.category_id} value={category.category_id}>
-                {category.categoryname}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => setShowAddCategory((prev) => !prev)}
-            className="button"
-          >
-            Add New Category
-          </button>
+        {/* Category Input with Suggestions */}
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            name="category"
+            value={expenseData.category}
+            onChange={handleCategoryInput}
+            placeholder="Enter category"
+            className="input"
+          />
+          {filteredCategories.length > 0 && (
+            <ul className="suggestions">
+              {filteredCategories.map((suggestion, index) => (
+                <li
+                  key={index}
+                  onClick={() => handleCategorySelect(suggestion)}
+                >
+                  {suggestion}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-
-        {/* Add Category Input */}
-        {showAddCategory && (
-          <div>
-            <input
-              type="text"
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              placeholder="New category name"
-              className="input"
-            />
-            <button type="button" onClick={handleAddCategory} className="button">
-              Save Category
-            </button>
-          </div>
-        )}
 
         {/* Other form fields */}
         <div>
