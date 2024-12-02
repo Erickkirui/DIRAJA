@@ -6,15 +6,15 @@ const BatchDetails = ({ batchNumber, onDetailsFetched }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (!batchNumber) return;
+        if (!batchNumber) return; // Exit early if batchNumber is not set.
 
         const fetchBatchDetails = async () => {
             try {
-                const response = await axios.get(' /api/diraja/batch-details', {
+                const response = await axios.get('/api/diraja/batch-details', {
                     params: { BatchNumber: batchNumber },
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
                 });
 
                 const { itemname, metric, unit_price, stock_id } = response.data;
@@ -30,11 +30,7 @@ const BatchDetails = ({ batchNumber, onDetailsFetched }) => {
         };
 
         fetchBatchDetails();
-    }, [batchNumber, onDetailsFetched]);
-
-    if (!batchNumber) {
-        return null;
-    }
+    }, [batchNumber]); // Only depend on batchNumber.
 
     return (
         <div>

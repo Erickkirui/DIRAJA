@@ -16,7 +16,7 @@ const SingleEmployee = () => {
     const fetchEmployee = async () => {
       try {
 
-        const response = await fetch(`/api/diraja/employee/${employee_id}`, {
+ 
 
 
         const response = await fetch(` /api/diraja/employee/${employee_id}`, {

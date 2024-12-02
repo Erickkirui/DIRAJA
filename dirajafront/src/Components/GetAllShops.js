@@ -26,9 +26,6 @@ const Shops = () => {
           return;
         }
 
-
-        const response = await axios.get('/api/diraja/allshops', {
-=
         const response = await axios.get(' /api/diraja/allshops', {
 
 
@@ -66,7 +63,7 @@ const Shops = () => {
       await Promise.all(
         selectedShops.map((shopId) =>
 
-          axios.delete(`/api/diraja/shop/${shopId}`, {
+      
 
 
           axios.delete(` /api/diraja/shop/${shopId}`, {

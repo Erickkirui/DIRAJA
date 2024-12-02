@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/customers.css';
 
 const Customers = () => {
@@ -12,6 +12,9 @@ const Customers = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedCustomers, setSelectedCustomers] = useState([]);
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [updatedName, setUpdatedName] = useState('');
+  const [updatedNumber, setUpdatedNumber] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -24,9 +27,7 @@ const Customers = () => {
           return;
         }
 
-
-        const response = await axios.get(' /api/diraja/allcustomers', {
-
+        const response = await axios.get('/api/diraja/allcustomers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -57,15 +58,53 @@ const Customers = () => {
     }
   };
 
+  const handleEditClick = (customer) => {
+    setEditingCustomer(customer.customer_id);
+    setUpdatedName(customer.customer_name);
+    setUpdatedNumber(customer.customer_number);
+  };
+
+  const handleEditSave = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken || !editingCustomer) return;
+
+    try {
+      await axios.put(`/api/diraja/customers/${editingCustomer}`, {
+        customer_name: updatedName,
+        customer_number: updatedNumber,
+      }, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      setCustomers((prevCustomers) =>
+        prevCustomers.map((customer) =>
+          customer.customer_id === editingCustomer
+            ? { ...customer, customer_name: updatedName, customer_number: updatedNumber }
+            : customer
+        )
+      );
+      setEditingCustomer(null);
+      setUpdatedName('');
+      setUpdatedNumber('');
+    } catch (err) {
+      setError('Error updating customer. Please try again.');
+    }
+  };
+
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
 
-    if (selectedAction === 'delete') {
+    if (selectedAction === 'edit' && selectedCustomers.length === 1) {
+      const customerToEdit = customers.find((customer) => customer.customer_id === selectedCustomers[0]);
+      if (customerToEdit) {
+        handleEditClick(customerToEdit);
+      }
+    } else if (selectedAction === 'delete') {
       await Promise.all(
         selectedCustomers.map((customerId) =>
-
-          axios.delete(` /api/diraja/allcustomers/${customerId}`, {
-
+          axios.delete(`/api/diraja/customers/${customerId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -84,7 +123,7 @@ const Customers = () => {
     const matchesSearch =
       customer.customer_name.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesDate = selectedDate
+    const matchesDate = selectedDate
       ? new Date(customer.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
       : true;
 
@@ -103,46 +142,42 @@ const Customers = () => {
   return (
     <div className="customers-container">
       <div className="filter-container">
-      <input
-        type="text"
-        placeholder="Search by name, number, or shop"
-        className="search-bar"
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setCurrentPage(1);
+        <input
+          type="text"
+          placeholder="Search by name, number, or shop"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
           }}
-        
-      />
+        />
 
-      <input
-        type="date"
-        className="date-picker"
-        value={selectedDate}
-        onChange={(e) => {
-          setSelectedDate(e.target.value);
-          setCurrentPage(1);
-          }}  
-      />
+        <input
+          type="date"
+          className="date-picker"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
       </div>
 
-      <div className='actions-container' >
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">
-          Apply
-        </button>
-      </div>
+      <div className="actions-container">
+        <div className="actions">
+          <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <option value="">With selected, choose an action</option>
+            <option value="edit">Edit</option>
+            <option value="delete">Delete</option>
+          </select>
+          <button onClick={handleAction} className="action-button">
+            Apply
+          </button>
+        </div>
         <ExportExcel data={customers} fileName="CustomersData" />
         <DownloadPDF tableId="customers-table" fileName="CustomersData" />
-
-
       </div>
-
- 
 
       {filteredCustomers.length > 0 ? (
         <>
@@ -177,8 +212,28 @@ const Customers = () => {
                     />
                   </td>
                   <td>{customer.customer_id}</td>
-                  <td>{customer.customer_name}</td>
-                  <td>{customer.customer_number}</td>
+                  <td>
+                    {editingCustomer === customer.customer_id ? (
+                      <input
+                        type="text"
+                        value={updatedName}
+                        onChange={(e) => setUpdatedName(e.target.value)}
+                      />
+                    ) : (
+                      customer.customer_name
+                    )}
+                  </td>
+                  <td>
+                    {editingCustomer === customer.customer_id ? (
+                      <input
+                        type="text"
+                        value={updatedNumber}
+                        onChange={(e) => setUpdatedNumber(e.target.value)}
+                      />
+                    ) : (
+                      customer.customer_number
+                    )}
+                  </td>
                   <td>{customer.shop_id}</td>
                   <td>{customer.item}</td>
                   <td>{customer.amount_paid}</td>
@@ -189,7 +244,6 @@ const Customers = () => {
             </tbody>
           </table>
 
-          
           <div className="pagination">
             {Array.from({ length: totalPages }, (_, index) => (
               <button
