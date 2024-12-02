@@ -25,7 +25,7 @@ const Customers = () => {
         }
 
 
-        const response = await axios.get('/api/diraja/allcustomers', {
+        const response = await axios.get(' /api/diraja/allcustomers', {
 
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -64,7 +64,7 @@ const Customers = () => {
       await Promise.all(
         selectedCustomers.map((customerId) =>
 
-          axios.delete(`/api/diraja/allcustomers/${customerId}`, {
+          axios.delete(` /api/diraja/allcustomers/${customerId}`, {
 
             headers: {
               Authorization: `Bearer ${accessToken}`,

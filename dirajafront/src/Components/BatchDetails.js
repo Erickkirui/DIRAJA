@@ -10,7 +10,7 @@ const BatchDetails = ({ batchNumber, onDetailsFetched }) => {
 
         const fetchBatchDetails = async () => {
             try {
-                const response = await axios.get('/api/diraja/batch-details', {
+                const response = await axios.get(' /api/diraja/batch-details', {
                     params: { BatchNumber: batchNumber },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`

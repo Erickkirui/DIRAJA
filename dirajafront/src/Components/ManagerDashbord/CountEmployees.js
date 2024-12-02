@@ -12,7 +12,7 @@ const CountEmployees = () => {
   useEffect(() => {
     const fetchEmployeeCount = async () => {
       try {
-        const response = await axios.get('/api/diraja/totalemployees', {
+        const response = await axios.get(' /api/diraja/totalemployees', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
