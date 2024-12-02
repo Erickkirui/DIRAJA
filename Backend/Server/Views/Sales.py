@@ -9,6 +9,7 @@ from flask import jsonify,request,make_response
 from Server.Models.Shopstock import ShopStock
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify, request
 from functools import wraps
 
@@ -106,7 +107,7 @@ class AddSale(Resource):
             payment_method=payment_method,
             created_at=created_at
         )
-
+                                                
         try:
             # Save both sale and customer to the database
             db.session.add(new_sale)
@@ -323,3 +324,34 @@ class SalesResources(Resource):
 
     
     
+#Geting cash at hand, bank and mpesa
+
+class GetPaymentTotals(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Get query parameter for payment method
+            payment_method = request.args.get('payment_method', None)
+
+            # Base query to calculate the sum of amount_paid for 'paid' sales
+            query = db.session.query(
+                db.func.coalesce(db.func.sum(Sales.amount_paid), 0).label('total')
+            ).filter(Sales.status == 'unpaid')
+
+            # Apply filter by payment method if provided
+            if payment_method:
+                query = query.filter(Sales.payment_method.ilike(payment_method))
+
+            # Execute the query
+            result = query.scalar()  # Returns the sum or 0 if no matching records
+
+            return {"total_amount": float(result)}, 200
+
+        except SQLAlchemyError as e:
+            # Log and handle database errors
+            db.session.rollback()  # Roll back in case of transaction failure
+            return {"error": "Database error occurred", "details": str(e)}, 500
+
+        except Exception as e:
+            # Catch any other exceptions
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500

@@ -382,3 +382,119 @@ class GetItemsByShopId(Resource):
         except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching items for the shop"}, 500
+
+
+
+#Get shopstock value per shop
+
+class GetStockValueByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id):
+        try:
+            # Fetch the shop to ensure it exists
+            shop = Shops.query.get(shop_id)
+            if not shop:
+                return {"error": f"Shop with ID {shop_id} not found"}, 404
+
+            # Calculate the total stock value for the given shop
+            total_stock_value = db.session.query(
+                db.func.sum(ShopStock.total_cost)
+            ).filter_by(shop_id=shop_id).scalar()  # Use scalar() to fetch the single aggregated value
+
+            # Handle the case where the shop has no stock
+            total_stock_value = total_stock_value or 0.0
+
+            # Prepare the response
+            response = {
+                "shop_id": shop_id,
+                "shop_name": shop.shopname,
+                "total_stock_value": total_stock_value
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error occurred: {str(e)}")
+            return {"error": "An error occurred while calculating stock value"}, 500
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error occurred: {str(e)}")
+            return {"error": "An unexpected error occurred"}, 500
+
+
+# class GetShopsWithStock(Resource):
+#     @jwt_required()
+#     def get(self):
+#         try:
+#             # Query to get shop names and their total stock values
+#             query = db.session.query(
+#                 Shops.name.label("shop_name"),
+#                 db.func.sum(ShopStock.unit_price * ShopStock.quantity).label("total_stock_value")
+#             ).join(ShopStock, Shops.id == ShopStock.shop_id)  # Assuming Stock has a shop_id foreign key
+#             .group_by(shop_.id, shop_name)
+            
+#             # Execute the query
+#             result = query.all()
+
+#             # Format the response
+#             shop_stock_list = [
+#                 {"shop_name": row.shop_name, "total_stock_value": float(row.total_stock_value) if row.total_stock_value else 0.0}
+#                 for row in result
+#             ]
+
+#             if not shop_stock_list:
+#                 return {"message": "No shops or stock found"}, 404
+
+#             return {"shops_with_stock": shop_stock_list}, 200
+
+#         except SQLAlchemyError as e:
+#             # Roll back in case of transaction failure
+#             db.session.rollback()
+#             return {"error": "Database error occurred", "details": str(e)}, 500
+
+#         except Exception as e:
+#             return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
+
+# Get stock value for all shops
+class TotalStockValue(Resource):
+    @jwt_required()
+    @check_role('manager')  # Ensure only managers can access this endpoint
+    def get(self):
+        try:
+            # Fetch all shop stocks with required fields
+            shop_stocks = ShopStock.query.options(
+                joinedload(ShopStock.shop),
+                joinedload(ShopStock.inventory)
+            ).all()
+
+            # Compute the total value of stock for each shop
+            shop_stock_values = {}
+            for stock in shop_stocks:
+                shop_id = stock.shop_id
+                shop_name = stock.shop.shopname
+                stock_value = stock.quantity * stock.unitPrice
+
+                if shop_id not in shop_stock_values:
+                    shop_stock_values[shop_id] = {
+                        "shop_name": shop_name,
+                        "total_stock_value": 0
+                    }
+
+                shop_stock_values[shop_id]["total_stock_value"] += stock_value
+
+            # Prepare the response
+            response = {
+                "shop_stock_values": shop_stock_values
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error occurred: {str(e)}")
+            return {"error": "An error occurred while calculating the total stock value"}, 500
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error occurred: {str(e)}")
+            return {"error": "An unexpected error occurred"}, 500
+

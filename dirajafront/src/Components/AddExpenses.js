@@ -11,6 +11,7 @@ const AddExpense = () => {
     quantity: '',
     totalPrice: '',
     amountPaid: '',
+    paidTo: '',
     created_at: ''
   });
 
@@ -114,6 +115,7 @@ const AddExpense = () => {
           quantity: '',
           totalPrice: '',
           amountPaid: '',
+          paidTo: '',
           created_at: ''
         });
       }
@@ -222,6 +224,16 @@ const AddExpense = () => {
             value={expenseData.amountPaid}
             onChange={handleChange}
             placeholder="Amount Paid"
+            className="input"
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            name="paidTo"
+            value={expenseData.paidTo}
+            onChange={handleChange}
+            placeholder="Paid To"
             className="input"
           />
         </div>

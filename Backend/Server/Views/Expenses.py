@@ -35,6 +35,7 @@ class AddExpense(Resource):
         category = data.get('category')  # Directly accept the category from the request
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
+        paidTo = data.get('paidTo')
 
         # Convert the 'created_at' String to a datetime object
         created_at = data.get('created_at')
@@ -50,6 +51,7 @@ class AddExpense(Resource):
             category=category,  # Directly use the provided category
             totalPrice=totalPrice,
             amountPaid=amountPaid,
+            paidTo=paidTo,
             created_at=created_at,
             user_id=current_user_id
         )
@@ -93,6 +95,7 @@ class AllExpenses(Resource):
                 "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
+                "paidTo": expense.paidTo,
                 "created_at": expense.created_at
             })
 
@@ -119,6 +122,7 @@ class GetShopExpenses(Resource):
             "quantity" : expense.quantity,
             "totalPrice" : expense.totalPrice,
             "amountPaid" : expense.amountPaid,
+            "paidTo": expense.paidTo,
             "created_at" : expense.created_at
 
         } for expense in shopExpenses]
@@ -146,6 +150,7 @@ class ExpensesResources(Resource):
                 "category": expense.category,
                 "quantity": expense.quantity,
                 "totalPrice": expense.totalPrice,
+                "paidTo": expense.paidTo,
                 "amountPaid": expense.amountPaid,
                 # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
@@ -187,6 +192,7 @@ class ExpensesResources(Resource):
             expense.quantity = data.get('quantity', expense.quantity)
             expense.totalPrice = data.get('totalPrice', expense.totalPrice)
             expense.amountPaid = data.get('amountPaid', expense.amountPaid)
+            expense.paidTo = data.get('paidTo', expense.paidTo)
             
             # Convert created_at from String to datetime, handling both formats
             if 'created_at' in data:

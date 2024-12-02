@@ -75,7 +75,8 @@ const AddEmployee = () => {
     }
 
     // Log the employee data being sent to the server
-    console.log('Posting employee data:', JSON.Stringify(employeeData, null, 2));
+    console.log('Posting employee data:', JSON.stringify(employeeData, null, 2));
+
 
     try {
 
@@ -120,9 +121,122 @@ const AddEmployee = () => {
 
   return (
     <div>
+
+    {message.text && (
+      <div
+        className={`message ${message.type === 'success' ? 'success' : 'error'}`}
+      >
+        {message.text}
+      </div>
+    )}
+
+    <form onSubmit={handleSubmit} className="form">
+      {/* Shop Selection */}
+      <div className="form-group">
+        <label htmlFor="shop_id">Shop</label>
+        <select
+          name="shop_id"
+          value={employeeData.shop_id}
+          onChange={handleChange}
+          className={`select ${employeeData.shop_id ? 'valid' : 'invalid'}`}
+        >
+          <option value="">Select a shop</option>
+          {shops.length > 0 ? (
+            shops.map((shop) => (
+              <option key={shop.shop_id} value={shop.shop_id}>
+                {shop.shopname}
+              </option>
+            ))
+          ) : (
+            <option disabled>No shops available</option>
+          )}
+        </select>
+        {shopError && <p className="error-text">No shops available</p>}
+      </div>
+
+      {/* Employee Fields */}
+      <div className="form-group">
+        <label htmlFor="first_name">First Name</label>
+        <input
+          type="text"
+          name="first_name"
+          value={employeeData.first_name}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="middle_name">Middle Name</label>
+        <input
+          type="text"
+          name="middle_name"
+          value={employeeData.middle_name}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="surname">Surname</label>
+        <input
+          type="text"
+          name="surname"
+          value={employeeData.surname}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="phone_number">Phone Number</label>
+        <input
+          type="text"
+          name="phone_number"
+          value={employeeData.phone_number}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+        <label htmlFor="work_email">Work Email</label>
+        <input
+          type="email"
+          name="work_email"
+          value={employeeData.work_email}
+          onChange={handleChange}
+          className="input"
+        />
+      </div>
+
+      <div className="form-group">
+  <label htmlFor="account_status">Account Status</label>
+  <select
+    name="account_status"
+    value={employeeData.account_status || ''}
+    onChange={handleChange}
+    className="input"
+  >
+    <option value="">-- Select Account Status --</option>
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+  </select>
+</div>
+
+
+      <div className="form-group">
+        <label htmlFor="role">Role</label>
+        <select
+          name="role"
+          value={employeeData.role}
+          onChange={handleChange}
+          className="select"
+
       {message.text && (
         <div
           className={`message ${message.type === 'success' ? 'success' : 'error'}`}
+
         >
           {message.text}
         </div>

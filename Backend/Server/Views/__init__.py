@@ -8,14 +8,24 @@ from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLo
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer
+
+
+
+# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue
+
+
+
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource
+
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
@@ -49,22 +59,30 @@ api.add_resource(BatchDetailsResource, '/batch-details')
 api.add_resource(AvailableBatchesResource, '/batches/available')
 api.add_resource(AvailableBatchesByShopResource, '/batches/available-by-shop')
 api.add_resource(GetAllStock, '/allstock')
+api.add_resource(GetStockValueByShop, '/shop/<int:shop_id>/stock-value')
+api.add_resource(TotalStockValue, '/shopstock/value')
 
+# api.add_resource(GetShopsWithStock, '/shops_with_stock')
 
 #Employess Routes
-
 api.add_resource(AddNewemployee, '/newemployee')
 api.add_resource(GetAllemployees,'/allemployees')
 api.add_resource(Employeeresource, '/employee/<int:employee_id>')
 ## Add get employess by shop_id
-
-
 #Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
+
+
 # inventory endpoints 
 api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
+
+
+
+#distribute stock to a specific shop
+# api.add_resource(InventoryDistribute, '/inventory/distribute')
+
 api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
 
 
@@ -93,7 +111,7 @@ api.add_resource(AddSale, '/newsale')
 api.add_resource(GetSales, '/allsales')
 api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
 api.add_resource(SalesResources,'/sale/<int:sales_id>')
-
+api.add_resource(GetPaymentTotals, '/get_payment_totals')
 
 
 api.add_resource(DistributeInventory,'/transfer')
