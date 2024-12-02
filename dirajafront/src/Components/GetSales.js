@@ -3,6 +3,7 @@ import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/sales.css';
+import { isSameDay } from 'date-fns';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
@@ -19,21 +20,23 @@ const Sales = () => {
         const accessToken = localStorage.getItem('access_token');
 
         if (!accessToken) {
-          setError('No access token found, please log in.');
+          setError('No access token found. Please log in.');
           return;
         }
 
-
-        const response = await axios.get('/api/diraja/allsales', {
-
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+        const response = await axios.get(' /api/diraja/allsales', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         setSales(response.data);
+        setError(''); // Clear any previous errors
       } catch (err) {
-        setError('Error fetching sales. Please try again.');
+        if (err.response?.status === 404) {
+          setSales([]); // Treat 404 as no sales data
+          setError('No sales found.');
+        } else {
+          setError('Error fetching sales. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -42,21 +45,38 @@ const Sales = () => {
     fetchSales();
   }, []);
 
-  const getFirstName = (username) => username.split(' ')[0];
-  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
+  const getFirstName = (username) => username?.split(' ')[0] || '';
+  const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
+  const renderPaginationButtons = () => {
+    const range = 3; // Number of buttons to show around the current page
+    const pages = [];
+    for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
+      pages.push(i);
+    }
+    return pages.map((page) => (
+      <button
+        key={page}
+        className={`page-button ${currentPage === page ? 'active' : ''}`}
+        onClick={() => handlePageChange(page)}
+      >
+        {page}
+      </button>
+    ));
+  };
+
   // Filter sales based on search query and selected date
   const filteredSales = sales.filter((sale) => {
-    const matchesSearch = 
+    const matchesSearch =
       sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.username.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      ? isSameDay(new Date(sale.created_at), new Date(selectedDate))
       : true;
 
     return matchesSearch && matchesDate;
@@ -72,17 +92,13 @@ const Sales = () => {
     return <div className="loading-message">Loading sales...</div>;
   }
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
   return (
     <div className="sales-container">
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item, shop, customer's name or employee"
+          placeholder="Search by item, shop, customer's name, or employee"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -102,71 +118,64 @@ const Sales = () => {
         />
       </div>
 
-      <div className='actions-container' >
+      <div className="actions-container">
         <ExportExcel data={filteredSales} fileName="SalesData" />
         <DownloadPDF tableId="sales-table" fileName="SalesData" />
       </div>
 
-      {filteredSales.length > 0 ? (
-        <>
-          <table id="sales-table" className="sales-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Employee</th>
-                <th>Customer</th>
-                <th>Shop</th>
-                <th>Item</th>
-                <th>Quantity</th>
-                <th>Unit Cost (ksh)</th>
-                <th>Amount Paid (ksh)</th>
-                <th>Payment Method</th>
-                <th>Date</th>
-                <th>Action</th>
+      <table id="sales-table" className="sales-table" aria-label="Sales data">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Employee</th>
+            <th>Customer</th>
+            <th>Shop</th>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Unit Cost (ksh)</th>
+            <th>Amount Paid (ksh)</th>
+            <th>Payment Method</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {currentSales.length > 0 ? (
+            currentSales.map((sale) => (
+              <tr key={sale.sale_id}>
+                <td>{sale.sale_id}</td>
+                <td>
+                  <div className="employee-info">
+                    <div className="employee-icon">{getFirstLetter(sale.username)}</div>
+                    <span className="employee-name">{getFirstName(sale.username)}</span>
+                  </div>
+                </td>
+                <td>{sale.customer_name}</td>
+                <td>{sale.shopname}</td>
+                <td>{sale.item_name}</td>
+                <td>{sale.quantity} {sale.metric}</td>
+                <td>{sale.unit_price}</td>
+                <td>{sale.amount_paid}</td>
+                <td>{sale.payment_method}</td>
+                <td>{new Date(sale.created_at).toLocaleString()}</td>
+                <td>
+                  <a href={`/sale/${sale.sale_id}`}>View more</a>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {currentSales.map((sale) => (
-                <tr key={sale.sale_id}>
-                  <td>{sale.sale_id}</td>
-                  <td>
-                    <div className="employee-info">
-                      <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                      <span className="employee-name">{getFirstName(sale.username)}</span>
-                    </div>
-                  </td>
-                  <td>{sale.customer_name}</td>
-                  <td>{sale.shopname}</td>
-                  <td>{sale.item_name}</td>
-                  <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.unit_price}</td>
-                  <td>{sale.amount_paid}</td>
-                  <td>{sale.payment_method}</td>
-                  <td>{new Date(sale.created_at).toLocaleString()}</td>
-                  <td>
-                    <a href={`/sale/${sale.sale_id}`}>View more</a>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="11">No sales found matching your criteria.</td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
-          {/* Pagination */}
-          <div className="pagination">
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button
-                key={index}
-                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(index + 1)}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        </>
-      ) : (
-        <p>No sales found.</p>
-      )}
+      {/* Pagination */}
+      <div className="pagination">{renderPaginationButtons()}</div>
+
+      {/* Error Message */}
+      {error && <div className="error-message">{error}</div>}
     </div>
   );
 };

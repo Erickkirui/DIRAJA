@@ -28,7 +28,7 @@ const AddSale = () => {
     useEffect(() => {
         const fetchShops = async () => {
             try {
-                const response = await axios.get('/api/diraja/allshops', {
+                const response = await axios.get(' /api/diraja/allshops', {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -48,7 +48,7 @@ const AddSale = () => {
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
-                const response = await axios.get('/api/diraja/batches/available', {
+                const response = await axios.get(' /api/diraja/batches/available', {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
                     }
@@ -106,7 +106,7 @@ const AddSale = () => {
         }
 
         try {
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            const response = await axios.post(' /api/diraja/newsale', formData, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`

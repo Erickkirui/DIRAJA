@@ -24,7 +24,7 @@ const SingleShopSale = () => {
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
-                const response = await axios.get('/api/diraja/batches/available-by-shop', {
+                const response = await axios.get(' /api/diraja/batches/available-by-shop', {
                     params: { shop_id: formData.shop_id },  // Send shop_id as a query parameter
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -49,7 +49,7 @@ const SingleShopSale = () => {
             if (!formData.BatchNumber) return;
 
             try {
-                const response = await axios.get('/api/diraja/batch-details', {
+                const response = await axios.get(' /api/diraja/batch-details', {
                     params: { BatchNumber: formData.BatchNumber },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -97,7 +97,7 @@ const SingleShopSale = () => {
         console.log("Data being sent for sale:", formData);
     
         try {
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            const response = await axios.post(' /api/diraja/newsale', formData, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`
