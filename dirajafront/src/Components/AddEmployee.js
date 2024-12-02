@@ -75,7 +75,8 @@ const AddEmployee = () => {
     }
 
     // Log the employee data being sent to the server
-    console.log('Posting employee data:', JSON.Stringify(employeeData, null, 2));
+    console.log('Posting employee data:', JSON.stringify(employeeData, null, 2));
+
 
     try {
 
@@ -209,15 +210,19 @@ const AddEmployee = () => {
       </div>
 
       <div className="form-group">
-        <label htmlFor="account_status">Account Status</label>
-        <input
-          type="text"
-          name="account_status"
-          value={employeeData.account_status}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
+  <label htmlFor="account_status">Account Status</label>
+  <select
+    name="account_status"
+    value={employeeData.account_status || ''}
+    onChange={handleChange}
+    className="input"
+  >
+    <option value="">-- Select Account Status --</option>
+    <option value="Active">Active</option>
+    <option value="Inactive">Inactive</option>
+  </select>
+</div>
+
 
       <div className="form-group">
         <label htmlFor="role">Role</label>

@@ -15,6 +15,7 @@ class Expenses(db.Model):
     description = db.Column(db.String(50), nullable=False) 
     category = db.Column(db.String(50), nullable=False) 
     quantity = db.Column (db.Float, nullable=True)
+    paidTo = db.Column (db.String(50), nullable=True)
     totalPrice = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
@@ -30,4 +31,4 @@ class Expenses(db.Model):
     def __repr__(self):
         return (f"Expense (expense_id={self.expense_id}, user_id='{self.user_id}', "
             f"shop_id='{self.shop_id}', category='{self.category}', item='{self.item}', description='{self.description}', "
-            f"quantity='{self.quantity}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')")
+            f"quantity='{self.quantity}', paidTo='{self.paidTo}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')")

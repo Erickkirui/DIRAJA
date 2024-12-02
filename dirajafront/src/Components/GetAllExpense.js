@@ -85,6 +85,7 @@ const Expenses = () => {
       expense.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.shop_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.item.toLowerCase().includes(searchTerm.toLowerCase())||
+      expense.paidTo.toLowerCase().includes(searchTerm.toLowerCase())||
       expense.category.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDate =
@@ -164,6 +165,7 @@ const Expenses = () => {
             <th>Quantity</th>
             <th>Total Price (Ksh)</th>
             <th>Amount Paid (Ksh)</th>
+            <th>Paid To </th>
             <th>Date</th>
           </tr>
         </thead>
@@ -191,6 +193,7 @@ const Expenses = () => {
               <td>{expense.quantity}</td>
               <td>{expense.totalPrice}</td>
               <td>{expense.amountPaid}</td>
+              <td>{expense.paidTo}</td>
               <td>{new Date(expense.created_at).toLocaleString()}</td>
             </tr>
           ))}

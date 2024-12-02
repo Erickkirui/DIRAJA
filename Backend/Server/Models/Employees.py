@@ -16,20 +16,20 @@ class Employees(db.Model):
     account_status= db.Column(db.String(50), nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     role = db.Column(db.String(50), nullable=False)
-    personal_email = db.Column(db.String(50), nullable= False)
-    designation = db.Column(db.String(50), nullable= False)
-    date_of_birth = db.Column (db.DateTime, nullable=False)
-    national_id_number = db.Column (db.Integer, nullable=False)
-    kra_pin = db.Column (db.String(50), nullable= False)
-    monthly_gross_salary = db.Column (db.Float, nullable=False)
-    payment_method = db.Column(db.String(50), nullable= False)
-    bank_account_number = db.Column(db.Integer )
-    bank_name = db.Column(db.String(50))
-    department = db.Column(db.String(50), nullable=False)
-    starting_date = db.Column (db.DateTime, nullable=False)
-    contract_termination_date = db.Column (db.DateTime, nullable=False)
-    contract_renewal_date = db.Column (db.DateTime, nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    personal_email = db.Column(db.String(50), nullable=True)
+    designation = db.Column(db.String(50), nullable=True)
+    date_of_birth = db.Column (db.DateTime, nullable=True)
+    national_id_number = db.Column (db.Integer, nullable=True)
+    kra_pin = db.Column (db.String(50), nullable=True)
+    monthly_gross_salary = db.Column (db.Float, nullable=True)
+    payment_method = db.Column(db.String(50), nullable=True)
+    bank_account_number = db.Column(db.Integer, nullable=True )
+    bank_name = db.Column(db.String(50), nullable=True)
+    department = db.Column(db.String(50), nullable=True)
+    starting_date = db.Column (db.DateTime, nullable=True)
+    contract_termination_date = db.Column (db.DateTime, nullable=True)
+    contract_renewal_date = db.Column (db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=True)
     
     #Relationship
     shops = db.relationship('Shops' ,backref='employees', lazy=True)
@@ -41,11 +41,6 @@ class Employees(db.Model):
         assert '.' in work_email.split('@')[-1], "work_email address must have a valid domain name."
         return work_email
     
-    @validates('personal_email')
-    def validate_email(self, key, personal_email):
-        assert '@' in personal_email, "personal_email address must contain the @ symbol."
-        assert '.' in personal_email.split('@')[-1], "personal_email address must have a valid domain name."
-        return personal_email
     
     @validates('role')
     def validate_role(self, key, role):
@@ -62,8 +57,12 @@ class Employees(db.Model):
     
     @validates('contract_termination_date')
     def validate_contract_termination_date(self, key, contract_termination_date):
-        assert contract_termination_date > self.starting_date, "Contract Termination Date must be after Starting Date."
-        return contract_termination_date
+        if contract_termination_date is not None and self.starting_date is not None:
+            assert contract_termination_date > self.starting_date, "Contract Termination Date must be after Starting Date."
+        elif contract_termination_date is None or self.starting_date is None:
+            pass  # Allow the employee to be created without these dates
+        else:
+            raise ValueError("Both contract_termination_date and starting_date must be provided.")
 
     
     @validates('account_status')

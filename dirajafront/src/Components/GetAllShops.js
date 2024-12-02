@@ -14,6 +14,8 @@ const Shops = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedShops, setSelectedShops] = useState([]);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState({});
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -25,7 +27,6 @@ const Shops = () => {
         }
 
         const response = await axios.get('/api/diraja/allshops', {
-
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setShops(response.data);
@@ -59,9 +60,7 @@ const Shops = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedShops.map((shopId) =>
-
           axios.delete(`/api/diraja/shop/${shopId}`, {
-
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -71,6 +70,38 @@ const Shops = () => {
       setShops((prev) => prev.filter((shop) => !selectedShops.includes(shop.shop_id)));
       setSelectedShops([]);
       setSelectedAction('');
+    } else if (selectedAction === 'edit') {
+      if (selectedShops.length !== 1) {
+        alert('Please select exactly one shop to edit.');
+        return;
+      }
+
+      const selectedShop = shops.find((shop) => shop.shop_id === selectedShops[0]);
+      setEditData(selectedShop); // Pre-fill form with selected shop's data
+      setIsEditModalOpen(true); // Open the modal for editing
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    try {
+      await axios.put(`/api/diraja/shop/${editData.shop_id}`, editData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setShops((prev) =>
+        prev.map((shop) =>
+          shop.shop_id === editData.shop_id ? { ...shop, ...editData } : shop
+        )
+      );
+      alert('Shop updated successfully!');
+      setIsEditModalOpen(false);
+      setSelectedShops([]);
+      setSelectedAction('');
+    } catch (err) {
+      alert('Error updating shop');
     }
   };
 
@@ -98,8 +129,6 @@ const Shops = () => {
 
   return (
     <div className="shops-container">
-     
-
       <input
         type="text"
         placeholder="Search by shop name or employee"
@@ -115,25 +144,20 @@ const Shops = () => {
         className="date-picker"
       />
       <div className='actions-container'>
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">
-          Apply
-        </button>
-      </div>
-       {/* Export to Excel/PDF functionality */}
-       
+        <div className="actions">
+          <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <option value="">With selected, choose an action</option>
+            <option value="delete">Delete</option>
+            <option value="edit">Edit</option>
+          </select>
+          <button onClick={handleAction} className="action-button">
+            Apply
+          </button>
+        </div>
         <ExportExcel data={shops} fileName="ShopsData" />
         <DownloadPDF tableId="shops-table" fileName="ShopsData" />
-     
-
       </div>
-     
 
-      {/* Display error message */}
       {error && <div className="error-message">{error}</div>}
 
       <table id="shops-table" className="shops-table">
@@ -183,7 +207,6 @@ const Shops = () => {
                     Shop images
                   </a>
                 </td>
-
               </tr>
             ))
           ) : (
@@ -194,9 +217,6 @@ const Shops = () => {
         </tbody>
       </table>
 
-      
-
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="pagination">
           {[...Array(totalPages)].map((_, index) => (
@@ -208,6 +228,49 @@ const Shops = () => {
               {index + 1}
             </button>
           ))}
+        </div>
+      )}
+
+      {isEditModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Edit Shop</h2>
+            <form>
+              <label>Shop Name:</label>
+              <input
+                type="text"
+                value={editData.shopname || ''}
+                onChange={(e) => setEditData({ ...editData, shopname: e.target.value })}
+              />
+              <label>Location:</label>
+              <input
+                type="text"
+                value={editData.location || ''}
+                onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+              />
+              <label>Status:</label>
+              <select
+                value={editData.shopstatus || ''}
+                onChange={(e) => setEditData({ ...editData, shopstatus: e.target.value })}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+
+               <label>Employee incharge:</label>
+               <input
+                 type="text"
+                 value={editData.employee || ''}
+                 onChange={(e) => setEditData({ ...editData, employee: e.target.value })}
+               />       
+              <button type="button" onClick={handleEditSubmit}>
+                Save
+              </button>
+              <button type="button" onClick={() => setIsEditModalOpen(false)}>
+                Cancel
+              </button>
+            </form>
+          </div>
         </div>
       )}
     </div>
