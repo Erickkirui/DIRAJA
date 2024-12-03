@@ -38,15 +38,19 @@ def initialize_views():
 def create_app(config_name):
     app.config.from_object(config_name)
     # app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
+    app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/Diraja'
+
+
+
     # MySQL database configuration      
     
-    app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@148.251.133.221/kulimaco_dirajaapp'
+#     app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@148.251.133.221/kulimaco_dirajaapp'
 
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'pool_recycle': 280,  # Recycle connections after 280 seconds of inactivity
-    'pool_timeout': 30,   # Wait 30 seconds for a connection from the pool
-    'pool_pre_ping': True  # Check connection health before using it
-}    
+#     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+#     'pool_recycle': 280,  # Recycle connections after 280 seconds of inactivity
+#     'pool_timeout': 30,   # Wait 30 seconds for a connection from the pool
+#     'pool_pre_ping': True  # Check connection health before using it
+# }   
 
 
     

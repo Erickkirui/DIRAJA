@@ -29,7 +29,7 @@ from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, G
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
 
@@ -103,7 +103,7 @@ api.add_resource(BankResourceById, '/bank/<int:bank_id>')
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomersByShop, '/customers/<shop_id>')
-# api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
+api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
 
 
 #Sales 

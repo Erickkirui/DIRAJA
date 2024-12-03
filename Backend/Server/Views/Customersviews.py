@@ -129,6 +129,68 @@ class GetAllCustomers(Resource):
             db.session.rollback()
             return {"error": "An error occurred while fetching customers"}, 500
 
+class GetCustomersByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id):
+        try:
+            # Query the Customers table for customers related to the given shop_id
+            customers = Customers.query.filter_by(shop_id=shop_id).all()
+
+            # Prepare the list of customer data
+            customer_list = []
+            for customer in customers:
+                customer_data = {
+                    "customer_id": customer.customer_id,
+                    "customer_name": customer.customer_name,
+                    "customer_number": customer.customer_number,
+                    "shop_id": customer.shop_id,
+                    "user_id": customer.user_id,
+                    "item": customer.item,
+                    "amount_paid": customer.amount_paid,
+                    "payment_method": customer.payment_method,
+                    "created_at": customer.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Format datetime as String
+                }
+                customer_list.append(customer_data)
+
+            # If no customers found for the shop
+            if not customer_list:
+                return jsonify({"message": "No customers found for this shop"}), 404
+
+            return make_response(jsonify(customer_list), 200)
+        
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"error": "An error occurred while fetching customers"}), 500
+
+class GetAllCustomers(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            customers = Customers.query.all()
+
+            customer_list = []
+            for customer in customers:
+                customer_data = {
+                    "customer_id": customer.customer_id,
+                    "customer_name": customer.customer_name,
+                    "customer_number": customer.customer_number,
+                    "shop_id": customer.shop_id,
+                    "user_id": customer.user_id,
+                    "item": customer.item,
+                    "amount_paid": customer.amount_paid,
+                    "payment_method": customer.payment_method,
+                    "created_at": customer.created_at
+                }
+                customer_list.append(customer_data)
+
+            return make_response(jsonify(customer_list), 200)
+        
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching customers"}, 500
+
+
+
 class GetCustomerById(Resource):
     
     @jwt_required()
@@ -155,3 +217,49 @@ class GetCustomerById(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching the customer"}, 500
+
+    @jwt_required()
+    def put(self, customer_id):
+        try:
+            # Get the existing customer
+            customer = Customers.query.get(customer_id)
+            if not customer:
+                return {"error": f"Customer with ID {customer_id} not found"}, 404
+
+            # Parse the JSON data from the request
+            data = request.get_json()
+
+            # Update the customer properties with new data
+            customer.customer_name = data.get('customer_name', customer.customer_name)
+            customer.customer_number = data.get('customer_number', customer.customer_number)
+            customer.shop_id = data.get('shop_id', customer.shop_id)
+            customer.user_id = data.get('user_id', customer.user_id)
+            customer.item = data.get('item', customer.item)
+            customer.amount_paid = data.get('amount_paid', customer.amount_paid)
+            customer.payment_method = data.get('payment_method', customer.payment_method)
+
+            # Commit the changes to the database
+            db.session.commit()
+
+            return make_response(jsonify({"message": "Customer updated successfully"}), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while updating the customer"}, 500
+
+    @jwt_required()
+    def delete(self, customer_id):
+        try:
+            customer = Customers.query.get(customer_id)
+            if not customer:
+                return {"error": f"Customer with ID {customer_id} not found"}, 404
+
+            # Delete the customer from the database
+            db.session.delete(customer)
+            db.session.commit()
+
+            return make_response(jsonify({"message": "Customer deleted successfully"}), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while deleting the customer"}, 500

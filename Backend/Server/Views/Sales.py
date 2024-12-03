@@ -82,7 +82,7 @@ class AddSale(Resource):
             payment_method=payment_method,
             BatchNumber=batch_number,
             stock_id=stock_id,  # Include stock_id in the sales record
-            ballance=balance,  # Store calculated balance
+            balance=balance,  # Store calculated balance
             status=status,
             created_at=created_at
         )
@@ -117,7 +117,7 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
-
+        
 class GetSales(Resource):
     @jwt_required()
     def get(self):
@@ -154,7 +154,7 @@ class GetSales(Resource):
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
                     "batchnumber": sale.BatchNumber,
-                    "balance": sale.ballance,
+                    "balance": sale.balance,
                     "metric": sale.metric,
                     "BatchNumber": sale.BatchNumber,
                     "unit_price": sale.unit_price,
@@ -207,7 +207,7 @@ class GetSalesByShop(Resource):
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
                     "batchnumber": sale.BatchNumber,
-                    "balance": sale.ballance,
+                    "balance": sale.balance,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
@@ -254,7 +254,7 @@ class SalesResources(Resource):
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
                 "batchnumber": sale.BatchNumber,  # Ensure attribute name matches your model
-                "balance": sale.ballance,          
+                "balance": sale.balance,          
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "amount_paid": sale.amount_paid,
