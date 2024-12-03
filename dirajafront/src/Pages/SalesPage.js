@@ -9,9 +9,9 @@ function SalesPage() {
 
           <div className="header-container">
             <h1>Sales</h1>
-            <button className="add-button">
-              <Link to="/newsale">Add Sale ＋</Link>
-            </button>
+            
+              <Link to="/newsale"  className='add-button' >Add Sale ＋</Link>
+         
           </div>
           <Sales />
    

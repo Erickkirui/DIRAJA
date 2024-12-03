@@ -62,8 +62,14 @@
     border-radius: 6px;
 }
 
-
-
+.shortcuts{
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+.shortcuts a{
+    text-decoration: none;
+    
+}
 
 
 

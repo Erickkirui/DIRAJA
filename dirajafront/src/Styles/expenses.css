@@ -122,9 +122,10 @@
     padding: 10px;
     width: 20%;
   }
-  button:hover{
-    background-color: var(--background);
-    color: #000;
+
+  .button:hover{
+    background-color: #4A2B84;
+   
   }
   
 

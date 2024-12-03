@@ -10,7 +10,6 @@ const SingleSale = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shopname, setShopname] = useState(''); // State for shop name
-  const [username, setUsername] = useState(''); // State for username
   const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
   const [editedSale, setEditedSale] = useState({}); // State for the edited sale data
 
@@ -37,15 +36,6 @@ const SingleSale = () => {
           if (shopResponse.ok) {
             const shopData = await shopResponse.json();
             setShopname(shopData.name);
-          }
-        }
-
-        // Fetch username
-        if (data.sale.user_id) {
-          const userResponse = await fetch(`/api/diraja/user/${data.sale.user_id}`);
-          if (userResponse.ok) {
-            const userData = await userResponse.json();
-            setUsername(userData.username);
           }
         }
       } catch (err) {
@@ -100,9 +90,9 @@ const SingleSale = () => {
 
   return (
     <div className="single-sale-container">
-      <div className='action-single'>
+      <div className="action-single">
         <DownloadPDF tableId="sale-details" fileName={`Sale-${sale.sale_id}`} />
-        <button onClick={handleEditClick} className='button'>Edit</button>
+        <button onClick={handleEditClick} className="button">Edit</button>
       </div>
 
       <div className="sale-details" id="sale-details">

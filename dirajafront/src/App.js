@@ -31,6 +31,7 @@ import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
 import SingleShopSale from './Components/ClerkDashbord/SingleShopSale';
 import NotFound from './Components/NotFound';
 import AnalyticsPage from './Pages/AnalyticsPage';
+import ManageUsers from './Pages/ManageUsers';
 
 
 const Layout = ({ children }) => {
@@ -119,6 +120,7 @@ function App() {
             <Route path='/analytics' element={<Layout><AnalyticsPage/></Layout>}></Route>
             <Route path="*" element={<NotFound />} />
             <Route path='/Balanceheet' element={<BalanceSheet/>} ></Route>
+            <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
  
           </Routes>
        
