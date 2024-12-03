@@ -4,6 +4,7 @@ import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/sales.css';
 import { isSameDay } from 'date-fns';
+import LoadingAnimation from './LoadingAnimation';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
@@ -89,7 +90,7 @@ const Sales = () => {
   const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
 
   if (loading) {
-    return <div className="loading-message">Loading sales...</div>;
+    return <LoadingAnimation />;
   }
 
   return (

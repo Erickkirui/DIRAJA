@@ -36,56 +36,50 @@ class AddNewemployee(Resource):
 
         data = request.get_json()
 
-        first_name = data.get('first_name')
-        middle_name = data.get('middle_name')
-        surname = data.get('surname')
-        phone_number = data.get('phone_number')
-        work_email = data.get('work_email')
-        account_status = data.get('account_status')
-        shop_id = data.get('shop_id')
-        role = data.get('role')  # Role of the new employee
-        personal_email = data.get('personal_email')
-        designation = data.get('designation')
-        national_id_number = data.get('national_id_number')
-        kra_pin = data.get('kra_pin')
-        monthly_gross_salary = data.get('monthly_gross_salary')
-        payment_method = data.get('payment_method')
-        bank_account_number = data.get('bank_account_number')
-        bank_name = data.get('bank_name')
-        department = data.get('department')
-
         # Check if the current user has the right to add a manager
-        if role == 'manager' and current_user_role != 'super_admin':
+        if data.get('role') == 'manager' and current_user_role != 'super_admin':
             return {"error": "Only users with the role 'super_admin' can add an employee with the role 'manager'."}, 403
 
-        # Parse the date fields safely
-        date_of_birth = self.parse_date(data.get('date_of_birth'))
+        # List of fields that are nullable
+        nullable_fields = ['national_id_number', 'kra_pin', 'payment_method', 'bank_account_number',
+                           'bank_name', 'department', 'date_of_birth', 'contract_termination_date',
+                           'contract_renewal_date', 'created_at']
+
+        # Update the employee data to set empty strings to None
+        for field in nullable_fields:
+            if field in data and data[field] == '':
+                data[field] = None
+
+        # Parse date fields using the helper method
         starting_date = self.parse_date(data.get('starting_date'))
         contract_termination_date = self.parse_date(data.get('contract_termination_date'))
         contract_renewal_date = self.parse_date(data.get('contract_renewal_date'))
+        date_of_birth = self.parse_date(data.get('date_of_birth'))
 
+        # Create the employee object with the processed data
         new_employee = Employees(
-            first_name=first_name,
-            middle_name=middle_name,
-            surname=surname,
-            phone_number=phone_number,
-            work_email=work_email,
-            account_status=account_status,
-            shop_id=shop_id,
-            role=role,
-            personal_email=personal_email,
-            designation=designation,
+            first_name=data.get('first_name'),
+            middle_name=data.get('middle_name'),
+            surname=data.get('surname'),
+            phone_number=data.get('phone_number'),
+            work_email=data.get('work_email'),
+            account_status=data.get('account_status'),
+            shop_id=data.get('shop_id'),
+            role=data.get('role'),
+            personal_email=data.get('personal_email'),
+            designation=data.get('designation'),
             date_of_birth=date_of_birth,
-            national_id_number=national_id_number,
-            kra_pin=kra_pin,
-            monthly_gross_salary=monthly_gross_salary,
-            payment_method=payment_method,
-            bank_account_number=bank_account_number,
-            bank_name=bank_name,
-            department=department,
+            national_id_number=data.get('national_id_number'),
+            kra_pin=data.get('kra_pin'),
+            monthly_gross_salary=data.get('monthly_gross_salary'),
+            payment_method=data.get('payment_method'),
+            bank_account_number=data.get('bank_account_number'),
+            bank_name=data.get('bank_name'),
+            department=data.get('department'),
             starting_date=starting_date,
             contract_termination_date=contract_termination_date,
-            contract_renewal_date=contract_renewal_date
+            contract_renewal_date=contract_renewal_date,
+            created_at=datetime.now()  # Automatically set the current timestamp
         )
 
         db.session.add(new_employee)
@@ -94,9 +88,9 @@ class AddNewemployee(Resource):
         # Add a new user with the employee details
         default_password = 'defaultPassword123'  # Set a default password or generate one
         new_user = Users(
-            username=first_name,  # Use first name as username
-            email=work_email,  # Use work email
-            role=role if role else 'manager',  # Set role to 'manager' if not provided
+            username=data.get('first_name'),  # Use first name as username
+            email=data.get('work_email'),  # Use work email
+            role=data.get('role') if data.get('role') else 'manager',  # Set role to 'manager' if not provided
             password=default_password,  # Set a default password, or use a password hash function
             employee_id=new_employee.employee_id  # Link to the newly created employee
         )
@@ -108,7 +102,7 @@ class AddNewemployee(Resource):
 
     def parse_date(self, date_str):
         """
-        Helper method to parse a date String into a datetime object.
+        Helper method to parse a date string into a datetime object.
         Handles both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' formats.
         """
         if date_str:
@@ -119,6 +113,8 @@ class AddNewemployee(Resource):
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
         return None
+
+
 
 
 class GetAllemployees(Resource):

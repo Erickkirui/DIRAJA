@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import LoadingAnimation from '../LoadingAnimation';
+
 
 const TodaysSales = () => {
   const [sales, setSales] = useState([]);
@@ -8,6 +10,7 @@ const TodaysSales = () => {
 
   useEffect(() => {
     const fetchSales = async () => {
+      setLoading(true); // Start loading
       try {
         const accessToken = localStorage.getItem('access_token');
 
@@ -17,7 +20,7 @@ const TodaysSales = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allsales', {
+        const response = await axios.get('/api/diraja/allsales', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
@@ -25,7 +28,6 @@ const TodaysSales = () => {
         console.log("API Response:", response.data);
 
         const salesData = response.data.sales || [];
-
         const today = new Date().toISOString().split('T')[0];
 
         // Filter sales by today's date, using only the date portion of `created_at`
@@ -35,18 +37,22 @@ const TodaysSales = () => {
         });
 
         console.log("Today's Sales:", todaySales); // Log filtered sales for today
-        setSales(todaySales);
+
+        // Simulate a 3-second delay
+        setTimeout(() => {
+          setSales(todaySales);
+          setLoading(false); // Stop loading
+        }, 3000);
       } catch (err) {
         setError(`Error fetching sales: ${err.message}`);
-      } finally {
-        setLoading(false);
+        setLoading(false); // Stop loading even on error
       }
     };
 
     fetchSales();
   }, []);
 
-  if (loading) return <p className="loading-message">Loading sales...</p>;
+  if (loading) return <LoadingAnimation />; // Show the loading animation
   if (error) return <p className="error-message">{error}</p>;
 
   return (

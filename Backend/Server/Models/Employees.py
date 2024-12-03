@@ -71,12 +71,7 @@ class Employees(db.Model):
         assert account_status in account_status, f"Invalid status. Must be one of: {', '.join(valid_account_status)}"
         return account_status
     
-    @validates('payment_method')
-    def validate_payment_method(self, key,payment_method):
-        valid_method = ['bank', 'cash', 'mpesa']
-        assert payment_method in payment_method, f"Invalid Payment Method. Must be one of: {', '.join(valid_method)}"
-        return payment_method
-    
+
 
     def __repr__(self):
         return f"<Employee id={self.id}, name={self.first_name} {self.middle_name} {self.surname}, email={self.work_email}, role={self.role}>"
