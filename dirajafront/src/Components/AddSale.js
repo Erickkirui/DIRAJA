@@ -89,35 +89,43 @@ const AddSale = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         const requiredFields = [
             'shop_id', 'BatchNumber', 'quantity', 'payment_method', 'item_name', 'stock_id',
         ];
-
+    
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) {
                 newErrors[field] = `Please fill out the ${field.replace('_', ' ')} field.`;
             }
         });
-
+    
         if (formData.payment_method && !validPaymentMethods.includes(formData.payment_method)) {
             newErrors.payment_method = `Invalid Payment Method. Must be one of: ${validPaymentMethods.join(', ')}`;
         }
-
+    
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
-
+    
+        // Prepare payload
+        const payload = {
+            ...formData,
+            customer_number: formData.customer_number || null, // Convert blank to null
+        };
+    
+        console.log('Payload being sent:', JSON.stringify(payload, null, 2)); // Log the payload
+    
         try {
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            const response = await axios.post('/api/diraja/newsale', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-
+    
             if (response.status === 201) {
                 setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
@@ -142,6 +150,7 @@ const AddSale = () => {
             setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
         }
     };
+    
 
     return (
         <div>
