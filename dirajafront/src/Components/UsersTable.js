@@ -64,6 +64,29 @@ const UsersTable = () => {
     }
   };
 
+  const handleDeleteClick = async (userId) => {
+    const confirmDelete = window.confirm('Are you sure you want to delete this user?');
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`/api/diraja/user/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to delete user');
+
+      // Remove the deleted user from the state
+      setUsers((prevUsers) => prevUsers.filter((user) => user.user_id !== userId));
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setError('Failed to delete user. Please try again.');
+    }
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
@@ -91,7 +114,7 @@ const UsersTable = () => {
                 <td>
                   {isEditing === user.user_id ? (
                     <input
-                      type="password"
+                     
                       value={newPassword} // Shows the typed password
                       onChange={(e) => setNewPassword(e.target.value)} // Updates state as the user types
                       placeholder="Enter new password"
@@ -108,7 +131,10 @@ const UsersTable = () => {
                       <button onClick={() => setIsEditing(null)}>Cancel</button>
                     </>
                   ) : (
-                    <button onClick={() => handleEditClick(user.user_id)}>Edit</button>
+                    <>
+                      <button onClick={() => handleEditClick(user.user_id)}>Edit</button>
+                      <button onClick={() => handleDeleteClick(user.user_id)}>Delete</button>
+                    </>
                   )}
                 </td>
               </tr>
