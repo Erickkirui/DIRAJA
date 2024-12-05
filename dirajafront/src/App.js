@@ -119,7 +119,7 @@ function App() {
             <Route path='/shopsale' element={<ClerkLayout><SingleShopSale /></ClerkLayout>} ></Route>
             <Route path='/analytics' element={<Layout><AnalyticsPage/></Layout>}></Route>
             <Route path="*" element={<NotFound />} />
-            <Route path='/Balanceheet' element={<BalanceSheet/>} ></Route>
+            <Route path='/Balanceheet' element={<Layout><BalanceSheet/></Layout>} ></Route>
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
  
           </Routes>
