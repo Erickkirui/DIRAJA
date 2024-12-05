@@ -82,6 +82,9 @@ class AllExpenses(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
+            # Calculate the balance dynamically
+            balance = max(expense.totalPrice - expense.amountPaid, 0)  # Ensure no negative balances
+
             # Append the data
             all_expenses.append({
                 "expense_id": expense.expense_id,
@@ -95,11 +98,13 @@ class AllExpenses(Resource):
                 "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
+                "balance": balance,  # Dynamically calculated balance
                 "paidTo": expense.paidTo,
-                "created_at": expense.created_at
+                "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             })
 
         return make_response(jsonify(all_expenses), 200)
+
     
 
 class GetShopExpenses(Resource):
@@ -209,4 +214,18 @@ class ExpensesResources(Resource):
             return {"message": "Expense updated successfully"}, 200
         else:
             return {"error": "Expense not found"}, 404
-        
+
+
+class TotalBalance(Resource):
+
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        # Query all expenses
+        expenses = Expenses.query.all()
+
+        # Calculate the total balance
+        total_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+
+        # Return the total balance
+        return make_response(jsonify({"total_balance": total_balance}), 200)

@@ -3,6 +3,8 @@ from flask_restful import Resource
 from Server.Models.Sales import Sales
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.Expenses import Expenses
+from Server.Models.Inventory import Inventory
 from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
 from flask import jsonify,request,make_response
@@ -321,8 +323,8 @@ class SalesResources(Resource):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
+        
 
-    
     
 #Geting cash at hand, bank and mpesa
 
@@ -330,28 +332,82 @@ class GetPaymentTotals(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Get query parameter for payment method
-            payment_method = request.args.get('payment_method', None)
+            # Get the 'payment_method' query parameter (if provided)
+            payment_method_filter = request.args.get('payment_method', None)
 
-            # Base query to calculate the sum of amount_paid for 'paid' sales
-            query = db.session.query(
-                db.func.coalesce(db.func.sum(Sales.amount_paid), 0).label('total')
-            ).filter(Sales.status == 'unpaid')
+            # Query to dynamically retrieve all distinct payment methods
+            query_methods = db.session.query(Sales.payment_method).distinct()
+            payment_methods = [row.payment_method for row in query_methods]
 
-            # Apply filter by payment method if provided
-            if payment_method:
-                query = query.filter(Sales.payment_method.ilike(payment_method))
+            # If 'payment_method' query param is provided, filter by it
+            if payment_method_filter:
+                payment_methods = [method for method in payment_methods if payment_method_filter.lower() in method.lower()]
 
-            # Execute the query
-            result = query.scalar()  # Returns the sum or 0 if no matching records
+            # Initialize a dictionary to store totals for each payment method
+            totals = {}
 
-            return {"total_amount": float(result)}, 200
+            # Calculate totals for each payment method
+            for method in payment_methods:
+                # Query to calculate the sum of amount_paid for 'unpaid' sales by payment method
+                query = db.session.query(
+                    db.func.coalesce(db.func.sum(Sales.amount_paid), 0).label('total')
+                ).filter(
+                    Sales.status == 'unpaid',
+                    Sales.payment_method.ilike(method)
+                )
+                result = query.scalar()
+
+                # Add the result to the totals dictionary
+                totals[method] = f"ksh. {float(result):,.2f}"
+
+            return totals, 200
 
         except SQLAlchemyError as e:
-            # Log and handle database errors
             db.session.rollback()  # Roll back in case of transaction failure
             return {"error": "Database error occurred", "details": str(e)}, 500
 
         except Exception as e:
             # Catch any other exceptions
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
+
+
+class SalesBalanceResource(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Fetch all sales records
+            all_sales = Sales.query.all()
+
+            # Sum up all balances and ensure the result is positive
+            total_balance = abs(sum(sale.ballance for sale in all_sales if sale.ballance is not None))
+
+            return {"total_balance": total_balance}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
+class TotalBalanceSummary(Resource):
+    
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            # Fetch all expenses and calculate total expense balance
+            expenses = Expenses.query.all()
+            total_expense_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+
+            # Fetch all inventory items and calculate total inventory balance
+            inventory_items = Inventory.query.all()
+            total_inventory_balance = sum(max(item.totalCost - item.amountPaid, 0) for item in inventory_items)
+
+            # Aggregate both balances
+            total_balance = total_expense_balance + total_inventory_balance
+
+            # Return the summary as JSON
+            return make_response(jsonify({
+                "total_balance": total_balance
+            }), 200)
+
+        except Exception as e:
+            return make_response(jsonify({"error": str(e)}), 500)
