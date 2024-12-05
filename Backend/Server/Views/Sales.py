@@ -84,7 +84,7 @@ class AddSale(Resource):
             payment_method=payment_method,
             BatchNumber=batch_number,
             stock_id=stock_id,  # Include stock_id in the sales record
-            ballance=balance,  # Store calculated balance
+            balance=balance,  # Store calculated balance
             status=status,
             created_at=created_at
         )
@@ -119,13 +119,13 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
-
+        
 class GetSales(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Query all sales from the Sales table
-            sales = Sales.query.all()
+            # Query all sales from the Sales table in descending order by created_at
+            sales = Sales.query.order_by(Sales.created_at.desc()).all()
 
             # If no sales found
             if not sales:
@@ -134,8 +134,6 @@ class GetSales(Resource):
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
-
-                
                 # Fetch username and shop name manually using user_id and shop_id
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
@@ -145,7 +143,7 @@ class GetSales(Resource):
                 shopname = shop.shopname if shop else "Unknown Shop"
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sale_id` is the primary key
+                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -156,31 +154,29 @@ class GetSales(Resource):
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
                     "batchnumber": sale.BatchNumber,
-                    "balance": sale.ballance,
+                    "balance": sale.balance,
                     "metric": sale.metric,
-                    "BatchNumber": sale.BatchNumber,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
                     "total_price": sale.total_price,
                     "payment_method": sale.payment_method,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to String
+                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
                 })
 
             # Return the list of sales
-
             return make_response(jsonify(sales_data), 200)
 
         except Exception as e:
-            return ({"error": str(e)}), 500
+            return {"error": str(e)}, 500
 
 
-        
 class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
         try:
             # Query the Sales table for sales related to the given shop_id
-            sales = Sales.query.filter_by(shop_id=shop_id).all()
+            sales = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.asc()).all()
+
 
             # If no sales found for the shop
             if not sales:
@@ -209,7 +205,7 @@ class GetSalesByShop(Resource):
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
                     "batchnumber": sale.BatchNumber,
-                    "balance": sale.ballance,
+                    "balance": sale.balance,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "amount_paid": sale.amount_paid,
@@ -256,7 +252,7 @@ class SalesResources(Resource):
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
                 "batchnumber": sale.BatchNumber,  # Ensure attribute name matches your model
-                "balance": sale.ballance,          
+                "balance": sale.balance,          
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "amount_paid": sale.amount_paid,

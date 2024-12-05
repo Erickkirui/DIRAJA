@@ -7,8 +7,8 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock
-
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer
+
 
 
 # from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
@@ -16,8 +16,10 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue
 
 
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource
+
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
@@ -52,9 +54,6 @@ api.add_resource(GetAllShops, '/allshops')
 api.add_resource(GetShopStock, '/shopstock')
 #Get stock by shopid
 api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')  
-#Delete a stock in a specific shop
-# api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:stock_id>')
-# api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/shop_stock/<int:inventory_id>')
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
 api.add_resource(BatchDetailsResource, '/batch-details')
 api.add_resource(AvailableBatchesResource, '/batches/available')
@@ -80,14 +79,11 @@ api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 
 
+
 #distribute stock to a specific shop
 # api.add_resource(InventoryDistribute, '/inventory/distribute')
+
 api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
-
-#get distribution details
-# api.add_resource(GetAllDistributions, '/inventory/distributions')
-# api.add_resource(GetDistributionById, '/inventory/distributions/<distribution_id>')
-
 
 
 # expenses endpoint 
@@ -96,8 +92,6 @@ api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
 api.add_resource(TotalBalance, '/accountsreceivable')
-
-
 
 
 # banks endpoint
@@ -109,7 +103,7 @@ api.add_resource(BankResourceById, '/bank/<int:bank_id>')
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomersByShop, '/customers/<shop_id>')
-# api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
+api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
 
 
 #Sales 

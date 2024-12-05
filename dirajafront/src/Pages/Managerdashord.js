@@ -6,6 +6,7 @@ import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidS
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases'
 
 import LowStockAlert from '../Components/StockAlert'
+import { Link } from 'react-router-dom'
 
 function Managerdashord() {
   return (
@@ -13,6 +14,12 @@ function Managerdashord() {
     
     <h2>Dashboard</h2>
     <p>Analytics</p>
+    <div className='shortcuts'>
+    <Link to="/allusers" className='button'> Manage Users</Link>
+
+    </div>
+    
+
       <div className='top-row'>
         <div className='metrix-card-container'>
           <div className='metrix-pair'>

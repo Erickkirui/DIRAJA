@@ -15,6 +15,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 import datetime 
+from sqlalchemy import func
+
 
 
 def check_role(required_role):
@@ -55,16 +57,23 @@ class AvailableBatchesByShopResource(Resource):
 class AvailableBatchesResource(Resource):
     @jwt_required()
     def get(self):
-        # Query for batch numbers with quantity greater than zero
-        batches = db.session.query(ShopStock.BatchNumber).filter(ShopStock.quantity > 0).all()
+        # Query for batch numbers with total quantity greater than zero
+        batches = (
+            db.session.query(ShopStock.BatchNumber)
+            .group_by(ShopStock.BatchNumber)
+            .having(func.sum(ShopStock.quantity) > 0)
+            .all()
+        )
 
         # Extract BatchNumber values into a list
         batch_numbers = [batch.BatchNumber for batch in batches]
 
         # Return the batch numbers as a JSON response
         return jsonify(batch_numbers)
+
     
 class BatchDetailsResource(Resource):
+    @jwt_required()
     def get(self):
         # Retrieve the batch number from the request arguments
         batch_number = request.args.get('BatchNumber')
@@ -72,15 +81,18 @@ class BatchDetailsResource(Resource):
         if not batch_number:
             return {'message': 'Batch number is required'}, 400
         
-        # Query the ShopStock table for the given batch number
-        shop_stock_item = ShopStock.query.filter_by(BatchNumber=batch_number).first()
+        # Query the ShopStock table for the given batch number and filter out zero quantities
+        shop_stock_items = ShopStock.query.filter_by(BatchNumber=batch_number).filter(ShopStock.quantity > 0).all()
         
-        if not shop_stock_item:
-            return {'message': 'Batch number not found'}, 404
+        if not shop_stock_items:
+            return {'message': 'No available stock for the given batch number'}, 404
+
+        # Select the first item with non-zero quantity
+        shop_stock_item = shop_stock_items[0]  # You can add custom logic to pick a specific record if needed
 
         # Prepare the sales details based on the selected batch number
         sales_details = {
-            'itemname':shop_stock_item.itemname,
+            'itemname': shop_stock_item.itemname,
             'metric': shop_stock_item.metric,
             'unit_price': shop_stock_item.unitPrice,
             'BatchNumber': shop_stock_item.BatchNumber,

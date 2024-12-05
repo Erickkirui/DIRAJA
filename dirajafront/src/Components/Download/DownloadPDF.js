@@ -1,9 +1,16 @@
-import jsPDF from 'jspdf';
+import React from 'react';
 import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
-const DownloadPDF = ({ tableId, fileName }) => {
+const DownloadPDF = ({ containerId, tableId, fileName }) => {
   const generatePDF = () => {
-    const input = document.getElementById(tableId);
+    let input;
+    if (containerId) {
+      input = document.getElementById(containerId);
+    } else if (tableId) {
+      input = document.getElementById(tableId);
+    }
+
     if (input) {
       const scaleFactor = 3;
 
@@ -27,7 +34,7 @@ const DownloadPDF = ({ tableId, fileName }) => {
         pdf.setFontSize(16); // Adjust font size as needed
         pdf.text(fileName, pageWidth / 2, 15, { align: "center" });
 
-        // Add the first page with the table image
+        // Add the first page with the content image
         pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
 

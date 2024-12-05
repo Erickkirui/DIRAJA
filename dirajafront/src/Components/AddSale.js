@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import BatchDetails from './BatchDetails';
 
@@ -8,35 +8,34 @@ const AddSale = () => {
         customer_name: '',
         customer_number: '',
         quantity: '',
-        amount_paid: '',
         payment_method: '',
         BatchNumber: '',
         item_name: '',
         metric: '',
         unit_price: '',
-        stock_id: ''
+        stock_id: '',
+        amount_paid: '',
     });
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [shopError, setShopError] = useState(false);
     const [batchError, setBatchError] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
-    const [message, setMessage] = useState({ text: '', type: '' }); // For success/error messages
+    const [message, setMessage] = useState({ text: '', type: '' });
 
-    const validPaymentMethods = ['bank', 'cash', 'mpesa']; // Valid payment methods
+    const validPaymentMethods = ['bank', 'cash', 'mpesa'];
 
+    // Fetch shops
     useEffect(() => {
         const fetchShops = async () => {
             try {
                 const response = await axios.get('/api/diraja/allshops', {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
                 });
                 setShops(response.data);
-                if (response.data.length === 0) {
-                    setShopError(true);
-                }
+                if (response.data.length === 0) setShopError(true);
             } catch (error) {
                 console.error('Error fetching shops:', error);
                 setShopError(true);
@@ -45,18 +44,17 @@ const AddSale = () => {
         fetchShops();
     }, []);
 
+    // Fetch batch numbers
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
                 const response = await axios.get('/api/diraja/batches/available', {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
                 });
                 setBatchNumbers(response.data);
-                if (response.data.length === 0) {
-                    setBatchError(true);
-                }
+                if (response.data.length === 0) setBatchError(true);
             } catch (error) {
                 console.error('Error fetching batch numbers:', error);
                 setBatchError(true);
@@ -65,54 +63,69 @@ const AddSale = () => {
         fetchBatchNumbers();
     }, []);
 
+    // Handle input changes
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-        setFieldErrors({ ...fieldErrors, [e.target.name]: '' });
+        const { name, value } = e.target;
+        setFormData((prevData) => ({
+            ...prevData,
+            [name]: value,
+            ...(name === 'quantity' ? { amount_paid: value * prevData.unit_price } : {}),
+        }));
+        setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
 
-    const handleBatchDetailsFetched = (details) => {
+    // Handle batch details fetched
+    const handleBatchDetailsFetched = useCallback((details) => {
         setFormData((prevData) => ({
             ...prevData,
             item_name: details.itemname,
             metric: details.metric,
             unit_price: details.unit_price,
-            stock_id: details.stock_id
+            stock_id: details.stock_id,
+            amount_paid: prevData.quantity ? prevData.quantity * details.unit_price : '',
         }));
-    };
+    }, []);
 
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         const requiredFields = [
-            'shop_id', 'BatchNumber', 'customer_name', 'customer_number',
-            'quantity', 'amount_paid', 'payment_method', 'item_name', 'stock_id'
+            'shop_id', 'BatchNumber', 'quantity', 'payment_method', 'item_name', 'stock_id',
         ];
-
+    
         const newErrors = {};
-        requiredFields.forEach(field => {
+        requiredFields.forEach((field) => {
             if (!formData[field]) {
                 newErrors[field] = `Please fill out the ${field.replace('_', ' ')} field.`;
             }
         });
-
-        // Payment method validation
+    
         if (formData.payment_method && !validPaymentMethods.includes(formData.payment_method)) {
             newErrors.payment_method = `Invalid Payment Method. Must be one of: ${validPaymentMethods.join(', ')}`;
         }
-
+    
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
-
+    
+        // Prepare payload
+        const payload = {
+            ...formData,
+            customer_number: formData.customer_number || null, // Convert blank to null
+        };
+    
+        console.log('Payload being sent:', JSON.stringify(payload, null, 2)); // Log the payload
+    
         try {
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            const response = await axios.post('/api/diraja/newsale', payload, {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                }
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
             });
-
+    
             if (response.status === 201) {
                 setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
@@ -120,13 +133,13 @@ const AddSale = () => {
                     customer_name: '',
                     customer_number: '',
                     quantity: '',
-                    amount_paid: '',
                     payment_method: '',
                     BatchNumber: '',
                     item_name: '',
                     metric: '',
                     unit_price: '',
-                    stock_id: ''
+                    stock_id: '',
+                    amount_paid: '',
                 });
                 setFieldErrors({});
             } else {
@@ -137,15 +150,14 @@ const AddSale = () => {
             setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
         }
     };
+    
 
     return (
         <div>
             <h1>Add Sale</h1>
-            {/* General Error Alert */}
             {Object.keys(fieldErrors).length > 0 && (
                 <div className="alert alert-error">
-                    
-                    {Object.values(fieldErrors).join(' ')} {/* Display all error messages */}
+                    {Object.values(fieldErrors).join(' ')}
                 </div>
             )}
             {message.text && (
@@ -153,7 +165,6 @@ const AddSale = () => {
                     {message.text}
                 </div>
             )}
-
             {shopError ? (
                 <p>Error loading shops. Please try again later.</p>
             ) : (
@@ -166,7 +177,6 @@ const AddSale = () => {
                             </option>
                         ))}
                     </select>
-
                     {batchError ? (
                         <p>Error loading batch numbers. Please try again later.</p>
                     ) : (
@@ -180,7 +190,6 @@ const AddSale = () => {
                         </select>
                     )}
                     <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
-
                     <input
                         name="customer_name"
                         value={formData.customer_name}
@@ -188,15 +197,13 @@ const AddSale = () => {
                         placeholder="Customer Name"
                         className="input"
                     />
-
                     <input
                         name="customer_number"
                         value={formData.customer_number}
                         onChange={handleChange}
-                        placeholder="Customer Number"
+                        placeholder="Customer Number(optional)"
                         className="input"
                     />
-
                     <input
                         name="quantity"
                         type="number"
@@ -205,16 +212,6 @@ const AddSale = () => {
                         placeholder="Quantity"
                         className="input"
                     />
-
-                    <input
-                        name="amount_paid"
-                        type="number"
-                        value={formData.amount_paid}
-                        onChange={handleChange}
-                        placeholder="Amount Paid"
-                        className="input"
-                    />
-
                     <select
                         name="payment_method"
                         value={formData.payment_method}
@@ -224,11 +221,14 @@ const AddSale = () => {
                         <option value="">Select Payment Method</option>
                         {validPaymentMethods.map((method) => (
                             <option key={method} value={method}>
-                                {method.charAt(0).toUpperCase() + method.slice(1)} {/* Capitalize method */}
+                                {method.charAt(0).toUpperCase() + method.slice(1)}
                             </option>
                         ))}
                     </select>
-
+                    <div>
+                        <span>Total Amount: </span>
+                        <span>{formData.amount_paid}</span>
+                    </div>
                     <button type="submit" className="button">Add Sale</button>
                 </form>
             )}

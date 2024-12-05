@@ -145,3 +145,7 @@
 .sale-details-table td{
   padding: 5px;
 }
+.action-single{
+  display: flex;
+   gap:  10px;
+}

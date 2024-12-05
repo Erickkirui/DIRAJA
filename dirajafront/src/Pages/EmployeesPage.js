@@ -7,7 +7,7 @@ function EmployeesPage() {
     <div>
       <div className='header-container'>
       <h1>Employees</h1>
-      <button className='add-button' ><Link to="/addemployee">Add Employees  </Link></button>
+      <Link className='add-button' to="/addemployee">Add Employees  </Link>
       </div>
         <Employees />
     </div>

@@ -7,8 +7,8 @@ class Customers(db.Model):
     __tablename__= "customers"
 
     customer_id = db.Column(db.Integer, primary_key=True , autoincrement=True)
-    customer_name = db.Column(db.String(50), nullable=False)
-    customer_number = db.Column(db.Integer, nullable=False)
+    customer_name = db.Column(db.String(50), nullable=True)
+    customer_number = db.Column(db.Integer, nullable=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     sales_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
@@ -21,6 +21,13 @@ class Customers(db.Model):
     shops = db.relationship('Shops' ,backref='customers', lazy=True)
     users = db.relationship('Users', backref='customers', lazy=True)
     sales = db.relationship('Sales', backref='customers', lazy=True)
+
+    @validates('customer_number')
+    def validate_customer_number(self, key, customer_number):
+        if customer_number == '':
+            return None  # Set to None if an empty string is provided
+        return customer_number
+
    
 
 

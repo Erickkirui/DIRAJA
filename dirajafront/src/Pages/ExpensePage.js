@@ -7,11 +7,12 @@ export default function ExpensePage() {
     <div>
        <div className='header-container'>
         <h1>Expenses</h1>
-        <button className='add-button'><Link to="/addexpence">AddExpense ＋ </Link></button>
+        <Link to="/addexpence" className='add-button'>AddExpense ＋ </Link>
 
        </div>
      
       <Expenses/>
+ 
     </div>
   )
 }

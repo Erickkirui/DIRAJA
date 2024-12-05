@@ -33,7 +33,7 @@ const AddInventory = () => {
     };
 
     try {
-      const response = await axios.post('/api/diraja/newinventory', numericFormData, {
+      const response = await axios.post(' /api/diraja/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -96,6 +96,7 @@ const AddInventory = () => {
           >
             <option value="kg">Kilograms</option>
             <option value="litres">Litres</option>
+            <option value="item">items</option>
           </select>
         </div>
         <div>

@@ -15,7 +15,7 @@ const StockAlert = () => {
     const fetchStockData = async () => {
       try {
         // Make the GET request to the backend endpoint
-        const response = await axios.get("/api/diraja/checkstock", {
+        const response = await axios.get(" /api/diraja/checkstock", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`, // Include the token if needed
           },
