@@ -165,6 +165,7 @@ const Expenses = () => {
             <th>Quantity</th>
             <th>Total Price (Ksh)</th>
             <th>Amount Paid (Ksh)</th>
+            <th>Balance (Ksh)</th>
             <th>Paid To </th>
             <th>Date</th>
           </tr>
@@ -193,6 +194,7 @@ const Expenses = () => {
               <td>{expense.quantity}</td>
               <td>{expense.totalPrice}</td>
               <td>{expense.amountPaid}</td>
+              <td>{expense.balance}</td>
               <td>{expense.paidTo}</td>
               <td>{new Date(expense.created_at).toLocaleString()}</td>
             </tr>
