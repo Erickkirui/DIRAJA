@@ -21,11 +21,11 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources
+from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
@@ -91,7 +91,7 @@ api.add_resource(AddExpense,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
 api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
-
+api.add_resource(TotalBalance, '/accountsreceivable')
 
 
 # banks endpoint
@@ -112,8 +112,11 @@ api.add_resource(GetSales, '/allsales')
 api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
 api.add_resource(SalesResources,'/sale/<int:sales_id>')
 api.add_resource(GetPaymentTotals, '/get_payment_totals')
+api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
+api.add_resource(TotalBalanceSummary, '/accountspayable')
 
 
+#Distribution
 api.add_resource(DistributeInventory,'/transfer')
 api.add_resource(GetTransfer,'/alltransfers')
 
