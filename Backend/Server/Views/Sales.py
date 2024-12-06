@@ -14,6 +14,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify, request
 from functools import wraps
+from datetime import datetime
 
 
 def check_role(required_role):
@@ -323,48 +324,52 @@ class SalesResources(Resource):
 
     
 #Geting cash at hand, bank and mpesa
-
 class GetPaymentTotals(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Get the 'payment_method' query parameter (if provided)
-            payment_method_filter = request.args.get('payment_method', None)
+            # Get the 'start_date' and 'end_date' query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
 
-            # Query to dynamically retrieve all distinct payment methods
+            # Convert date strings to datetime objects if provided
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
+
+            # Get the distinct payment methods
             query_methods = db.session.query(Sales.payment_method).distinct()
             payment_methods = [row.payment_method for row in query_methods]
-
-            # If 'payment_method' query param is provided, filter by it
-            if payment_method_filter:
-                payment_methods = [method for method in payment_methods if payment_method_filter.lower() in method.lower()]
 
             # Initialize a dictionary to store totals for each payment method
             totals = {}
 
-            # Calculate totals for each payment method
             for method in payment_methods:
-                # Query to calculate the sum of amount_paid for 'unpaid' sales by payment method
                 query = db.session.query(
                     db.func.coalesce(db.func.sum(Sales.amount_paid), 0).label('total')
                 ).filter(
                     Sales.status == 'unpaid',
                     Sales.payment_method.ilike(method)
                 )
+
+                # Apply date filters if specified, using 'created_at' instead of 'date'
+                if start_date:
+                    query = query.filter(Sales.created_at >= start_date)
+                if end_date:
+                    query = query.filter(Sales.created_at <= end_date)
+
                 result = query.scalar()
 
-                # Add the result to the totals dictionary
                 totals[method] = f"ksh. {float(result):,.2f}"
 
             return totals, 200
 
         except SQLAlchemyError as e:
-            db.session.rollback()  # Roll back in case of transaction failure
-            return {"error": "Database error occurred", "details": str(e)}, 500
+            db.session.rollback()
+            return jsonify({"error": "Database error occurred", "details": str(e)}), 500
 
         except Exception as e:
-            # Catch any other exceptions
-            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+            return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
 
 
 
@@ -407,3 +412,44 @@ class TotalBalanceSummary(Resource):
 
         except Exception as e:
             return make_response(jsonify({"error": str(e)}), 500)
+
+class TotalBalance(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            # Get start_date and end_date from query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
+
+            # Convert date strings to datetime objects if provided
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            else:
+                start_date = None
+
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            else:
+                end_date = None
+
+            # Query expenses, possibly filtering by date range using created_at
+            query = Expenses.query
+            if start_date:
+                query = query.filter(Expenses.created_at >= start_date)
+            if end_date:
+                query = query.filter(Expenses.created_at <= end_date)
+
+            expenses = query.all()
+
+            # Calculate the total balance
+            total_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+
+            # Return the total balance
+            return make_response(jsonify({"total_balance": total_balance}), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
+        except Exception as e:
+            return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)

@@ -1,8 +1,13 @@
-.container{
- display: flex;
- flex-direction: column;
+
+
+
+.Add-balanshett-deatails form{
+  display:  flex;
+  gap: 10px;
+
+ 
 }
 
-.container > *:nth-child(n) {
-  border-bottom: 1px solid #ccc;
+.new-item input{
+  padding: 10px;
 }

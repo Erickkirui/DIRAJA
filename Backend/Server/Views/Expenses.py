@@ -7,6 +7,7 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 from datetime import datetime
 from functools import wraps
+from sqlalchemy.exc import SQLAlchemyError
 
 def check_role(required_role):
     def wrapper(fn):
@@ -217,15 +218,42 @@ class ExpensesResources(Resource):
 
 
 class TotalBalance(Resource):
-
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Query all expenses
-        expenses = Expenses.query.all()
+        try:
+            # Get start_date and end_date from query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
 
-        # Calculate the total balance
-        total_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+            # Convert date strings to datetime objects if provided
+            if start_date_str:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+            else:
+                start_date = None
 
-        # Return the total balance
-        return make_response(jsonify({"total_balance": total_balance}), 200)
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
+            else:
+                end_date = None
+
+            # Query expenses, possibly filtering by date range using created_at
+            query = Expenses.query
+            if start_date:
+                query = query.filter(Expenses.created_at >= start_date)
+            if end_date:
+                query = query.filter(Expenses.created_at <= end_date)
+
+            expenses = query.all()
+
+            # Calculate the total balance
+            total_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+
+            # Return the total balance
+            return make_response(jsonify({"total_balance": total_balance}), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
+        except Exception as e:
+            return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)

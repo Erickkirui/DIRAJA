@@ -1,173 +1,132 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 
-
-const Assets = () => {
-  const [cashBreakdown, setCashBreakdown] = useState([
-    { subcategory: "Cash at Hand", display: "ksh. 0.00" },
-    { subcategory: "Cash in Bank", display: "ksh. 0.00" },
-    { subcategory: "Cash in Mpesa", display: "ksh. 0.00" },
-  ]);
-
-  const [shopStocks, setShopStocks] = useState([]);
-  const [otherAssets, setOtherAssets] = useState([]);
-  const [error, setError] = useState(null);
-
-  // Fetch the cash breakdown data
-  const fetchCashBreakdown = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.error("Access token not found in local storage");
-        return;
-      }
-  
-      const response = await fetch("/api/diraja/get_payment_totals", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to fetch cash breakdown data");
-      }
-  
-      const data = await response.json();
-  
-      // Remove the 'ksh. ' prefix and convert to a float
-      setCashBreakdown([
-        {
-          subcategory: "Cash at Hand",
-          display: `ksh. ${parseFloat(data.cash.replace(/[^0-9.-]+/g, "")).toFixed(2)}`,
-        },
-        {
-          subcategory: "Cash in Bank",
-          display: `ksh. ${parseFloat(data.bank.replace(/[^0-9.-]+/g, "")).toFixed(2)}`,
-        },
-        {
-          subcategory: "Cash in Mpesa",
-          display: `ksh. ${parseFloat(data.mpesa.replace(/[^0-9.-]+/g, "")).toFixed(2)}`,
-        },
-      ]);
-    } catch (error) {
-      console.error("Error fetching cash breakdown data:", error);
-      setError(error.message);
-    }
-  };
-  
-
-  // Fetch the shop stock values
-  const fetchShopStocks = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.error("Access token not found in local storage");
-        return;
-      }
-
-      const response = await fetch("/api/diraja/shopstock/value", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch shop stock data");
-      }
-
-      const data = await response.json();
-      setShopStocks(
-        data.shop_stock_values
-          ? Object.values(data.shop_stock_values).map((shop) => ({
-              shopName: shop.shop_name,
-              stockValue: shop.total_stock_value,
-            }))
-          : []
-      );
-    } catch (error) {
-      console.error("Error fetching shop stock data:", error);
-      setError(error.message);
-    }
-  };
-
-  // Fetch other assets like accounts receivable
-  const fetchAccountsReceivable = async () => {
-    try {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        console.error("Access token not found in local storage");
-        return;
-      }
-
-      const response = await fetch("/api/diraja/accountsreceivable", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch accounts receivable data");
-      }
-
-      const data = await response.json();
-      const amount = parseFloat(data.amount) || 0;
-
-      setOtherAssets((prevAssets) => [
-        ...prevAssets.filter((asset) => asset.name !== "Accounts Receivable"),
-        { name: "Accounts Receivable", amount },
-      ]);
-    } catch (error) {
-      console.error("Error fetching accounts receivable data:", error);
-    }
-  };
+const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
+  const [assetData, setAssetData] = useState([]);
+  const [shopStockData, setShopStockData] = useState([]);
+  const [accountsReceivableData, setAccountsReceivableData] = useState([]);
 
   useEffect(() => {
-    fetchCashBreakdown();
-    fetchShopStocks();
-    fetchAccountsReceivable();
-  }, []);
+    const fetchAssetData = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `/api/diraja/get_payment_totals?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch asset data');
+        }
+
+        const data = await response.json();
+        const parsedData = [
+          { name: 'Bank', value: parseFloat(data.bank.replace(/[^\d.-]/g, '')) },
+          { name: 'Cash', value: parseFloat(data.cash.replace(/[^\d.-]/g, '')) },
+          { name: 'Mpesa', value: parseFloat(data.mpesa.replace(/[^\d.-]/g, '')) }
+        ];
+        setAssetData(parsedData);
+      } catch (error) {
+        console.error('Error fetching asset data:', error);
+      }
+    };
+
+    const fetchShopStockData = async () => {
+      try {
+        const response = await fetch(
+          `/api/diraja/shopstock/value?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch shop stock data');
+        }
+
+        const data = await response.json();
+        const parsedShopStock = Object.keys(data.shop_stock_values).map((key) => ({
+          name: data.shop_stock_values[key].shop_name,
+          value: data.shop_stock_values[key].total_stock_value
+        }));
+
+        setShopStockData(parsedShopStock);
+      } catch (error) {
+        console.error('Error fetching shop stock data:', error);
+      }
+    };
+
+    const fetchAccountsReceivableData = async () => {
+      try {
+        const response = await fetch(
+          `/api/diraja/accountsreceivable?start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`
+            }
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch accounts receivable data');
+        }
+
+        const data = await response.json();
+        const parsedReceivables = data.map((item) => ({
+          name: item.customerName, // Adjust as per your response structure
+          value: parseFloat(item.amountDue) // Adjust as per your response structure
+        }));
+
+        setAccountsReceivableData(parsedReceivables);
+      } catch (error) {
+        console.error('Error fetching accounts receivable data:', error);
+      }
+    };
+
+    if (startDate && endDate) {
+      fetchAssetData();
+      fetchShopStockData();
+      fetchAccountsReceivableData();
+      setLoading(false);
+    }
+  }, [setLoading, startDate, endDate]);
+
+  const calculateTotalAssets = () => {
+    const allAssets = [...assetData, ...addedItems, ...shopStockData, ...accountsReceivableData];
+    return allAssets.reduce((total, item) => total + item.value, 0);
+  };
 
   return (
-    <div className="assets">
+    <div>
       <h2>Assets</h2>
-      <div>
+      <ul>
         <h3>Cash Breakdown</h3>
-        <ul>
-          {cashBreakdown.map((cash, index) => (
-            <li key={index}>
-              {cash.subcategory}: {cash.display}
-            </li>
-          ))}
-        </ul>
-      </div>
+        {assetData.map((item, index) => (
+          <li key={`dynamic-${index}`}>{item.name}: Ksh. {item.value.toFixed(2)}</li>
+        ))}
 
-      <div>
-        <h3>Shop Stocks</h3>
-        {shopStocks.length > 0 ? (
-          <ul>
-            {shopStocks.map((shop, index) => (
-              <li key={index}>
-                {shop.shopName}: ksh {shop.stockValue.toLocaleString()}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No shop stock data available</p>
-        )}
-      </div>
+        <h3>Shop Stock Values</h3>
+        {shopStockData.map((item, index) => (
+          <li key={`shop-${index}`}>{item.name}: Ksh. {item.value.toFixed(2)}</li>
+        ))}
 
-      <div>
+        <h3>Accounts Receivable</h3>
+        {accountsReceivableData.map((item, index) => (
+          <li key={`receivable-${index}`}>{item.name}: Ksh. {item.value.toFixed(2)}</li>
+        ))}
+
         <h3>Other Assets</h3>
-        <ul>
-          {otherAssets.map((item, index) => (
-            <li key={index}>
-              {item.name}: ksh {item.amount.toLocaleString()}
-            </li>
-          ))}
-        </ul>
-      </div>
+        {addedItems.map((item, index) => (
+          <li key={`user-${index}`}>{item.name}: Ksh. {item.value.toFixed(2)}</li>
+        ))}
+      </ul>
+
+      <h3>Total Assets: Ksh. {calculateTotalAssets().toFixed(2)}</h3>
     </div>
   );
 };
