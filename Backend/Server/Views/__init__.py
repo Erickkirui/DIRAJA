@@ -13,7 +13,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 
 # from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
 
 
 
@@ -62,7 +62,10 @@ api.add_resource(GetAllStock, '/allstock')
 api.add_resource(GetStockValueByShop, '/shop/<int:shop_id>/stock-value')
 api.add_resource(TotalStockValue, '/shopstock/value')
 
-# api.add_resource(GetShopsWithStock, '/shops_with_stock')
+#Shopstock date range
+api.add_resource(ShopStockByDate, '/shopstock/bydate')
+
+
 
 #Employess Routes
 api.add_resource(AddNewemployee, '/newemployee')

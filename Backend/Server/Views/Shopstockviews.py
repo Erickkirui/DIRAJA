@@ -7,6 +7,7 @@ from Server.Models.Users import Users
 from Server.Models.Inventory import Inventory, db
 from Server.Models.Expenses import Expenses  # Import Expenses model
 from Server.Models.Transfer import Transfer  # Import Transfer model
+from Server.Models.Sales import Sales
 from app import db
 from flask import current_app
 from functools import wraps
@@ -15,6 +16,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 import datetime 
+from datetime import datetime
 from sqlalchemy import func
 
 
@@ -434,40 +436,6 @@ class GetStockValueByShop(Resource):
             return {"error": "An unexpected error occurred"}, 500
 
 
-# class GetShopsWithStock(Resource):
-#     @jwt_required()
-#     def get(self):
-#         try:
-#             # Query to get shop names and their total stock values
-#             query = db.session.query(
-#                 Shops.name.label("shop_name"),
-#                 db.func.sum(ShopStock.unit_price * ShopStock.quantity).label("total_stock_value")
-#             ).join(ShopStock, Shops.id == ShopStock.shop_id)  # Assuming Stock has a shop_id foreign key
-#             .group_by(shop_.id, shop_name)
-            
-#             # Execute the query
-#             result = query.all()
-
-#             # Format the response
-#             shop_stock_list = [
-#                 {"shop_name": row.shop_name, "total_stock_value": float(row.total_stock_value) if row.total_stock_value else 0.0}
-#                 for row in result
-#             ]
-
-#             if not shop_stock_list:
-#                 return {"message": "No shops or stock found"}, 404
-
-#             return {"shops_with_stock": shop_stock_list}, 200
-
-#         except SQLAlchemyError as e:
-#             # Roll back in case of transaction failure
-#             db.session.rollback()
-#             return {"error": "Database error occurred", "details": str(e)}, 500
-
-#         except Exception as e:
-#             return {"error": "An unexpected error occurred", "details": str(e)}, 500
-
-
 # Get stock value for all shops
 class TotalStockValue(Resource):
     @jwt_required()
@@ -509,4 +477,93 @@ class TotalStockValue(Resource):
         except Exception as e:
             current_app.logger.error(f"Unexpected error occurred: {str(e)}")
             return {"error": "An unexpected error occurred"}, 500
+
+
+class ShopStockByDate(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            # Parse query parameters
+            args = request.args
+            start_date = datetime.strptime(args['start_date'], '%Y-%m-%d')
+            end_date = datetime.strptime(args['end_date'], '%Y-%m-%d')
+
+            # Query transfers and sales within the date range
+            transfers = Transfer.query.filter(
+                Transfer.created_at >= start_date,
+                Transfer.created_at <= end_date
+            ).all()
+
+            sales = Sales.query.filter(
+                Sales.created_at >= start_date,
+                Sales.created_at <= end_date
+            ).all()
+
+            # Process data
+            shop_data = {}
+
+            # Process transfers (based on inventory_id)
+            for transfer in transfers:
+                shop_id = transfer.shop_id
+                inventory_id = transfer.inventory_id  # Transfer uses inventory_id
+
+                if shop_id not in shop_data:
+                    shop_data[shop_id] = {
+                        "shop_name": transfer.shop.shopname,
+                        "total_value": 0,
+                        "stock_breakdown": {}
+                    }
+
+                if inventory_id not in shop_data[shop_id]["stock_breakdown"]:
+                    shop_data[shop_id]["stock_breakdown"][inventory_id] = {
+                        "item_name": transfer.itemname,
+                        "quantity": 0,
+                        "unitCost": transfer.unitCost,
+                        "total_value": 0
+                    }
+
+                shop_data[shop_id]["stock_breakdown"][inventory_id]["quantity"] += transfer.quantity
+                shop_data[shop_id]["stock_breakdown"][inventory_id]["total_value"] += transfer.quantity * transfer.unitCost
+                shop_data[shop_id]["total_value"] += transfer.quantity * transfer.unitCost
+
+            # Process sales (based on stock_id)
+            for sale in sales:
+                shop_id = sale.shop_id
+                stock_id = sale.stock_id  # Sale uses stock_id
+
+                if shop_id in shop_data:
+                    # Find the inventory_id linked to this stock_id
+                    for inventory_id, stock in shop_data[shop_id]["stock_breakdown"].items():
+                        if stock_id == inventory_id:
+                            stock["quantity"] -= sale.quantity
+                            stock["total_value"] -= sale.quantity * stock["unitCost"]
+                            shop_data[shop_id]["total_value"] -= sale.quantity * stock["unitCost"]
+
+            # Prepare response
+            response = {
+                "start_date": start_date.strftime('%Y-%m-%d'),
+                "end_date": end_date.strftime('%Y-%m-%d'),
+                "shop_stocks": [
+                    {
+                        "shop_id": shop_id,
+                        "shop_name": data["shop_name"],
+                        "total_value": data["total_value"],
+                        "stock_breakdown": [
+                            {
+                                "inventory_id": inventory_id,
+                                "item_name": stock["item_name"],
+                                "quantity": stock["quantity"],
+                                "unitCost": stock["unitCost"],
+                                "total_value": stock["total_value"]
+                            } for inventory_id, stock in data["stock_breakdown"].items()
+                        ]
+                    } for shop_id, data in shop_data.items()
+                ]
+            }
+
+            return response, 200  # Return dictionary instead of jsonify
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
