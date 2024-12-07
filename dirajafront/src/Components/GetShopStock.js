@@ -16,36 +16,40 @@ const Shopstock = () => {
         const fetchShopStockData = async () => {
             try {
                 const accessToken = localStorage.getItem('access_token');
-
+    
                 if (!accessToken) {
                     setError('No access token found, please log in.');
                     setLoading(false);
                     return;
                 }
-
-                const response = await fetch(' /api/diraja/shopstock', {
-
+    
+                const response = await fetch('/api/diraja/shopstock', {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
                 });
-
+    
                 if (!response.ok) {
                     throw new Error('Failed to fetch shop stock data');
                 }
-
+    
                 const data = await response.json();
-                setShopStocks(data.shop_stocks);
+    
+                // Sort the data in descending order by stock_id
+                const sortedData = data.shop_stocks.sort((a, b) => b.stock_id - a.stock_id);
+    
+                setShopStocks(sortedData);
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
                 setLoading(false);
             }
         };
-
+    
         fetchShopStockData();
     }, []);
+    
 
     // Filter shop stocks based on search query and selected date
     const filteredShopsStock = shopStocks.filter((stock) => {
@@ -113,7 +117,7 @@ const Shopstock = () => {
                         </thead>
                         <tbody>
                             {paginatedStocks.map((stock) => (
-                                <tr key={stock.stock_id}>
+                                <tr key={stock.stock_id} className={stock.quantity === 0 ? 'faint-row' : ''}>
                                     <td>{stock.stock_id}</td>
                                     <td>{stock.shop_name}</td>
                                     <td>{stock.item_name}</td>
