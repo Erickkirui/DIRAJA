@@ -389,29 +389,52 @@ class SalesBalanceResource(Resource):
             return {"error": str(e)}, 500
         
 class TotalBalanceSummary(Resource):
-    
     @jwt_required()
     @check_role('manager')
     def get(self):
         try:
-            # Fetch all expenses and calculate total expense balance
-            expenses = Expenses.query.all()
+            # Get start_date and end_date from query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
+
+            # Remove any leading or trailing spaces and convert date strings to datetime objects if provided
+            start_date = datetime.strptime(start_date_str.strip(), '%Y-%m-%d') if start_date_str else None
+            end_date = datetime.strptime(end_date_str.strip(), '%Y-%m-%d') if end_date_str else None
+
+            # Query expenses and filter by date range if specified
+            query = Expenses.query
+            if start_date:
+                query = query.filter(Expenses.created_at >= start_date)
+            if end_date:
+                query = query.filter(Expenses.created_at <= end_date)
+
+            expenses = query.all()
             total_expense_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
 
-            # Fetch all inventory items and calculate total inventory balance
-            inventory_items = Inventory.query.all()
+            # Query inventory items and filter by date range if specified
+            inventory_query = Inventory.query
+            if start_date:
+                inventory_query = inventory_query.filter(Inventory.created_at >= start_date)
+            if end_date:
+                inventory_query = inventory_query.filter(Inventory.created_at <= end_date)
+
+            inventory_items = inventory_query.all()
             total_inventory_balance = sum(max(item.totalCost - item.amountPaid, 0) for item in inventory_items)
 
             # Aggregate both balances
             total_balance = total_expense_balance + total_inventory_balance
 
-            # Return the summary as JSON
+            # Return the total balance as JSON
             return make_response(jsonify({
                 "total_balance": total_balance
             }), 200)
 
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
         except Exception as e:
-            return make_response(jsonify({"error": str(e)}), 500)
+            return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)
+
 
 class TotalBalance(Resource):
     @jwt_required()

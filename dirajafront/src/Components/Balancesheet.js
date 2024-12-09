@@ -5,10 +5,7 @@ import Liabilities from './Balancesheet/Liabilities';
 
 const BalanceSheet = () => {
   const [assets, setAssets] = useState([]);
-  const [liabilities, setLiabilities] = useState([
-    { name: 'Accounts Payable', value: 1500 },
-    { name: 'Loans', value: 3000 }
-  ]);
+  const [liabilities, setLiabilities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -17,6 +14,12 @@ const BalanceSheet = () => {
     // Retrieve stored assets from localStorage on component mount
     const storedAssets = JSON.parse(localStorage.getItem('assets')) || [];
     setAssets(storedAssets);
+  }, []);
+
+  useEffect(() => {
+    // Retrieve stored liabilities from localStorage on component mount
+    const storedLiabilities = JSON.parse(localStorage.getItem('liabilities')) || [];
+    setLiabilities(storedLiabilities);
   }, []);
 
   const addAsset = (newAsset) => {
@@ -70,11 +73,10 @@ const BalanceSheet = () => {
         endDate={endDate}
       />
       <Liabilities
-        liabilityItems={liabilities}
         startDate={startDate}
         endDate={endDate}
+        liabilities={liabilities} // Pass liabilities to the Liabilities component
       />
-      
     </div>
   );
 };

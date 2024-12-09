@@ -4,40 +4,54 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
   const [assetData, setAssetData] = useState([]);
   const [shopStockData, setShopStockData] = useState([]);
   const [accountsReceivableData, setAccountsReceivableData] = useState([]);
+  const [totalBalance, setTotalBalance] = useState(0);
+
 
   useEffect(() => {
-    const fetchAssetData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/diraja/get_payment_totals?start_date=${startDate}&end_date=${endDate}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      const fetchAssetData = async () => {
+        setLoading(true);
+        try {
+          const response = await fetch(
+            `/api/diraja/get_payment_totals?start_date=${startDate}&end_date=${endDate}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem('access_token')}`
+              }
             }
+          );
+      
+          if (!response.ok) {
+            throw new Error('Failed to fetch asset data');
           }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch asset data');
+      
+          const data = await response.json();
+          console.log('Raw asset data:', data);
+      
+          // Ensure correct parsing of values
+          const parsedData = [
+            { name: 'Bank', value: parseFloat(data.bank.replace(/[^\d.-]/g, '')) },
+            { name: 'Cash', value: parseFloat(data.cash.replace(/[^\d.-]/g, '')) },
+            { name: 'Mpesa', value: parseFloat(data.mpesa.replace(/[^\d.-]/g, '')) }
+          ];
+      
+          // Check for improperly scaled values and adjust if necessary
+          const scaledData = parsedData.map((item) => ({
+            ...item,
+            value: item.value < 1 ? item.value * 100 : item.value // Fix improperly scaled values
+          }));
+      
+          console.log('Parsed asset data:', scaledData);
+          setAssetData(scaledData);
+        } catch (error) {
+          console.error('Error fetching asset data:', error);
         }
-
-        const data = await response.json();
-        const parsedData = [
-          { name: 'Bank', value: parseFloat(data.bank.replace(/[^\d.-]/g, '')) },
-          { name: 'Cash', value: parseFloat(data.cash.replace(/[^\d.-]/g, '')) },
-          { name: 'Mpesa', value: parseFloat(data.mpesa.replace(/[^\d.-]/g, '')) }
-        ];
-        setAssetData(parsedData);
-      } catch (error) {
-        console.error('Error fetching asset data:', error);
-      }
-    };
+      };
+    
 
     const fetchShopStockData = async () => {
       try {
         const response = await fetch(
-          `/api/diraja/shopstock/value?start_date=${startDate}&end_date=${endDate}`,
+          `/api/diraja/shopstock/bydate?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -50,44 +64,58 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
         }
 
         const data = await response.json();
-        const parsedShopStock = Object.keys(data.shop_stock_values).map((key) => ({
-          name: data.shop_stock_values[key].shop_name,
-          value: data.shop_stock_values[key].total_stock_value
-        }));
+        console.log('Raw shop stock data:', data);
+
+        // Check if shop_stocks is an array and process it
+        const parsedShopStock = Array.isArray(data.shop_stocks)
+          ? data.shop_stocks.map((item) => ({
+              name: item.shop_name,
+              value: item.total_value
+            }))
+          : [];
+
+        console.log('Parsed shop stock data:', parsedShopStock);
 
         setShopStockData(parsedShopStock);
       } catch (error) {
         console.error('Error fetching shop stock data:', error);
       }
     };
-
     const fetchAccountsReceivableData = async () => {
       try {
         const response = await fetch(
           `/api/diraja/accountsreceivable?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('access_token')}`
-            }
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
           }
         );
-
+    
         if (!response.ok) {
           throw new Error('Failed to fetch accounts receivable data');
         }
-
+    
         const data = await response.json();
+        console.log("Raw accounts receivable data:", data);
+    
+        // Ensure the total_balance is set in state if needed
+        if (data.total_balance !== undefined) {
+          setTotalBalance(data.total_balance); // Assume `setTotalBalance` is defined to set the state
+        }
+    
         const parsedReceivables = data.map((item) => ({
-          name: item.customerName, // Adjust as per your response structure
-          value: parseFloat(item.amountDue) // Adjust as per your response structure
+          name: item.customerName || "Unknown Customer",
+          value: parseFloat(item.amountDue) || 0,
         }));
-
+    
         setAccountsReceivableData(parsedReceivables);
       } catch (error) {
-        console.error('Error fetching accounts receivable data:', error);
+        console.error("Error fetching accounts receivable data:", error.message, error);
       }
     };
 
+   
     if (startDate && endDate) {
       fetchAssetData();
       fetchShopStockData();
@@ -116,9 +144,7 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
         ))}
 
         <h3>Accounts Receivable</h3>
-        {accountsReceivableData.map((item, index) => (
-          <li key={`receivable-${index}`}>{item.name}: Ksh. {item.value.toFixed(2)}</li>
-        ))}
+        <p>Total Balance: Ksh. {totalBalance.toFixed(2)}</p>
 
         <h3>Other Assets</h3>
         {addedItems.map((item, index) => (

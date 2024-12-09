@@ -227,15 +227,8 @@ class TotalBalance(Resource):
             end_date_str = request.args.get('end_date')
 
             # Convert date strings to datetime objects if provided
-            if start_date_str:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
-            else:
-                start_date = None
-
-            if end_date_str:
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d')
-            else:
-                end_date = None
+            start_date = datetime.strptime(start_date_str.strip(), '%Y-%m-%d') if start_date_str else None
+            end_date = datetime.strptime(end_date_str.strip(), '%Y-%m-%d') if end_date_str else None
 
             # Query expenses, possibly filtering by date range using created_at
             query = Expenses.query
