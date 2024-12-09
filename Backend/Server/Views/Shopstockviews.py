@@ -484,21 +484,28 @@ class ShopStockByDate(Resource):
     @check_role('manager')
     def get(self):
         try:
-            # Parse query parameters
-            args = request.args
-            start_date = datetime.strptime(args['start_date'], '%Y-%m-%d')
-            end_date = datetime.strptime(args['end_date'], '%Y-%m-%d')
+            # Get the 'start_date' and 'end_date' query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
+
+            # Convert date strings to datetime objects if provided
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
 
             # Query transfers and sales within the date range
-            transfers = Transfer.query.filter(
-                Transfer.created_at >= start_date,
-                Transfer.created_at <= end_date
-            ).all()
+            transfers_query = Transfer.query
+            sales_query = Sales.query
 
-            sales = Sales.query.filter(
-                Sales.created_at >= start_date,
-                Sales.created_at <= end_date
-            ).all()
+            # Apply date filters if specified
+            if start_date:
+                transfers_query = transfers_query.filter(Transfer.created_at >= start_date)
+                sales_query = sales_query.filter(Sales.created_at >= start_date)
+            if end_date:
+                transfers_query = transfers_query.filter(Transfer.created_at <= end_date)
+                sales_query = sales_query.filter(Sales.created_at <= end_date)
+
+            transfers = transfers_query.all()
+            sales = sales_query.all()
 
             # Process data
             shop_data = {}
@@ -542,8 +549,8 @@ class ShopStockByDate(Resource):
 
             # Prepare response
             response = {
-                "start_date": start_date.strftime('%Y-%m-%d'),
-                "end_date": end_date.strftime('%Y-%m-%d'),
+                "start_date": start_date.strftime('%Y-%m-%d') if start_date else None,
+                "end_date": end_date.strftime('%Y-%m-%d') if end_date else None,
                 "shop_stocks": [
                     {
                         "shop_id": shop_id,
@@ -562,8 +569,12 @@ class ShopStockByDate(Resource):
                 ]
             }
 
-            return response, 200  # Return dictionary instead of jsonify
+            return response, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "Database error occurred", "details": str(e)}, 500
 
         except Exception as e:
-            return {"error": str(e)}, 500
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
