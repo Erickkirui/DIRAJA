@@ -1,13 +1,68 @@
-
-
-
-.Add-balanshett-deatails form{
-  display:  flex;
+.BalancesheetContainer{
+  display: flex;
+  flex-direction: column;
+  margin-left: auto;
+  margin-right: auto;
+   width: 80%;
+}
+.BalancesheetContainer p{
+  font-size: 20px;
+}
+.form-area-balancesheet{
+  display: flex;
   gap: 10px;
-
- 
+  margin-top: 20px;
+  justify-content: center;
+  align-items: center;
 }
 
-.new-item input{
+.balancesheet-top-section{
+  text-align: center;
+}
+
+.balancesheet-form{
+  display: flex;
+  gap: 10px;
+}
+
+.form-area-balancesheet button{
   padding: 10px;
+}
+
+.balancesheet-form input{
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.balancesheet-titles{
+
+  border-bottom:  1px solid #ccc;
+  padding-bottom: 10px;
+
+}
+.balancesheet-total-container{
+  display: flex;
+  justify-content: space-between;
+  background-color: #13D268;
+  padding: 0px 10px 0px 10px;
+  color: #fff;
+}
+
+.asset-container table{
+
+  font-size: 20px;
+
+  width: 100%;
+}
+.asset-container td{
+  padding-bottom: 10px;
+
+}
+.asset-container td:first-child {
+  text-align: left;
+}
+
+.asset-container td:nth-child(2) {
+  text-align: right;
 }

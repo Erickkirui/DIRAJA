@@ -1,5 +1,7 @@
 // AddItemForm.js
 import React, { useState } from 'react';
+import '../../Styles/Balancesheet.css'
+
 
 const AddItemForm = ({ onAddAsset, onAddLiability }) => {
   const [itemType, setItemType] = useState('asset'); // 'asset' or 'liability'
@@ -20,18 +22,21 @@ const AddItemForm = ({ onAddAsset, onAddLiability }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add New Item</h2>
+    <>
+    
+    <form onSubmit={handleSubmit} className='balancesheet-form'>
+      
       <div>
-        <label>Item Type:</label>
+        
         <select value={itemType} onChange={(e) => setItemType(e.target.value)}>
           <option value="asset">Asset</option>
           <option value="liability">Liability</option>
         </select>
       </div>
       <div>
-        <label>Item Name:</label>
+        
         <input
+        placeholder='Input item name (eg Lories)'
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -39,8 +44,8 @@ const AddItemForm = ({ onAddAsset, onAddLiability }) => {
         />
       </div>
       <div>
-        <label>Item Value (Ksh.):</label>
         <input
+        placeholder='Input item value(eg 1000)'
           type="number"
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -49,6 +54,7 @@ const AddItemForm = ({ onAddAsset, onAddLiability }) => {
       </div>
       <button type="submit">Add Item</button>
     </form>
+    </>
   );
 };
 

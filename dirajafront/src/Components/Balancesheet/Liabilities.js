@@ -55,21 +55,35 @@ const Liabilities = ({ startDate, endDate, liabilities }) => {
   };
 
   return (
-    <div>
-      <h2>Liabilities</h2>
+    <div className='asset-container' > 
+      <h2 className='balancesheet-titles'>Liabilities</h2>
       {loading ? (
         <p>Loading data...</p>
       ) : (
         <>
-        <h3>Account Payable</h3>
-          <p>Accountpayable: ksh {totalBalance.toFixed(2)}</p>
+          <h3>Account Payable</h3>
+         
+          <table>
+            <tr>
+              <td>Total Payable</td>
+              <td> ksh {totalBalance.toFixed(2)}</td>
+            </tr>
+          </table>
           <h3>Other Liabilities</h3>
-          <ul>
-            {liabilities.map((item, index) => (
-              <li key={index}>{item.name}: ksh {item.value.toFixed(2)}</li>
-            ))}
-          </ul>
-          <h3>Total Liabilities: ksh {calculateTotalLiabilities().toFixed(2)}</h3>
+          <table className='balancesheet-table'>
+            <tbody>
+              {liabilities.map((item, index) => (
+                <tr key={index}>
+                  <td>{item.name}</td>
+                  <td>{item.value.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className='balancesheet-total-container'>
+            <h3>Total Liabilities</h3>
+            <h3>ksh {calculateTotalLiabilities().toFixed(2)}</h3>
+          </div>
         </>
       )}
     </div>

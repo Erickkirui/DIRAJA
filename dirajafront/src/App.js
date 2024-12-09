@@ -87,8 +87,6 @@ const ClerkLayout = ({ children }) => {
 
 };
 
-
-
 function App() {
   return (
     <div className="App">
@@ -121,7 +119,7 @@ function App() {
             <Route path='/shopsale' element={<ClerkLayout><SingleShopSale /></ClerkLayout>} ></Route>
             <Route path='/analytics' element={<Layout><AnalyticsPage/></Layout>}></Route>
             <Route path="*" element={<NotFound />} />
-            <Route path='/Balancesheet' element={<Layout><BalanceSheet/></Layout>} ></Route>
+            <Route path='/balancesheet' element={<Layout><BalanceSheet/></Layout>} ></Route>
             <Route path='/ProfitAndLoss' element={<Layout><ProfitAndLoss/></Layout>} ></Route>
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
  

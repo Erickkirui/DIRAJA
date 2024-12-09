@@ -57,7 +57,10 @@ function Navbar() {
       <div className='accounting-menu'>
         <h4>ACCOUNTING</h4>
         <ul>
-          <li>Balance Sheet</li>
+        <NavLink to="/balancesheet" className="menu-item" activeClassName="active">
+        <li>Balance Sheet</li>
+        </NavLink>
+          
           <li>Cash Flow</li>
           <li>Profit and Loss</li>
         </ul>
