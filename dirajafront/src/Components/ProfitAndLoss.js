@@ -19,34 +19,28 @@ const ProfitAndLoss = () => {
         Authorization: `Bearer ${token}`,
       };
 
-      const salesResponse = await fetch(
-        `/api/diraja/allsales?start_date=${startDate}&end_date=${endDate}`,
-        { headers }
-      );
-      const purchasesResponse = await fetch(
-        `/api/diraja/alltransfers?start_date=${startDate}&end_date=${endDate}`,
-        { headers }
-      );
-      const expensesResponse = await fetch(
-        `/api/diraja/allexpenses?start_date=${startDate}&end_date=${endDate}`,
-        { headers }
-      );
+      // Fetch sales, purchases, and expenses data
+      const [salesResponse, purchasesResponse, expensesResponse] = await Promise.all([
+        fetch(`/api/diraja/allsales?start_date=${startDate}&end_date=${endDate}`, { headers }),
+        fetch(`/api/diraja/alltransfers?start_date=${startDate}&end_date=${endDate}`, { headers }),
+        fetch(`/api/diraja/allexpenses?start_date=${startDate}&end_date=${endDate}`, { headers }),
+      ]);
 
       if (!salesResponse.ok || !purchasesResponse.ok || !expensesResponse.ok) {
         throw new Error("Failed to fetch data. Please check your API.");
       }
 
-      const sales = await salesResponse.json();
-      const purchases = await purchasesResponse.json();
-      const expenses = await expensesResponse.json();
+      const [sales, purchases, expenses] = await Promise.all([
+        salesResponse.json(),
+        purchasesResponse.json(),
+        expensesResponse.json(),
+      ]);
 
       console.log("Sales data:", sales);
       console.log("Purchases data:", purchases);
       console.log("Expenses data:", expenses);
 
       const profitAndLossData = calculateProfitAndLoss(sales, purchases, expenses);
-      console.log("Processed Profit and Loss Data:", profitAndLossData);
-
       setProfitAndLoss(profitAndLossData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -60,41 +54,52 @@ const ProfitAndLoss = () => {
     let totalExpenses = 0;
 
     const salesByShop = {};
-    sales.forEach((sale) => {
-      const { shopname, item_name, amount_paid } = sale;
-      if (!shopname || !item_name || !amount_paid) {
-        console.warn("Skipping invalid sale record:", sale);
-        return;
-      }
+    const purchasesByShop = {};
+    const expensesByShop = {};
+
+    // Filter sales by date and group by shop
+    sales.filter(sale => {
+      const saleDate = new Date(sale.created_at);
+      return saleDate >= new Date(startDate) && saleDate <= new Date(endDate);
+    }).forEach((sale) => {
+      const { shopname = "Unknown Shop", item_name, amount_paid } = sale;
+      if (!amount_paid || !item_name) return;
 
       if (!salesByShop[shopname]) salesByShop[shopname] = {};
       if (!salesByShop[shopname][item_name]) salesByShop[shopname][item_name] = 0;
+
       salesByShop[shopname][item_name] += amount_paid;
       totalSales += amount_paid;
     });
 
-    const purchasesByShop = {};
-    purchases.forEach((purchase) => {
-      const { shopname, itemname, amountPaid } = purchase;
+    // Filter purchases by date and group by shop
+    purchases.filter(purchase => {
+      const purchaseDate = new Date(purchase.created_at);
+      return purchaseDate >= new Date(startDate) && purchaseDate <= new Date(endDate);
+    }).forEach((purchase) => {
+      const { shop_name = "Unknown Shop", itemname, amountPaid } = purchase;
+      if (!amountPaid || !itemname) return;
 
-      const shop = shopname || "Unknown Shop";
+      if (!purchasesByShop[shop_name]) purchasesByShop[shop_name] = {};
+      if (!purchasesByShop[shop_name][itemname]) purchasesByShop[shop_name][itemname] = 0;
 
-      if (!purchasesByShop[shop]) purchasesByShop[shop] = {};
-      if (!purchasesByShop[shop][itemname]) purchasesByShop[shop][itemname] = 0;
-      purchasesByShop[shop][itemname] += amountPaid;
-
+      purchasesByShop[shop_name][itemname] += amountPaid;
       totalPurchases += amountPaid;
     });
 
-    const expensesDetails = [];
-    expenses.forEach((expense) => {
-      const { description, amountPaid } = expense;
-      if (!amountPaid) {
-        console.warn("Skipping invalid expense record:", expense);
-        return;
-      }
+    // Filter expenses by date and group by shop
+    expenses.filter(expense => {
+      const expenseDate = new Date(expense.created_at);
+      return expenseDate >= new Date(startDate) && expenseDate <= new Date(endDate);
+    }).forEach((expense) => {
+      const { shop_name = "Unknown Shop", description, amountPaid } = expense;
+      if (!amountPaid) return;
 
-      expensesDetails.push({ name: description || "Miscellaneous", amountPaid });
+      if (!expensesByShop[shop_name]) expensesByShop[shop_name] = [];
+      expensesByShop[shop_name].push({
+        description: description || "Miscellaneous",
+        amountPaid,
+      });
       totalExpenses += amountPaid;
     });
 
@@ -104,7 +109,7 @@ const ProfitAndLoss = () => {
     return {
       salesByShop,
       purchasesByShop,
-      expensesDetails,
+      expensesByShop,
       totalSales,
       totalPurchases,
       totalExpenses,
@@ -142,16 +147,15 @@ const ProfitAndLoss = () => {
             </div>
           ))}
           <p><strong>Total Sales:</strong> {profitAndLoss.totalSales.toFixed(2)}</p>
-          <p><strong>Total Income:</strong> {profitAndLoss.totalSales.toFixed(2)}</p>
 
           <h2>Cost of Goods Sold</h2>
           <h3>Purchases</h3>
           {Object.entries(profitAndLoss.purchasesByShop).map(([shop, items]) => (
             <div key={shop}>
               <h4>Shop: {shop}</h4>
-              {Object.entries(items).map(([item, amount]) => (
+              {Object.entries(items).map(([item, cost]) => (
                 <p key={item}>
-                  {item}: {amount.toFixed(2)}
+                  {item}: {cost.toFixed(2)}
                 </p>
               ))}
             </div>
@@ -160,10 +164,15 @@ const ProfitAndLoss = () => {
           <p><strong>Gross Profit:</strong> {profitAndLoss.grossProfit.toFixed(2)}</p>
 
           <h2>Expenses</h2>
-          {profitAndLoss.expensesDetails.map((expense, index) => (
-            <p key={index}>
-              {expense.name}: {expense.amountPaid.toFixed(2)}
-            </p>
+          {Object.entries(profitAndLoss.expensesByShop).map(([shop, expenses]) => (
+            <div key={shop}>
+              <h4>Shop: {shop}</h4>
+              {expenses.map((expense, index) => (
+                <p key={index}>
+                  {expense.description}: {expense.amountPaid.toFixed(2)}
+                </p>
+              ))}
+            </div>
           ))}
           <p><strong>Total Expenses:</strong> {profitAndLoss.totalExpenses.toFixed(2)}</p>
 
