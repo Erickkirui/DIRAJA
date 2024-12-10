@@ -14,6 +14,7 @@ import AddInventory from './Components/AddInventory';
 import AddSale from './Components/AddSale';
 import BalanceSheet from './Components/Balancesheet';
 import ProfitAndLoss from './Components/ProfitAndLoss';
+import CashFlowStatement from './Components/CashFlow';
 
 
 // import ShopStockPage from './Pages/ShopStockPage';
@@ -121,6 +122,7 @@ function App() {
             <Route path="*" element={<NotFound />} />
             <Route path='/balancesheet' element={<Layout><BalanceSheet/></Layout>} ></Route>
             <Route path='/ProfitAndLoss' element={<Layout><ProfitAndLoss/></Layout>} ></Route>
+            <Route path='/CashFlowStatement' element={<Layout><CashFlowStatement/></Layout>} ></Route>
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
  
           </Routes>
