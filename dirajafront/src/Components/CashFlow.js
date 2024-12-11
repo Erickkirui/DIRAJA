@@ -112,15 +112,10 @@ const CashFlowStatement = () => {
   };
 
   const renderSection = (title, data) => (
-    <div className="section">
-      <h2>{title}</h2>
+    <div className="asset-container">
+      <h2 className="balancesheet-total-container">{title}</h2>
       <table>
-        <thead>
-          <tr>
-            <th>Description</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
+        
         <tbody>
           {data.length > 0 ? (
             data.map((item, index) => (
@@ -141,43 +136,21 @@ const CashFlowStatement = () => {
 
   return (
     <div className="cash-flow-statement">
-      <form onSubmit={handleAddEntity}>
-        <h2>Add Activity</h2>
-        <label>Type:</label>
-        <select
-          value={entityType}
-          onChange={(e) => setEntityType(e.target.value)}
-        >
-          <option value="Operating">Operating Activities</option>
-          <option value="Financing">Financing Activities</option>
-        </select>
-        <label>Description:</label>
-        <input
-          type="text"
-          value={entityDescription}
-          onChange={(e) => setEntityDescription(e.target.value)}
-          required
-        />
-        <label>Amount:</label>
-        <input
-          type="number"
-          value={entityAmount}
-          onChange={(e) => setEntityAmount(e.target.value)}
-          required
-        />
-        <button type="submit">Add Activity</button>
-      </form>
-
-      <form onSubmit={handleDateRangeSubmit}>
+      <div className="cashflow-top-part">
+        <h1>Statement of Cash Flows</h1>
+        <h3>For the period</h3>
+        <form onSubmit={handleDateRangeSubmit} className="period-cashflow-picker">
         <label>Start Date:</label>
         <input
           type="date"
+           className="date-picker"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           required
         />
         <label>End Date:</label>
         <input
+          className="date-picker"
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
@@ -185,18 +158,46 @@ const CashFlowStatement = () => {
         />
         <button type="submit">Filter by Date Range</button>
       </form>
-
-      <button onClick={handleRefreshData}>Refresh Data</button>
-
-      <h1>Statement of Cash Flows</h1>
+     
+        <form onSubmit={handleAddEntity} className="more-cashflow-details">
+         
+          <select
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value)}
+          >
+            <option value="Operating">Operating Activities</option>
+            <option value="Financing">Financing Activities</option>
+          </select>
+         
+          <input
+          placeholder="input description"
+            type="text"
+            value={entityDescription}
+            onChange={(e) => setEntityDescription(e.target.value)}
+            required
+          />
+       
+          <input
+          placeholder="input amount"
+            type="number"
+            value={entityAmount}
+            onChange={(e) => setEntityAmount(e.target.value)}
+            required
+          />
+          <button type="submit">Add Activity</button>
+          
+        </form>
+        <button onClick={handleRefreshData}>Refresh Data</button>
+      </div>
+      
       {loading && <p>Loading data...</p>}
       {error && <p className="error">{error}</p>}
 
       {renderSection("Operating Activities", operatingActivities)}
       {renderSection("Financing Activities", financingActivities)}
 
-      <div className="section">
-        <h2>Net Cash Flow</h2>
+      <div className="asset-container">
+        <h2 className="balancesheet-total-container">Net Cash Flow</h2>
         <table>
           <tbody>
             <tr>

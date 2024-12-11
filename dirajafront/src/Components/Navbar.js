@@ -60,9 +60,14 @@ function Navbar() {
         <NavLink to="/balancesheet" className="menu-item" activeClassName="active">
         <li>Balance Sheet</li>
         </NavLink>
+        <NavLink to="/CashFlowStatement" className="menu-item" activeClassName="active">
+        <li>Cash Flow Statement</li>
+        </NavLink>
+        <NavLink to="/ProfitAndLoss" className="menu-item" activeClassName="active">
+        <li>Profit and Loss Statement</li>
+        </NavLink>
           
-          <li>Cash Flow</li>
-          <li>Profit and Loss</li>
+  
         </ul>
       </div>
     </div>

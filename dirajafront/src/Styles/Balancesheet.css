@@ -66,3 +66,35 @@
 .asset-container td:nth-child(2) {
   text-align: right;
 }
+
+
+/* cahsflow */
+.cash-flow-statement{
+  width: 80%;
+  margin-left: auto;
+  margin-right:auto ;
+
+}
+.cashflow-top-part{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.period-cashflow-picker{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.more-cashflow-details{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.more-cashflow-details input{
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
