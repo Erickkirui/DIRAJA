@@ -10,8 +10,8 @@ const SingleShopSale = () => {
         item_name: '',
         quantity: '',
         metric: '',
-        unit_price: '',
-        amount_paid: '',
+        unit_price: '', // Fetched from batch details
+        amount_paid: '', // Will be calculated
         payment_method: '',
         BatchNumber: '',
         stock_id: '',
@@ -24,7 +24,7 @@ const SingleShopSale = () => {
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
-                const response = await axios.get(' /api/diraja/batches/available-by-shop', {
+                const response = await axios.get('/api/diraja/batches/available-by-shop', {
                     params: { shop_id: formData.shop_id },  // Send shop_id as a query parameter
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -49,7 +49,7 @@ const SingleShopSale = () => {
             if (!formData.BatchNumber) return;
 
             try {
-                const response = await axios.get(' /api/diraja/batch-details', {
+                const response = await axios.get('/api/diraja/batch-details', {
                     params: { BatchNumber: formData.BatchNumber },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -64,6 +64,7 @@ const SingleShopSale = () => {
                     metric: metric || '',
                     unit_price: unit_price || '',
                     stock_id: stock_id || '',
+                    amount_paid: prevData.quantity * (unit_price || 0), // Calculate amount_paid automatically
                 }));
             } catch (error) {
                 console.error('Error fetching batch details:', error);
@@ -74,7 +75,15 @@ const SingleShopSale = () => {
     }, [formData.BatchNumber]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        let newFormData = { ...formData, [name]: value };
+
+        // Automatically calculate amount_paid if quantity changes
+        if (name === 'quantity' || name === 'unit_price') {
+            newFormData.amount_paid = newFormData.quantity * newFormData.unit_price;
+        }
+
+        setFormData(newFormData);
     };
 
     const handleSubmit = async (e) => {
@@ -97,7 +106,7 @@ const SingleShopSale = () => {
         console.log("Data being sent for sale:", formData);
     
         try {
-            const response = await axios.post(' /api/diraja/newsale', formData, {
+            const response = await axios.post('/api/diraja/newsale', formData, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -114,8 +123,8 @@ const SingleShopSale = () => {
                     item_name: '',
                     quantity: '',
                     metric: '',
-                    unit_price: '',
-                    amount_paid: '',
+                    unit_price: '', // Reset unit_price
+                    amount_paid: '',  // Reset amount_paid
                     payment_method: '',
                     BatchNumber: '',
                     stock_id: '',
@@ -177,13 +186,23 @@ const SingleShopSale = () => {
                     <span>{formData.stock_id}</span>
                 </div>
 
-                <input name="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} placeholder="Amount Paid" />
-                <input name="payment_method" value={formData.payment_method} onChange={handleChange} placeholder="Payment Method" />
+                <div>
+                    <label>Total Amount:</label>
+                    <span>{formData.amount_paid}</span> {/* Display calculated amount */}
+                </div>
+
+                <select name="payment_method" value={formData.payment_method} onChange={handleChange} className="payment-method-dropdown">
+                    <option value="">Select Payment Method</option>
+                    <option value="cash">Cash</option>
+                    <option value="mpesa">M-Pesa</option>
+                    <option value="bank">Bank</option>
+                </select>
+
                 
                 <button className="button" type="submit">Add Sale</button>
                 
             </form>
-            <Link  to='/clerk'>Home</Link>
+            <Link to='/clerk'>Home</Link>
         </div>
     );
 };
