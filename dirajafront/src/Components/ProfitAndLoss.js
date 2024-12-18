@@ -19,7 +19,7 @@ const ProfitAndLoss = () => {
         Authorization: `Bearer ${token}`,
       };
 
-      // Fetch sales, purchases, and expenses data
+      // Fetch sales, transfers (purchases), and expenses data
       const [salesResponse, purchasesResponse, expensesResponse] = await Promise.all([
         fetch(`/api/diraja/allsales?start_date=${startDate}&end_date=${endDate}`, { headers }),
         fetch(`/api/diraja/alltransfers?start_date=${startDate}&end_date=${endDate}`, { headers }),
@@ -50,41 +50,41 @@ const ProfitAndLoss = () => {
 
   const calculateProfitAndLoss = (sales, purchases, expenses) => {
     let totalSales = 0;
-    let totalPurchases = 0;
+    let totalCOGS = 0;
     let totalExpenses = 0;
 
     const salesByShop = {};
-    const purchasesByShop = {};
+    const purchasesByItem = {};
     const expensesByShop = {};
+
+    // Map purchases by item for COGS calculation
+    purchases.forEach((purchase) => {
+      const { itemname, unitCost } = purchase;
+      if (!itemname || !unitCost) return;
+
+      if (!purchasesByItem[itemname]) purchasesByItem[itemname] = [];
+      purchasesByItem[itemname].push(unitCost);
+    });
 
     // Filter sales by date and group by shop
     sales.filter(sale => {
       const saleDate = new Date(sale.created_at);
       return saleDate >= new Date(startDate) && saleDate <= new Date(endDate);
     }).forEach((sale) => {
-      const { shopname = "Unknown Shop", item_name, amount_paid } = sale;
-      if (!amount_paid || !item_name) return;
+      const { shopname = "Unknown Shop", item_name, amount_paid, quantity } = sale;
+      if (!amount_paid || !item_name || !quantity) return;
 
       if (!salesByShop[shopname]) salesByShop[shopname] = {};
       if (!salesByShop[shopname][item_name]) salesByShop[shopname][item_name] = 0;
 
       salesByShop[shopname][item_name] += amount_paid;
       totalSales += amount_paid;
-    });
 
-    // Filter purchases by date and group by shop
-    purchases.filter(purchase => {
-      const purchaseDate = new Date(purchase.created_at);
-      return purchaseDate >= new Date(startDate) && purchaseDate <= new Date(endDate);
-    }).forEach((purchase) => {
-      const { shop_name = "Unknown Shop", itemname, amountPaid } = purchase;
-      if (!amountPaid || !itemname) return;
-
-      if (!purchasesByShop[shop_name]) purchasesByShop[shop_name] = {};
-      if (!purchasesByShop[shop_name][itemname]) purchasesByShop[shop_name][itemname] = 0;
-
-      purchasesByShop[shop_name][itemname] += amountPaid;
-      totalPurchases += amountPaid;
+      // Calculate COGS based on quantity sold and unit cost from purchases
+      if (purchasesByItem[item_name]) {
+        const unitCost = purchasesByItem[item_name][0]; // Use the first available unit cost
+        totalCOGS += quantity * unitCost;
+      }
     });
 
     // Filter expenses by date and group by shop
@@ -103,15 +103,14 @@ const ProfitAndLoss = () => {
       totalExpenses += amountPaid;
     });
 
-    const grossProfit = totalSales - totalPurchases;
+    const grossProfit = totalSales - totalCOGS;
     const netProfit = grossProfit - totalExpenses;
 
     return {
       salesByShop,
-      purchasesByShop,
-      expensesByShop,
       totalSales,
-      totalPurchases,
+      totalCOGS,
+      expensesByShop,
       totalExpenses,
       grossProfit,
       netProfit,
@@ -149,18 +148,7 @@ const ProfitAndLoss = () => {
           <p><strong>Total Sales:</strong> {profitAndLoss.totalSales.toFixed(2)}</p>
 
           <h2>Cost of Goods Sold</h2>
-          <h3>Purchases</h3>
-          {Object.entries(profitAndLoss.purchasesByShop).map(([shop, items]) => (
-            <div key={shop}>
-              <h4>Shop: {shop}</h4>
-              {Object.entries(items).map(([item, cost]) => (
-                <p key={item}>
-                  {item}: {cost.toFixed(2)}
-                </p>
-              ))}
-            </div>
-          ))}
-          <p><strong>Total Purchases:</strong> {profitAndLoss.totalPurchases.toFixed(2)}</p>
+          <p><strong>Total COGS:</strong> {profitAndLoss.totalCOGS.toFixed(2)}</p>
           <p><strong>Gross Profit:</strong> {profitAndLoss.grossProfit.toFixed(2)}</p>
 
           <h2>Expenses</h2>
