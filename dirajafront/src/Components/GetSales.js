@@ -133,7 +133,7 @@ const Sales = () => {
             <th>Shop</th>
             <th>Item</th>
             <th>Quantity</th>
-            <th>Unit Cost (ksh)</th>
+            <th>Unit Price (ksh)</th>
             <th>Amount Paid (ksh)</th>
             <th>Payment Method</th>
             <th>Date</th>

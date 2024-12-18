@@ -112,7 +112,7 @@ const Shopstock = () => {
                                 <th>Item Name</th>
                                 <th>Batch Number</th>
                                 <th>Quantity</th>
-                                <th>Unit Price</th>
+                                <th>Unit Price (ksh)</th>
                             </tr>
                         </thead>
                         <tbody>
