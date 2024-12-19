@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../Styles/employees.css'
+
 
 const AddEmployee = () => {
   const [employeeData, setEmployeeData] = useState({
@@ -121,273 +123,222 @@ const AddEmployee = () => {
 
   return (
     <div>
-    {message.text && (
-      <div
-        className={`message ${message.type === 'success' ? 'success' : 'error'}`}
-      >
-        {message.text}
-      </div>
-    )}
+      <h1>New Employee</h1>
+      <p>The files marked with (*) are mandatory</p>
+    
+      <form onSubmit={handleSubmit} className="employee-form">
+        <h3>Account Details</h3>
+        <p >These details will be used to assign a users to a shop and create an acount for the user</p>
+        
+        <div className="category-group">
+          <select
+            name="shop_id"
+            value={employeeData.shop_id}
+            onChange={handleChange}
+            className={`select ${employeeData.shop_id ? 'valid' : 'invalid'}`}
+          >
+            <option value=""> -- Select a shop * -- </option>
+            {shops.length > 0 ? (
+              shops.map((shop) => (
+                <option key={shop.shop_id} value={shop.shop_id}>
+                  {shop.shopname}
+                </option>
+              ))
+            ) : (
+              <option disabled>No shops available</option>
+            )}
+          </select>
+          {shopError && <p className="error-text">No shops available</p>}
 
-    <form onSubmit={handleSubmit} className="form">
-      {/* Shop Selection */}
-      <div className="form-group">
-        <label htmlFor="shop_id">Shop</label>
-        <select
-          name="shop_id"
-          value={employeeData.shop_id}
+          <select
+            name="role"
+            value={employeeData.role}
+            onChange={handleChange}
+            className="select"
+          >
+            <option value="">-- Select employee Role *  --</option>
+            <option value="manager">Manager</option>
+            <option value="clerk">Clerk</option>
+          </select>
+          <select
+          name="account_status"
+          value={employeeData.account_status || 'Active'}
           onChange={handleChange}
-          className={`select ${employeeData.shop_id ? 'valid' : 'invalid'}`}
+          className="input"
         >
-          <option value="">Select a shop</option>
-          {shops.length > 0 ? (
-            shops.map((shop) => (
-              <option key={shop.shop_id} value={shop.shop_id}>
-                {shop.shopname}
-              </option>
-            ))
-          ) : (
-            <option disabled>No shops available</option>
-          )}
+          <option value="">-- Select Account Status --</option>
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
         </select>
-        {shopError && <p className="error-text">No shops available</p>}
-      </div>
+  
+          <input
+            placeholder="Work email * "
+            type="email"
+            name="work_email"
+            value={employeeData.work_email}
+            onChange={handleChange}
+            className="input"
+          />
+            <input
+            placeholder="Personal email * "
+            type="email"
+            name="personal_email"
+            value={employeeData.personal_email}
+            onChange={handleChange}
+            className="input"
+          />
 
-      {/* Employee Fields */}
-      <div className="form-group">
-        <label htmlFor="first_name">First Name</label>
-        <input
-          type="text"
-          name="first_name"
-          value={employeeData.first_name}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
+        </div>
+  
+        <h3>Personal Details</h3>
+        <div className="category-group">
+          <input
+            type="text"
+            placeholder="First Name * eg(John)"
+            name="first_name"
+            value={employeeData.first_name}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Middle Name *"
+            type="text"
+            name="middle_name"
+            value={employeeData.middle_name}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Surname *"
+            type="text"
+            name="surname"
+            value={employeeData.surname}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Phone number * eg (0712345678)"
+            type="text"
+            name="phone_number"
+            value={employeeData.phone_number}
+            onChange={handleChange}
+            className="input"
+          />
+          <input
+            placeholder="Designation eg (Driver)"
+            type="text"
+            name="designation"
+            value={employeeData.designation}
+            onChange={handleChange}
+            className="input"
+          />
+        </div>
+  
+      
+        <h3>Payment Details</h3>
+        <div className="category-group">
+          <input
+            placeholder="Monthly Gross Salary"
+            type="number"
+            name="monthly_gross_salary"
+            value={employeeData.monthly_gross_salary}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Payment Method"
+            type="text"
+            name="payment_method"
+            value={employeeData.payment_method}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Bank Account Number"
+            type="text"
+            name="bank_account_number"
+            value={employeeData.bank_account_number}
+            onChange={handleChange}
+            className="input"
+          />
+  
+          <input
+            placeholder="Bank Name"
+            type="text"
+            name="bank_name"
+            value={employeeData.bank_name}
+            onChange={handleChange}
+            className="input"
+          />
+        </div>
+  
+        <h3>Contract Details</h3>
+        <div className="category-group">
+            <div className="form-field">
+              <label htmlFor="date_of_birth">Date of Birth</label>
+              <input
+                type="date"
+                name="date_of_birth"
+                value={employeeData.date_of_birth}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
 
-      <div className="form-group">
-        <label htmlFor="middle_name">Middle Name</label>
-        <input
-          type="text"
-          name="middle_name"
-          value={employeeData.middle_name}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
+            <div className="form-field">
+              <label htmlFor="starting_date">Starting Date</label>
+              <input
+                type="date"
+                name="starting_date"
+                value={employeeData.starting_date}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
 
-      <div className="form-group">
-        <label htmlFor="surname">Surname</label>
-        <input
-          type="text"
-          name="surname"
-          value={employeeData.surname}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
+            <div className="form-field">
+              <label htmlFor="contract_termination_date">Contract Termination Date</label>
+              <input
+                type="date"
+                name="contract_termination_date"
+                value={employeeData.contract_termination_date}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
 
-      <div className="form-group">
-        <label htmlFor="phone_number">Phone Number</label>
-        <input
-          type="text"
-          name="phone_number"
-          value={employeeData.phone_number}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
+            <div className="form-field">
+              <label htmlFor="contract_renewal_date">Contract Renewal Date</label>
+              <input
+                type="date"
+                name="contract_renewal_date"
+                value={employeeData.contract_renewal_date}
+                onChange={handleChange}
+                className="input"
+              />
+            </div>
+          </div>
 
-      <div className="form-group">
-        <label htmlFor="work_email">Work Email</label>
-        <input
-          type="email"
-          name="work_email"
-          value={employeeData.work_email}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-  <label htmlFor="account_status">Account Status</label>
-  <select
-    name="account_status"
-    value={employeeData.account_status || ''}
-    onChange={handleChange}
-    className="input"
-  >
-    <option value="">-- Select Account Status --</option>
-    <option value="Active">Active</option>
-    <option value="Inactive">Inactive</option>
-  </select>
-</div>
-
-
-      <div className="form-group">
-        <label htmlFor="role">Role</label>
-        <select
-          name="role"
-          value={employeeData.role}
-          onChange={handleChange}
-          className="select"
+  
+        <button type="submit" className="employee-submit-button">
+          Add Employee
+        </button>
+      </form>
+      {message.text && (
+        <div
+          className={`message ${message.type === 'success' ? 'success' : 'error'}`}
         >
-          <option value="">Select Role</option>
-          <option value="manager">Manager</option>
-          <option value="clerk">Clerk</option>
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="personal_email">Personal Email</label>
-        <input
-          type="email"
-          name="personal_email"
-          value={employeeData.personal_email}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="designation">Designation</label>
-        <input
-          type="text"
-          name="designation"
-          value={employeeData.designation}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="national_id_number">National ID Number</label>
-        <input
-          type="text"
-          name="national_id_number"
-          value={employeeData.national_id_number}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="kra_pin">KRA PIN</label>
-        <input
-          type="text"
-          name="kra_pin"
-          value={employeeData.kra_pin}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="monthly_gross_salary">Monthly Gross Salary</label>
-        <input
-          type="number"
-          name="monthly_gross_salary"
-          value={employeeData.monthly_gross_salary}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="payment_method">Payment Method</label>
-        <input
-          type="text"
-          name="payment_method"
-          value={employeeData.payment_method}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="bank_account_number">Bank Account Number</label>
-        <input
-          type="text"
-          name="bank_account_number"
-          value={employeeData.bank_account_number}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="bank_name">Bank Name</label>
-        <input
-          type="text"
-          name="bank_name"
-          value={employeeData.bank_name}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="department">Department</label>
-        <input
-          type="text"
-          name="department"
-          value={employeeData.department}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="date_of_birth">Date of Birth</label>
-        <input
-          type="date"
-          name="date_of_birth"
-          value={employeeData.date_of_birth}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="starting_date">Starting Date</label>
-        <input
-          type="date"
-          name="starting_date"
-          value={employeeData.starting_date}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="contract_termination_date">Contract Termination Date</label>
-        <input
-          type="date"
-          name="contract_termination_date"
-          value={employeeData.contract_termination_date}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="contract_renewal_date">Contract Renewal Date</label>
-        <input
-          type="date"
-          name="contract_renewal_date"
-          value={employeeData.contract_renewal_date}
-          onChange={handleChange}
-          className="input"
-        />
-      </div>
-
-      {/* Submit Button */}
-      <button type="submit" className="submit-button">
-        Add Employee
-      </button>
-    </form>
-  </div>
+          {message.text}
+        </div>
+      )}
+    </div>
   );
-};
+  
+};  
 
 export default AddEmployee;

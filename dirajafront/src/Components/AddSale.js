@@ -125,7 +125,7 @@ const AddSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-    
+        
             if (response.status === 201) {
                 setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
@@ -147,8 +147,28 @@ const AddSale = () => {
             }
         } catch (error) {
             console.error('Error:', error);
-            setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
+        
+            if (error.response && error.response.data) {
+                const { data } = error.response;
+        
+                // Backend sends a specific error message
+                if (data.message) {
+                    setMessage({ text: data.message, type: 'error' });
+                }
+        
+                // Backend sends validation errors for specific fields
+                if (data.errors) {
+                    const newErrors = {};
+                    Object.entries(data.errors).forEach(([field, errorMsg]) => {
+                        newErrors[field] = errorMsg;
+                    });
+                    setFieldErrors(newErrors);
+                }
+            } else {
+                setMessage({ text: 'An unknown error occurred. Please try again.', type: 'error' });
+            }
         }
+        
     };
     
 
@@ -157,7 +177,9 @@ const AddSale = () => {
             <h1>Add Sale</h1>
             {Object.keys(fieldErrors).length > 0 && (
                 <div className="alert alert-error">
-                    {Object.values(fieldErrors).join(' ')}
+                    {Object.values(fieldErrors).map((error, index) => (
+                        <p key={index}>{error}</p>
+                    ))}
                 </div>
             )}
             {message.text && (
@@ -165,6 +187,8 @@ const AddSale = () => {
                     {message.text}
                 </div>
             )}
+
+
             {shopError ? (
                 <p>Error loading shops. Please try again later.</p>
             ) : (
