@@ -106,7 +106,7 @@ api.add_resource(BankResourceById, '/bank/<int:bank_id>')
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomersByShop, '/customers/<shop_id>')
-api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
+# api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
 
 
 #Sales 

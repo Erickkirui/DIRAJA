@@ -33,7 +33,34 @@
     padding: 10px;
 }
 
+.clerk-button{
+    background-color: var(--primary);
+    margin-bottom: 10px;
+    text-align:  center;
+    text-decoration: none;
+    color: #ffffff;
+    padding: 10px;
+    border-radius: 8px;
+}
 
+.add-sale-button{
+    background-color: var(--primary);
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    color: #ffffff;
+}
+
+.nav-clerk-button{
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    border-radius: 8px ;
+    text-decoration: none;
+    color: #000000;
+
+}
 
 @media (max-width: 768px){
     .clerk-sale{

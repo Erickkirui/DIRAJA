@@ -90,11 +90,12 @@ const SingleShopSale = () => {
         e.preventDefault();
     
         const requiredFields = [
-            'shop_id', 'customer_name', 'customer_number', 'item_name', 
+            'shop_id', 'customer_name', 'item_name', 
             'quantity', 'metric', 'unit_price', 'amount_paid', 
             'payment_method', 'BatchNumber', 'stock_id'
         ];
     
+        // Validate required fields
         for (const field of requiredFields) {
             if (!formData[field]) {
                 setMessageType('error');
@@ -139,6 +140,7 @@ const SingleShopSale = () => {
             setMessage('An error occurred. Please try again.');
         }
     };
+    
 
     return (
         <div>
@@ -152,7 +154,7 @@ const SingleShopSale = () => {
             <h1>Record a sale</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
-                <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number" />
+                <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number (optional)" />
                 <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantity" />
 
                 {/* Batch Number Dropdown */}
@@ -199,10 +201,11 @@ const SingleShopSale = () => {
                 </select>
 
                 
-                <button className="button" type="submit">Add Sale</button>
+                <button className="add-sale-button" type="submit">Add Sale</button>
+                <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
                 
             </form>
-            <Link to='/clerk'>Home</Link>
+            
         </div>
     );
 };

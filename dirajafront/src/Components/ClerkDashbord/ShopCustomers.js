@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const ShopCustomers = () => {
   const [customers, setCustomers] = useState([]); // Initialize customers as an array
@@ -10,35 +11,41 @@ const ShopCustomers = () => {
 
   useEffect(() => {
     const fetchCustomers = async () => {
-      try {
-        const accessToken = localStorage.getItem('access_token');
-        const shopId = localStorage.getItem('shop_id');
+  try {
+    const accessToken = localStorage.getItem('access_token');
+    const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId) {
-          setError('No access token found, please log in.');
-          return;
-        }
+    if (!accessToken || !shopId) {
+      setError('No access token found, please log in.');
+      return;
+    }
 
-        const response = await axios.get(` /api/diraja/customers/${shopId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
+    const response = await axios.get(`/api/diraja/customers/${shopId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
 
-        console.log('Fetched Customers data:', response.data);
+    console.log('Fetched Customers data:', response.data);
 
-        if (Array.isArray(response.data)) {
-          setCustomers(response.data);
-        } else if (response.data && Array.isArray(response.data.customers)) {
-          setCustomers(response.data.customers);
-        } else {
-          setError('Unexpected data format received.');
-          setCustomers([]);
-        }
-      } catch (err) {
-        console.error('Error fetching customers:', err);
-        setError('Error fetching customers. Please try again.');
-        setCustomers([]);
-      }
-    };
+    // Handle the case where the response is a single object
+    if (response.data && !Array.isArray(response.data)) {
+      setCustomers([response.data]); // Wrap the single object in an array
+    } 
+    // Handle the case where the response is an array
+    else if (Array.isArray(response.data)) {
+      setCustomers(response.data);
+    } 
+    // Unexpected format
+    else {
+      setError('Unexpected data format received.');
+    }
+  } catch (err) {
+    console.error('Error fetching customers:', err);
+    setError('Error fetching customers. Please try again.');
+    setCustomers([]);
+  }
+};
+
+    
 
     fetchCustomers();
   }, []);
@@ -84,7 +91,7 @@ const ShopCustomers = () => {
           <table className="customers-table">
             <thead>
               <tr>
-                <th>ID</th>
+             
                 <th>Name</th>
                 <th>Phone</th>
                 <th>Item</th>
@@ -94,7 +101,7 @@ const ShopCustomers = () => {
             <tbody>
               {currentCustomers.map((customer) => (
                 <tr key={customer.customer_id}>
-                  <td>{customer.customer_id}</td>
+                
                   <td>{customer.customer_name}</td>
                   <td>{customer.customer_number}</td>
                   <td>{customer.item}</td>
@@ -121,6 +128,8 @@ const ShopCustomers = () => {
       ) : (
         <p>No customers found.</p>
       )}
+      
+   <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
     </div>
   );
 };

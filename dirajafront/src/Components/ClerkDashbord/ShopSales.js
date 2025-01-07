@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 const ShopSales = () => {
   const [sales, setSales] = useState([]); // Initialize sales as an array
@@ -101,8 +102,7 @@ const ShopSales = () => {
           <table className="sales-table">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Clerk</th>
+                <th>Customer</th>
                 <th>Quantity</th>
                 <th>Amount</th>
                 <th>Date</th>
@@ -111,8 +111,7 @@ const ShopSales = () => {
             <tbody>
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
-                  <td>{sale.sale_id}</td>
-                  <td>{sale.username}</td>
+                  <td>{sale.customer_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.amount_paid} Ksh</td>
                   {/* Format the date to show only the date (without time) */}
@@ -138,6 +137,9 @@ const ShopSales = () => {
       ) : (
         <p>No sales found.</p>
       )}
+
+      <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
+      
     </div>
   );
 };
