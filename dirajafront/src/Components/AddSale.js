@@ -66,14 +66,27 @@ const AddSale = () => {
     // Handle input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value,
-            ...(name === 'quantity' ? { amount_paid: value * prevData.unit_price } : {}),
-        }));
+        setFormData((prevData) => {
+            // Dynamically calculate amount_paid if quantity or unit_price changes
+            if (name === 'quantity' || name === 'unit_price') {
+                const updatedValue = { ...prevData, [name]: value };
+                return {
+                    ...updatedValue,
+                    amount_paid: updatedValue.quantity && updatedValue.unit_price
+                        ? updatedValue.quantity * updatedValue.unit_price
+                        : '',
+                };
+            }
+    
+            // Allow manual editing of amount_paid
+            return {
+                ...prevData,
+                [name]: value,
+            };
+        });
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
-
+    
     // Handle batch details fetched
     const handleBatchDetailsFetched = useCallback((details) => {
         setFormData((prevData) => ({
@@ -250,9 +263,18 @@ const AddSale = () => {
                         ))}
                     </select>
                     <div>
-                        <span>Total Amount: </span>
-                        <span>{formData.amount_paid}</span>
+                        
+                        <input
+                            id="amount_paid"
+                            name="amount_paid"
+                            type="number"
+                            value={formData.amount_paid}
+                            onChange={handleChange}
+                            className="input"
+                            placeholder="Amount Paid"
+                        />
                     </div>
+
                     <button type="submit" className="button">Add Sale</button>
                 </form>
             )}
