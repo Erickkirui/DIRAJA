@@ -42,6 +42,10 @@
     padding: 10px;
     border-radius: 8px;
 }
+.clerk-sale span{
+    color: var(--primary);
+   
+}
 
 .add-sale-button{
     background-color: var(--primary);

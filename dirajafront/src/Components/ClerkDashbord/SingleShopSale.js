@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
-        shop_id: localStorage.getItem('shop_id') || '',  // Get shop_id from local storage
+        shop_id: localStorage.getItem('shop_id') || '', // Get shop_id from local storage
         customer_name: '',
         customer_number: '',
         item_name: '',
@@ -25,10 +25,10 @@ const SingleShopSale = () => {
         const fetchBatchNumbers = async () => {
             try {
                 const response = await axios.get('/api/diraja/batches/available-by-shop', {
-                    params: { shop_id: formData.shop_id },  // Send shop_id as a query parameter
+                    params: { shop_id: formData.shop_id }, // Send shop_id as a query parameter
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
                 });
                 setBatchNumbers(response.data);
 
@@ -52,8 +52,8 @@ const SingleShopSale = () => {
                 const response = await axios.get('/api/diraja/batch-details', {
                     params: { BatchNumber: formData.BatchNumber },
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                    }
+                        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                    },
                 });
 
                 const { itemname, metric, unit_price, stock_id } = response.data;
@@ -88,13 +88,20 @@ const SingleShopSale = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         const requiredFields = [
-            'shop_id', 'customer_name', 'item_name', 
-            'quantity', 'metric', 'unit_price', 'amount_paid', 
-            'payment_method', 'BatchNumber', 'stock_id'
+            'shop_id',
+            'customer_name',
+            'item_name',
+            'quantity',
+            'metric',
+            'unit_price',
+            'amount_paid',
+            'payment_method',
+            'BatchNumber',
+            'stock_id',
         ];
-    
+
         // Validate required fields
         for (const field of requiredFields) {
             if (!formData[field]) {
@@ -103,29 +110,29 @@ const SingleShopSale = () => {
                 return;
             }
         }
-    
-        console.log("Data being sent for sale:", formData);
-    
+
+        console.log('Data being sent for sale:', formData);
+
         try {
             const response = await axios.post('/api/diraja/newsale', formData, {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`
-                }
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
             });
-    
+
             if (response.status === 201) {
                 setMessageType('success');
                 setMessage(response.data.message);
                 setFormData({
-                    shop_id: localStorage.getItem('shop_id') || '',  // Reset with shop_id from local storage
+                    shop_id: localStorage.getItem('shop_id') || '', // Reset with shop_id from local storage
                     customer_name: '',
                     customer_number: '',
                     item_name: '',
                     quantity: '',
                     metric: '',
                     unit_price: '', // Reset unit_price
-                    amount_paid: '',  // Reset amount_paid
+                    amount_paid: '', // Reset amount_paid
                     payment_method: '',
                     BatchNumber: '',
                     stock_id: '',
@@ -140,7 +147,6 @@ const SingleShopSale = () => {
             setMessage('An error occurred. Please try again.');
         }
     };
-    
 
     return (
         <div>
@@ -150,8 +156,8 @@ const SingleShopSale = () => {
                     {message}
                 </div>
             )}
-            
-            <h1>Record a sale</h1>
+
+            <h1>Record a Sale</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
                 <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number (optional)" />
@@ -170,27 +176,35 @@ const SingleShopSale = () => {
                         ))}
                     </select>
                 )}
-                
+
                 <div>
-                    <label>Item Name:</label>
+                    <label>Item Name : </label>
                     <span>{formData.item_name}</span>
                 </div>
                 <div>
-                    <label>Metric:</label>
+                    <label>Metric : </label>
                     <span>{formData.metric}</span>
                 </div>
                 <div>
-                    <label>Unit Price:</label>
+                    <label>Unit Price : </label>
                     <span>{formData.unit_price}</span>
                 </div>
                 <div>
-                    <label>Stock ID:</label>
+                    <label>Stock ID : </label>
                     <span>{formData.stock_id}</span>
                 </div>
 
                 <div>
-                    <label>Total Amount:</label>
-                    <span>{formData.amount_paid}</span> {/* Display calculated amount */}
+                    <lable>Total Amount : </lable>
+                <input
+                    id="amount_paid"
+                    name="amount_paid"
+                    type="number"
+                    value={formData.amount_paid}
+                    onChange={handleChange}
+                    className="input"
+                    placeholder="Amount Paid"
+                />
                 </div>
 
                 <select name="payment_method" value={formData.payment_method} onChange={handleChange} className="payment-method-dropdown">
@@ -200,12 +214,13 @@ const SingleShopSale = () => {
                     <option value="bank">Bank</option>
                 </select>
 
-                
-                <button className="add-sale-button" type="submit">Add Sale</button>
-                <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
-                
+                <button className="add-sale-button" type="submit">
+                    Add Sale
+                </button>
+                <Link className="nav-clerk-button" to="/clerk">
+                    Home
+                </Link>
             </form>
-            
         </div>
     );
 };
