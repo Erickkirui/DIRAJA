@@ -16,6 +16,7 @@ const AddSale = () => {
         stock_id: '',
         amount_paid: '',
     });
+    const [paymentMethods, setPaymentMethods] = useState([{ method: '', amount: '' }]);
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [shopError, setShopError] = useState(false);
@@ -63,30 +64,32 @@ const AddSale = () => {
         fetchBatchNumbers();
     }, []);
 
-    // Handle input changes
-    const handleChange = (e) => {
+     // Handle input changes for form data
+     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prevData) => {
-            // Dynamically calculate amount_paid if quantity or unit_price changes
-            if (name === 'quantity' || name === 'unit_price') {
-                const updatedValue = { ...prevData, [name]: value };
-                return {
-                    ...updatedValue,
-                    amount_paid: updatedValue.quantity && updatedValue.unit_price
-                        ? updatedValue.quantity * updatedValue.unit_price
-                        : '',
-                };
-            }
-    
-            // Allow manual editing of amount_paid
-            return {
-                ...prevData,
-                [name]: value,
-            };
-        });
+        setFormData((prevData) => ({ ...prevData, [name]: value }));
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
-    
+
+    // Handle changes for payment methods
+    const handlePaymentChange = (index, field, value) => {
+        setPaymentMethods((prevMethods) =>
+            prevMethods.map((method, idx) =>
+                idx === index ? { ...method, [field]: value } : method
+            )
+        );
+    };
+
+    // Add a new payment method
+    const addPaymentMethod = () => {
+        setPaymentMethods((prevMethods) => [...prevMethods, { method: '', amount: '' }]);
+    };
+
+    // Remove a payment method
+    const removePaymentMethod = (index) => {
+        setPaymentMethods((prevMethods) => prevMethods.filter((_, idx) => idx !== index));
+    };
+
     // Handle batch details fetched
     const handleBatchDetailsFetched = useCallback((details) => {
         setFormData((prevData) => ({
@@ -99,38 +102,31 @@ const AddSale = () => {
         }));
     }, []);
 
-    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
-        const requiredFields = [
-            'shop_id', 'BatchNumber', 'quantity', 'payment_method', 'item_name', 'stock_id',
-        ];
-    
+
+        const requiredFields = ['shop_id', 'BatchNumber', 'quantity', 'item_name', 'stock_id'];
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) {
                 newErrors[field] = `Please fill out the ${field.replace('_', ' ')} field.`;
             }
         });
-    
-        if (formData.payment_method && !validPaymentMethods.includes(formData.payment_method)) {
-            newErrors.payment_method = `Invalid Payment Method. Must be one of: ${validPaymentMethods.join(', ')}`;
+
+        if (paymentMethods.some((pm) => !pm.method || !pm.amount)) {
+            newErrors.paymentMethods = 'Each payment method must have a valid type and amount.';
         }
-    
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
-    
-        // Prepare payload
+
         const payload = {
             ...formData,
-            customer_number: formData.customer_number || null, // Convert blank to null
+            payment_methods: paymentMethods,
         };
-    
-        console.log('Payload being sent:', JSON.stringify(payload, null, 2)); // Log the payload
-    
+
         try {
             const response = await axios.post('/api/diraja/newsale', payload, {
                 headers: {
@@ -138,7 +134,6 @@ const AddSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-        
             if (response.status === 201) {
                 setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
@@ -146,44 +141,22 @@ const AddSale = () => {
                     customer_name: '',
                     customer_number: '',
                     quantity: '',
-                    payment_method: '',
                     BatchNumber: '',
                     item_name: '',
                     metric: '',
                     unit_price: '',
                     stock_id: '',
-                    amount_paid: '',
                 });
+                setPaymentMethods([{ method: '', amount: '' }]);
                 setFieldErrors({});
             } else {
                 setMessage({ text: 'Failed to add sale', type: 'error' });
             }
         } catch (error) {
             console.error('Error:', error);
-        
-            if (error.response && error.response.data) {
-                const { data } = error.response;
-        
-                // Backend sends a specific error message
-                if (data.message) {
-                    setMessage({ text: data.message, type: 'error' });
-                }
-        
-                // Backend sends validation errors for specific fields
-                if (data.errors) {
-                    const newErrors = {};
-                    Object.entries(data.errors).forEach(([field, errorMsg]) => {
-                        newErrors[field] = errorMsg;
-                    });
-                    setFieldErrors(newErrors);
-                }
-            } else {
-                setMessage({ text: 'An unknown error occurred. Please try again.', type: 'error' });
-            }
+            setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
         }
-        
     };
-    
 
     return (
         <div>
@@ -200,86 +173,78 @@ const AddSale = () => {
                     {message.text}
                 </div>
             )}
-
-
-            {shopError ? (
-                <p>Error loading shops. Please try again later.</p>
-            ) : (
-                <form onSubmit={handleSubmit} className="form">
-                    <select name="shop_id" value={formData.shop_id} onChange={handleChange} className="input">
-                        <option value="">Select Shop</option>
-                        {shops.map((shop) => (
-                            <option key={shop.shop_id} value={shop.shop_id}>
-                                {shop.shopname}
-                            </option>
-                        ))}
-                    </select>
-                    {batchError ? (
-                        <p>Error loading batch numbers. Please try again later.</p>
-                    ) : (
-                        <select name="BatchNumber" value={formData.BatchNumber} onChange={handleChange} className="input">
-                            <option value="">Select Batch Number</option>
-                            {batchNumbers.map((batch, index) => (
-                                <option key={index} value={batch}>
-                                    {batch}
-                                </option>
-                            ))}
-                        </select>
-                    )}
-                    <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
-                    <input
-                        name="customer_name"
-                        value={formData.customer_name}
-                        onChange={handleChange}
-                        placeholder="Customer Name"
-                        className="input"
-                    />
-                    <input
-                        name="customer_number"
-                        value={formData.customer_number}
-                        onChange={handleChange}
-                        placeholder="Customer Number(optional)"
-                        className="input"
-                    />
-                    <input
-                        name="quantity"
-                        type="number"
-                        value={formData.quantity}
-                        onChange={handleChange}
-                        placeholder="Quantity"
-                        className="input"
-                    />
-                    <select
-                        name="payment_method"
-                        value={formData.payment_method}
-                        onChange={handleChange}
-                        className="input"
-                    >
-                        <option value="">Select Payment Method</option>
-                        {validPaymentMethods.map((method) => (
-                            <option key={method} value={method}>
-                                {method.charAt(0).toUpperCase() + method.slice(1)}
-                            </option>
-                        ))}
-                    </select>
-                    <div>
-                        
-                        <input
-                            id="amount_paid"
-                            name="amount_paid"
-                            type="number"
-                            value={formData.amount_paid}
-                            onChange={handleChange}
-                            className="input"
-                            placeholder="Amount Paid"
-                        />
-                    </div>
-
-                    <button type="submit" className="button">Add Sale</button>
-                </form>
-            )}
+            <form onSubmit={handleSubmit} className="form">
+                <select name="shop_id" value={formData.shop_id} onChange={handleChange} className="input">
+                    <option value="">Select Shop</option>
+                    {shops.map((shop) => (
+                        <option key={shop.shop_id} value={shop.shop_id}>
+                            {shop.shopname}
+                        </option>
+                    ))}
+                </select>
+                <select name="BatchNumber" value={formData.BatchNumber} onChange={handleChange} className="input">
+                    <option value="">Select Batch Number</option>
+                    {batchNumbers.map((batch, index) => (
+                        <option key={index} value={batch}>
+                            {batch}
+                        </option>
+                    ))}
+                </select>
+                <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
+                <input
+                    name="customer_name"
+                    value={formData.customer_name}
+                    onChange={handleChange}
+                    placeholder="Customer Name"
+                    className="input"
+                />
+                <input
+                    name="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    placeholder="Quantity"
+                    className="input"
+                />
+                <div>
+                    <h3>Payment Methods</h3>
+                    {paymentMethods.map((method, index) => (
+                        <div key={index} className="payment-method">
+                            <select
+                                value={method.method}
+                                onChange={(e) => handlePaymentChange(index, 'method', e.target.value)}
+                                className="input"
+                            >
+                                <option value="">Select Payment Method</option>
+                                {validPaymentMethods.map((validMethod) => (
+                                    <option key={validMethod} value={validMethod}>
+                                        {validMethod.charAt(0).toUpperCase() + validMethod.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
+                            <input
+                                type="number"
+                                value={method.amount}
+                                onChange={(e) => handlePaymentChange(index, 'amount', e.target.value)}
+                                placeholder="Amount"
+                                className="input"
+                            />
+                            <button type="button" onClick={() => removePaymentMethod(index)} className="button remove">
+                                Remove
+                            </button>
+                        </div>
+                    ))}
+                    <button type="button" onClick={addPaymentMethod} className="button add">
+                        Add Payment Method
+                    </button>
+                </div>
+                <button type="submit" className="button">
+                    Add Sale
+                </button>
+            </form>
         </div>
     );
 };
 
 export default AddSale;
+
