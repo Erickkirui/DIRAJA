@@ -56,7 +56,7 @@ class TotalAmountPaidAllSales(Resource):
         try:
             # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
             total_sales = (
-                db.session.query(db.func.sum(Sales.amount_paid))
+                db.session.query(db.func.sum(Sales.total_price))
                 .filter(Sales.created_at >= start_date)
                 .scalar() or 0
             )

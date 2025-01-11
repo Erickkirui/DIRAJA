@@ -13,6 +13,9 @@ const SingleSale = () => {
   const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
   const [editedSale, setEditedSale] = useState({}); // State for the edited sale data
 
+  // Retrieve the access token from localStorage
+  const accessToken = localStorage.getItem('access_token');
+
   useEffect(() => {
     const fetchSale = async () => {
       try {
@@ -20,7 +23,7 @@ const SingleSale = () => {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            Authorization: `Bearer ${accessToken}`, // Add Authorization header
           },
         });
 
@@ -32,7 +35,12 @@ const SingleSale = () => {
 
         // Fetch shop name
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`);
+          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`, // Add Authorization header
+            },
+          });
           if (shopResponse.ok) {
             const shopData = await shopResponse.json();
             setShopname(shopData.name);
@@ -46,7 +54,7 @@ const SingleSale = () => {
     };
 
     fetchSale();
-  }, [sale_id]);
+  }, [sale_id, accessToken]); // Add accessToken as dependency
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -66,7 +74,7 @@ const SingleSale = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          Authorization: `Bearer ${accessToken}`, // Add Authorization header
         },
         body: JSON.stringify(editedSale),
       });
@@ -175,7 +183,23 @@ const SingleSale = () => {
                 </tr>
               </tbody>
             </table>
-            <p>Amount paid: <strong>{sale.amount_paid} ksh</strong></p>
+            <p>Amount paid: <strong>{sale.total_price} ksh</strong></p>
+
+            {/* Payment Methods Section */}
+            <div className="payment-methods-section">
+              <h3>Payment Methods</h3>
+              {Array.isArray(sale.payment_methods) ? (
+                <ul>
+                  {sale.payment_methods.map((method, index) => (
+                    <li key={index}>
+                      {method.payment_method}: <strong>{method.amount_paid} ksh</strong>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No payment methods available.</p>
+              )}
+            </div>
           </div>
         )}
       </div>

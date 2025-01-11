@@ -25,7 +25,7 @@ const Sales = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allsales', {
+        const response = await axios.get('/api/diraja/allsales', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -135,7 +135,6 @@ const Sales = () => {
             <th>Quantity</th>
             <th>Unit Price (ksh)</th>
             <th>Amount Paid (ksh)</th>
-            <th>Payment Method</th>
             <th>Date</th>
             <th>Action</th>
           </tr>
@@ -156,8 +155,7 @@ const Sales = () => {
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.unit_price}</td>
-                <td>{sale.amount_paid}</td>
-                <td>{sale.payment_method}</td>
+                <td>{sale.total_price}</td>
                 <td>{new Date(sale.created_at).toLocaleString()}</td>
                 <td>
                   <a href={`/sale/${sale.sale_id}`}>View more</a>
