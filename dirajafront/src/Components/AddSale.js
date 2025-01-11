@@ -24,7 +24,7 @@ const AddSale = () => {
     const [fieldErrors, setFieldErrors] = useState({});
     const [message, setMessage] = useState({ text: '', type: '' });
 
-    const validPaymentMethods = ['bank', 'cash', 'mpesa'];
+    const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay'];
 
     // Fetch shops
     useEffect(() => {
@@ -145,6 +145,7 @@ const AddSale = () => {
                     item_name: '',
                     metric: '',
                     unit_price: '',
+                    total_price: '',
                     stock_id: '',
                 });
                 setPaymentMethods([{ method: '', amount: '' }]);
@@ -198,6 +199,13 @@ const AddSale = () => {
                     placeholder="Customer Name"
                     className="input"
                 />
+                <input
+                        name="customer_number"
+                        value={formData.customer_number}
+                        onChange={handleChange}
+                        placeholder="Customer Number(optional)"
+                        className="input"
+                    />
                 <input
                     name="quantity"
                     type="number"

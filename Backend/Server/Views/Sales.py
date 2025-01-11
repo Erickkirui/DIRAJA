@@ -321,47 +321,43 @@ class GetPaymentTotals(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Get the 'start_date' and 'end_date' query parameters
+            # Get query parameters
             start_date_str = request.args.get('start_date')
             end_date_str = request.args.get('end_date')
 
-            # Convert date strings to datetime objects if provided
+            # Parse dates
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
 
-            # Get the distinct payment methods
-            query_methods = db.session.query(Sales.payment_method).distinct()
-            payment_methods = [row.payment_method for row in query_methods]
-
-            # Initialize a dictionary to store totals for each payment method
+            # Initialize totals dictionary
             totals = {}
 
-            for method in payment_methods:
-                query = db.session.query(
-                    db.func.coalesce(db.func.sum(Sales.amount_paid), 0).label('total')
-                ).filter(
-                    Sales.status == 'unpaid',
-                    Sales.payment_method.ilike(method)
-                )
+            # Query sales records and join SalesPaymentMethods
+            query = db.session.query(SalesPaymentMethods.payment_method, db.func.sum(SalesPaymentMethods.amount_paid)).join(
+                Sales, Sales.sales_id == SalesPaymentMethods.sale_id
+            ).filter(Sales.status == 'unpaid')
 
-                # Apply date filters if specified, using 'created_at' instead of 'date'
-                if start_date:
-                    query = query.filter(Sales.created_at >= start_date)
-                if end_date:
-                    query = query.filter(Sales.created_at <= end_date)
+            if start_date:
+                query = query.filter(Sales.created_at >= start_date)
+            if end_date:
+                query = query.filter(Sales.created_at <= end_date)
 
-                result = query.scalar()
+            query = query.group_by(SalesPaymentMethods.payment_method)
 
-                totals[method] = f"ksh. {float(result):,.2f}"
+            # Process results
+            results = query.all()
+            for payment_method, total in results:
+                totals[payment_method] = f"ksh. {total:,.2f}"
 
             return totals, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return jsonify({"error": "Database error occurred", "details": str(e)}), 500
+            return {"error": "Database error occurred", "details": str(e)}, 500
 
         except Exception as e:
-            return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
 
 
 
