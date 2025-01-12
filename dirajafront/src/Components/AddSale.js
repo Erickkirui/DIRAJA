@@ -15,6 +15,7 @@ const AddSale = () => {
         unit_price: '',
         stock_id: '',
         amount_paid: '',
+        total_price: '', // New field for total price
     });
     const [paymentMethods, setPaymentMethods] = useState([{ method: '', amount: '' }]);
     const [shops, setShops] = useState([]);
@@ -67,7 +68,18 @@ const AddSale = () => {
      // Handle input changes for form data
      const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData((prevData) => ({ ...prevData, [name]: value }));
+        setFormData((prevData) => {
+            const updatedData = { ...prevData, [name]: value };
+
+            // Calculate total price if quantity or unit_price changes
+            if (name === 'quantity' || name === 'unit_price') {
+                const quantity = parseFloat(updatedData.quantity) || 0;
+                const unitPrice = parseFloat(updatedData.unit_price) || 0;
+                updatedData.total_price = quantity * unitPrice;
+            }
+
+            return updatedData;
+        });
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
 
@@ -99,6 +111,8 @@ const AddSale = () => {
             unit_price: details.unit_price,
             stock_id: details.stock_id,
             amount_paid: prevData.quantity ? prevData.quantity * details.unit_price : '',
+            total_price: prevData.quantity ? prevData.quantity * details.unit_price : '', // Update total price
+
         }));
     }, []);
 
@@ -214,6 +228,11 @@ const AddSale = () => {
                     placeholder="Quantity"
                     className="input"
                 />
+                {/* Display total price below quantity */}
+                <div>
+                    <label>Total Price:</label>
+                    <p>{formData.total_price || 0}</p>
+                </div>
                 <div>
                     <h3>Payment Methods</h3>
                     {paymentMethods.map((method, index) => (

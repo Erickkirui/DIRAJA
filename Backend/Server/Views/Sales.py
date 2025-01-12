@@ -160,7 +160,7 @@ class GetSales(Resource):
                 # Fetch username and shop name manually using user_id and shop_id
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-                
+
                 # Handle cases where user or shop may not be found
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
@@ -170,10 +170,12 @@ class GetSales(Resource):
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
-                        "balance": payment.balance,
                     }
                     for payment in sale.payments  # Use the relationship
                 ]
+
+                # Calculate total amount paid
+                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
                 sales_data.append({
                     "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
@@ -190,6 +192,7 @@ class GetSales(Resource):
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "total_price": sale.total_price,
+                    "total_amount_paid": total_amount_paid,  # Include total amount paid
                     "payment_methods": payment_data,  # Include multiple payments
                     "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
                 })
@@ -198,6 +201,7 @@ class GetSales(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 
@@ -224,7 +228,7 @@ class GetSalesByShop(Resource):
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
                 
-                # Process multiple payment methods
+                # Process multiple payment methods and calculate total amount paid
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
@@ -233,9 +237,10 @@ class GetSalesByShop(Resource):
                     }
                     for payment in sale.payments  # Assuming `sale.payments` is a relationship or list
                 ]
+                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -249,7 +254,8 @@ class GetSalesByShop(Resource):
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "total_price": sale.total_price,
-                    "payment_methods": payment_data,  # Include multiple payments
+                    "total_amount_paid": total_amount_paid,  # Add total amount paid
+                    "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
                 })
 
@@ -257,6 +263,7 @@ class GetSalesByShop(Resource):
 
         except Exception as e:
             return jsonify({"error": str(e)}), 500
+
 
 
 
@@ -278,7 +285,7 @@ class SalesResources(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            # Process multiple payment methods
+            # Process multiple payment methods and calculate total amount paid
             payment_data = [
                 {
                     "payment_method": payment.payment_method,
@@ -287,10 +294,11 @@ class SalesResources(Resource):
                 }
                 for payment in sale.payments  # Assuming `sale.payments` is a relationship or list
             ]
+            total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
             # Prepare sale data
             sale_data = {
-                "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                "sale_id": sale.sales_id,
                 "user_id": sale.user_id,
                 "username": username,
                 "shop_id": sale.shop_id,
@@ -304,7 +312,8 @@ class SalesResources(Resource):
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "total_price": sale.total_price,
-                "payment_methods": payment_data,  # Include multiple payments
+                "total_amount_paid": total_amount_paid,  # Add total amount paid
+                "payment_methods": payment_data,
                 "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
             }
 
@@ -312,6 +321,7 @@ class SalesResources(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
         
 

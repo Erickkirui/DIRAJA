@@ -183,7 +183,7 @@ const SingleSale = () => {
                 </tr>
               </tbody>
             </table>
-            <p>Amount paid: <strong>{sale.total_price} ksh</strong></p>
+            <p>Amount paid: <strong>{sale.total_amount_paid} ksh</strong></p>
 
             {/* Payment Methods Section */}
             <div className="payment-methods-section">

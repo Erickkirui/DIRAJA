@@ -155,7 +155,7 @@ const Sales = () => {
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.unit_price}</td>
-                <td>{sale.total_price}</td>
+                <td>{sale.total_amount_paid}</td>
                 <td>{new Date(sale.created_at).toLocaleString()}</td>
                 <td>
                   <a href={`/sale/${sale.sale_id}`}>View more</a>
