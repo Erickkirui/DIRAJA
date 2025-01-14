@@ -15,6 +15,7 @@ const AddSale = () => {
         unit_price: '',
         stock_id: '',
         amount_paid: '',
+        sale_date: '',
     });
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
@@ -44,11 +45,16 @@ const AddSale = () => {
         fetchShops();
     }, []);
 
-    // Fetch batch numbers
+    // Fetch batch numbers based on shop_id
     useEffect(() => {
         const fetchBatchNumbers = async () => {
+            if (!formData.shop_id) {
+                setBatchNumbers([]);
+                return;
+            }
             try {
-                const response = await axios.get('/api/diraja/batches/available', {
+                const response = await axios.get('/api/diraja/batches/available-by-shop', {
+                    params: { shop_id: formData.shop_id },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                     },
@@ -61,7 +67,7 @@ const AddSale = () => {
             }
         };
         fetchBatchNumbers();
-    }, []);
+    }, [formData.shop_id]);
 
     // Handle input changes
     const handleChange = (e) => {
@@ -77,16 +83,11 @@ const AddSale = () => {
                         : '',
                 };
             }
-    
-            // Allow manual editing of amount_paid
-            return {
-                ...prevData,
-                [name]: value,
-            };
+            return { ...prevData, [name]: value };
         });
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
-    
+
     // Handle batch details fetched
     const handleBatchDetailsFetched = useCallback((details) => {
         setFormData((prevData) => ({
@@ -102,35 +103,31 @@ const AddSale = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
         const requiredFields = [
-            'shop_id', 'BatchNumber', 'quantity', 'payment_method', 'item_name', 'stock_id',
+            'shop_id', 'BatchNumber', 'quantity', 'payment_method', 'item_name', 'stock_id', 'sale_date',
         ];
-    
+
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) {
                 newErrors[field] = `Please fill out the ${field.replace('_', ' ')} field.`;
             }
         });
-    
+
         if (formData.payment_method && !validPaymentMethods.includes(formData.payment_method)) {
             newErrors.payment_method = `Invalid Payment Method. Must be one of: ${validPaymentMethods.join(', ')}`;
         }
-    
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
-    
-        // Prepare payload
+
         const payload = {
             ...formData,
             customer_number: formData.customer_number || null, // Convert blank to null
         };
-    
-        console.log('Payload being sent:', JSON.stringify(payload, null, 2)); // Log the payload
-    
+
         try {
             const response = await axios.post('/api/diraja/newsale', payload, {
                 headers: {
@@ -138,7 +135,7 @@ const AddSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-        
+
             if (response.status === 201) {
                 setMessage({ text: response.data.message, type: 'success' });
                 setFormData({
@@ -153,6 +150,7 @@ const AddSale = () => {
                     unit_price: '',
                     stock_id: '',
                     amount_paid: '',
+                    sale_date: '',
                 });
                 setFieldErrors({});
             } else {
@@ -160,16 +158,14 @@ const AddSale = () => {
             }
         } catch (error) {
             console.error('Error:', error);
-        
+
             if (error.response && error.response.data) {
                 const { data } = error.response;
-        
-                // Backend sends a specific error message
+
                 if (data.message) {
                     setMessage({ text: data.message, type: 'error' });
                 }
-        
-                // Backend sends validation errors for specific fields
+
                 if (data.errors) {
                     const newErrors = {};
                     Object.entries(data.errors).forEach(([field, errorMsg]) => {
@@ -181,9 +177,7 @@ const AddSale = () => {
                 setMessage({ text: 'An unknown error occurred. Please try again.', type: 'error' });
             }
         }
-        
     };
-    
 
     return (
         <div>
@@ -200,8 +194,6 @@ const AddSale = () => {
                     {message.text}
                 </div>
             )}
-
-
             {shopError ? (
                 <p>Error loading shops. Please try again later.</p>
             ) : (
@@ -249,6 +241,14 @@ const AddSale = () => {
                         placeholder="Quantity"
                         className="input"
                     />
+                    <input
+                        type="date"
+                        name="sale_date"
+                        value={formData.sale_date}
+                        onChange={handleChange}
+                        className="input"
+                    />
+                  
                     <select
                         name="payment_method"
                         value={formData.payment_method}
@@ -262,19 +262,15 @@ const AddSale = () => {
                             </option>
                         ))}
                     </select>
-                    <div>
-                        
-                        <input
-                            id="amount_paid"
-                            name="amount_paid"
-                            type="number"
-                            value={formData.amount_paid}
-                            onChange={handleChange}
-                            className="input"
-                            placeholder="Amount Paid"
-                        />
-                    </div>
-
+                    <input
+                        id="amount_paid"
+                        name="amount_paid"
+                        type="number"
+                        value={formData.amount_paid}
+                        onChange={handleChange}
+                        className="input"
+                        placeholder="Amount Paid"
+                    />
                     <button type="submit" className="button">Add Sale</button>
                 </form>
             )}

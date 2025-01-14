@@ -93,7 +93,7 @@ class AddSale(Resource):
         # Check inventory availability
         shop_stock_item = ShopStock.query.filter_by(stock_id=stock_id).first()
         if not shop_stock_item or shop_stock_item.quantity < quantity:
-            return {'message': 'Insufficient inventory quantity'}, 400
+            return {'message': 'Not enoung stock to complete sale'}, 400
 
         # Update the shop stock quantity
         shop_stock_item.quantity -= quantity  # Subtract sold quantity from shop stock

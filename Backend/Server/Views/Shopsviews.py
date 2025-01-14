@@ -109,7 +109,6 @@ class ShopsResourceById(Resource):
 class GetAllShops(Resource):
 
     @jwt_required()
-    @check_role('manager')
     def get(self):
 
         shops = Shops.query.all()

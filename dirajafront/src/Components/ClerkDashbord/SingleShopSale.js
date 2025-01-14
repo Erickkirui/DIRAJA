@@ -4,59 +4,67 @@ import { Link } from 'react-router-dom';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
-        shop_id: localStorage.getItem('shop_id') || '', // Get shop_id from local storage
+        shop_id: localStorage.getItem('shop_id') || '',
         customer_name: '',
         customer_number: '',
         item_name: '',
         quantity: '',
         metric: '',
-        unit_price: '', // Fetched from batch details
-        amount_paid: '', // Will be calculated
+        unit_price: '',
+        amount_paid: '',
         payment_method: '',
         BatchNumber: '',
         stock_id: '',
     });
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [batchError, setBatchError] = useState(false);
-    const [message, setMessage] = useState(''); // For displaying messages
-    const [messageType, setMessageType] = useState(''); // 'success' or 'error'
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [remainingStock, setRemainingStock] = useState(0); // To store remaining stock
 
+    // Fetch batch numbers when shop_id is updated
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
                 const response = await axios.get('/api/diraja/batches/available-by-shop', {
-                    params: { shop_id: formData.shop_id }, // Send shop_id as a query parameter
+                    params: { shop_id: formData.shop_id },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                     },
                 });
                 setBatchNumbers(response.data);
-
                 if (response.data.length === 0) {
                     setBatchError(true);
                 }
             } catch (error) {
                 console.error('Error fetching batch numbers:', error);
                 setBatchError(true);
+                setMessageType('error');
+                setMessage('Error fetching batch numbers. Please try again later.');
             }
         };
-
         fetchBatchNumbers();
     }, [formData.shop_id]);
 
+    // Fetch batch details when BatchNumber is selected
+    // Fetch batch details when BatchNumber is selected
     useEffect(() => {
         const fetchBatchDetails = async () => {
-            if (!formData.BatchNumber) return;
+            if (!formData.BatchNumber || !formData.shop_id) return;
 
             try {
-                const response = await axios.get('/api/diraja/batch-details', {
-                    params: { BatchNumber: formData.BatchNumber },
+                const response = await axios.get('/api/diraja/shop-batchdetails', {
+                    params: {
+                        BatchNumber: formData.BatchNumber,
+                        shop_id: formData.shop_id, // Include shop_id to fetch details for the specific shop
+                    },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                     },
                 });
 
-                const { itemname, metric, unit_price, stock_id } = response.data;
+                const { itemname, metric, unit_price, stock_id, quantity } = response.data;
 
                 setFormData((prevData) => ({
                     ...prevData,
@@ -64,21 +72,27 @@ const SingleShopSale = () => {
                     metric: metric || '',
                     unit_price: unit_price || '',
                     stock_id: stock_id || '',
-                    amount_paid: prevData.quantity * (unit_price || 0), // Calculate amount_paid automatically
+                    amount_paid: prevData.quantity * (unit_price || 0), // Automatically calculate amount_paid
                 }));
+
+                // Set the remaining stock (quantity from the API response)
+                setRemainingStock(quantity); // This is where you set the remaining stock quantity
             } catch (error) {
                 console.error('Error fetching batch details:', error);
+                setMessageType('error');
+                setMessage('Error fetching batch details. Please try again.');
             }
         };
 
         fetchBatchDetails();
-    }, [formData.BatchNumber]);
+    }, [formData.BatchNumber, formData.shop_id]); // Ensure effect runs when BatchNumber or shop_id changes
 
+    // Handle form data changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newFormData = { ...formData, [name]: value };
 
-        // Automatically calculate amount_paid if quantity changes
+        // Automatically calculate amount_paid if quantity or unit_price changes
         if (name === 'quantity' || name === 'unit_price') {
             newFormData.amount_paid = newFormData.quantity * newFormData.unit_price;
         }
@@ -86,9 +100,10 @@ const SingleShopSale = () => {
         setFormData(newFormData);
     };
 
+    // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
+    
         const requiredFields = [
             'shop_id',
             'customer_name',
@@ -101,8 +116,7 @@ const SingleShopSale = () => {
             'BatchNumber',
             'stock_id',
         ];
-
-        // Validate required fields
+    
         for (const field of requiredFields) {
             if (!formData[field]) {
                 setMessageType('error');
@@ -110,9 +124,9 @@ const SingleShopSale = () => {
                 return;
             }
         }
-
-        console.log('Data being sent for sale:', formData);
-
+    
+        setIsLoading(true);
+    
         try {
             const response = await axios.post('/api/diraja/newsale', formData, {
                 headers: {
@@ -120,37 +134,46 @@ const SingleShopSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-
+    
             if (response.status === 201) {
                 setMessageType('success');
                 setMessage(response.data.message);
                 setFormData({
-                    shop_id: localStorage.getItem('shop_id') || '', // Reset with shop_id from local storage
+                    shop_id: localStorage.getItem('shop_id') || '',
                     customer_name: '',
                     customer_number: '',
                     item_name: '',
                     quantity: '',
                     metric: '',
-                    unit_price: '', // Reset unit_price
-                    amount_paid: '', // Reset amount_paid
+                    unit_price: '',
+                    amount_paid: '',
                     payment_method: '',
                     BatchNumber: '',
                     stock_id: '',
                 });
+                setRemainingStock(0);
             } else {
                 setMessageType('error');
                 setMessage('Failed to add sale');
             }
         } catch (error) {
-            console.error('Error:', error);
-            setMessageType('error');
-            setMessage('An error occurred. Please try again.');
+            // Handle backend error messages
+            if (error.response && error.response.data && error.response.data.message) {
+                setMessageType('error');
+                setMessage(error.response.data.message);
+            } else {
+                console.error('Error:', error);
+                setMessageType('error');
+                setMessage('An unexpected error occurred. Please try again.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
+    
 
     return (
         <div>
-            {/* Display the message above the form */}
             {message && (
                 <div className={`message ${messageType === 'success' ? 'success' : 'error'}`}>
                     {message}
@@ -159,11 +182,26 @@ const SingleShopSale = () => {
 
             <h1>Record a Sale</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
-                <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
-                <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number (optional)" />
-                <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantity" />
+                <input
+                    name="customer_name"
+                    value={formData.customer_name}
+                    onChange={handleChange}
+                    placeholder="Customer Name"
+                />
+                <input
+                    name="customer_number"
+                    value={formData.customer_number}
+                    onChange={handleChange}
+                    placeholder="Customer Number (optional)"
+                />
+                <input
+                    name="quantity"
+                    type="number"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    placeholder="Quantity"
+                />
 
-                {/* Batch Number Dropdown */}
                 {batchError ? (
                     <p>Error loading batch numbers. Please try again later.</p>
                 ) : (
@@ -194,17 +232,23 @@ const SingleShopSale = () => {
                     <span>{formData.stock_id}</span>
                 </div>
 
+                {/* Display Remaining Stock */}
                 <div>
-                    <lable>Total Amount : </lable>
-                <input
-                    id="amount_paid"
-                    name="amount_paid"
-                    type="number"
-                    value={formData.amount_paid}
-                    onChange={handleChange}
-                    className="input"
-                    placeholder="Amount Paid"
-                />
+                    <label>Remaining Stock: </label>
+                    <span>{remainingStock}</span> {/* This will show the updated remaining stock */}
+                </div>
+
+                <div>
+                    <label>Total Amount : </label>
+                    <input
+                        id="amount_paid"
+                        name="amount_paid"
+                        type="number"
+                        value={formData.amount_paid}
+                        onChange={handleChange}
+                        className="input"
+                        placeholder="Amount Paid"
+                    />
                 </div>
 
                 <select name="payment_method" value={formData.payment_method} onChange={handleChange} className="payment-method-dropdown">
@@ -217,6 +261,9 @@ const SingleShopSale = () => {
                 <button className="add-sale-button" type="submit">
                     Add Sale
                 </button>
+
+                {isLoading && <div className="posting-sale"></div>}
+
                 <Link className="nav-clerk-button" to="/clerk">
                     Home
                 </Link>

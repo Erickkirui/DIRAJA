@@ -17,7 +17,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
 from Server.Views.Bankviews import AddBank, BankResourceById
@@ -56,6 +56,7 @@ api.add_resource(GetShopStock, '/shopstock')
 api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')  
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
 api.add_resource(BatchDetailsResource, '/batch-details')
+api.add_resource(BatchDetailsResourceForShop, '/shop-batchdetails')
 api.add_resource(AvailableBatchesResource, '/batches/available')
 api.add_resource(AvailableBatchesByShopResource, '/batches/available-by-shop')
 api.add_resource(GetAllStock, '/allstock')

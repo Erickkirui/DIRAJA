@@ -149,3 +149,10 @@
   display: flex;
    gap:  10px;
 }
+
+@media (max-width: 768px) {
+  
+  .item-details{
+    width: auto;
+  }
+}

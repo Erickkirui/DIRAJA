@@ -3,6 +3,7 @@ import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/transfers.css';
+import LoadingAnimation from './LoadingAnimation';
 
 const Transfers = () => {
   const [transfers, setTransfers] = useState([]);
@@ -10,29 +11,35 @@ const Transfers = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state
   const itemsPerPage = 50;
 
   useEffect(() => {
     const fetchTransfers = async () => {
       try {
+        setLoading(true); // Start loading
         const accessToken = localStorage.getItem('access_token');
 
         if (!accessToken) {
           setError('No access token found, please log in.');
+          setLoading(false);
           return;
         }
 
-
-        const response = await axios.get(' /api/diraja/alltransfers', {
-
+        const response = await axios.get('/api/diraja/alltransfers', {
           headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
 
-        setTransfers(response.data);
+        // Sort transfers by transfer_id in descending order
+        const sortedTransfers = response.data.sort((a, b) => b.transfer_id - a.transfer_id);
+
+        setTransfers(sortedTransfers);
       } catch (err) {
         setError('Error fetching transfers. Please try again.');
+      } finally {
+        setLoading(false); // Stop loading
       }
     };
 
@@ -51,18 +58,20 @@ const Transfers = () => {
     setCurrentPage(pageNumber);
   };
 
-  const filteredTransfers = transfers.filter((transfer) => {
-    const matchesSearch =
-      transfer.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transfer.username.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTransfers = transfers
+    .filter((transfer) => {
+      const matchesSearch =
+        transfer.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transfer.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transfer.username.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDate = selectedDate
-      ? new Date(transfer.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
-      : true;
+      const matchesDate = selectedDate
+        ? new Date(transfer.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+        : true;
 
-    return matchesSearch && matchesDate;
-  });
+      return matchesSearch && matchesDate;
+    })
+    .sort((a, b) => b.transfer_id - a.transfer_id); // Ensure filtered transfers are sorted
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -87,7 +96,7 @@ const Transfers = () => {
             setCurrentPage(1);
           }}
         />
-        
+
         <input
           type="date"
           className="date-picker"
@@ -98,13 +107,15 @@ const Transfers = () => {
           }}
         />
       </div>
-      
+
       <div className="actions-container">
         <ExportExcel data={filteredTransfers} fileName="TransfersData" />
         <DownloadPDF tableId="transfers-table" fileName="TransfersData" />
       </div>
-      
-      {filteredTransfers.length > 0 ? (
+
+      {loading ? (
+       <LoadingAnimation /> // Show loading message
+      ) : filteredTransfers.length > 0 ? (
         <>
           <table id="transfers-table" className="transfers-table">
             <thead>

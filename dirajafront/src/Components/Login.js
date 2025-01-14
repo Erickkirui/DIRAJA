@@ -13,11 +13,9 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      const response = await axios.post('/api/diraja/login', { email, password });
 
-      const response = await axios.post(' /api/diraja/login', { email, password });
-
-
-      const { access_token, refresh_token, username, role, shop_id } = response.data;
+      const { access_token, refresh_token, username, role, shop_id, designation } = response.data;
 
       // Store the data in localStorage
       localStorage.setItem('access_token', access_token);
@@ -26,6 +24,9 @@ const Login = () => {
       localStorage.setItem('role', role);
       if (shop_id) {
         localStorage.setItem('shop_id', shop_id);
+      }
+      if (designation) {
+        localStorage.setItem('designation', designation);
       }
 
       // Reset the form and clear any previous errors
@@ -51,7 +52,7 @@ const Login = () => {
   return (
     <div className="login-container">
       <h2 className="login-title">Account Login</h2>
-    
+
       {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleLogin} className="login-form">
         <label>Email</label>
@@ -85,7 +86,7 @@ const Login = () => {
 
         <button type="submit" className="submit-button">
           <span>Login</span>
-          <FontAwesomeIcon  icon={faRightToBracket} size="0x" />
+          <FontAwesomeIcon icon={faRightToBracket} size="0x" />
         </button>
       </form>
     </div>

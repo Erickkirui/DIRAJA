@@ -73,7 +73,39 @@ class AvailableBatchesResource(Resource):
         # Return the batch numbers as a JSON response
         return jsonify(batch_numbers)
 
-    
+
+class BatchDetailsResourceForShop(Resource):
+    @jwt_required()
+    def get(self):
+        # Retrieve the batch number and shop_id from the request arguments
+        batch_number = request.args.get('BatchNumber')
+        shop_id = request.args.get('shop_id')
+        
+        if not batch_number or not shop_id:
+            return {'message': 'Batch number and shop ID are required'}, 400
+        
+        # Query the ShopStock table for the given batch number and shop_id and filter out zero quantities
+        shop_stock_items = ShopStock.query.filter_by(BatchNumber=batch_number, shop_id=shop_id).filter(ShopStock.quantity > 0).all()
+        
+        if not shop_stock_items:
+            return {'message': 'No available stock for the given batch number and shop ID'}, 404
+
+        # Select the first item with non-zero quantity
+        shop_stock_item = shop_stock_items[0]
+
+        # Prepare the sales details based on the selected batch number
+        sales_details = {
+            'itemname': shop_stock_item.itemname,
+            'metric': shop_stock_item.metric,
+            'unit_price': shop_stock_item.unitPrice,
+            'BatchNumber': shop_stock_item.BatchNumber,
+            'stock_id': shop_stock_item.stock_id,
+            'quantity': shop_stock_item.quantity
+        }
+        
+        return sales_details, 200
+
+
 class BatchDetailsResource(Resource):
     @jwt_required()
     def get(self):
@@ -98,7 +130,8 @@ class BatchDetailsResource(Resource):
             'metric': shop_stock_item.metric,
             'unit_price': shop_stock_item.unitPrice,
             'BatchNumber': shop_stock_item.BatchNumber,
-            'stock_id': shop_stock_item.stock_id
+            'stock_id': shop_stock_item.stock_id,
+            'quantity': shop_stock_item.quantity
         }
         
         return sales_details, 200
