@@ -29,6 +29,7 @@ class Sales(db.Model):
     users = db.relationship('Users', backref='sales', lazy=True)
     shops = db.relationship('Shops', backref='sales_for_shop', lazy=True, foreign_keys=[shop_id])
     shop_stock = db.relationship('ShopStock', backref='sales', lazy=True)
+    payment= db.relationship('SalesPaymentMethods', backref='related_sale', lazy=True, cascade="all, delete-orphan")
     
     # Validations
     @validates('status')
