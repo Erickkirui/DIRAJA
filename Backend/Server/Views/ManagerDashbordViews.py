@@ -197,21 +197,25 @@ class TotalAmountPaidPerShop(Resource):
         elif period == 'month':
             start_date = today - timedelta(days=30)
         else:
-            return {"message": "Invalid period specified"}, 400
+            return {"message": "Invalid period specified. Valid periods are 'today', 'week', or 'month'."}, 400
 
         try:
             # Query for all shop IDs
             shops = Shops.query.all()
 
-            # Calculate total sales for each shop
+            # Calculate total sales for each shop by summing the `amount_paid` from `SalesPaymentMethods`
             results = []
             for shop in shops:
                 shop_id = shop.shops_id
+
+                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for each shop
                 total_sales = (
-                    db.session.query(db.func.sum(Sales.amount_paid))
-                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                    db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to get the shop_id
+                    .filter(Sales.shop_id == shop_id, Sales.created_at >= start_date)
                     .scalar() or 0
                 )
+
                 results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,
@@ -222,7 +226,8 @@ class TotalAmountPaidPerShop(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching total sales amounts for all shops"}, 500
+            return {"error": "An error occurred while fetching total sales amounts for all shops", "details": str(e)}, 500
+
 
 
 class StockAlert(Resource):
