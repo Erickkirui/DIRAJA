@@ -282,3 +282,57 @@ const AddSale = () => {
 
 export default AddSale;
 
+
+
+// shop_id: '2', customer_name: 'Erick', customer_number: '', quantity: '1', payment_method: '', …}
+// BatchNumber
+// : 
+// "DAMAS-NDUMBERI-BROILER-250106-A5"
+// amount_paid
+// : 
+// ""
+// customer_name
+// : 
+// "Erick"
+// customer_number
+// : 
+// ""
+// item_name
+// : 
+// "Broiler"
+// metric
+// : 
+// "kg"
+// payment_method
+// : 
+// ""
+// payment_methods
+// : 
+// Array(2)
+// 0
+// : 
+// {method: 'cash', amount: '400'}
+// 1
+// : 
+// {method: 'mpesa', amount: '90'}
+// length
+// : 
+// 2
+// [[Prototype]]
+// : 
+// Array(0)
+// quantity
+// : 
+// "1"
+// shop_id
+// : 
+// "2"
+// stock_id
+// : 
+// 4
+// total_price
+// : 
+// 490
+// unit_price
+// : 
+// 490

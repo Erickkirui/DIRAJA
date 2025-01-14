@@ -143,6 +143,7 @@ class AddSale(Resource):
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
 
+
         
 
 class GetSales(Resource):
