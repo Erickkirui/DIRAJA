@@ -7,22 +7,20 @@ class Sales(db.Model):
     
     # Table columns
     sales_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'), nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
     customer_name = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(50), default="unpaid", nullable=False)
-    customer_number = db.Column(db.Integer, nullable=True)  # Updated to allow empty value
+    customer_number = db.Column(db.String(15), nullable=True)  # Changed to String to handle phone numbers
     item_name = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
-    amount_paid = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    payment_method = db.Column(db.String(50), nullable=False)
     BatchNumber = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
-    balance = db.Column(db.Float)  # Fixed typo from 'ballance' to 'balance'
+    balance = db.Column(db.Float)
     note = db.Column(db.String(50))
     
     # Relationships

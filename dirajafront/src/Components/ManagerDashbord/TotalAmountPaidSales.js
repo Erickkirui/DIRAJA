@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import LoadingAnimation from '../LoadingAnimation';
 
-
 const TotalAmountPaidSales = () => {
   const [period, setPeriod] = useState('today');
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
@@ -23,7 +22,7 @@ const TotalAmountPaidSales = () => {
           },
         });
 
-        // Simulate a 3-second delay
+        // Simulate a 3-second delay (optional, could be removed)
         setTimeout(() => {
           setTotalAmountPaid(response.data.total_sales_amount_paid);
           setLoading(false); // Stop loading
@@ -58,7 +57,7 @@ const TotalAmountPaidSales = () => {
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
-        <h1>Ksh {totalAmountPaid?.toFixed(2)}</h1>
+        <h1>{totalAmountPaid ? `${totalAmountPaid}` : '0.00'}</h1>
       )}
       <Link to="/analytics">View Sales</Link>
     </div>

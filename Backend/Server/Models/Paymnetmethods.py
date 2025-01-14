@@ -12,8 +12,6 @@ class SalesPaymentMethods(db.Model):
     amount_paid = db.Column(db.Float, nullable=False)
     balance = db.Column(db.Float, nullable=True)  # New field for balance
 
-    # Relationship with Sales
-    sale = db.relationship("Sales", backref="payment_records")
 
     # Validation for payment method
     @validates('payment_method')

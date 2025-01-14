@@ -3,6 +3,7 @@ from app import db
 from Server.Models.Inventory import Inventory
 from Server.Models.Transfer import Transfer
 from Server.Models.Users import Users
+from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
@@ -11,6 +12,7 @@ from Server.Models.Expenses import Expenses
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
+from sqlalchemy.orm import aliased
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
@@ -38,8 +40,8 @@ class CountEmployees(Resource):
 class TotalAmountPaidAllSales(Resource):
     @jwt_required()
     def get(self):
-        # Get period from query parameters
-        period = request.args.get('period', 'today')
+        # Get period from query parameters, default is 'today'
+        period = request.args.get('period', 'today').lower()
 
         today = datetime.utcnow()
         
@@ -51,21 +53,29 @@ class TotalAmountPaidAllSales(Resource):
         elif period == 'month':
             start_date = today - timedelta(days=30)
         else:
-            return {"message": "Invalid period specified"}, 400
+            return {"message": "Invalid period specified. Valid periods are 'today', 'week', or 'month'."}, 400
 
         try:
-            # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
+            # Alias the SalesPaymentMethods table to aggregate the amount_paid
+            sales_payment_alias = aliased(SalesPaymentMethods)
+            
+            # Query for the sum of `amount_paid` from the `SalesPaymentMethods` where the related sales' created_at >= `start_date`
             total_sales = (
-                db.session.query(db.func.sum(Sales.amount_paid))
+                db.session.query(db.func.sum(sales_payment_alias.amount_paid))
+                .join(Sales, Sales.sales_id == sales_payment_alias.sale_id)
                 .filter(Sales.created_at >= start_date)
-                .scalar() or 0
+                .scalar() or 0  # Return 0 if no sales are found
             )
             
-            return {"total_sales_amount_paid": total_sales}, 200
+            # Return the total sales amount paid
+            return {"total_sales_amount_paid": f"ksh {total_sales:,.2f}"}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total sales amount"}, 500
+            return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
+        except Exception as e:
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+
         
         
 class TotalAmountPaidSales(Resource):
