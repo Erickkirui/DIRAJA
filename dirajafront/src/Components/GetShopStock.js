@@ -90,7 +90,7 @@ const Shopstock = () => {
                 />
                 <input
                     type="date"
-                    className="date-filter"
+                    className="date-picker"
                     value={selectedDate}
                     onChange={(e) => setSelectedDate(e.target.value)}
                 />

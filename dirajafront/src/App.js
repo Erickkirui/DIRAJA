@@ -117,6 +117,7 @@ function App() {
             <Route path='/shopsales' element={<ClerkLayout><ShopSales/></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
+            <Route path='/relieversales' element={<ClerkLayout><AddSale /></ClerkLayout>}></Route>
             <Route path='/shopsale' element={<ClerkLayout><SingleShopSale /></ClerkLayout>} ></Route>
             <Route path='/analytics' element={<Layout><AnalyticsPage/></Layout>}></Route>
             <Route path="*" element={<NotFound />} />

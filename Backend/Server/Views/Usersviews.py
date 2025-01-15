@@ -53,20 +53,23 @@ class Addusers(Resource):
         return {'message': 'User added successfully'}, 201
 
 
+
 class UserLogin(Resource):
     def post(self):
-        
         email = request.json.get("email", None)
         password = request.json.get("password", None)
 
+        # Fetch the user based on email
         user = Users.query.filter_by(email=email).one_or_none()
 
         if not user:
             return make_response(jsonify({"error": "User not found. Please check your email."}), 404)
 
+        # Validate the password
         if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
             return make_response(jsonify({"error": "Wrong password"}), 401)
-        
+
+        # Prepare response data
         username = user.username
         user_role = user.role
         response_data = {
@@ -76,11 +79,12 @@ class UserLogin(Resource):
             "role": user_role
         }
 
-        # Check if the user is a clerk and include shop_id if so
+        # Check if the user is a clerk and include shop_id and designation
         if user_role == "clerk":
             employee = Employees.query.filter_by(work_email=email).one_or_none()
             if employee:
                 response_data["shop_id"] = employee.shop_id
+                response_data["designation"] = employee.designation  # Add designation, even if not "reliever"
 
         return make_response(jsonify(response_data), 200)
 

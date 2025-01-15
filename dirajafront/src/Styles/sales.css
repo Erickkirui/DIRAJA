@@ -150,3 +150,74 @@
    gap:  10px;
 }
 
+.payment-method select{
+  width: 15%;
+}
+.payment-method input{
+  width: 25%;
+}
+.payment-method{
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.payment-button{
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #ffff;
+  cursor: pointer;
+  
+}
+
+.payment-button:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+/* css for updating single slae edit */
+.edit-form{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-form select{
+  width: 40%;
+}
+.edit-form input {
+  padding: 10px;
+  border: 1px #ccc solid;
+ border-radius: 6px;
+ width: 40%;
+
+}
+.edit-form label{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.payment-methods{
+  width: 70%;
+}
+.bottom-class{
+  display: flex ;
+  gap: 10px;
+}
+
+/* media query */
+@media (max-width: 768px) {
+  .success{
+    width: 90%;
+  }
+  .payment-method input{
+    width: 50%;
+  }
+  .payment-method select{
+    width: 50%;
+  }
+  .item-details{
+    width: auto;
+  }
+}
