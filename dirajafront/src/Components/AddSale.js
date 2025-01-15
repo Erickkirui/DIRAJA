@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import BatchDetails from './BatchDetails';
+import PaymentMethods from './PaymentMethod';
 
 const AddSale = () => {
     const [formData, setFormData] = useState({
@@ -10,7 +11,7 @@ const AddSale = () => {
         quantity: '',
         payment_method: '',
         BatchNumber: '',
-        item_name: '',
+        item_name: '',  
         metric: '',
         unit_price: '',
         stock_id: '',
@@ -75,36 +76,17 @@ const AddSale = () => {
         const { name, value } = e.target;
         setFormData((prevData) => {
             const updatedData = { ...prevData, [name]: value };
-
-            // Calculate total price if quantity or unit_price changes
-            if (name === 'quantity' || name === 'unit_price') {
+    
+            // Recalculate total price if quantity or unit_price changes, unless editing total_price directly
+            if ((name === 'quantity' || name === 'unit_price') && name !== 'total_price') {
                 const quantity = parseFloat(updatedData.quantity) || 0;
                 const unitPrice = parseFloat(updatedData.unit_price) || 0;
                 updatedData.total_price = quantity * unitPrice;
             }
-
+    
             return updatedData;
         });
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
-    };
-
-    // Handle changes for payment methods
-    const handlePaymentChange = (index, field, value) => {
-        setPaymentMethods((prevMethods) =>
-            prevMethods.map((method, idx) =>
-                idx === index ? { ...method, [field]: value } : method
-            )
-        );
-    };
-
-    // Add a new payment method
-    const addPaymentMethod = () => {
-        setPaymentMethods((prevMethods) => [...prevMethods, { method: '', amount: '' }]);
-    };
-
-    // Remove a payment method
-    const removePaymentMethod = (index) => {
-        setPaymentMethods((prevMethods) => prevMethods.filter((_, idx) => idx !== index));
     };
 
     // Handle batch details fetched
@@ -179,7 +161,7 @@ const AddSale = () => {
             setMessage({ text: 'An error occurred. Please try again.', type: 'error' });
         }
     };
-    
+
     return (
         <div>
             <h1>Add Sale</h1>
@@ -235,43 +217,33 @@ const AddSale = () => {
                     placeholder="Quantity"
                     className="input"
                 />
-                {/* Display total price below quantity */}
                 <div>
-                    <label>Total Price:</label>
-                    <p>{formData.total_price || 0}</p>
+                    <input
+                        type="number"
+                        name="total_price"
+                        value={formData.total_price || ''}
+                        onChange={(e) => handleChange(e)}
+                        placeholder="Total Price"
+                        className="input"
+                    />
                 </div>
-                <div>
-                    <h3>Payment Methods</h3>
-                    {paymentMethods.map((method, index) => (
-                        <div key={index} className="payment-method">
-                            <select
-                                value={method.method}
-                                onChange={(e) => handlePaymentChange(index, 'method', e.target.value)}
-                                className="input"
-                            >
-                                <option value="">Select Payment Method</option>
-                                {validPaymentMethods.map((validMethod) => (
-                                    <option key={validMethod} value={validMethod}>
-                                        {validMethod.charAt(0).toUpperCase() + validMethod.slice(1)}
-                                    </option>
-                                ))}
-                            </select>
-                            <input
-                                type="number"
-                                value={method.amount}
-                                onChange={(e) => handlePaymentChange(index, 'amount', e.target.value)}
-                                placeholder="Amount"
-                                className="input"
-                            />
-                            <button type="button" onClick={() => removePaymentMethod(index)} className="button remove">
-                                Remove
-                            </button>
-                        </div>
-                    ))}
-                    <button type="button" onClick={addPaymentMethod} className="button add">
-                        Add Payment Method
-                    </button>
-                </div>
+
+                <PaymentMethods
+                    paymentMethods={paymentMethods}
+                    validPaymentMethods={validPaymentMethods}
+                    handlePaymentChange={(index, field, value) =>
+                        setPaymentMethods((prev) =>
+                            prev.map((pm, idx) => (idx === index ? { ...pm, [field]: value } : pm))
+                        )
+                    }
+                    addPaymentMethod={() =>
+                        setPaymentMethods((prev) => [...prev, { method: '', amount: '' }])
+                    }
+                    removePaymentMethod={(index) =>
+                        setPaymentMethods((prev) => prev.filter((_, idx) => idx !== index))
+                    }
+                />
+
                 <button type="submit" className="button">
                     Add Sale
                 </button>
@@ -281,4 +253,3 @@ const AddSale = () => {
 };
 
 export default AddSale;
-

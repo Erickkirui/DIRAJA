@@ -150,6 +150,31 @@
    gap:  10px;
 }
 
+.payment-method select{
+  width: 15%;
+}
+.payment-method input{
+  width: 25%;
+}
+.payment-method{
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.payment-button{
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #ffff;
+  cursor: pointer;
+  
+}
+
+.payment-button:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
 @media (max-width: 768px) {
   
   .item-details{
