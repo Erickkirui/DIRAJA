@@ -176,7 +176,15 @@
 }
 
 @media (max-width: 768px) {
-  
+  .success{
+    width: 90%;
+  }
+  .payment-method input{
+    width: 50%;
+  }
+  .payment-method select{
+    width: 50%;
+  }
   .item-details{
     width: auto;
   }

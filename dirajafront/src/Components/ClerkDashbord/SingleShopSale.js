@@ -24,7 +24,7 @@ const SingleShopSale = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [remainingStock, setRemainingStock] = useState(0);
 
-    const validPaymentMethods = ['cash', 'mpesa', 'bank'];
+    const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay'];
 
     useEffect(() => {
         const fetchBatchNumbers = async () => {

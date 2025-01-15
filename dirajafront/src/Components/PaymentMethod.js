@@ -17,7 +17,7 @@ const PaymentMethods = ({
                         onChange={(e) => handlePaymentChange(index, 'method', e.target.value)}
                         className="input"
                     >
-                        <option value="">Select Payment Method</option>
+                        <option value="">Payment Method</option>
                         {validPaymentMethods.map((validMethod) => (
                             <option key={validMethod} value={validMethod}>
                                 {validMethod.charAt(0).toUpperCase() + validMethod.slice(1)}
