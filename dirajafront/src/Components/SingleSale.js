@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import DownloadPDF from './Download/DownloadPDF'; // Import the DownloadPDF component
 import LoadingAnimation from './LoadingAnimation';
+import EditSaleForm from './EditSaleForm'; // Import the new EditSaleForm component
 import '../Styles/sales.css';
 
 const SingleSale = () => {
@@ -11,7 +12,7 @@ const SingleSale = () => {
   const [error, setError] = useState(null);
   const [shopname, setShopname] = useState(''); // State for shop name
   const [isEditing, setIsEditing] = useState(false); // State to toggle edit mode
-  const [editedSale, setEditedSale] = useState({}); // State for the edited sale data
+  const [successMessage, setSuccessMessage] = useState(''); // State for success message
 
   useEffect(() => {
     const fetchSale = async () => {
@@ -28,11 +29,17 @@ const SingleSale = () => {
 
         const data = await response.json();
         setSale(data.sale);
-        setEditedSale(data.sale); // Initialize the edited sale data
 
-        // Fetch shop name
+        // Fetch shop name with authorization header
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`);
+          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`, // Include auth header here
+            },
+          });
+
           if (shopResponse.ok) {
             const shopData = await shopResponse.json();
             setShopname(shopData.name);
@@ -52,15 +59,7 @@ const SingleSale = () => {
     setIsEditing(true);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditedSale({
-      ...editedSale,
-      [name]: value,
-    });
-  };
-
-  const handleSaveClick = async () => {
+  const handleSave = async (updatedSale) => {
     try {
       const response = await fetch(`/api/diraja/sale/${sale_id}`, {
         method: 'PUT',
@@ -68,21 +67,27 @@ const SingleSale = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
-        body: JSON.stringify(editedSale),
+        body: JSON.stringify(updatedSale),
       });
 
       if (!response.ok) throw new Error('Failed to save changes');
 
-      const updatedSale = await response.json();
-      console.log('Updated Sale:', updatedSale); // Debug log
+      const updatedSaleData = await response.json();
+      setSale(updatedSaleData);
+      setSuccessMessage('Sale successfully updated!'); // Show success message
+      setIsEditing(false); // Exit edit mode
 
-      // Update state to re-render with updated data and exit edit mode
-      setSale(updatedSale);
-      setEditedSale(updatedSale);
-      setIsEditing(false);
+      // Reload the page to reflect the updated data
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000); // Reload after 2 seconds to show success message
     } catch (err) {
-      console.error('Error updating sale:', err);
+      setError('Failed to save changes');
     }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false); // Cancel edit mode
   };
 
   if (loading) return <LoadingAnimation />;
@@ -103,57 +108,14 @@ const SingleSale = () => {
           <p><strong>Invoice Status:</strong> {sale.status}</p>
         </div>
 
+        {successMessage && <div className="success-message">{successMessage}</div>} {/* Display success message */}
+
         {isEditing ? (
-          <div className="edit-form">
-            <label>
-              Item:
-              <input
-                type="text"
-                name="item_name"
-                value={editedSale.item_name || ''}
-                onChange={handleChange}
-              />
-            </label>
-            <label>
-              Quantity:
-              <input
-                type="number"
-                name="quantity"
-                value={editedSale.quantity || ''}
-                onChange={handleChange}
-              />
-            </label>
-            <label>
-              Unit Price:
-              <input
-                type="number"
-                name="unit_price"
-                value={editedSale.unit_price || ''}
-                onChange={handleChange}
-              />
-            </label>
-            <label>
-              Total Price:
-              <input
-                type="number"
-                name="total_price"
-                value={editedSale.total_price || ''}
-                onChange={handleChange}
-              />
-            </label>
-            <label>
-              Status:
-              <select
-                name="status"
-                value={editedSale.status || 'unpaid'}
-                onChange={handleChange}
-              >
-                <option value="paid">Paid</option>
-                <option value="unpaid">Unpaid</option>
-              </select>
-            </label>
-            <button onClick={handleSaveClick}>Save Changes</button>
-          </div>
+          <EditSaleForm
+            sale={sale}
+            onSave={handleSave}
+            onCancel={handleCancel}
+          />
         ) : (
           <div className="view-sale">
             {/* Display Sale Details */}
@@ -175,7 +137,15 @@ const SingleSale = () => {
                 </tr>
               </tbody>
             </table>
-            <p>Amount paid: <strong>{sale.amount_paid} ksh</strong></p>
+           
+            <p><strong>Payment Method:</strong> {sale.payment_method}</p>
+            <div className="payment-methods">
+              {sale.payment_methods && sale.payment_methods.map((payment, index) => (
+                <div key={index}>
+                  <p><strong>{payment.payment_method.charAt(0).toUpperCase() + payment.payment_method.slice(1)}:</strong> {payment.amount_paid} ksh</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

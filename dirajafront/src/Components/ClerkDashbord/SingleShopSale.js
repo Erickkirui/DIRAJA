@@ -263,7 +263,7 @@ const SingleShopSale = () => {
                         value={formData.amount_paid}
                         onChange={handleChange}
                         className="input"
-                        placeholder="Amount Paid"
+                        placeholder="Amount"
                     />
                 </div>
 

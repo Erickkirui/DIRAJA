@@ -271,30 +271,29 @@ class SalesResources(Resource):
             # Fetch sale by sales_id
             sale = Sales.query.get(sales_id)
 
-            # Handle case where sale is not found
             if not sale:
                 return {"message": "Sale not found"}, 404
-
+            
             # Fetch username and shop name using user_id and shop_id
             user = Users.query.filter_by(users_id=sale.user_id).first()
-            shop = Shops.query.filter_by(shop_id=sale.shop_id).first()
-
+            shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+            
             # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            # Process multiple payment methods using the relationship
+            # Fetch related payment methods
             payment_data = [
                 {
                     "payment_method": payment.payment_method,
                     "amount_paid": payment.amount_paid,
-                    "balance": payment.balance,  # Include balance from payment method
+                    "balance": payment.balance,
                 }
-                for payment in sale.payment  # Updated to use the correct relationship
+                for payment in sale.payment  # 'payment' is the relationship with SalesPaymentMethods
             ]
-
-            # Calculate total amount paid
-            total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+            
+            # Calculate total amount paid from the related payments
+            total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
             # Prepare sale data
             sale_data = {
@@ -304,18 +303,17 @@ class SalesResources(Resource):
                 "shop_id": sale.shop_id,
                 "shop_name": shopname,
                 "customer_name": sale.customer_name,
+                "status": sale.status,
                 "customer_number": sale.customer_number,
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
-                "batch_number": sale.BatchNumber,  # Ensure consistent naming
+                "batchnumber": sale.BatchNumber,
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "total_price": sale.total_price,
                 "total_amount_paid": total_amount_paid,  # Add total amount paid
                 "payment_methods": payment_data,
-                "created_at": sale.created_at.strftime('%Y-%m-%d'),  # Convert datetime to string
-                "balance": sale.balance,  # Include balance at the sale level
-                "note": sale.note,  # Include note field
+                "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
             }
 
             return {"sale": sale_data}, 200
@@ -323,6 +321,87 @@ class SalesResources(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+    @jwt_required()
+    def put(self, sales_id):
+        try:
+            # Fetch the sale by sales_id
+            sale = Sales.query.get(sales_id)
+
+            if not sale:
+                return {"message": "Sale not found"}, 404
+
+            # Get the updated data from the request
+            data = request.get_json()
+
+            # Update sale details
+            if 'customer_name' in data:
+                sale.customer_name = data['customer_name']
+            if 'status' in data:
+                sale.status = data['status']
+            if 'customer_number' in data:
+                sale.customer_number = data['customer_number']
+            if 'item_name' in data:
+                sale.item_name = data['item_name']
+            if 'quantity' in data:
+                sale.quantity = data['quantity']
+            if 'metric' in data:
+                sale.metric = data['metric']
+            if 'unit_price' in data:
+                sale.unit_price = data['unit_price']
+            if 'total_price' in data:
+                sale.total_price = data['total_price']
+            if 'BatchNumber' in data:
+                sale.BatchNumber = data['BatchNumber']
+
+            # Handle payment methods update
+            if 'payment_methods' in data:
+                # First, delete the old payment methods
+                for payment in sale.payment:
+                    db.session.delete(payment)
+
+                # Add updated payment methods
+                for payment_data in data['payment_methods']:
+                    # Create new payment method records and associate them with the sale
+                    payment = SalesPaymentMethods(
+                        sale_id=sale.sales_id,
+                        payment_method=payment_data.get('payment_method'),
+                        amount_paid=payment_data.get('amount_paid'),
+                        balance=payment_data.get('balance')
+                    )
+                    db.session.add(payment)
+
+            # Commit changes to the database
+            db.session.commit()
+
+            return {"message": "Sale updated successfully"}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
+    @jwt_required()
+    def delete(self, sales_id):
+        try:
+            # Fetch the sale by sales_id
+            sale = Sales.query.get(sales_id)
+
+            if not sale:
+                return {"message": "Sale not found"}, 404
+
+            # Delete related payment records
+            for payment in sale.payment:
+                db.session.delete(payment)
+            
+            # Delete the sale record
+            db.session.delete(sale)
+
+            # Commit changes to the database
+            db.session.commit()
+
+            return {"message": "Sale deleted successfully"}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
         
 

@@ -65,18 +65,20 @@ const ShopSales = () => {
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   // Filter sales based on search query and selected date
-  const filteredSales = sales.filter((sale) => {
-    const matchesSearch = (
-      (sale.item_name && sale.item_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (sale.customer_name && sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+  const filteredSales = sales
+    .filter((sale) => {
+      const matchesSearch = (
+        (sale.item_name && sale.item_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (sale.customer_name && sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
 
-    const matchesDate = selectedDate
-      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
-      : true;
+      const matchesDate = selectedDate
+        ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+        : true;
 
-    return matchesSearch && matchesDate;
-  });
+      return matchesSearch && matchesDate;
+    })
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at in descending order
 
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;

@@ -175,6 +175,38 @@
   color: #fff;
 }
 
+/* css for updating single slae edit */
+.edit-form{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-form select{
+  width: 40%;
+}
+.edit-form input {
+  padding: 10px;
+  border: 1px #ccc solid;
+ border-radius: 6px;
+ width: 40%;
+
+}
+.edit-form label{
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.payment-methods{
+  width: 70%;
+}
+.bottom-class{
+  display: flex ;
+  gap: 10px;
+}
+
+/* media query */
 @media (max-width: 768px) {
   .success{
     width: 90%;
