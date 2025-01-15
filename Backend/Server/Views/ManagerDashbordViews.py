@@ -76,46 +76,45 @@ class TotalAmountPaidAllSales(Resource):
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
-        
-        
 class TotalAmountPaidSales(Resource):
-        @jwt_required()
+    @jwt_required()
     # @check_role('manager')
-        def get(self):
+    def get(self):
         # Get period and shop_id from query parameters
-            period = request.args.get('period', 'today')
-            shop_id = request.args.get('shop_id')
+        period = request.args.get('period', 'today')
+        shop_id = request.args.get('shop_id')
 
-            # Validate shop_id
-            if not shop_id:
-                return {"message": "Shop ID is required"}, 400
+        # Validate shop_id
+        if not shop_id:
+            return {"message": "Shop ID is required"}, 400
 
-            today = datetime.utcnow()
+        today = datetime.utcnow()
+        
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Query the sum of `amount_paid` from the `SalesPaymentMethods` table
+            total_sales = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join with Sales table
+                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)  # Filter by date and shop_id
+                .scalar() or 0  # Return 0 if no records found
+            )
             
-            # Set the start date based on the requested period
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
-            elif period == 'week':
-                start_date = today - timedelta(days=7)
-            elif period == 'month':
-                start_date = today - timedelta(days=30)
-            else:
-                return {"message": "Invalid period specified"}, 400
+            return {"total_sales_amount_paid": total_sales}, 200
 
-            try:
-                # Query for the sum of `amountPaid` from `Sales` where `created_at` >= `start_date` and `shop_id` matches
-                total_sales = (
-                    db.session.query(db.func.sum(Sales.amount_paid))
-                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
-                    .scalar() or 0
-                )
-                
-                return {"total_sales_amount_paid": total_sales}, 200
-
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                return {"error": "An error occurred while fetching the total sales amount"}, 500
-    
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total sales amount"}, 500
+        
 
 class TotalAmountPaidExpenses(Resource):
     @jwt_required()

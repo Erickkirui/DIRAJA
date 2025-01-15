@@ -208,7 +208,6 @@ class GetSales(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
-
 class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
@@ -218,19 +217,15 @@ class GetSalesByShop(Resource):
 
             # If no sales found for the shop
             if not sales:
-                return jsonify({"message": "No sales found for this shop"}), 404
+                return {"message": "No sales found for this shop"}, 404
 
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name manually using user_id and shop_id
-                user = Users.query.filter_by(users_id=sale.user_id).first()
-                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-                
-                # Handle cases where user or shop may not be found
-                username = user.username if user else "Unknown User"
-                shopname = shop.shopname if shop else "Unknown Shop"
-                
+                # Fetch username and shop name using relationships
+                username = sale.users.username if sale.users else "Unknown User"
+                shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
+
                 # Process multiple payment methods and calculate total amount paid
                 payment_data = [
                     {
@@ -238,10 +233,11 @@ class GetSalesByShop(Resource):
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
                     }
-                    for payment in sale.payments  # Assuming `sale.payments` is a relationship or list
+                    for payment in sale.payment  # Using the defined relationship in the Sales model
                 ]
-                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
+                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
+                # Append the formatted sale data
                 sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
@@ -253,20 +249,19 @@ class GetSalesByShop(Resource):
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
+                    "batch_number": sale.BatchNumber,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Add total amount paid
+                    "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
                 })
 
             return {"sales": sales_data}, 200
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
+            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
 
 
 class SalesResources(Resource):
@@ -282,7 +277,7 @@ class SalesResources(Resource):
 
             # Fetch username and shop name using user_id and shop_id
             user = Users.query.filter_by(users_id=sale.user_id).first()
-            shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+            shop = Shops.query.filter_by(shop_id=sale.shop_id).first()
 
             # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
@@ -309,11 +304,10 @@ class SalesResources(Resource):
                 "shop_id": sale.shop_id,
                 "shop_name": shopname,
                 "customer_name": sale.customer_name,
-                "status": sale.status,
                 "customer_number": sale.customer_number,
                 "item_name": sale.item_name,
                 "quantity": sale.quantity,
-                "batchnumber": sale.BatchNumber,
+                "batch_number": sale.BatchNumber,  # Ensure consistent naming
                 "metric": sale.metric,
                 "unit_price": sale.unit_price,
                 "total_price": sale.total_price,
