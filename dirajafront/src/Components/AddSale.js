@@ -21,8 +21,6 @@ const AddSale = () => {
     const [paymentMethods, setPaymentMethods] = useState([{ method: '', amount: '' }]);
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
-    const [shopError, setShopError] = useState(false);
-    const [batchError, setBatchError] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
     const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -38,10 +36,8 @@ const AddSale = () => {
                     },
                 });
                 setShops(response.data);
-                if (response.data.length === 0) setShopError(true);
             } catch (error) {
                 console.error('Error fetching shops:', error);
-                setShopError(true);
             }
         };
         fetchShops();
@@ -62,10 +58,8 @@ const AddSale = () => {
                     },
                 });
                 setBatchNumbers(response.data);
-                if (response.data.length === 0) setBatchError(true);
             } catch (error) {
                 console.error('Error fetching batch numbers:', error);
-                setBatchError(true);
             }
         };
         fetchBatchNumbers();
