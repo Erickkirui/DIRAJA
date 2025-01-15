@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import PaymentMethods from '../PaymentMethod';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -12,18 +13,19 @@ const SingleShopSale = () => {
         metric: '',
         unit_price: '',
         amount_paid: '',
-        payment_method: '',
         BatchNumber: '',
         stock_id: '',
+        payment_methods: [{ method: '', amount: '' }]
     });
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [batchError, setBatchError] = useState(false);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [remainingStock, setRemainingStock] = useState(0); // To store remaining stock
+    const [remainingStock, setRemainingStock] = useState(0);
 
-    // Fetch batch numbers when shop_id is updated
+    const validPaymentMethods = ['cash', 'mpesa', 'bank'];
+
     useEffect(() => {
         const fetchBatchNumbers = async () => {
             try {
@@ -47,8 +49,6 @@ const SingleShopSale = () => {
         fetchBatchNumbers();
     }, [formData.shop_id]);
 
-    // Fetch batch details when BatchNumber is selected
-    // Fetch batch details when BatchNumber is selected
     useEffect(() => {
         const fetchBatchDetails = async () => {
             if (!formData.BatchNumber || !formData.shop_id) return;
@@ -57,7 +57,7 @@ const SingleShopSale = () => {
                 const response = await axios.get('/api/diraja/shop-batchdetails', {
                     params: {
                         BatchNumber: formData.BatchNumber,
-                        shop_id: formData.shop_id, // Include shop_id to fetch details for the specific shop
+                        shop_id: formData.shop_id,
                     },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -72,11 +72,10 @@ const SingleShopSale = () => {
                     metric: metric || '',
                     unit_price: unit_price || '',
                     stock_id: stock_id || '',
-                    amount_paid: prevData.quantity * (unit_price || 0), // Automatically calculate amount_paid
+                    amount_paid: prevData.quantity * (unit_price || 0),
                 }));
 
-                // Set the remaining stock (quantity from the API response)
-                setRemainingStock(quantity); // This is where you set the remaining stock quantity
+                setRemainingStock(quantity);
             } catch (error) {
                 console.error('Error fetching batch details:', error);
                 setMessageType('error');
@@ -85,14 +84,12 @@ const SingleShopSale = () => {
         };
 
         fetchBatchDetails();
-    }, [formData.BatchNumber, formData.shop_id]); // Ensure effect runs when BatchNumber or shop_id changes
+    }, [formData.BatchNumber, formData.shop_id]);
 
-    // Handle form data changes
     const handleChange = (e) => {
         const { name, value } = e.target;
         let newFormData = { ...formData, [name]: value };
 
-        // Automatically calculate amount_paid if quantity or unit_price changes
         if (name === 'quantity' || name === 'unit_price') {
             newFormData.amount_paid = newFormData.quantity * newFormData.unit_price;
         }
@@ -100,10 +97,27 @@ const SingleShopSale = () => {
         setFormData(newFormData);
     };
 
-    // Handle form submission
+    const handlePaymentChange = (index, field, value) => {
+        const newPaymentMethods = [...formData.payment_methods];
+        newPaymentMethods[index][field] = value;
+        setFormData({ ...formData, payment_methods: newPaymentMethods });
+    };
+
+    const addPaymentMethod = () => {
+        setFormData({
+            ...formData,
+            payment_methods: [...formData.payment_methods, { method: '', amount: '' }],
+        });
+    };
+
+    const removePaymentMethod = (index) => {
+        const newPaymentMethods = formData.payment_methods.filter((_, i) => i !== index);
+        setFormData({ ...formData, payment_methods: newPaymentMethods });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         const requiredFields = [
             'shop_id',
             'customer_name',
@@ -112,11 +126,10 @@ const SingleShopSale = () => {
             'metric',
             'unit_price',
             'amount_paid',
-            'payment_method',
             'BatchNumber',
             'stock_id',
         ];
-    
+
         for (const field of requiredFields) {
             if (!formData[field]) {
                 setMessageType('error');
@@ -124,9 +137,15 @@ const SingleShopSale = () => {
                 return;
             }
         }
-    
+
+        if (formData.payment_methods.some((method) => !method.method || !method.amount)) {
+            setMessageType('error');
+            setMessage('Please provide valid payment method details.');
+            return;
+        }
+
         setIsLoading(true);
-    
+
         try {
             const response = await axios.post('/api/diraja/newsale', formData, {
                 headers: {
@@ -134,7 +153,7 @@ const SingleShopSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-    
+
             if (response.status === 201) {
                 setMessageType('success');
                 setMessage(response.data.message);
@@ -147,9 +166,9 @@ const SingleShopSale = () => {
                     metric: '',
                     unit_price: '',
                     amount_paid: '',
-                    payment_method: '',
                     BatchNumber: '',
                     stock_id: '',
+                    payment_methods: [{ method: '', amount: '' }],
                 });
                 setRemainingStock(0);
             } else {
@@ -157,12 +176,10 @@ const SingleShopSale = () => {
                 setMessage('Failed to add sale');
             }
         } catch (error) {
-            // Handle backend error messages
             if (error.response && error.response.data && error.response.data.message) {
                 setMessageType('error');
                 setMessage(error.response.data.message);
             } else {
-                console.error('Error:', error);
                 setMessageType('error');
                 setMessage('An unexpected error occurred. Please try again.');
             }
@@ -170,7 +187,6 @@ const SingleShopSale = () => {
             setIsLoading(false);
         }
     };
-    
 
     return (
         <div>
@@ -235,7 +251,7 @@ const SingleShopSale = () => {
                 {/* Display Remaining Stock */}
                 <div>
                     <label>Remaining Stock: </label>
-                    <span>{remainingStock}</span> {/* This will show the updated remaining stock */}
+                    <span>{remainingStock}</span>
                 </div>
 
                 <div>
@@ -251,12 +267,14 @@ const SingleShopSale = () => {
                     />
                 </div>
 
-                <select name="payment_method" value={formData.payment_method} onChange={handleChange} className="payment-method-dropdown">
-                    <option value="">Select Payment Method</option>
-                    <option value="cash">Cash</option>
-                    <option value="mpesa">M-Pesa</option>
-                    <option value="bank">Bank</option>
-                </select>
+                {/* Payment Methods Component */}
+                <PaymentMethods
+                    paymentMethods={formData.payment_methods}
+                    validPaymentMethods={validPaymentMethods}
+                    handlePaymentChange={handlePaymentChange}
+                    addPaymentMethod={addPaymentMethod}
+                    removePaymentMethod={removePaymentMethod}
+                />
 
                 <button className="add-sale-button" type="submit">
                     Add Sale
