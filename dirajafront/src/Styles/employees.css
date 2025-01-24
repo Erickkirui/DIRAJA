@@ -1,0 +1,137 @@
+ /* add employee sytling  */
+ .category-group{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 15px;
+
+ }
+ .category-group input{
+  padding: 15px;
+ }
+ .category-group select{
+  padding: 15px;
+  width: 42.3%;
+ }
+
+.employee-form h3{
+  margin-top: 20px;
+}
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 500px;
+}
+.employee-submit-button{
+  padding: 15px;
+  margin: 20px 0 10px 0;
+  background-color: var(--primary);
+  color: #fff;
+  border: 1px solid;
+  border-radius: 3px;
+  cursor: pointer;
+
+}
+.guide{
+  color: var(--primary);
+}
+
+ 
+ .employees-container h2 {
+    text-align: left;
+    margin-bottom: 20px;
+    font-weight: 400;
+  }
+
+  .employee-name-link {
+    text-decoration: none;
+    color: inherit;
+  }
+  
+  .employee-name-link:hover {
+    text-decoration: underline;
+  }
+  
+  
+  .error-message {
+    color: red;
+    text-align: center;
+  }
+  
+  .employees-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+   
+  }
+  
+  .employees-table th, .employees-table td {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+    font-size: 14px;
+  }
+  
+  .employees-table th {
+    font-size: 14px;
+    background-color: var(--background);
+  }
+  
+
+
+  .employee-info {
+    display: flex;
+    align-items: center;
+  }
+  
+  .employee-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+   
+    margin-right: 10px;
+  }
+  
+  .employee-name {
+    font-weight: normal;
+    font-size: 16px;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  
+  .page-button {
+    border: 1px solid #3498db;
+    background-color: #fff;
+    border-radius: 50%;
+    color: #3498db;
+    padding: 10px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+  }
+  
+  .page-button.active {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  .page-button:hover {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+.form-group{
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

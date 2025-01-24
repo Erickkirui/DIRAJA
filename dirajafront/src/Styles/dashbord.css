@@ -1,0 +1,76 @@
+/* dashbord Page */
+
+.top-row{
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+.metrix-pair{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+
+/* dashbord elements  */
+.single-card{
+    margin-top: 10px;
+
+}
+.metrix-container{
+    border:  1px solid #ccc;
+    padding: 10px;
+    border-radius: 8px;
+    width: 250px;
+    background-color: #ffffff;
+    
+
+}
+
+.metrix-container a{
+    text-decoration: none;
+    color: var(--secondary);
+    font-size: 12px;
+}
+
+.metric-icon {
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 8px;
+}
+.metric-top{
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Sales card */
+.sales-today-container {
+    border:  1px solid #ccc;
+    padding: 10px;
+    border-radius: 8px;
+    width: 80%;
+    max-height: 300px;
+}
+.sales-table{
+    table-layout: fixed;
+    padding: 10px;
+
+}
+.sales-table thead{
+    background-color: rgba(238, 240, 246, 1);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.shortcuts{
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+.shortcuts a{
+    text-decoration: none;
+    
+}
+
+
+
+

@@ -101,7 +101,7 @@ class AddNewemployee(Resource):
         if date_str:
             try:
                 # Try parsing the full datetime format first
-                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                return datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
                 # If only the date is provided, parse as date
                 return datetime.strptime(date_str, '%Y-%m-%d')
@@ -109,11 +109,14 @@ class AddNewemployee(Resource):
 
 
 
-class GetAllemployees(Resource):
-    jwt_required() 
-    @check_role('manager')
-    def get(self):
 
+
+class GetAllemployees(Resource):
+    @jwt_required() 
+    @check_role('manager')
+    
+    def get(self):
+    
         employees = Employees.query.all()
 
         all_employess = [ {
@@ -138,7 +141,8 @@ class GetAllemployees(Resource):
             'department':employee.department,
             'starting_date' : employee.starting_date,
             'contract_termination_date': employee.contract_termination_date,
-            'contract_renewal_date': employee.contract_renewal_date
+            'contract_renewal_date': employee.contract_renewal_date,
+            "created_at": employee.created_at
 
         } for employee in employees ]
 
@@ -149,6 +153,8 @@ class GetAllemployees(Resource):
 
 
 class Employeeresource(Resource):
+    @jwt_required()
+    @check_role('manager')
     def get(self, employee_id):
         """Get employee details by employee_id"""
         employee = Employees.query.get(employee_id)
@@ -182,7 +188,9 @@ class Employeeresource(Resource):
         }
 
         return make_response(jsonify(employee_data), 200)
-
+    
+    @jwt_required()
+    @check_role('manager')
     def put(self, employee_id):
         """Update employee details by employee_id"""
         data = request.get_json()
@@ -217,7 +225,9 @@ class Employeeresource(Resource):
         db.session.commit()
 
         return {"message": "Employee updated successfully"}, 200
-
+    
+    @jwt_required()
+    @check_role('manager')
     def delete(self, employee_id):
         """Delete an employee by employee_id"""
         employee = Employees.query.get(employee_id)
@@ -230,10 +240,10 @@ class Employeeresource(Resource):
         return {"message": "Employee deleted successfully"}, 200
 
     def parse_date(self, date_str, original_date):
-        """Helper method to parse a date string into a datetime object"""
+        """Helper method to parse a date String into a datetime object"""
         if date_str:
             try:
-                return datetime.strptime(date_str, '%Y-%m-%d %H:%M:%S')
+                return datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
                 try:
                     return datetime.strptime(date_str, '%Y-%m-%d')
@@ -243,6 +253,7 @@ class Employeeresource(Resource):
 
 class CountEmployees(Resource):
     @jwt_required()
+    @check_role('superadmin')
     @check_role('manager')
     def get(self):
         countEmployees = Employees.query.count()

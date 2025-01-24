@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import "../Styles/Login.css";
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/diraja/login', { email, password });
+
+      const response = await axios.post(' /api/diraja/login', { email, password });
+
 
       const { access_token, refresh_token, username, role, shop_id } = response.data;
 
@@ -32,7 +37,7 @@ const Login = () => {
       if (role === 'manager') {
         window.location.href = '/';
       } else if (role === 'clerk') {
-        window.location.href = '/clerkDashboard';
+        window.location.href = '/clerk';
       }
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {
@@ -45,31 +50,42 @@ const Login = () => {
 
   return (
     <div className="login-container">
-      <h2 className="login-title">Login</h2>
+      <h2 className="login-title">Account Login</h2>
+    
       {error && <p className="error-message">{error}</p>}
       <form onSubmit={handleLogin} className="login-form">
-        <div className="form-group">
-          <label>Email</label>
+        <label>Email</label>
+        <input
+          type="email"
+          placeholder="Enter Your Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="input-field"
+        />
+
+        <label>Password</label>
+        <div className="password-container">
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="input-field"
-          />
-        </div>
-        <div className="form-group">
-          <label>Password</label>
-          <input
-            type="password"
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Enter Your Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
             className="input-field"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="show-hide-button"
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
         </div>
+
         <button type="submit" className="submit-button">
-          Login
+          <span>Login</span>
+          <FontAwesomeIcon  icon={faRightToBracket} size="0x" />
         </button>
       </form>
     </div>

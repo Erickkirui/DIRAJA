@@ -3,14 +3,17 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
-
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 db = SQLAlchemy()
 jwt = JWTManager()
 
+
 def initialize_models():
     from Server.Models.Users import Users
+    
     from Server.Models.Shops import Shops
     from Server.Models.Sales import Sales
     from Server.Models.Bank import Bank
@@ -21,8 +24,11 @@ def initialize_models():
     from Server.Models.Expenses import Expenses 
     from Server.Models.Inventory import Inventory
     from Server.Models.Shopstock import ShopStock
-    from Server.Models.Distribution import Distribution
+    # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
+
+    # from Server.Models.Purchases import Purchases
+
 
 def initialize_views():
     from  Server.Views import api_endpoint
@@ -32,11 +38,25 @@ def initialize_views():
 def create_app(config_name):
     app.config.from_object(config_name)
     app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    # app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/Diraja'
 
+
+
+    # MySQL database configuration      
+    
+#     app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@148.251.133.221/kulimaco_dirajaapp'
+
+#     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+#     'pool_recycle': 280,  # Recycle connections after 280 seconds of inactivity
+#     'pool_timeout': 30,   # Wait 30 seconds for a connection from the pool
+#     'pool_pre_ping': True  # Check connection health before using it
+# }   
+
+
+    
     #JWT SETUP KEY
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 86000))
+    app.config['JWT_SECRET_KEY'] = "Soweto@2024"
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 2592000))
     
     #Initialize DB with app
     db.init_app(app)

@@ -1,8 +1,4 @@
-.expenses-container {
-    width: 98%;
-    margin: 0 auto;
-    padding: 20px;
-  }
+
   
  .expenses-container h2 {
     text-align: left;
@@ -83,5 +79,75 @@
   .page-button:hover {
     background-color: #3498db;
     color: #fff;
+  }
+  
+
+  /* form styling ro alss */
+  .message {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .success {
+    background-color: #d4edda;
+    color: #155724;
+    width: 40%;
+  }
+  .error {
+    background-color: #f8d7da;
+    color: #721c24;
+    width: 40%;
+  }
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .select, .input, .button {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 40%;
+  }
+  .select.valid {
+    color: #000;
+  }
+  .error-text {
+    color: #ff0000;
+    margin-top: 8px;
+  }
+  .button {
+    background-color: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    padding: 10px;
+    width: 20%;
+  }
+
+  .button:hover{
+    background-color: #4A2B84;
+   
+  }
+  
+
+  .suggestions {
+    border: 1px solid #ccc;
+    background: white;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 100px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: 1000;
+    width: 30%;
+  }
+  
+  .suggestions li {
+    padding: 8px;
+    cursor: pointer;
+  }
+  
+  .suggestions li:hover {
+    background-color: #f0f0f0;
   }
   

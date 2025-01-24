@@ -31,10 +31,11 @@ class AddShops(Resource):
         data = request.get_json()
         
         
-        if 'shopname' not in data or 'employee'  not in data or 'shopstatus' not in data:
-            return {'message': 'Missing shopname, employee or status'}, 400
+        if 'shopname' not in data or 'location' not in data or 'employee'  not in data or 'shopstatus' not in data:
+            return {'message': 'Missing shopname, location, employee or status'}, 400
     
         shopname = data.get('shopname')
+        location = data.get('location')
         employee = data.get('employee') 
         shopstatus =  data.get('shopstatus')
         
@@ -42,7 +43,7 @@ class AddShops(Resource):
         if Shops.query.filter_by(shopname=shopname).first():
             return {'message': 'Shop already exists'}, 400
 
-        shop = Shops(shopname=shopname, employee=employee,shopstatus=shopstatus)
+        shop = Shops(shopname=shopname, location=location, employee=employee,shopstatus=shopstatus)
         db.session.add(shop)
         db.session.commit()
         
@@ -61,6 +62,7 @@ class ShopsResourceById(Resource):
             return {
             "shops_id": shop.shops_id,
             "shopname": shop.shopname,
+            "location": shop.location,
             "employee": shop.employee,
             "shopstatus": shop.shopstatus
         }, 200
@@ -92,6 +94,8 @@ class ShopsResourceById(Resource):
         # Update the shop's fields
         if 'shopname' in data:
             shop.shopname = data['shopname']
+        if 'location' in data:
+            shop.location = data['location']
         if 'employee' in data:
             shop.employee = data['employee']
         if 'shopstatus' in data:
@@ -112,8 +116,11 @@ class GetAllShops(Resource):
     
         all_shops = [{
             
+
             "shop_id": shop.shops_id,  
+
             "shopname" :shop.shopname,
+            "location" :shop.location,
             "employee":shop.employee,
             "shopstatus" : shop.shopstatus,
             "created_at" : shop.created_at
@@ -122,13 +129,7 @@ class GetAllShops(Resource):
 
         return make_response(jsonify(all_shops), 200)
 
-class CountShops(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        countShops = Shops.query.count()
-        return {"total shops": countShops}, 200      
-         
+
     
 
 

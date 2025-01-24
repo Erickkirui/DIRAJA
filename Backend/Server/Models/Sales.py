@@ -5,59 +5,82 @@ from sqlalchemy.orm import validates
 class Sales(db.Model):
     __tablename__ = "sales"
     
-    #Table columns
+    # Table columns
     sales_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
-    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
-    customer_name = db.Column(db.String(20), nullable=False)
-    status = db.Column(db.String(20), default="unpaid", nullable=False)
-    customer_number = db.Column(db.Integer, nullable=False)
-    item_name = db.Column(db.String, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'), nullable=False)
+    shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
+    customer_name = db.Column(db.String(50), nullable=True)
+    status = db.Column(db.String(50), default="unpaid", nullable=False)
+    customer_number = db.Column(db.String(15), nullable=True)  # Changed to String to handle phone numbers
+    item_name = db.Column(db.String(50), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
-    amount_paid = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    payment_method = db.Column(db.String(20), nullable=False)
+    BatchNumber = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
-    
-    #Relationship
-    users = db.relationship('Users', backref='sales', lazy=True)
-    shops = db.relationship('Shops', backref='sales_for_shop', lazy=True, foreign_keys=[shop_id])
-    
-    
-    #Validations
+    stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
+    balance = db.Column(db.Float)
+    note = db.Column(db.String(50))
+
+    # Relationships
+    payments = db.relationship(
+        'SalesPaymentMethods', backref='related_sale', lazy=True, cascade="all, delete-orphan"
+    )
+    user = db.relationship('Users', backref='sales', lazy=True)
+    shop = db.relationship('Shops', backref='sales_for_shop', lazy=True)
+    shop_stock = db.relationship('ShopStock', backref='sales', lazy=True)
+
+    # Validations
     @validates('status')
-    def validate_status(self, key,status):
+    def validate_status(self, key, status):
         valid_status = ['paid', 'unpaid', 'partially_paid']
-        assert status in status, f"Invalid status. Must be one of: {', '.join(valid_status)}"
+        assert status in valid_status, f"Invalid status. Must be one of: {', '.join(valid_status)}"
         return status
-    
-    @validates('payment_method')
-    def validate_payment_method(self, key,payment_method):
-        valid_method = ['bank', 'cash', 'mpesa']
-        assert payment_method in payment_method, f"Invalid Payment Method. Must be one of: {', '.join(valid_method)}"
-        return payment_method
-    
+
     @validates('metric')
-    def validate_metric(self, key,metric):
+    def validate_metric(self, key, metric):
         valid_metric = ['item', 'kg', 'ltrs']
-        assert metric in metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
+        assert metric in valid_metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
         return metric
-    
+
     @validates('customer_number')
     def validate_customer_number(self, key, customer_number):
-        phone_str = str(customer_number)
-        assert phone_str.isdigit(), "Phone number must contain only digits."
-        assert len(phone_str) >= 10 and len(phone_str) <= 15, "Phone number must be between 10 and 15 digits."
+        if customer_number == '':
+            return None  # Set to None if an empty string is provided
         return customer_number
-    
-   
+
     def __repr__(self):
         return (
-            f"Sale(id={self.id}, user_id='{self.user_id}' "
+            f"Sale(id={self.sales_id}, user_id='{self.user_id}', "
             f"shop_id='{self.shop_id}', customer_name='{self.customer_name}', "
-            f"item_nem={self.item_name}, quantity='{self.quantity}', metric='{self.metric}', "
-            f"unit_price='{self.unit_price}', amount_paid='{self.amount_paid}'),"
-            f"total_price='{self.total_price}', payment_method='{self.payment_method}')"
+            f"item_name='{self.item_name}', quantity='{self.quantity}', metric='{self.metric}', "
+            f"unit_price='{self.unit_price}', total_price='{self.total_price}', balance='{self.balance}')"
         )
+
+
+class SalesPaymentMethods(db.Model):
+    __tablename__ = "sales_payment_methods"
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    sale_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    amount_paid = db.Column(db.Float, nullable=False)
+    balance = db.Column(db.Float, nullable=True)  # New field for balance
+
+    # Relationship with Sales
+    sale = db.relationship("Sales", backref="payment_records")
+
+    # Validation for payment method
+    @validates('payment_method')
+    def validate_payment_method(self, key, payment_method):
+        valid_methods = ['bank', 'cash', 'mpesa', 'sasapay']
+        assert payment_method in valid_methods, f"Invalid payment method. Must be one of: {', '.join(valid_methods)}"
+        return payment_method
+
+    def __repr__(self):
+        return (
+            f"SalesPaymentMethods(id={self.id}, sale_id={self.sale_id}, "
+            f"payment_method='{self.payment_method}', amount_paid={self.amount_paid}, balance={self.balance})"
+        )
+

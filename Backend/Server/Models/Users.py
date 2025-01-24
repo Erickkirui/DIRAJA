@@ -10,10 +10,10 @@ class Users(db.Model):
     
     #Table columns
     users_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    username = db.Column(db.String(20), unique=False, nullable=False)
-    email = db.Column(db.String, unique=True, nullable=False)
-    role = db.Column(db.String, default="manager", nullable=False)
-    password = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String(50), unique=False, nullable=False)
+    email = db.Column(db.String(50), unique=True, nullable=False)
+    role = db.Column(db.String(50), default="manager", nullable=False)
+    password = db.Column(db.String(200), unique=True, nullable=False)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.employee_id'))
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
@@ -37,7 +37,7 @@ class Users(db.Model):
     
     @validates('role')
     def validate_role(self, key, role):
-        valid_roles = ['manager', 'clerk']
+        valid_roles = ['manager', 'clerk', 'super_admin']
         assert role in valid_roles, f"Invalid role. Must be one of: {', '.join(valid_roles)}"
         return role
     

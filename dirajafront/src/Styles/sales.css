@@ -1,0 +1,152 @@
+
+ .sales-container h2 {
+    text-align: left;
+    font-weight: 400;
+  }
+  
+  .error-message {
+    color: red;
+    text-align: center;
+  }
+  
+  .sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: fixed;
+  }
+  
+  .sales-table td {
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+    text-align: left;
+
+    
+  }
+  .sales-table th, .expenses-table td {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+    text-align: left;
+    font-size: 14px;
+  }
+  
+  .sales-table th {
+    font-size: 14px;
+    background-color: var(--background);
+  }
+  
+  .employee-info {
+    display: flex;
+    align-items: center;
+  }
+  
+  .employee-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    margin-right: 10px;
+  }
+  
+  .employee-name {
+    font-weight: normal;
+    font-size: 16px;
+  }
+  
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  
+  .page-button {
+    border: 1px solid #3498db;
+    background-color: #fff;
+    border-radius: 50%;
+    color: #3498db;
+    padding: 10px 15px;
+    margin: 0 5px;
+    cursor: pointer;
+  }
+  
+  .page-button.active {
+    background-color: #3498db;
+    color: #fff;
+  }
+  
+  .page-button:hover {
+    background-color: #3498db;
+    color: #fff;
+  }
+.search-bar{
+  width: 50%;
+  padding: 10px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.item-details {
+  display: flex;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  width: 40%;
+ 
+}
+.return-data{
+  display: flex;
+  margin: auto;
+  width: 30%;
+}
+
+.item-details .label {
+  font-weight: 300;
+  color: #888;
+  margin-right: 10px;
+}
+
+.item-details .value {
+  font-weight: 500;
+  color: #333;
+}
+
+/* sales analytics */
+.shop-cards-container{
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+
+
+}
+.shop-sales-cards{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 200px;
+}
+
+/* SingleSale.css */
+
+.sale-details-table {
+  width: 50%;
+
+}
+.sale-details-table th{
+  text-align: left;
+  padding: 5px;
+  background-color: var(--background);
+}
+.sale-details-table td{
+  padding: 5px;
+}
+.action-single{
+  display: flex;
+   gap:  10px;
+}
+

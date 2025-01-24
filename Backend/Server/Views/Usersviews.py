@@ -8,6 +8,7 @@ from flask import jsonify,request,make_response
 from functools import wraps
 from flask_jwt_extended import jwt_required,get_jwt_identity
 
+
 def check_role(required_role):
     def wrapper(fn):
         @wraps(fn)
@@ -66,6 +67,7 @@ class UserLogin(Resource):
             return make_response(jsonify({"error": "Wrong password"}), 401)
         
         username = user.username
+
         shop_id = None  # Initialize shop_id as None
 
         # Check if the user is a clerk and retrieve the shop_id if so
@@ -86,6 +88,24 @@ class UserLogin(Resource):
             "role": user.role,
             "shop_id": shop_id  # Include shop_id in the response
         }), 200)
+
+        user_role = user.role
+        response_data = {
+            "access_token": create_access_token(identity=user.users_id, additional_claims={'roles': [user_role]}),
+            "refresh_token": create_refresh_token(identity=user.users_id),
+            "username": username,
+            "role": user_role
+        }
+
+        # Check if the user is a clerk and include shop_id if so
+        if user_role == "clerk":
+            employee = Employees.query.filter_by(work_email=email).one_or_none()
+            if employee:
+                response_data["shop_id"] = employee.shop_id
+
+        return make_response(jsonify(response_data), 200)
+
+
 
 class UsersResourceById(Resource):
 
@@ -118,6 +138,43 @@ class UsersResourceById(Resource):
             return {"message": f"User with id {users_id} deleted successfully"}, 200
         else:
             return {"error": "User not found"}, 404
+
+    @jwt_required()
+    def put(self, users_id):
+        user = Users.query.get(users_id)
+
+        if not user:
+            return {"error": "User not found"}, 404
+
+        data = request.get_json()
+
+        # Validate input data
+        username = data.get("username")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role")
+
+        if username:
+            user.username = username
+        if email:
+            user.email = email
+        if password:
+            user.password = password
+        if role:
+            user.role = role
+
+        # Save changes to the database
+        db.session.commit()
+
+        return {
+            "message": f"User with id {users_id} updated successfully",
+            "user": {
+                "users_id": user.users_id,
+                "username": user.username,
+                "email": user.email,
+                "role": user.role
+            }
+        }, 200
 
    
 class GetAllUsers(Resource):

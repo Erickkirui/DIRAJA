@@ -111,3 +111,4 @@ def serialize_sales(sales):
         "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S') if sale.created_at else None
     } for sale in sales]
     
+

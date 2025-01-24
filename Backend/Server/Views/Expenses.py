@@ -2,12 +2,12 @@ from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
-from Server.Utils import get_expenses_filtered, serialize_expenses
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 from datetime import datetime
 from functools import wraps
+from sqlalchemy.exc import SQLAlchemyError
 
 def check_role(required_role):
     def wrapper(fn):
@@ -21,10 +21,11 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
 class AddExpence(Resource):
+
     @jwt_required()
     @check_role('manager')
-
     def post(self):
         data = request.get_json()
 
@@ -34,29 +35,36 @@ class AddExpence(Resource):
         item = data.get('item')
         description = data.get('description')
         quantity = data.get('quantity')
+        category = data.get('category')  # Directly accept the category from the request
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
+        paidTo = data.get('paidTo')
 
-        # Convert the 'created_at' string to a datetime object
+        # Convert the 'created_at' String to a datetime object
         created_at = data.get('created_at')
         if created_at:
             created_at = datetime.strptime(created_at, '%Y-%m-%d')
 
-        newexpence = Expenses(
+        # Create a new expense entry
+        new_expense = Expenses(
             shop_id=shop_id,
             item=item,
             description=description,
             quantity=quantity,
+            category=category,  # Directly use the provided category
             totalPrice=totalPrice,
             amountPaid=amountPaid,
+            paidTo=paidTo,
             created_at=created_at,
             user_id=current_user_id
         )
 
-        db.session.add(newexpence)
+        db.session.add(new_expense)
         db.session.commit()
 
         return {"message": "Expense added successfully"}, 201
+
+
 
 
 class AllExpenses(Resource):
@@ -77,6 +85,9 @@ class AllExpenses(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
+            # Calculate the balance dynamically
+            balance = max(expense.totalPrice - expense.amountPaid, 0)  # Ensure no negative balances
+
             # Append the data
             all_expenses.append({
                 "expense_id": expense.expense_id,
@@ -87,12 +98,16 @@ class AllExpenses(Resource):
                 "item": expense.item,
                 "description": expense.description,
                 "quantity": expense.quantity,
+                "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
-                "created_at": expense.created_at
+                "balance": balance,  # Dynamically calculated balance
+                "paidTo": expense.paidTo,
+                "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             })
 
         return make_response(jsonify(all_expenses), 200)
+
 
 class GetShopExpenses(Resource):
     
@@ -110,9 +125,11 @@ class GetShopExpenses(Resource):
             "shop_id" :expense.shop_id,
             "item":expense.item,
             "description" : expense.description,
+            "category": expense.category,
             "quantity" : expense.quantity,
             "totalPrice" : expense.totalPrice,
             "amountPaid" : expense.amountPaid,
+            "paidTo": expense.paidTo,
             "created_at" : expense.created_at
 
         } for expense in shopExpenses]
@@ -137,10 +154,12 @@ class ExpensesResources(Resource):
                 "shop_id": expense.shop_id,
                 "item": expense.item,
                 "description": expense.description,
+                "category": expense.category,
                 "quantity": expense.quantity,
                 "totalPrice": expense.totalPrice,
+                "paidTo": expense.paidTo,
                 "amountPaid": expense.amountPaid,
-                # Convert datetime object to string
+                # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             }, 200
         else:
@@ -176,11 +195,13 @@ class ExpensesResources(Resource):
             # Update the expense with the provided data
             expense.item = data.get('item', expense.item)
             expense.description = data.get('description', expense.description)
+            expense.category = data.get('category', expense.category)
             expense.quantity = data.get('quantity', expense.quantity)
             expense.totalPrice = data.get('totalPrice', expense.totalPrice)
             expense.amountPaid = data.get('amountPaid', expense.amountPaid)
+            expense.paidTo = data.get('paidTo', expense.paidTo)
             
-            # Convert created_at from string to datetime, handling both formats
+            # Convert created_at from String to datetime, handling both formats
             if 'created_at' in data:
                 try:
                     # Try parsing the full datetime first
@@ -195,29 +216,38 @@ class ExpensesResources(Resource):
             return {"message": "Expense updated successfully"}, 200
         else:
             return {"error": "Expense not found"}, 404
-        
 
 
-class TodaysExpenses(Resource):
-
+class TotalBalance(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        expenses = get_expenses_filtered('today').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
+        try:
+            # Get start_date and end_date from query parameters
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
 
-class WeeksExpenses(Resource):
+            # Convert date strings to datetime objects if provided
+            start_date = datetime.strptime(start_date_str.strip(), '%Y-%m-%d') if start_date_str else None
+            end_date = datetime.strptime(end_date_str.strip(), '%Y-%m-%d') if end_date_str else None
 
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        expenses = get_expenses_filtered('week').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
+            # Query expenses, possibly filtering by date range using created_at
+            query = Expenses.query
+            if start_date:
+                query = query.filter(Expenses.created_at >= start_date)
+            if end_date:
+                query = query.filter(Expenses.created_at <= end_date)
 
-class MonthsExpenses(Resource):
+            expenses = query.all()
 
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        expenses = get_expenses_filtered('month').all()
-        return make_response(jsonify(serialize_expenses(expenses)), 200)
+            # Calculate the total balance
+            total_balance = sum(max(expense.totalPrice - expense.amountPaid, 0) for expense in expenses)
+
+            # Return the total balance
+            return make_response(jsonify({"total_balance": total_balance}), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
+        except Exception as e:
+            return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)

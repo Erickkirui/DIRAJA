@@ -1,38 +1,69 @@
-.navigation-container h4{
+/* Container Styling */
+.navigation-container h1 {
+    font-size: 18px;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Section Headers */
+.navigation-container h4 {
     color: #ccc;
     font-size: 12px;
     font-weight: 400;
-    
+    margin-bottom: 10px;
 }
 
-.menu-item img{
+/* Link Styling */
+.navigation-container a {
+    text-decoration: none;
+    color: #000000;
+    font-size: 16px;
+}
+
+/* Menu Item Styling */
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+/* Hover and Active States */
+.menu-item:hover,
+.menu-item.active {
+    background-color: var(--primary);
+    color: #ffffff;
+}
+
+/* Image Styling */
+.menu-item img {
+    width: 20px;
+    height: 20px;
     object-fit: contain;
-    width: 30px;
-    height: 30px;
 }
 
 .accounting-menu{
     border-top: 1px solid #ccc ;
 }
-
-.navigation-container h1{
-    font-size: 18px;
-    font-weight: 500;
-}
-.menu-item{
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-   
-}
-.navigation-container ul{
-   list-style: none;
-   gap: 20px;
-   padding: 0;
-
+/* Active Link Styling */
+.active {
+    background-color: var(--primary);
+    color: #ffffff;
+    border-radius: 8px;
 }
 
-.navigation-container li{
+/* List Styles */
+.navigation-container ul {
+    list-style: none;
+    padding: 0;
+}
+
+.navigation-container li {
     text-align: left;
     font-size: 16px;
 }

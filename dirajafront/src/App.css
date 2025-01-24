@@ -1,15 +1,101 @@
-.Page-continer{
+.Page-continer {
   display: flex;
+  height: 100vh;
+  overflow-y: auto; /* Allows the sticky element to work within the viewport */
 }
 
-.navigation{
+.navigation {
   width: 15%;
   padding: 20px;
   height: 100vh;
   border-right: 1px solid #ccc;
+  position: sticky;
+  top: 0; /* Keeps it at the top while scrolling */
+  align-self: flex-start; /* Helps maintain sticky position within flex layout */
 }
 
- 
-.body-area{
+.body-area {
+  width: 85%; /* Adjusts the width to avoid overflow issues */
+}
+
+.body-header {
+  border-bottom: 1px solid #ccc;
+  
+}
+
+.page-area {
   padding: 20px;
+ 
+}
+
+/* page not found */
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  text-align: center;
+  background-color: #f8f9fa;
+  color: #343a40;
+  font-family: Arial, sans-serif;
+}
+
+.error-code {
+  font-size: 10rem;
+  margin: 0;
+}
+
+
+
+.home-link {
+  padding: 10px 20px;
+  border: 1px solid var(--primary);
+  border-radius: 5px;
+  text-decoration: none;
+  color: var(--primary);
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
+.home-link:hover {
+  background-color: var(--primary);
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .navigation{
+    display: none;
+  }
+  .body-area{
+    width: 100%;
+  }
+
+}
+
+/* HTML: <div class="loader"></div> */
+.loader {
+  width: 40px;
+  aspect-ratio: 1;
+  display: grid;
+  border: 3px solid #0000;
+  border-radius: 50%;
+  border-right-color: var(--primary);
+  animation: l15 1s infinite linear;
+}
+.loader::before,
+.loader::after {    
+  content: "";
+  grid-area: 1/1;
+  margin: 2px;
+  border: inherit;
+  border-radius: 50%;
+  animation: l15 2s infinite;
+}
+.loader::after {
+  margin: 8px;
+  animation-duration: 3s;
+}
+@keyframes l15{ 
+  100%{transform: rotate(1turn)}
 }
