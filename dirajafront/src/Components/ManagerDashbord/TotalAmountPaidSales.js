@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import LoadingAnimation from '../LoadingAnimation';
 
-
 const TotalAmountPaidSales = () => {
   const [period, setPeriod] = useState('today');
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
@@ -23,9 +22,11 @@ const TotalAmountPaidSales = () => {
           },
         });
 
+        console.log('API Response:', response.data);
+
         // Simulate a 3-second delay
         setTimeout(() => {
-          setTotalAmountPaid(response.data.total_sales_amount_paid);
+          setTotalAmountPaid(response.data.total_sales_amount_paid || 0);
           setLoading(false); // Stop loading
         }, 3000);
 
@@ -33,7 +34,7 @@ const TotalAmountPaidSales = () => {
       } catch (error) {
         console.error('Error fetching total amount paid:', error);
         setError('Could not fetch total amount paid');
-        setTotalAmountPaid(null);
+        setTotalAmountPaid(0); // Set totalAmountPaid to 0 in case of an error
         setLoading(false); // Stop loading even on error
       }
     };
@@ -58,7 +59,7 @@ const TotalAmountPaidSales = () => {
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
-        <h1>Ksh {totalAmountPaid?.toFixed(2)}</h1>
+        <h1>Ksh {totalAmountPaid ? totalAmountPaid.toFixed(2) : "0.00"}</h1>
       )}
       <Link to="/analytics">View Sales</Link>
     </div>
