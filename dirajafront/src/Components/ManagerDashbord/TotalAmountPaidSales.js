@@ -59,7 +59,7 @@ const TotalAmountPaidSales = () => {
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
-        <h1>Ksh {totalAmountPaid ? totalAmountPaid.toFixed(2) : "0.00"}</h1>
+        <h1>Ksh {totalAmountPaid}</h1>
       )}
       <Link to="/analytics">View Sales</Link>
     </div>
