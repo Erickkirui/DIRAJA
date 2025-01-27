@@ -59,26 +59,37 @@ const Expenses = () => {
 
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
-
+  
     if (selectedAction === 'delete') {
-      await Promise.all(
-        selectedExpenses.map((expenseId) =>
-
-          axios.delete(` /api/diraja/expense/${expenseId}`, {
-
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-        )
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete the selected expenses? This action cannot be undone."
       );
-      setExpenses((prev) =>
-        prev.filter((expense) => !selectedExpenses.includes(expense.expense_id))
-      );
-      setSelectedExpenses([]);
-      setSelectedAction('');
+      if (!confirmDelete) {
+        return; // Exit if the user cancels
+      }
+  
+      try {
+        await Promise.all(
+          selectedExpenses.map((expenseId) =>
+            axios.delete(`/api/diraja/expense/${expenseId}`, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          )
+        );
+        setExpenses((prev) =>
+          prev.filter((expense) => !selectedExpenses.includes(expense.expense_id))
+        );
+        setSelectedExpenses([]);
+        setSelectedAction('');
+      } catch (error) {
+        console.error("Error deleting expenses:", error);
+        // Add error handling logic here if needed
+      }
     }
   };
+  
 
   const filteredExpenses = expenses.filter((expense) => {
     const matchesSearchTerm =

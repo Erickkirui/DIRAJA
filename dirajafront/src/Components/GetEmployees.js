@@ -58,25 +58,38 @@ const Employees = () => {
 
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
-
+  
     if (selectedAction === 'delete') {
-      await Promise.all(
-        selectedEmployees.map((employeeId) =>
-          axios.delete(` /api/diraja/employee/${employeeId}`, {
-
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-        )
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete the selected employees? This action cannot be undone."
       );
-      setEmployees((prev) =>
-        prev.filter((employee) => !selectedEmployees.includes(employee.employee_id))
-      );
-      setSelectedEmployees([]);
-      setSelectedAction('');
+  
+      if (!confirmDelete) {
+        return; // Exit if the user cancels
+      }
+  
+      try {
+        await Promise.all(
+          selectedEmployees.map((employeeId) =>
+            axios.delete(`/api/diraja/employee/${employeeId}`, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          )
+        );
+        setEmployees((prev) =>
+          prev.filter((employee) => !selectedEmployees.includes(employee.employee_id))
+        );
+        setSelectedEmployees([]);
+        setSelectedAction('');
+      } catch (error) {
+        console.error("Error deleting employees:", error);
+        // Handle error appropriately
+      }
     }
   };
+  
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearchTerm =
