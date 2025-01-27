@@ -3,42 +3,65 @@ import '../Styles/shopstock.css';
 import ExportExcel from '../Components/Download/ExportExcel'; // Ensure correct import path
 import DownloadPDF from '../Components/Download/DownloadPDF'; // Ensure correct import path
 
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <h2>Confirm Deletion</h2>
+                <p>Are you sure you want to delete the selected shop stocks?</p>
+                <div className="modal-actions">
+                    <button className="cancel-button" onClick={onClose}>
+                        Cancel
+                    </button>
+                    <button className="confirm-button" onClick={onConfirm}>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
+    const [selectedStocks, setSelectedStocks] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const itemsPerPage = 50;
 
     useEffect(() => {
         const fetchShopStockData = async () => {
             try {
                 const accessToken = localStorage.getItem('access_token');
-    
+
                 if (!accessToken) {
                     setError('No access token found, please log in.');
                     setLoading(false);
                     return;
                 }
-    
+
                 const response = await fetch('/api/diraja/shopstock', {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
                     },
                 });
-    
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch shop stock data');
                 }
-    
+
                 const data = await response.json();
-    
+
                 // Sort the data in descending order by stock_id
                 const sortedData = data.shop_stocks.sort((a, b) => b.stock_id - a.stock_id);
-    
+
                 setShopStocks(sortedData);
                 setLoading(false);
             } catch (error) {
@@ -46,21 +69,55 @@ const Shopstock = () => {
                 setLoading(false);
             }
         };
-    
+
         fetchShopStockData();
     }, []);
-    
 
-    // Filter shop stocks based on search query and selected date
+    const handleBulkDelete = async () => {
+        try {
+            const accessToken = localStorage.getItem('access_token');
+            const deletePromises = selectedStocks.map((stockId) =>
+                fetch(`/api/diraja/deleteshopstock/${stockId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                })
+            );
+
+            await Promise.all(deletePromises);
+
+            // Remove the deleted stocks from the state
+            setShopStocks((prevStocks) => prevStocks.filter((stock) => !selectedStocks.includes(stock.stock_id)));
+            setSelectedStocks([]); // Clear selected items
+            alert('Selected shop stocks deleted successfully');
+        } catch (error) {
+            alert(`Error deleting shop stocks: ${error.message}`);
+        }
+    };
+
+    const confirmDelete = () => {
+        setIsModalOpen(false);
+        handleBulkDelete();
+    };
+
+    const toggleSelectStock = (stockId) => {
+        setSelectedStocks((prevSelected) =>
+            prevSelected.includes(stockId)
+                ? prevSelected.filter((id) => id !== stockId)
+                : [...prevSelected, stockId]
+        );
+    };
+
     const filteredShopsStock = shopStocks.filter((stock) => {
         const matchesSearch = stock.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                              stock.shop_id.toString().includes(searchQuery);
+            stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            stock.shop_id.toString().includes(searchQuery);
         const matchesDate = !selectedDate || stock.date === selectedDate;
         return matchesSearch && matchesDate;
     });
 
-    // Pagination logic
     const totalPages = Math.ceil(filteredShopsStock.length / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedStocks = filteredShopsStock.slice(startIndex, startIndex + itemsPerPage);
@@ -96,17 +153,37 @@ const Shopstock = () => {
                 />
             </div>
 
-            {/* Export Actions */}
-            <div className='actions-container'>
+            {/* Bulk Delete Button */}
+            <div className="actions-container">
+                <button
+                    className="bulk-delete-button"
+                    onClick={() => setIsModalOpen(true)}
+                    disabled={selectedStocks.length === 0}
+                >
+                    Delete Selected
+                </button>
                 <ExportExcel data={shopStocks} fileName="ShopstocksData" />
                 <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
             </div>
-         
+
             {filteredShopsStock.length > 0 ? (
                 <>
                     <table id="shopStocks-table" className="shopStocks-table">
                         <thead>
                             <tr>
+                                <th>
+                                    <input
+                                        type="checkbox"
+                                        onChange={(e) =>
+                                            setSelectedStocks(
+                                                e.target.checked
+                                                    ? filteredShopsStock.map((stock) => stock.stock_id)
+                                                    : []
+                                            )
+                                        }
+                                        checked={selectedStocks.length === filteredShopsStock.length && filteredShopsStock.length > 0}
+                                    />
+                                </th>
                                 <th>Stock ID</th>
                                 <th>Shop Name</th>
                                 <th>Item Name</th>
@@ -118,6 +195,13 @@ const Shopstock = () => {
                         <tbody>
                             {paginatedStocks.map((stock) => (
                                 <tr key={stock.stock_id} className={stock.quantity === 0 ? 'faint-row' : ''}>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedStocks.includes(stock.stock_id)}
+                                            onChange={() => toggleSelectStock(stock.stock_id)}
+                                        />
+                                    </td>
                                     <td>{stock.stock_id}</td>
                                     <td>{stock.shop_name}</td>
                                     <td>{stock.item_name}</td>
@@ -145,6 +229,13 @@ const Shopstock = () => {
             ) : (
                 <p>No shop stocks found.</p>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <DeleteConfirmationModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                onConfirm={confirmDelete}
+            />
         </div>
     );
 };

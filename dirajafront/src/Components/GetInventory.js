@@ -61,18 +61,30 @@ const Inventory = () => {
   };
 
   const handleDelete = async () => {
-    const accessToken = localStorage.getItem('access_token');
-    await Promise.all(
-      selectedInventory.map((inventoryId) =>
-        axios.delete(` /api/diraja/inventory/${inventoryId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-      )
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete the selected inventory items? This action cannot be undone."
     );
-    setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
-    setSelectedInventory([]);
-    setSelectedAction('');
+    if (!confirmDelete) {
+      return; // Exit the function if the user cancels
+    }
+  
+    const accessToken = localStorage.getItem('access_token');
+    try {
+      await Promise.all(
+        selectedInventory.map((inventoryId) =>
+          axios.delete(` /api/diraja/inventory/${inventoryId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+        )
+      );
+      setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
+      setSelectedInventory([]);
+      setSelectedAction('');
+    } catch (error) {
+      setError('Error deleting inventory. Please try again.');
+    }
   };
+  
 
   const handleDistributeSuccess = () => {
     setSelectedInventory([]);

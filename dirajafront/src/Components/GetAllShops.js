@@ -59,25 +59,36 @@ const Shops = () => {
 
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
+  
     if (selectedAction === 'delete') {
-      await Promise.all(
-        selectedShops.map((shopId) =>
-
-      
-
-
-          axios.delete(` /api/diraja/shop/${shopId}`, {
-
-
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-        )
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete the selected shops? This action cannot be undone."
       );
-      setShops((prev) => prev.filter((shop) => !selectedShops.includes(shop.shop_id)));
-      setSelectedShops([]);
-      setSelectedAction('');
+  
+      if (!confirmDelete) {
+        return; // Exit if user cancels
+      }
+  
+      try {
+        await Promise.all(
+          selectedShops.map((shopId) =>
+            axios.delete(`/api/diraja/shop/${shopId}`, {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            })
+          )
+        );
+        // Remove deleted shops from state
+        setShops((prev) =>
+          prev.filter((shop) => !selectedShops.includes(shop.shop_id))
+        );
+        setSelectedShops([]); // Clear selected shops
+        setSelectedAction(''); // Reset action
+      } catch (error) {
+        console.error("Error deleting shops:", error);
+        // Handle error appropriately
+      }
     } else if (selectedAction === 'edit') {
       if (selectedShops.length !== 1) {
         alert('Please select exactly one shop to edit.');

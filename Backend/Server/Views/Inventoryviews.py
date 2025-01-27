@@ -106,6 +106,57 @@ class DistributeInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error creating shop stock', 'error': str(e)}), 500
 
+class DeleteShopStock(Resource):
+    @jwt_required()
+    def delete(self, shop_stock_id):
+        # Get the current user ID from the JWT token
+        current_user_id = get_jwt_identity()
+
+        # Fetch the ShopStock record using the stock ID
+        shop_stock = ShopStock.query.get(shop_stock_id)
+        if not shop_stock:
+            return jsonify({'message': 'ShopStock record not found'}), 404
+
+        # Fetch the related Transfer record using the transfer ID from ShopStock
+        transfer = Transfer.query.get(shop_stock.transfer_id)
+        if not transfer:
+            return jsonify({'message': 'Related Transfer record not found'}), 404
+
+        # Fetch the related Inventory record using the inventory ID from ShopStock
+        inventory_item = Inventory.query.get(shop_stock.inventory_id)
+        if not inventory_item:
+            return jsonify({'message': 'Related Inventory item not found'}), 404
+
+        # Reverse the chain of distribution
+        try:
+            # Revert inventory quantity
+            inventory_item.quantity += shop_stock.quantity
+
+            # Log the reversal action (optional)
+            print(f"Reverted inventory quantity for Inventory ID {inventory_item.inventory_id}. New quantity: {inventory_item.quantity}")
+
+            # Delete the Transfer record
+            db.session.delete(transfer)
+
+            # Delete the ShopStock record
+            db.session.delete(shop_stock)
+
+            # Commit the changes to the database
+            db.session.commit()
+
+            return {
+                'message': 'ShopStock and associated records deleted successfully',
+                'details': {
+                    'shop_stock_id': shop_stock_id,
+                    'inventory_id': inventory_item.inventory_id,
+                    'transfer_id': transfer.transfer_id
+                }
+            }, 200
+
+        except Exception as e:
+            # Roll back in case of an error
+            db.session.rollback()
+            return jsonify({'message': 'Error deleting ShopStock', 'error': str(e)}), 500
 
 
 class GetTransfer(Resource):
