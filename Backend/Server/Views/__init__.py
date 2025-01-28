@@ -29,7 +29,7 @@ from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, G
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
 api = Api(api_endpoint)
 
 
@@ -82,7 +82,6 @@ api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 api.add_resource(DeleteShopStock, '/deleteshopstock/<int:shop_stock_id>')
-
 
 
 #distribute stock to a specific shop

@@ -106,6 +106,7 @@ class DistributeInventory(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error creating shop stock', 'error': str(e)}), 500
 
+
 class DeleteShopStock(Resource):
     @jwt_required()
     def delete(self, shop_stock_id):
@@ -157,7 +158,6 @@ class DeleteShopStock(Resource):
             # Roll back in case of an error
             db.session.rollback()
             return jsonify({'message': 'Error deleting ShopStock', 'error': str(e)}), 500
-
 
 class GetTransfer(Resource):
     @jwt_required()
@@ -412,6 +412,5 @@ class InventoryResourceById(Resource):
                 return jsonify({'error': 'Error deleting inventory', 'details': str(e)}), 500
         else:
             return {"error": "Inventory not found"}, 404
-
 
 

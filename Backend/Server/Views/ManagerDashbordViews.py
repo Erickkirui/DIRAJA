@@ -40,8 +40,8 @@ class CountEmployees(Resource):
 class TotalAmountPaidAllSales(Resource):
     @jwt_required()
     def get(self):
-        # Get period from query parameters, default is 'today'
-        period = request.args.get('period', 'today').lower()
+        # Get period from query parameters
+        period = request.args.get('period', 'today')
 
         today = datetime.utcnow()
         
@@ -53,28 +53,25 @@ class TotalAmountPaidAllSales(Resource):
         elif period == 'month':
             start_date = today - timedelta(days=30)
         else:
-            return {"message": "Invalid period specified. Valid periods are 'today', 'week', or 'month'."}, 400
+            return {"message": "Invalid period specified"}, 400
 
         try:
-            # Alias the SalesPaymentMethods table to aggregate the amount_paid
-            sales_payment_alias = aliased(SalesPaymentMethods)
-            
-            # Query for the sum of `amount_paid` from the `SalesPaymentMethods` where the related sales' created_at >= `start_date`
+            # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
             total_sales = (
-                db.session.query(db.func.sum(sales_payment_alias.amount_paid))
-                .join(Sales, Sales.sales_id == sales_payment_alias.sale_id)
+                db.session.query(db.func.sum(Sales.total_price))
                 .filter(Sales.created_at >= start_date)
-                .scalar() or 0  # Return 0 if no sales are found
+                .scalar() or 0
             )
+
+            # Format the total sales to 2 decimal places with commas
+            formatted_sales = "{:,.2f}".format(total_sales)
             
-            # Return the total sales amount paid
-            return {"total_sales_amount_paid": f"ksh {total_sales:,.2f}"}, 200
+            return {"total_sales_amount_paid": formatted_sales}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
-        except Exception as e:
-            return {"error": "An unexpected error occurred", "details": str(e)}, 500
+            return {"error": "An error occurred while fetching the total sales amount"}, 500
+
 
 class TotalAmountPaidSales(Resource):
     @jwt_required()
@@ -101,20 +98,22 @@ class TotalAmountPaidSales(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query the sum of `amount_paid` from the `SalesPaymentMethods` table
+            # Query for the sum of `amountPaid` from `Sales` where `created_at` >= `start_date` and `shop_id` matches
             total_sales = (
-                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
-                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join with Sales table
-                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)  # Filter by date and shop_id
-                .scalar() or 0  # Return 0 if no records found
+                db.session.query(db.func.sum(Sales.amount_paid))
+                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                .scalar() or 0
             )
+
+            # Format the total sales to 2 decimal places with commas
+            formatted_sales = "{:,.2f}".format(total_sales)
             
-            return {"total_sales_amount_paid": total_sales}, 200
+            return {"total_sales_amount_paid": formatted_sales}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching the total sales amount"}, 500
-        
+
 
 class TotalAmountPaidExpenses(Resource):
     @jwt_required()
@@ -133,14 +132,22 @@ class TotalAmountPaidExpenses(Resource):
         else:
             return {"message": "Invalid period specified"}, 400
 
-        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
-        total_amount = (
-            db.session.query(db.func.sum(Expenses.amountPaid))
-            .filter(Expenses.created_at >= start_date)
-            .scalar() or 0
-        )
-        
-        return {"total_amount_paid": total_amount}, 200
+        try:
+            # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
+            total_amount = (
+                db.session.query(db.func.sum(Expenses.amountPaid))
+                .filter(Expenses.created_at >= start_date)
+                .scalar() or 0
+            )
+
+            # Format the total amount to 2 decimal places with commas
+            formatted_amount = "{:,.2f}".format(total_amount)
+
+            return {"total_amount_paid": formatted_amount}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total expenses amount"}, 500
 
 
 class TotalAmountPaidPurchases(Resource):
@@ -160,14 +167,22 @@ class TotalAmountPaidPurchases(Resource):
         else:
             return {"message": "Invalid period specified"}, 400
 
-        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
-        total_amount = (
-            db.session.query(db.func.sum(Transfer.amountPaid))
-            .filter(Transfer.created_at >= start_date)
-            .scalar() or 0
-        )
-        
-        return {"total_amount_paid": total_amount}, 200
+        try:
+            # Query for the sum of `amountPaid` from `Transfer` where `created_at` >= `start_date`
+            total_amount = (
+                db.session.query(db.func.sum(Transfer.amountPaid))
+                .filter(Transfer.created_at >= start_date)
+                .scalar() or 0
+            )
+
+            # Format the total amount to 2 decimal places with commas
+            formatted_amount = "{:,.2f}".format(total_amount)
+
+            return {"total_amount_paid": formatted_amount}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total purchases amount"}, 500
     
 
 
@@ -232,7 +247,7 @@ class TotalAmountPaidPerShop(Resource):
 class StockAlert(Resource):
     @jwt_required()
     def get(self):
-        low_stock_threshold = 10
+        low_stock_threshold = 50
         out_of_stock_threshold = 0
         shop_name = request.args.get('shop')  # Filter by shop name if provided
 
@@ -285,6 +300,4 @@ class StockAlert(Resource):
         except SQLAlchemyError:
             # Handle database query errors
             return {"error": "Unable to fetch shop stock data"}, 500
-
-
 
