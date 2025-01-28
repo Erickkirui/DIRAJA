@@ -212,7 +212,7 @@ const Shopstock = () => {
                             ))}
                         </tbody>
                     </table>
-
+                                
                     {/* Pagination */}
                     <div className="pagination">
                         {Array.from({ length: totalPages }, (_, index) => (
