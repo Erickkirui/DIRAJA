@@ -31,6 +31,9 @@ class Sales(db.Model):
     shop = db.relationship('Shops', backref='sales_for_shop', lazy=True)
     shop_stock = db.relationship('ShopStock', backref='sales', lazy=True)
 
+    payment= db.relationship('SalesPaymentMethods', backref='related_sale', lazy=True, cascade="all, delete-orphan")
+    
+
     # Validations
     @validates('status')
     def validate_status(self, key, status):

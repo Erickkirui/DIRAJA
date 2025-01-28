@@ -6,6 +6,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
     itemname: '',
     quantity: 0,
     metric: '',
+    initial_quantity: "",
     unitCost: 0,
     amountPaid: 0,
     unitPrice: 0,
@@ -21,7 +22,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
     const fetchInventory = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await axios.get(` /api/diraja/inventory/${inventoryId}`, {
+        const response = await axios.get(`/api/diraja/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventoryData(response.data);
@@ -42,20 +43,22 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
     e.preventDefault();
     try {
       const accessToken = localStorage.getItem('access_token');
-      await axios.put(` /api/diraja/inventory/${inventoryId}`, inventoryData, {
+      await axios.put(`/api/diraja/inventory/${inventoryId}`, inventoryData, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       setSuccess('Inventory updated successfully.');
+      setError('');
       onUpdateSuccess();
     } catch (err) {
       setError('Error updating inventory.');
+      setSuccess('');
     }
   };
 
   return (
     <div>
-      {error && <p className="error-message">{error}</p>}
-      {success && <p className="success-message">{success}</p>}
+      {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
+      {success && <p className="success-message" style={{ color: 'green' }}>{success}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>Item Name:</label>
@@ -71,7 +74,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
           <input
             type="number"
             name="quantity"
-            value={inventoryData.quantity}
+            value={inventoryData.initial_quantity}
             onChange={handleChange}
           />
         </div>

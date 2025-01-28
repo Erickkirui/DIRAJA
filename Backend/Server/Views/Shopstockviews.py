@@ -73,7 +73,39 @@ class AvailableBatchesResource(Resource):
         # Return the batch numbers as a JSON response
         return jsonify(batch_numbers)
 
-    
+
+class BatchDetailsResourceForShop(Resource):
+    @jwt_required()
+    def get(self):
+        # Retrieve the batch number and shop_id from the request arguments
+        batch_number = request.args.get('BatchNumber')
+        shop_id = request.args.get('shop_id')
+        
+        if not batch_number or not shop_id:
+            return {'message': 'Batch number and shop ID are required'}, 400
+        
+        # Query the ShopStock table for the given batch number and shop_id and filter out zero quantities
+        shop_stock_items = ShopStock.query.filter_by(BatchNumber=batch_number, shop_id=shop_id).filter(ShopStock.quantity > 0).all()
+        
+        if not shop_stock_items:
+            return {'message': 'No available stock for the given batch number and shop ID'}, 404
+
+        # Select the first item with non-zero quantity
+        shop_stock_item = shop_stock_items[0]
+
+        # Prepare the sales details based on the selected batch number
+        sales_details = {
+            'itemname': shop_stock_item.itemname,
+            'metric': shop_stock_item.metric,
+            'unit_price': shop_stock_item.unitPrice,
+            'BatchNumber': shop_stock_item.BatchNumber,
+            'stock_id': shop_stock_item.stock_id,
+            'quantity': shop_stock_item.quantity
+        }
+        
+        return sales_details, 200
+
+
 class BatchDetailsResource(Resource):
     @jwt_required()
     def get(self):
@@ -98,7 +130,8 @@ class BatchDetailsResource(Resource):
             'metric': shop_stock_item.metric,
             'unit_price': shop_stock_item.unitPrice,
             'BatchNumber': shop_stock_item.BatchNumber,
-            'stock_id': shop_stock_item.stock_id
+            'stock_id': shop_stock_item.stock_id,
+            'quantity': shop_stock_item.quantity
         }
         
         return sales_details, 200
@@ -233,34 +266,36 @@ class GetShopStock(Resource):
             shop_id = request.args.get('shop_id', type=int)
             inventory_id = request.args.get('inventory_id', type=int)
 
-            # Base query
-            query = ShopStock.query
+            # Base query with eager loading
+            query = ShopStock.query.options(joinedload(ShopStock.inventory))
 
             if shop_id:
                 query = query.filter_by(shop_id=shop_id)
             if inventory_id:
                 query = query.filter_by(inventory_id=inventory_id)
 
-            # Execute query without eager loading
-            shop_stocks = query.all()  # Fetch all results
+            # Execute query
+            shop_stocks = query.all()
 
             # Serialize the data
             shop_stock_list = []
             for stock in shop_stocks:
                 # Fetch shop name manually using shop_id
                 shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
-
-                # Handle cases where shop may not be found
                 shopname = shop.shopname if shop else "Unknown Shop"
+
+                # Handle missing inventory reference
+                item_name = stock.inventory.itemname if stock.inventory else "Unknown Item"
+                metric = stock.inventory.metric if stock.inventory else "Unknown Metric"
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,
                     "shop_id": stock.shop_id,
-                    "shop_name": shopname,  # Adjust attribute if different
-                    "inventory_id": stock.inventory_id,
-                    "item_name": stock.inventory.itemname,  # Adjust attribute if different
+                    "shop_name": shopname,
+                    "inventory_id": stock.inventory_id if stock.inventory else None,
+                    "item_name": item_name,
                     "batchnumber": stock.BatchNumber,
-                    "metric": stock.inventory.metric,
+                    "metric": metric,
                     "quantity": stock.quantity,
                     "total_cost": stock.total_cost,
                     "unitPrice": stock.unitPrice
@@ -276,6 +311,7 @@ class GetShopStock(Resource):
         except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching shop stock data"}, 500
+
 
 
 
