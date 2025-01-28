@@ -300,6 +300,7 @@ class InventoryResourceById(Resource):
             return {
                 "inventory_id": inventory.inventory_id,
                 "itemname": inventory.itemname,
+                "initial_quantity":inventory.initial_quantity,
                 "quantity": inventory.quantity,
                 "metric": inventory.metric,
                 "totalCost": inventory.totalCost,

@@ -56,11 +56,12 @@ class TotalAmountPaidAllSales(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
+            # Query for the sum of `amount_paid` from `SalesPaymentMethods` where `Sales.created_at` >= `start_date`
             total_sales = (
-                db.session.query(db.func.sum(Sales.total_price))
-                .filter(Sales.created_at >= start_date)
-                .scalar() or 0
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to filter by created_at
+                .filter(Sales.created_at >= start_date)  # Filter by date range
+                .scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
             )
 
             # Format the total sales to 2 decimal places with commas
@@ -70,10 +71,12 @@ class TotalAmountPaidAllSales(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total sales amount"}, 500
+            return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
 
 
-class TotalAmountPaidSales(Resource):
+
+
+class TotalAmountPaidSalesPerShop(Resource):
     @jwt_required()
     # @check_role('manager')
     def get(self):
@@ -98,10 +101,11 @@ class TotalAmountPaidSales(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amountPaid` from `Sales` where `created_at` >= `start_date` and `shop_id` matches
+            # Query for the sum of `amountPaid` from `SalesPaymentMethods` where `created_at` >= `start_date` and `shop_id` matches
             total_sales = (
-                db.session.query(db.func.sum(Sales.amount_paid))
-                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales with SalesPaymentMethods
+                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)  # Apply filters
                 .scalar() or 0
             )
 
@@ -223,13 +227,16 @@ class TotalAmountPaidPerShop(Resource):
                 shop_id = shop.shops_id
 
                 # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for each shop
+                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for a specific shop
                 total_sales = (
                     db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
-                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to get the shop_id
-                    .filter(Sales.shop_id == shop_id, Sales.created_at >= start_date)
-                    .scalar() or 0
+                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to link sales_id
+                    .filter(Sales.shop_id == shop_id, Sales.created_at >= start_date)  # Filter by shop_id and start_date
+                    .scalar() or 0  # Default to 0 if no result
                 )
 
+
+             
                 results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,

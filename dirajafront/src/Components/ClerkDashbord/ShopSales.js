@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 const ShopSales = () => {
   const [sales, setSales] = useState([]); // Initialize sales as an array
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState(''); // Error state
+  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState(''); // Search query state
   const [selectedDate, setSelectedDate] = useState(''); // Selected date state
   const itemsPerPage = 50;
@@ -17,68 +17,48 @@ const ShopSales = () => {
         const shopId = localStorage.getItem('shop_id');
 
         if (!accessToken || !shopId) {
-          setError('Access token or shop ID is missing. Please log in again.');
+          setError('No access token found, please log in.');
           return;
         }
 
-        const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+        const response = await axios.get(` /api/diraja/sales/shop/${shopId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         // Log the response to check its structure
         console.log('Sales data fetched:', response.data);
 
-        if (response.status === 200 && response.data && response.data.sales) {
-          setSales(response.data.sales); // Update sales state
-          setError(''); // Clear any previous error
-        } else if (response.status === 404) {
-          setError('No sales found for this shop.');
+        // Check if the response contains the sales data
+        if (response.data && response.data.sales) {
+          setSales(response.data.sales); // Update to match the response structure
         } else {
-          setError('Unexpected response from the server.');
+          setError('Unexpected data format received.'); // Set error if not in expected format
         }
       } catch (err) {
-        if (err.response) {
-          // Errors from the server
-          if (err.response.status === 401) {
-            setError('Unauthorized. Please log in again.');
-          } else if (err.response.status === 403) {
-            setError('Forbidden access. You do not have permission to view this data.');
-          } else if (err.response.status === 500) {
-            setError('Server error. Please try again later.');
-          } else {
-            setError(`Error: ${err.response.statusText || 'Unexpected error occurred.'}`);
-          }
-        } else if (err.request) {
-          // No response from the server
-          setError('No response from the server. Please check your network connection.');
-        } else {
-          // Other errors
-          setError('An error occurred. Please try again.');
-        }
         console.error('Error fetching sales:', err); // Log the error
+        setError('Error fetching sales. Please try again.');
       }
     };
 
     fetchSales();
   }, []);
 
+
+
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   // Filter sales based on search query and selected date
-  const filteredSales = sales
-    .filter((sale) => {
-      const matchesSearch = (
-        (sale.item_name && sale.item_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (sale.customer_name && sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
+  const filteredSales = sales.filter((sale) => {
+    const matchesSearch = sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          sale.username.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesDate = selectedDate
-        ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
-        : true;
+    const matchesDate = selectedDate
+      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      : true;
 
-      return matchesSearch && matchesDate;
-    })
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)); // Sort by created_at in descending order
+    return matchesSearch && matchesDate;
+  });
 
   // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -98,12 +78,12 @@ const ShopSales = () => {
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item name or customer name"
+          placeholder="Search by item, shop, or employee"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setCurrentPage(1); // Reset to page 1 on new search query
+            setCurrentPage(1);
           }}
         />
         <input
@@ -112,7 +92,7 @@ const ShopSales = () => {
           value={selectedDate}
           onChange={(e) => {
             setSelectedDate(e.target.value);
-            setCurrentPage(1); // Reset to page 1 when a new date is selected
+            setCurrentPage(1);
           }}
         />
       </div>
@@ -123,8 +103,8 @@ const ShopSales = () => {
             <thead>
               <tr>
                 <th>Customer</th>
+                <th>Quantity</th>
                 <th>Amount</th>
-                <th>Item name</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -132,8 +112,8 @@ const ShopSales = () => {
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
                   <td>{sale.customer_name}</td>
-                  <td>{sale.amount_paid} Ksh</td>
-                  <td>{sale.item_name}</td>
+                  <td>{sale.quantity} {sale.metric}</td>
+                  <td>{sale.total_amount_paid} Ksh</td>
                   {/* Format the date to show only the date (without time) */}
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
@@ -158,7 +138,8 @@ const ShopSales = () => {
         <p>No sales found.</p>
       )}
 
-      <Link className="nav-clerk-button" to="/clerk">Home</Link>
+      <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
+      
     </div>
   );
 };
