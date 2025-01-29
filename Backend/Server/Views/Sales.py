@@ -43,42 +43,41 @@ class AddSale(Resource):
             'BatchNumber', 'stock_id'
         ]
         if not all(field in data for field in required_fields):
-            return jsonify({'message': 'Missing required fields'}), 400
+            return {'message': 'Missing required fields'}, 400
 
         # Extract and convert data
         shop_id = data.get('shop_id')
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
         item_name = data.get('item_name')
-        
-        # Convert to float or int where necessary
+
+        # Convert to float where necessary
         try:
-            quantity = int(data.get('quantity', 0))  # Default to 0 if not provided
+            quantity = float(data.get('quantity', 0))  # Accepting float values now
             metric = data.get('metric')
-            unit_price = float(data.get('unit_price', 0.0))  # Default to 0.0 if not provided
-            payment_methods = data.get('payment_methods')  # List of payment methods
+            unit_price = float(data.get('unit_price', 0.0))
+            payment_methods = data.get('payment_methods')
             batch_number = data.get('BatchNumber')
-            stock_id = data.get('stock_id')  # Use stock_id from shop stock
-            status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
+            stock_id = data.get('stock_id')
+            status = data.get('status', 'unpaid')
             created_at = datetime.utcnow()
         except ValueError:
-            return jsonify({'message': 'Invalid input for quantity or unit price'}), 400
+            return {'message': 'Invalid input for quantity or unit price'}, 400
 
         # Validate payment methods format
         if not isinstance(payment_methods, list) or not all(
-            'method' in pm and 'amount' in pm for pm in payment_methods
+            isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
         ):
-            return jsonify({'message': 'Invalid payment methods format'}), 400
+            return {'message': 'Invalid payment methods format'}, 400
 
-        # Calculate total price based on unit price and quantity
+        # Calculate total price
         total_price = unit_price * quantity
 
         # Calculate total amount paid
         try:
             total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
         except ValueError as e:
-            return {"message": f"Invalid amount value in payment methods: {e}"}, 400
-
+            return {'message': f'Invalid amount value in payment methods: {e}'}, 400
 
         # Calculate balance
         balance = total_amount_paid - total_price
@@ -90,7 +89,7 @@ class AddSale(Resource):
             customer_name=customer_name,
             customer_number=customer_number,
             item_name=item_name,
-            quantity=quantity,
+            quantity=quantity,  # Now stores float quantity
             metric=metric,
             unit_price=unit_price,
             total_price=total_price,
@@ -107,13 +106,13 @@ class AddSale(Resource):
             return {'message': 'Insufficient inventory quantity'}, 400
 
         # Update the shop stock quantity
-        shop_stock_item.quantity -= quantity  # Subtract sold quantity from shop stock
+        shop_stock_item.quantity -= quantity  # Now subtracting float quantity
 
         try:
             # Save the sale to the database
             db.session.add(new_sale)
             db.session.flush()  # Flush to get the sale ID
-            
+
             # Save payment methods to the database
             for payment in payment_methods:
                 payment_record = SalesPaymentMethods(
@@ -122,17 +121,17 @@ class AddSale(Resource):
                     amount_paid=payment['amount']
                 )
                 db.session.add(payment_record)
-            
+
             # Create new customer record
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
                 shop_id=shop_id,
-                sales_id=new_sale.sales_id,  # Link the sale to the customer
+                sales_id=new_sale.sales_id,  
                 user_id=current_user_id,
                 item=item_name,
                 amount_paid=total_amount_paid,
-                payment_method=", ".join(pm['method'] for pm in payment_methods),  # Concatenate methods for display
+                payment_method=", ".join(pm['method'] for pm in payment_methods),
                 created_at=created_at
             )
             db.session.add(new_customer)
@@ -142,9 +141,6 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
-
-
-        
 
 class GetSales(Resource):
     @jwt_required()
