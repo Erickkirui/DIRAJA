@@ -149,6 +149,7 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
           </div>
           <div>
           <button type="submit" className='button'>Update Inventory</button>
+           <p onClick={handleCancel}></p> {/*this is stupid should be made to work */}
 
           </div>
           

@@ -65,7 +65,7 @@ class TotalAmountPaidAllSales(Resource):
             )
 
             # Format the total sales to 2 decimal places with commas
-            formatted_sales = "{:,.2f}".format(total_sales)
+            formatted_sales = "ksh {:,.2f}".format(total_sales)
             
             return {"total_sales_amount_paid": formatted_sales}, 200
 
