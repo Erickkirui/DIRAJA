@@ -4,12 +4,12 @@ import axios from 'axios';
 const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
   const [inventoryData, setInventoryData] = useState({
     itemname: '',
-    quantity: 0,
+    initial_quantity: 0,
     metric: '',
-    initial_quantity: "",
     unitCost: 0,
-    amountPaid: 0,
     unitPrice: 0,
+    totalCost: 0,
+    amountPaid: 0,
     Suppliername: '',
     Supplier_location: '',
     note: '',
@@ -36,7 +36,13 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setInventoryData((prevData) => ({ ...prevData, [name]: value }));
+    setInventoryData((prevData) => {
+      const updatedData = { ...prevData, [name]: value };
+      if (name === 'initial_quantity' || name === 'unitCost') {
+        updatedData.totalCost = updatedData.unitCost * updatedData.initial_quantity;
+      }
+      return updatedData;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -62,92 +68,47 @@ const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
       <form onSubmit={handleSubmit}>
         <div>
           <label>Item Name:</label>
-          <input
-            type="text"
-            name="itemname"
-            value={inventoryData.itemname}
-            onChange={handleChange}
-          />
+          <input type="text" name="itemname" value={inventoryData.itemname} onChange={handleChange} />
         </div>
         <div>
           <label>Quantity:</label>
-          <input
-            type="number"
-            name="quantity"
-            value={inventoryData.initial_quantity}
-            onChange={handleChange}
-          />
+          <input type="number" name="initial_quantity" value={inventoryData.initial_quantity} onChange={handleChange} />
         </div>
         <div>
           <label>Metric:</label>
-          <input
-            type="text"
-            name="metric"
-            value={inventoryData.metric}
-            onChange={handleChange}
-          />
+          <input type="text" name="metric" value={inventoryData.metric} onChange={handleChange} />
         </div>
         <div>
           <label>Unit Cost (Ksh):</label>
-          <input
-            type="number"
-            name="unitCost"
-            value={inventoryData.unitCost}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <label>Amount Paid (Ksh):</label>
-          <input
-            type="number"
-            name="amountPaid"
-            value={inventoryData.amountPaid}
-            onChange={handleChange}
-          />
+          <input type="number" name="unitCost" value={inventoryData.unitCost} onChange={handleChange} />
         </div>
         <div>
           <label>Unit Price (Ksh):</label>
-          <input
-            type="number"
-            name="unitPrice"
-            value={inventoryData.unitPrice}
-            onChange={handleChange}
-          />
+          <input type="number" name="unitPrice" value={inventoryData.unitPrice} onChange={handleChange} />
+        </div>
+        <div>
+          <label>Total Cost (Ksh):</label>
+          <input type="number" name="totalCost" value={inventoryData.totalCost} disabled />
+        </div>
+        <div>
+          <label>Amount Paid (Ksh):</label>
+          <input type="number" name="amountPaid" value={inventoryData.amountPaid} onChange={handleChange} />
         </div>
         <div>
           <label>Supplier Name:</label>
-          <input
-            type="text"
-            name="Suppliername"
-            value={inventoryData.Suppliername}
-            onChange={handleChange}
-          />
+          <input type="text" name="Suppliername" value={inventoryData.Suppliername} onChange={handleChange} />
         </div>
         <div>
           <label>Supplier Location:</label>
-          <input
-            type="text"
-            name="Supplier_location"
-            value={inventoryData.Supplier_location}
-            onChange={handleChange}
-          />
+          <input type="text" name="Supplier_location" value={inventoryData.Supplier_location} onChange={handleChange} />
         </div>
         <div>
           <label>Note:</label>
-          <textarea
-            name="note"
-            value={inventoryData.note}
-            onChange={handleChange}
-          />
+          <textarea name="note" value={inventoryData.note} onChange={handleChange} />
         </div>
         <div>
           <label>Date:</label>
-          <input
-            type="date"
-            name="created_at"
-            value={inventoryData.created_at}
-            onChange={handleChange}
-          />
+          <input type="date" name="created_at" value={inventoryData.created_at} onChange={handleChange} />
         </div>
         <button type="submit">Update Inventory</button>
       </form>

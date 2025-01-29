@@ -327,53 +327,51 @@ class InventoryResourceById(Resource):
         if not inventory:
             return jsonify({'error': 'Inventory not found'}), 404
 
-        # Extract data to update
-        itemname = data.get('itemname')
-        quantity = data.get('quantity')
-        metric = data.get('metric')
-        unitCost = data.get('unitCost')
-        amountPaid = data.get('amountPaid')
-        unitPrice = data.get('unitPrice')
-        Suppliername = data.get('Suppliername')
-        Supplier_location = data.get('Supplier_location')
-        note = data.get('note')
-        created_at = data.get('created_at')
+        try:
+            # Extract and validate fields
+            itemname = data.get('itemname', inventory.itemname)
+            metric = data.get('metric', inventory.metric)
+            unitCost = float(data.get('unitCost', inventory.unitCost))  # Convert to float
+            unitPrice = float(data.get('unitPrice', inventory.unitPrice))  # Convert to float
+            Suppliername = data.get('Suppliername', inventory.Suppliername)
+            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+            note = data.get('note', inventory.note)
 
-        # Update fields if provided
-        if itemname:
+            quantity = data.get('quantity', inventory.quantity)
+            if quantity is not None:
+                quantity = int(quantity)  # Ensure it's an integer
+
+            amountPaid = data.get('amountPaid', inventory.amountPaid)
+            if amountPaid is not None:
+                amountPaid = float(amountPaid)  # Ensure it's a float
+
+            # Update inventory fields
             inventory.itemname = itemname
-        if quantity is not None:
+            inventory.metric = metric
+            inventory.unitCost = unitCost
+            inventory.unitPrice = unitPrice
+            inventory.Suppliername = Suppliername
+            inventory.Supplier_location = Supplier_location
+            inventory.note = note
             inventory.quantity = quantity
             inventory.initial_quantity = quantity  # Optional: Reset initial quantity
-        if metric:
-            inventory.metric = metric
-        if unitCost:
-            inventory.unitCost = unitCost
-        if amountPaid is not None:
             inventory.amountPaid = amountPaid
-        if unitPrice:
-            inventory.unitPrice = unitPrice
-        if Suppliername:
-            inventory.Suppliername = Suppliername
-        if Supplier_location:
-            inventory.Supplier_location = Supplier_location
-        if note is not None:
-            inventory.note = note
-        if created_at:
-            try:
-                inventory.created_at = datetime.strptime(created_at, '%Y-%m-%d')
-            except ValueError:
-                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
 
-        # Recalculate totalCost and balance if necessary
-        if unitCost is not None or quantity is not None:
+            # Calculate `totalCost` and `balance`
             inventory.totalCost = inventory.unitCost * inventory.quantity
-        if amountPaid is not None or unitCost is not None or quantity is not None:
             inventory.balance = inventory.totalCost - inventory.amountPaid
 
-        # Save changes to the database
-        try:
+            # Handle date field
+            created_at = data.get('created_at')
+            if created_at:
+                try:
+                    inventory.created_at = datetime.strptime(created_at, '%Y-%m-%d')
+                except ValueError:
+                    return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
+
+            # Commit changes to the database
             db.session.commit()
+
             return {
                 'message': 'Inventory updated successfully',
                 'inventory': {
@@ -385,7 +383,6 @@ class InventoryResourceById(Resource):
                     'totalCost': inventory.totalCost,
                     'amountPaid': inventory.amountPaid,
                     'unitPrice': inventory.unitPrice,
-                    'BatchNumber': inventory.BatchNumber,
                     'Suppliername': inventory.Suppliername,
                     'Supplier_location': inventory.Supplier_location,
                     'balance': inventory.balance,
@@ -393,9 +390,14 @@ class InventoryResourceById(Resource):
                     'created_at': inventory.created_at.strftime('%Y-%m-%d'),
                 }
             }, 200
+
+        except ValueError as e:
+            return jsonify({'error': f'Invalid data type: {str(e)}'}), 400
+
         except Exception as e:
             db.session.rollback()
             return jsonify({'error': 'Error updating inventory', 'details': str(e)}), 500
+ 
 
     @jwt_required()
     @check_role('manager')
