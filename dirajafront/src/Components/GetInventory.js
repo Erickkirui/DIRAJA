@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
@@ -18,6 +18,8 @@ const Inventory = () => {
   const [editingInventoryId, setEditingInventoryId] = useState(null); // Track editing inventory
   const itemsPerPage = 50;
 
+  const editInventoryRef = useRef(null); // Create a ref for the UpdateInventory component
+
   useEffect(() => {
     const fetchInventory = async () => {
       try {
@@ -27,7 +29,7 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allinventories', {
+        const response = await axios.get('/api/diraja/allinventories', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventory(response.data);
@@ -72,7 +74,7 @@ const Inventory = () => {
     try {
       await Promise.all(
         selectedInventory.map((inventoryId) =>
-          axios.delete(` /api/diraja/inventory/${inventoryId}`, {
+          axios.delete(`/api/diraja/inventory/${inventoryId}`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           })
         )
@@ -115,6 +117,9 @@ const Inventory = () => {
 
   const handleEditClick = (inventoryId) => {
     setEditingInventoryId(inventoryId); // Set editing inventory
+    if (editInventoryRef.current) {
+      editInventoryRef.current.scrollIntoView({ behavior: 'smooth' }); // Scroll to the update inventory component
+    }
   };
 
   return (
@@ -164,11 +169,13 @@ const Inventory = () => {
 
       {/* Update Inventory Modal */}
       {editingInventoryId && (
-        <UpdateInventory
-          inventoryId={editingInventoryId}
-          onClose={() => setEditingInventoryId(null)} // Close the modal
-          onUpdateSuccess={() => setEditingInventoryId(null)} // Refresh inventory on update
-        />
+         <div ref={editInventoryRef}> {/* This is the target for scrolling */}
+           <UpdateInventory
+             inventoryId={editingInventoryId}
+             onClose={() => setEditingInventoryId(null)} // Close the modal
+             onUpdateSuccess={() => setInventory([...inventory])} // Refresh inventory after update
+           />
+         </div>
       )}
 
       {/* Inventory Table */}
@@ -220,7 +227,7 @@ const Inventory = () => {
               <td>{inventoryItem.unitPrice}</td>
               <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
               <td>
-                <button onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
+                <button className='editeInventory' onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
               </td>
             </tr>
           ))}

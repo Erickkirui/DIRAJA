@@ -322,81 +322,56 @@ class InventoryResourceById(Resource):
     def put(self, inventory_id):
         data = request.get_json()
 
-        # Fetch inventory by ID
+        # Fetch the inventory record
         inventory = Inventory.query.get(inventory_id)
         if not inventory:
-            return jsonify({'error': 'Inventory not found'}), 404
+            return jsonify({'message': 'Inventory not found'}), 404
+
+        # Extract data from the request
+        itemname = data.get('itemname', inventory.itemname)
+        initial_quantity = data.get('initial_quantity', inventory.initial_quantity)
+        unitCost = data.get('unitCost', inventory.unitCost)
+        unitPrice = data.get('unitPrice', inventory.unitPrice)
+        totalCost = unitCost * initial_quantity
+        amountPaid = data.get('amountPaid', inventory.amountPaid)
+        Suppliername = data.get('Suppliername', inventory.Suppliername)
+        Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+        note = data.get('note', inventory.note)
+        created_at = data.get('created_at', inventory.created_at)
+
+        # Update inventory details
+        inventory.itemname = itemname
+        inventory.initial_quantity = initial_quantity
+        inventory.unitCost = unitCost
+        inventory.unitPrice = unitPrice
+        inventory.totalCost = totalCost
+        inventory.amountPaid = amountPaid
+        inventory.Suppliername = Suppliername
+        inventory.Supplier_location = Supplier_location
+        inventory.note = note
+        inventory.created_at = created_at
 
         try:
-            # Extract and validate fields
-            itemname = data.get('itemname', inventory.itemname)
-            metric = data.get('metric', inventory.metric)
-            unitCost = float(data.get('unitCost', inventory.unitCost))  # Convert to float
-            unitPrice = float(data.get('unitPrice', inventory.unitPrice))  # Convert to float
-            Suppliername = data.get('Suppliername', inventory.Suppliername)
-            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
-            note = data.get('note', inventory.note)
+            # Update related transfer records
+            transfers = Transfer.query.filter_by(inventory_id=inventory_id).all()
+            for transfer in transfers:
+                transfer.itemname = itemname
+                transfer.unitCost = unitCost
+                transfer.amountPaid = amountPaid
 
-            quantity = data.get('quantity', inventory.quantity)
-            if quantity is not None:
-                quantity = int(quantity)  # Ensure it's an integer
+            # Update related shop stock records
+            shop_stocks = ShopStock.query.filter_by(inventory_id=inventory_id).all()
+            for stock in shop_stocks:
+                stock.itemname = itemname
+                stock.unitPrice = unitPrice
 
-            amountPaid = data.get('amountPaid', inventory.amountPaid)
-            if amountPaid is not None:
-                amountPaid = float(amountPaid)  # Ensure it's a float
-
-            # Update inventory fields
-            inventory.itemname = itemname
-            inventory.metric = metric
-            inventory.unitCost = unitCost
-            inventory.unitPrice = unitPrice
-            inventory.Suppliername = Suppliername
-            inventory.Supplier_location = Supplier_location
-            inventory.note = note
-            inventory.quantity = quantity
-            inventory.initial_quantity = quantity  # Optional: Reset initial quantity
-            inventory.amountPaid = amountPaid
-
-            # Calculate `totalCost` and `balance`
-            inventory.totalCost = inventory.unitCost * inventory.quantity
-            inventory.balance = inventory.totalCost - inventory.amountPaid
-
-            # Handle date field
-            created_at = data.get('created_at')
-            if created_at:
-                try:
-                    inventory.created_at = datetime.strptime(created_at, '%Y-%m-%d')
-                except ValueError:
-                    return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
-
-            # Commit changes to the database
+            # Commit all changes to the database
             db.session.commit()
-
-            return {
-                'message': 'Inventory updated successfully',
-                'inventory': {
-                    'inventory_id': inventory.inventory_id,
-                    'itemname': inventory.itemname,
-                    'quantity': inventory.quantity,
-                    'metric': inventory.metric,
-                    'unitCost': inventory.unitCost,
-                    'totalCost': inventory.totalCost,
-                    'amountPaid': inventory.amountPaid,
-                    'unitPrice': inventory.unitPrice,
-                    'Suppliername': inventory.Suppliername,
-                    'Supplier_location': inventory.Supplier_location,
-                    'balance': inventory.balance,
-                    'note': inventory.note,
-                    'created_at': inventory.created_at.strftime('%Y-%m-%d'),
-                }
-            }, 200
-
-        except ValueError as e:
-            return jsonify({'error': f'Invalid data type: {str(e)}'}), 400
+            return {'message': 'Inventory and related records updated successfully'}, 200
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': 'Error updating inventory', 'details': str(e)}), 500
+            return {'message': 'Error updating inventory', 'error': str(e)}, 500
  
 
     @jwt_required()
