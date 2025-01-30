@@ -107,6 +107,57 @@ class DistributeInventory(Resource):
             return jsonify({'message': 'Error creating shop stock', 'error': str(e)}), 500
 
 
+class DeleteShopStock(Resource):
+    @jwt_required()
+    def delete(self, shop_stock_id):
+        # Get the current user ID from the JWT token
+        current_user_id = get_jwt_identity()
+
+        # Fetch the ShopStock record using the stock ID
+        shop_stock = ShopStock.query.get(shop_stock_id)
+        if not shop_stock:
+            return jsonify({'message': 'ShopStock record not found'}), 404
+
+        # Fetch the related Transfer record using the transfer ID from ShopStock
+        transfer = Transfer.query.get(shop_stock.transfer_id)
+        if not transfer:
+            return jsonify({'message': 'Related Transfer record not found'}), 404
+
+        # Fetch the related Inventory record using the inventory ID from ShopStock
+        inventory_item = Inventory.query.get(shop_stock.inventory_id)
+        if not inventory_item:
+            return jsonify({'message': 'Related Inventory item not found'}), 404
+
+        # Reverse the chain of distribution
+        try:
+            # Revert inventory quantity
+            inventory_item.quantity += shop_stock.quantity
+
+            # Log the reversal action (optional)
+            print(f"Reverted inventory quantity for Inventory ID {inventory_item.inventory_id}. New quantity: {inventory_item.quantity}")
+
+            # Delete the Transfer record
+            db.session.delete(transfer)
+
+            # Delete the ShopStock record
+            db.session.delete(shop_stock)
+
+            # Commit the changes to the database
+            db.session.commit()
+
+            return {
+                'message': 'ShopStock and associated records deleted successfully',
+                'details': {
+                    'shop_stock_id': shop_stock_id,
+                    'inventory_id': inventory_item.inventory_id,
+                    'transfer_id': transfer.transfer_id
+                }
+            }, 200
+
+        except Exception as e:
+            # Roll back in case of an error
+            db.session.rollback()
+            return jsonify({'message': 'Error deleting ShopStock', 'error': str(e)}), 500
 
 class GetTransfer(Resource):
     @jwt_required()
@@ -249,6 +300,7 @@ class InventoryResourceById(Resource):
             return {
                 "inventory_id": inventory.inventory_id,
                 "itemname": inventory.itemname,
+                "initial_quantity":inventory.initial_quantity,
                 "quantity": inventory.quantity,
                 "metric": inventory.metric,
                 "totalCost": inventory.totalCost,
@@ -270,80 +322,63 @@ class InventoryResourceById(Resource):
     def put(self, inventory_id):
         data = request.get_json()
 
-        # Fetch inventory by ID
+        # Fetch the inventory record
         inventory = Inventory.query.get(inventory_id)
         if not inventory:
-            return jsonify({'error': 'Inventory not found'}), 404
+            return jsonify({'message': 'Inventory not found'}), 404
 
-        # Extract data to update
-        itemname = data.get('itemname')
-        quantity = data.get('quantity')
-        metric = data.get('metric')
-        unitCost = data.get('unitCost')
-        amountPaid = data.get('amountPaid')
-        unitPrice = data.get('unitPrice')
-        Suppliername = data.get('Suppliername')
-        Supplier_location = data.get('Supplier_location')
-        note = data.get('note')
-        created_at = data.get('created_at')
-
-        # Update fields if provided
-        if itemname:
-            inventory.itemname = itemname
-        if quantity is not None:
-            inventory.quantity = quantity
-            inventory.initial_quantity = quantity  # Optional: Reset initial quantity
-        if metric:
-            inventory.metric = metric
-        if unitCost:
-            inventory.unitCost = unitCost
-        if amountPaid is not None:
-            inventory.amountPaid = amountPaid
-        if unitPrice:
-            inventory.unitPrice = unitPrice
-        if Suppliername:
-            inventory.Suppliername = Suppliername
-        if Supplier_location:
-            inventory.Supplier_location = Supplier_location
-        if note is not None:
-            inventory.note = note
-        if created_at:
-            try:
-                inventory.created_at = datetime.strptime(created_at, '%Y-%m-%d')
-            except ValueError:
-                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD.'}), 400
-
-        # Recalculate totalCost and balance if necessary
-        if unitCost is not None or quantity is not None:
-            inventory.totalCost = inventory.unitCost * inventory.quantity
-        if amountPaid is not None or unitCost is not None or quantity is not None:
-            inventory.balance = inventory.totalCost - inventory.amountPaid
-
-        # Save changes to the database
         try:
+            # Extract and Convert Data
+            itemname = data.get('itemname', inventory.itemname)
+            initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))  # Convert to int
+            unitCost = float(data.get('unitCost', inventory.unitCost))  # Convert to float
+            unitPrice = float(data.get('unitPrice', inventory.unitPrice))  # Convert to float
+            totalCost = unitCost * initial_quantity  # Ensure this is a valid number
+            amountPaid = float(data.get('amountPaid', inventory.amountPaid))  # Convert to float
+            ballance = totalCost - amountPaid  # Calculate balance
+            Suppliername = data.get('Suppliername', inventory.Suppliername)
+            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+            note = data.get('note', inventory.note)
+            created_at = data.get('created_at', inventory.created_at)
+
+            # Update inventory details
+            inventory.itemname = itemname
+            inventory.initial_quantity = initial_quantity
+            inventory.unitCost = unitCost
+            inventory.unitPrice = unitPrice
+            inventory.totalCost = totalCost
+            inventory.amountPaid = amountPaid
+            inventory.ballance = ballance  # Update the balance
+            inventory.Suppliername = Suppliername
+            inventory.Supplier_location = Supplier_location
+            inventory.note = note
+            inventory.created_at = created_at
+
+            # Update related transfer records
+            transfers = Transfer.query.filter_by(inventory_id=inventory_id).all()
+            for transfer in transfers:
+                transfer.itemname = itemname
+                transfer.unitCost = unitCost
+                transfer.amountPaid = amountPaid
+
+            # Update related shop stock records
+            shop_stocks = ShopStock.query.filter_by(inventory_id=inventory_id).all()
+            for stock in shop_stocks:
+                stock.itemname = itemname
+                stock.unitPrice = unitPrice
+
+            # Commit changes to the database
             db.session.commit()
-            return {
-                'message': 'Inventory updated successfully',
-                'inventory': {
-                    'inventory_id': inventory.inventory_id,
-                    'itemname': inventory.itemname,
-                    'quantity': inventory.quantity,
-                    'metric': inventory.metric,
-                    'unitCost': inventory.unitCost,
-                    'totalCost': inventory.totalCost,
-                    'amountPaid': inventory.amountPaid,
-                    'unitPrice': inventory.unitPrice,
-                    'BatchNumber': inventory.BatchNumber,
-                    'Suppliername': inventory.Suppliername,
-                    'Supplier_location': inventory.Supplier_location,
-                    'balance': inventory.balance,
-                    'note': inventory.note,
-                    'created_at': inventory.created_at.strftime('%Y-%m-%d'),
-                }
-            }, 200
+            return {'message': 'Inventory and related records updated successfully'}, 200
+
+        except ValueError as e:
+            db.session.rollback()
+            return {'message': 'Invalid data type', 'error': str(e)}, 400
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': 'Error updating inventory', 'details': str(e)}), 500
+            return {'message': 'Error updating inventory', 'error': str(e)}, 500
+
+ 
 
     @jwt_required()
     @check_role('manager')
@@ -361,6 +396,5 @@ class InventoryResourceById(Resource):
                 return jsonify({'error': 'Error deleting inventory', 'details': str(e)}), 500
         else:
             return {"error": "Inventory not found"}, 404
-
 
 

@@ -3,6 +3,7 @@
   justify-content: space-between;
   margin-bottom: 20px;
 }
+
 .date-picker{
 
   padding: 10px;
@@ -146,3 +147,25 @@
     margin: 0 5px;
   }
   
+
+  /* update inventory form */
+  .updateform{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .updateform input{
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .editeInventory{
+    background-color: #ffffff;
+    border: 1px solid #ccc;
+    border-radius: 1px;
+    padding: 5px;
+  }
+  .editeInventory:hover{
+    background-color: var(--primary);
+    color: #fff;
+  }

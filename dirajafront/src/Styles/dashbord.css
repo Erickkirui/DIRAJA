@@ -72,5 +72,26 @@
 }
 
 
+@media (max-width: 768px) {
+    .metrix-container{
+        width: 320px !important;
+    }
+    .metrix-pair{
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    .top-row{
+        display: flex;
+        gap: 20px;
+        flex-direction: column;
+        width: 100%;
+    }
+    .low-stock-container{
+        width: 320px !important;
 
+    }
+    
+  }
 

@@ -6,6 +6,7 @@ const UsersTable = () => {
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(null); // Holds the ID of the user being edited
   const [newPassword, setNewPassword] = useState(''); // Holds the new password input
+  const [message, setMessage] = useState(''); // State for success/error message
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -57,10 +58,11 @@ const UsersTable = () => {
         )
       );
 
-      // Exit edit mode
+      // Exit edit mode and show success message
       setIsEditing(null);
+      setMessage('Password updated successfully.');
     } catch (err) {
-      console.error('Error updating password:', err);
+      setMessage('Failed to update password. Please try again.');
     }
   };
 
@@ -81,9 +83,11 @@ const UsersTable = () => {
 
       // Remove the deleted user from the state
       setUsers((prevUsers) => prevUsers.filter((user) => user.user_id !== userId));
+
+      // Show success message
+      setMessage('User deleted successfully.');
     } catch (err) {
-      console.error('Error deleting user:', err);
-      setError('Failed to delete user. Please try again.');
+      setMessage('Failed to delete user. Please try again.');
     }
   };
 
@@ -92,6 +96,8 @@ const UsersTable = () => {
 
   return (
     <div className="single-sale-container">
+      {message && <div className="success">{message}</div>} {/* Display the message */}
+
       <div className="sale-details">
         <h1>All Users</h1>
         <table className="sale-details-table">
@@ -114,7 +120,6 @@ const UsersTable = () => {
                 <td>
                   {isEditing === user.user_id ? (
                     <input
-                     
                       value={newPassword} // Shows the typed password
                       onChange={(e) => setNewPassword(e.target.value)} // Updates state as the user types
                       placeholder="Enter new password"

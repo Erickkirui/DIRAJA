@@ -16,16 +16,16 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop
 
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSales,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -55,6 +55,7 @@ api.add_resource(GetShopStock, '/shopstock')
 api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')  
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
 api.add_resource(BatchDetailsResource, '/batch-details')
+api.add_resource(BatchDetailsResourceForShop, '/shop-batchdetails')
 api.add_resource(AvailableBatchesResource, '/batches/available')
 api.add_resource(AvailableBatchesByShopResource, '/batches/available-by-shop')
 api.add_resource(GetAllStock, '/allstock')
@@ -79,7 +80,7 @@ api.add_resource(AddEmployeeLoan,'/newloan')
 api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
-
+api.add_resource(DeleteShopStock, '/deleteshopstock/<int:shop_stock_id>')
 
 
 #distribute stock to a specific shop
@@ -137,7 +138,7 @@ api.add_resource(GetTransfer,'/alltransfers')
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')
 api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
-api.add_resource(TotalAmountPaidSales,'/totalsales')
+api.add_resource(TotalAmountPaidSalesPerShop,'/totalsales')
 api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
 api.add_resource(TotalAmountPaidPurchases,"/totalpurchases")
 api.add_resource(StockAlert,"/checkstock")

@@ -113,7 +113,7 @@ const ShopSales = () => {
                 <tr key={sale.sale_id}>
                   <td>{sale.customer_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.amount_paid} Ksh</td>
+                  <td>{sale.total_amount_paid} Ksh</td>
                   {/* Format the date to show only the date (without time) */}
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>

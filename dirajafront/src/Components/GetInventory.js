@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
@@ -18,6 +18,8 @@ const Inventory = () => {
   const [editingInventoryId, setEditingInventoryId] = useState(null); // Track editing inventory
   const itemsPerPage = 50;
 
+  const editInventoryRef = useRef(null); // Create a ref for the UpdateInventory component
+
   useEffect(() => {
     const fetchInventory = async () => {
       try {
@@ -27,7 +29,7 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allinventories', {
+        const response = await axios.get('/api/diraja/allinventories', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setInventory(response.data);
@@ -37,6 +39,13 @@ const Inventory = () => {
     };
     fetchInventory();
   }, []);
+
+  useEffect(() => {
+    if (editingInventoryId !== null) {
+      // Ensure the smooth scroll to the UpdateInventory component when editingInventoryId changes
+      editInventoryRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [editingInventoryId]); // Triggered when editingInventoryId is updated
 
   const handleCheckboxChange = (inventoryId) => {
     setSelectedInventory((prevSelected) =>
@@ -61,17 +70,28 @@ const Inventory = () => {
   };
 
   const handleDelete = async () => {
-    const accessToken = localStorage.getItem('access_token');
-    await Promise.all(
-      selectedInventory.map((inventoryId) =>
-        axios.delete(` /api/diraja/inventory/${inventoryId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        })
-      )
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete the selected inventory items? This action cannot be undone."
     );
-    setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
-    setSelectedInventory([]);
-    setSelectedAction('');
+    if (!confirmDelete) {
+      return; // Exit the function if the user cancels
+    }
+  
+    const accessToken = localStorage.getItem('access_token');
+    try {
+      await Promise.all(
+        selectedInventory.map((inventoryId) =>
+          axios.delete(`/api/diraja/inventory/${inventoryId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          })
+        )
+      );
+      setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
+      setSelectedInventory([]);
+      setSelectedAction('');
+    } catch (error) {
+      setError('Error deleting inventory. Please try again.');
+    }
   };
 
   const handleDistributeSuccess = () => {
@@ -82,11 +102,13 @@ const Inventory = () => {
   const filteredInventory = inventory.filter((inventoryItem) => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch =
-      inventoryItem.itemname.toLowerCase().includes(searchString) ||
-      inventoryItem.batchnumber.toLowerCase().includes(searchString) ||
-      inventoryItem.note.toLowerCase().includes(searchString);
+      (inventoryItem.itemname && inventoryItem.itemname.toLowerCase().includes(searchString)) ||
+      (inventoryItem.batchnumber && inventoryItem.batchnumber.toLowerCase().includes(searchString)) ||
+      (inventoryItem.note && inventoryItem.note.toLowerCase().includes(searchString));
+
     const matchesDateRange =
       selectedDate === '' || new Date(inventoryItem.created_at).toISOString().split('T')[0] === selectedDate;
+
     return matchesSearch && matchesDateRange;
   });
 
@@ -102,7 +124,11 @@ const Inventory = () => {
   };
 
   const handleEditClick = (inventoryId) => {
-    setEditingInventoryId(inventoryId); // Set editing inventory
+    setEditingInventoryId(inventoryId); // This will trigger the scroll effect
+  };
+
+  const handleCloseUpdate = () => {
+    setEditingInventoryId(null); // Hide UpdateInventory component
   };
 
   return (
@@ -152,11 +178,13 @@ const Inventory = () => {
 
       {/* Update Inventory Modal */}
       {editingInventoryId && (
-        <UpdateInventory
-          inventoryId={editingInventoryId}
-          onClose={() => setEditingInventoryId(null)} // Close the modal
-          onUpdateSuccess={() => setEditingInventoryId(null)} // Refresh inventory on update
-        />
+        <div ref={editInventoryRef}> {/* This is the target for scrolling */}
+           <UpdateInventory
+             inventoryId={editingInventoryId}
+             onClose={handleCloseUpdate} // Properly pass the close function
+             onUpdateSuccess={() => setInventory([...inventory])} 
+           />
+        </div>
       )}
 
       {/* Inventory Table */}
@@ -208,7 +236,7 @@ const Inventory = () => {
               <td>{inventoryItem.unitPrice}</td>
               <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
               <td>
-                <button onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
+                <button className='editeInventory' onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
               </td>
             </tr>
           ))}
@@ -217,15 +245,21 @@ const Inventory = () => {
 
       {/* Pagination */}
       <div className="pagination">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-          <button
-            key={pageNumber}
-            onClick={() => handlePageChange(pageNumber)}
-            className={currentPage === pageNumber ? 'active' : ''}
-          >
-            {pageNumber}
-          </button>
-        ))}
+        <button
+          className="pagination-button"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          className="pagination-button"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

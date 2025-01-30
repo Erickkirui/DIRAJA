@@ -53,7 +53,7 @@ const TotalShopSales = () => {
   
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {totalAmountPaid !== null ? (
-        <h1> Ksh {totalAmountPaid.toFixed(2)}</h1>
+        <h1> Ksh {totalAmountPaid}</h1>
       ) : (
         <p>Loading...</p>
       )}

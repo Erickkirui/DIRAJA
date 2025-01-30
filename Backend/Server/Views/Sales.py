@@ -1,6 +1,7 @@
 from app import db
 from flask_restful import Resource
-from Server.Models.Sales import Sales, SalesPaymentMethods
+from Server.Models.Sales import Sales
+from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.Expenses import Expenses
@@ -42,42 +43,41 @@ class AddSale(Resource):
             'BatchNumber', 'stock_id'
         ]
         if not all(field in data for field in required_fields):
-            return jsonify({'message': 'Missing required fields'}), 400
+            return {'message': 'Missing required fields'}, 400
 
         # Extract and convert data
         shop_id = data.get('shop_id')
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
         item_name = data.get('item_name')
-        
-        # Convert to float or int where necessary
+
+        # Convert to float where necessary
         try:
-            quantity = int(data.get('quantity', 0))  # Default to 0 if not provided
+            quantity = float(data.get('quantity', 0))  # Accepting float values now
             metric = data.get('metric')
-            unit_price = float(data.get('unit_price', 0.0))  # Default to 0.0 if not provided
-            payment_methods = data.get('payment_methods')  # List of payment methods
+            unit_price = float(data.get('unit_price', 0.0))
+            payment_methods = data.get('payment_methods')
             batch_number = data.get('BatchNumber')
-            stock_id = data.get('stock_id')  # Use stock_id from shop stock
-            status = data.get('status', 'unpaid')  # Optional field, defaults to 'unpaid'
+            stock_id = data.get('stock_id')
+            status = data.get('status', 'unpaid')
             created_at = datetime.utcnow()
         except ValueError:
-            return jsonify({'message': 'Invalid input for quantity or unit price'}), 400
+            return {'message': 'Invalid input for quantity or unit price'}, 400
 
         # Validate payment methods format
         if not isinstance(payment_methods, list) or not all(
-            'method' in pm and 'amount' in pm for pm in payment_methods
+            isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
         ):
-            return jsonify({'message': 'Invalid payment methods format'}), 400
+            return {'message': 'Invalid payment methods format'}, 400
 
-        # Calculate total price based on unit price and quantity
+        # Calculate total price
         total_price = unit_price * quantity
 
         # Calculate total amount paid
         try:
             total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
         except ValueError as e:
-            return {"message": f"Invalid amount value in payment methods: {e}"}, 400
-
+            return {'message': f'Invalid amount value in payment methods: {e}'}, 400
 
         # Calculate balance
         balance = total_amount_paid - total_price
@@ -89,7 +89,7 @@ class AddSale(Resource):
             customer_name=customer_name,
             customer_number=customer_number,
             item_name=item_name,
-            quantity=quantity,
+            quantity=quantity,  # Now stores float quantity
             metric=metric,
             unit_price=unit_price,
             total_price=total_price,
@@ -106,13 +106,13 @@ class AddSale(Resource):
             return {'message': 'Insufficient inventory quantity'}, 400
 
         # Update the shop stock quantity
-        shop_stock_item.quantity -= quantity  # Subtract sold quantity from shop stock
+        shop_stock_item.quantity -= quantity  # Now subtracting float quantity
 
         try:
             # Save the sale to the database
             db.session.add(new_sale)
             db.session.flush()  # Flush to get the sale ID
-            
+
             # Save payment methods to the database
             for payment in payment_methods:
                 payment_record = SalesPaymentMethods(
@@ -121,17 +121,17 @@ class AddSale(Resource):
                     amount_paid=payment['amount']
                 )
                 db.session.add(payment_record)
-            
+
             # Create new customer record
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
                 shop_id=shop_id,
-                sales_id=new_sale.sales_id,  # Link the sale to the customer
+                sales_id=new_sale.sales_id,  
                 user_id=current_user_id,
                 item=item_name,
                 amount_paid=total_amount_paid,
-                payment_method=", ".join(pm['method'] for pm in payment_methods),  # Concatenate methods for display
+                payment_method=", ".join(pm['method'] for pm in payment_methods),
                 created_at=created_at
             )
             db.session.add(new_customer)
@@ -142,7 +142,6 @@ class AddSale(Resource):
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
 
-        
 class GetSales(Resource):
     @jwt_required()
     def get(self):
@@ -165,17 +164,18 @@ class GetSales(Resource):
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Process multiple payment methods
+                # Process multiple payment methods using the `payment` relationship
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
+                        "balance": payment.balance,  # Include balance field
                     }
-                    for payment in sale.payments  # Use the relationship
+                    for payment in sale.payment  # Updated to use the correct relationship
                 ]
 
                 # Calculate total amount paid
-                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
+                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
                 sales_data.append({
                     "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
@@ -194,17 +194,15 @@ class GetSales(Resource):
                     "total_price": sale.total_price,
                     "total_amount_paid": total_amount_paid,  # Include total amount paid
                     "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d'),  # Convert datetime to string
+                    "balance": sale.balance,  # Include balance at the sale level
+                    "note": sale.note,  # Include note field
                 })
 
             return make_response(jsonify(sales_data), 200)
 
         except Exception as e:
             return {"error": str(e)}, 500
-
-
-
-
 
 class GetSalesByShop(Resource):
     @jwt_required()
@@ -215,19 +213,15 @@ class GetSalesByShop(Resource):
 
             # If no sales found for the shop
             if not sales:
-                return jsonify({"message": "No sales found for this shop"}), 404
+                return {"message": "No sales found for this shop"}, 404
 
             # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name manually using user_id and shop_id
-                user = Users.query.filter_by(users_id=sale.user_id).first()
-                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-                
-                # Handle cases where user or shop may not be found
-                username = user.username if user else "Unknown User"
-                shopname = shop.shopname if shop else "Unknown Shop"
-                
+                # Fetch username and shop name using relationships
+                username = sale.users.username if sale.users else "Unknown User"
+                shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
+
                 # Process multiple payment methods and calculate total amount paid
                 payment_data = [
                     {
@@ -235,10 +229,11 @@ class GetSalesByShop(Resource):
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
                     }
-                    for payment in sale.payments  # Assuming `sale.payments` is a relationship or list
+                    for payment in sale.payment  # Using the defined relationship in the Sales model
                 ]
-                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
+                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
+                # Append the formatted sale data
                 sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
@@ -250,21 +245,19 @@ class GetSalesByShop(Resource):
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
+                    "batch_number": sale.BatchNumber,
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Add total amount paid
+                    "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
                 })
 
             return {"sales": sales_data}, 200
 
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
-
-
+            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
 
 
 class SalesResources(Resource):
@@ -285,15 +278,17 @@ class SalesResources(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            # Process multiple payment methods and calculate total amount paid
+            # Fetch related payment methods
             payment_data = [
                 {
                     "payment_method": payment.payment_method,
                     "amount_paid": payment.amount_paid,
                     "balance": payment.balance,
                 }
-                for payment in sale.payments  # Assuming `sale.payments` is a relationship or list
+                for payment in sale.payment  # 'payment' is the relationship with SalesPaymentMethods
             ]
+            
+            # Calculate total amount paid from the related payments
             total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
             # Prepare sale data
@@ -322,44 +317,135 @@ class SalesResources(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+    @jwt_required()
+    def put(self, sales_id):
+        try:
+            # Fetch the sale by sales_id
+            sale = Sales.query.get(sales_id)
+
+            if not sale:
+                return {"message": "Sale not found"}, 404
+
+            # Get the updated data from the request
+            data = request.get_json()
+
+            # Update sale details
+            if 'customer_name' in data:
+                sale.customer_name = data['customer_name']
+            if 'status' in data:
+                sale.status = data['status']
+            if 'customer_number' in data:
+                sale.customer_number = data['customer_number']
+            if 'item_name' in data:
+                sale.item_name = data['item_name']
+            if 'quantity' in data:
+                sale.quantity = data['quantity']
+            if 'metric' in data:
+                sale.metric = data['metric']
+            if 'unit_price' in data:
+                sale.unit_price = data['unit_price']
+            if 'total_price' in data:
+                sale.total_price = data['total_price']
+            if 'BatchNumber' in data:
+                sale.BatchNumber = data['BatchNumber']
+
+            # Handle payment methods update
+            if 'payment_methods' in data:
+                # First, delete the old payment methods
+                for payment in sale.payment:
+                    db.session.delete(payment)
+
+                # Add updated payment methods
+                for payment_data in data['payment_methods']:
+                    # Create new payment method records and associate them with the sale
+                    payment = SalesPaymentMethods(
+                        sale_id=sale.sales_id,
+                        payment_method=payment_data.get('payment_method'),
+                        amount_paid=payment_data.get('amount_paid'),
+                        balance=payment_data.get('balance')
+                    )
+                    db.session.add(payment)
+
+            # Commit changes to the database
+            db.session.commit()
+
+            return {"message": "Sale updated successfully"}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
+    @jwt_required()
+    def delete(self, sales_id):
+        try:
+            # Fetch the sale by sales_id
+            sale = Sales.query.get(sales_id)
+
+            if not sale:
+                return {"message": "Sale not found"}, 404
+
+            # Delete related payment records
+            for payment in sale.payment:
+                db.session.delete(payment)
+            
+            # Delete the sale record
+            db.session.delete(sale)
+
+            # Commit changes to the database
+            db.session.commit()
+
+            return {"message": "Sale deleted successfully"}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
         
 
     
-#Geting cash at hand, bank and mpesa
 class GetPaymentTotals(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Get query parameters
+            # Get query parameters for date range
             start_date_str = request.args.get('start_date')
             end_date_str = request.args.get('end_date')
 
-            # Parse dates
+            # Parse date strings to datetime objects if provided
             start_date = datetime.strptime(start_date_str, '%Y-%m-%d') if start_date_str else None
             end_date = datetime.strptime(end_date_str, '%Y-%m-%d') if end_date_str else None
 
             # Initialize totals dictionary
-            totals = {}
+            totals = {"cash": 0, "bank": 0, "mpesa": 0, "sasapay": 0}
 
-            # Query sales records and join SalesPaymentMethods
-            query = db.session.query(SalesPaymentMethods.payment_method, db.func.sum(SalesPaymentMethods.amount_paid)).join(
+            # Build the query to calculate payment totals
+            query = db.session.query(
+                SalesPaymentMethods.payment_method,
+                db.func.sum(SalesPaymentMethods.amount_paid).label('total_paid')
+            ).join(
                 Sales, Sales.sales_id == SalesPaymentMethods.sale_id
-            ).filter(Sales.status == 'unpaid')
+            ).filter(
+                Sales.status != 'paid'  # Include unpaid and partially paid sales
+            )
 
+            # Apply date filters if provided
             if start_date:
                 query = query.filter(Sales.created_at >= start_date)
             if end_date:
                 query = query.filter(Sales.created_at <= end_date)
 
+            # Group by payment method
             query = query.group_by(SalesPaymentMethods.payment_method)
 
-            # Process results
+            # Execute query and process results
             results = query.all()
-            for payment_method, total in results:
-                totals[payment_method] = f"ksh. {total:,.2f}"
+            for payment_method, total_paid in results:
+                if payment_method in totals:
+                    totals[payment_method] = round(total_paid, 2)
 
-            return totals, 200
+            # Format the totals with currency
+            formatted_totals = {method: f"ksh. {amount:,.2f}" for method, amount in totals.items()}
+
+            return {"totals": formatted_totals}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -370,8 +456,6 @@ class GetPaymentTotals(Resource):
 
 
 
-
-
 class SalesBalanceResource(Resource):
     @jwt_required()
     def get(self):
@@ -379,14 +463,14 @@ class SalesBalanceResource(Resource):
             # Fetch all sales records
             all_sales = Sales.query.all()
 
-            # Sum up all balances and ensure the result is positive
-            total_balance = abs(sum(sale.ballance for sale in all_sales if sale.ballance is not None))
+            # Sum up all balances, ensuring non-None values, and ensure the result is positive
+            total_balance = abs(sum(sale.balance for sale in all_sales if sale.balance is not None))
 
-            return {"total_balance": total_balance}, 200
+            return {"total_balance": f"ksh. {total_balance:,.2f}"}, 200
 
         except Exception as e:
             return {"error": str(e)}, 500
-        
+
 class TotalBalanceSummary(Resource):
     @jwt_required()
     @check_role('manager')
@@ -396,7 +480,7 @@ class TotalBalanceSummary(Resource):
             start_date_str = request.args.get('start_date')
             end_date_str = request.args.get('end_date')
 
-            # Remove any leading or trailing spaces and convert date strings to datetime objects if provided
+            # Parse dates if provided
             start_date = datetime.strptime(start_date_str.strip(), '%Y-%m-%d') if start_date_str else None
             end_date = datetime.strptime(end_date_str.strip(), '%Y-%m-%d') if end_date_str else None
 
@@ -423,16 +507,14 @@ class TotalBalanceSummary(Resource):
             # Aggregate both balances
             total_balance = total_expense_balance + total_inventory_balance
 
-            # Return the total balance as JSON
-            return make_response(jsonify({
-                "total_balance": total_balance
-            }), 200)
+            # Return the total balance as JSON with currency format
+            return {"total_balance": f"ksh. {total_balance:,.2f}"}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
+            return {"error": "Database error occurred", "details": str(e)}, 500
         except Exception as e:
-            return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)
+            return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
 class TotalBalance(Resource):

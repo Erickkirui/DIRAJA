@@ -69,7 +69,7 @@ const ShopTodaySales = () => {
             currentSales.map(sale => (
               <tr key={sale.sale_id}>
                 <td>{sale.item_name}</td>
-                <td>{sale.amount_paid}</td>
+                <td>{sale.total_amount_paid}</td>
               </tr>
             ))
           ) : (

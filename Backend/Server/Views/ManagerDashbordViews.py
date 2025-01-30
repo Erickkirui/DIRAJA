@@ -3,6 +3,7 @@ from app import db
 from Server.Models.Inventory import Inventory
 from Server.Models.Transfer import Transfer
 from Server.Models.Users import Users
+from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
@@ -11,6 +12,7 @@ from Server.Models.Expenses import Expenses
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
+from sqlalchemy.orm import aliased
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
@@ -54,58 +56,70 @@ class TotalAmountPaidAllSales(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amount_paid` from `Sales` where `created_at` >= `start_date`
+            # Query for the sum of `amount_paid` from `SalesPaymentMethods` where `Sales.created_at` >= `start_date`
             total_sales = (
-                db.session.query(db.func.sum(Sales.total_price))
-                .filter(Sales.created_at >= start_date)
+
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to filter by created_at
+                .filter(Sales.created_at >= start_date)  # Filter by date range
+                .scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
+
+            )
+
+            # Format the total sales to 2 decimal places with commas
+            formatted_sales = "ksh {:,.2f}".format(total_sales)
+            
+            return {"total_sales_amount_paid": formatted_sales}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
+
+
+
+
+class TotalAmountPaidSalesPerShop(Resource):
+    @jwt_required()
+    # @check_role('manager')
+    def get(self):
+        # Get period and shop_id from query parameters
+        period = request.args.get('period', 'today')
+        shop_id = request.args.get('shop_id')
+
+        # Validate shop_id
+        if not shop_id:
+            return {"message": "Shop ID is required"}, 400
+
+        today = datetime.utcnow()
+        
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Query for the sum of `amountPaid` from `SalesPaymentMethods` where `created_at` >= `start_date` and `shop_id` matches
+            total_sales = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales with SalesPaymentMethods
+                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)  # Apply filters
                 .scalar() or 0
             )
+
+            # Format the total sales to 2 decimal places with commas
+            formatted_sales = "{:,.2f}".format(total_sales)
             
-            return {"total_sales_amount_paid": total_sales}, 200
+            return {"total_sales_amount_paid": formatted_sales}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching the total sales amount"}, 500
-        
-        
-class TotalAmountPaidSales(Resource):
-        @jwt_required()
-    # @check_role('manager')
-        def get(self):
-        # Get period and shop_id from query parameters
-            period = request.args.get('period', 'today')
-            shop_id = request.args.get('shop_id')
 
-            # Validate shop_id
-            if not shop_id:
-                return {"message": "Shop ID is required"}, 400
-
-            today = datetime.utcnow()
-            
-            # Set the start date based on the requested period
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
-            elif period == 'week':
-                start_date = today - timedelta(days=7)
-            elif period == 'month':
-                start_date = today - timedelta(days=30)
-            else:
-                return {"message": "Invalid period specified"}, 400
-
-            try:
-                # Query for the sum of `amountPaid` from `Sales` where `created_at` >= `start_date` and `shop_id` matches
-                total_sales = (
-                    db.session.query(db.func.sum(Sales.amount_paid))
-                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
-                    .scalar() or 0
-                )
-                
-                return {"total_sales_amount_paid": total_sales}, 200
-
-            except SQLAlchemyError as e:
-                db.session.rollback()
-                return {"error": "An error occurred while fetching the total sales amount"}, 500
-    
 
 class TotalAmountPaidExpenses(Resource):
     @jwt_required()
@@ -124,14 +138,22 @@ class TotalAmountPaidExpenses(Resource):
         else:
             return {"message": "Invalid period specified"}, 400
 
-        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
-        total_amount = (
-            db.session.query(db.func.sum(Expenses.amountPaid))
-            .filter(Expenses.created_at >= start_date)
-            .scalar() or 0
-        )
-        
-        return {"total_amount_paid": total_amount}, 200
+        try:
+            # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
+            total_amount = (
+                db.session.query(db.func.sum(Expenses.amountPaid))
+                .filter(Expenses.created_at >= start_date)
+                .scalar() or 0
+            )
+
+            # Format the total amount to 2 decimal places with commas
+            formatted_amount = "{:,.2f}".format(total_amount)
+
+            return {"total_amount_paid": formatted_amount}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total expenses amount"}, 500
 
 
 class TotalAmountPaidPurchases(Resource):
@@ -151,14 +173,22 @@ class TotalAmountPaidPurchases(Resource):
         else:
             return {"message": "Invalid period specified"}, 400
 
-        # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
-        total_amount = (
-            db.session.query(db.func.sum(Transfer.amountPaid))
-            .filter(Transfer.created_at >= start_date)
-            .scalar() or 0
-        )
-        
-        return {"total_amount_paid": total_amount}, 200
+        try:
+            # Query for the sum of `amountPaid` from `Transfer` where `created_at` >= `start_date`
+            total_amount = (
+                db.session.query(db.func.sum(Transfer.amountPaid))
+                .filter(Transfer.created_at >= start_date)
+                .scalar() or 0
+            )
+
+            # Format the total amount to 2 decimal places with commas
+            formatted_amount = "{:,.2f}".format(total_amount)
+
+            return {"total_amount_paid": formatted_amount}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total purchases amount"}, 500
     
 
 
@@ -187,21 +217,28 @@ class TotalAmountPaidPerShop(Resource):
         elif period == 'month':
             start_date = today - timedelta(days=30)
         else:
-            return {"message": "Invalid period specified"}, 400
+            return {"message": "Invalid period specified. Valid periods are 'today', 'week', or 'month'."}, 400
 
         try:
             # Query for all shop IDs
             shops = Shops.query.all()
 
-            # Calculate total sales for each shop
+            # Calculate total sales for each shop by summing the `amount_paid` from `SalesPaymentMethods`
             results = []
             for shop in shops:
                 shop_id = shop.shops_id
+
+                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for each shop
+                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for a specific shop
                 total_sales = (
-                    db.session.query(db.func.sum(Sales.amount_paid))
-                    .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)
-                    .scalar() or 0
+                    db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to link sales_id
+                    .filter(Sales.shop_id == shop_id, Sales.created_at >= start_date)  # Filter by shop_id and start_date
+                    .scalar() or 0  # Default to 0 if no result
                 )
+
+
+             
                 results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,
@@ -212,13 +249,14 @@ class TotalAmountPaidPerShop(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching total sales amounts for all shops"}, 500
+            return {"error": "An error occurred while fetching total sales amounts for all shops", "details": str(e)}, 500
+
 
 
 class StockAlert(Resource):
     @jwt_required()
     def get(self):
-        low_stock_threshold = 10
+        low_stock_threshold = 50
         out_of_stock_threshold = 0
         shop_name = request.args.get('shop')  # Filter by shop name if provided
 
@@ -271,6 +309,4 @@ class StockAlert(Resource):
         except SQLAlchemyError:
             # Handle database query errors
             return {"error": "Unable to fetch shop stock data"}, 500
-
-
 
