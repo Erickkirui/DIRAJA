@@ -327,31 +327,33 @@ class InventoryResourceById(Resource):
         if not inventory:
             return jsonify({'message': 'Inventory not found'}), 404
 
-        # Extract data from the request
-        itemname = data.get('itemname', inventory.itemname)
-        initial_quantity = data.get('initial_quantity', inventory.initial_quantity)
-        unitCost = data.get('unitCost', inventory.unitCost)
-        unitPrice = data.get('unitPrice', inventory.unitPrice)
-        totalCost = unitCost * initial_quantity
-        amountPaid = data.get('amountPaid', inventory.amountPaid)
-        Suppliername = data.get('Suppliername', inventory.Suppliername)
-        Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
-        note = data.get('note', inventory.note)
-        created_at = data.get('created_at', inventory.created_at)
-
-        # Update inventory details
-        inventory.itemname = itemname
-        inventory.initial_quantity = initial_quantity
-        inventory.unitCost = unitCost
-        inventory.unitPrice = unitPrice
-        inventory.totalCost = totalCost
-        inventory.amountPaid = amountPaid
-        inventory.Suppliername = Suppliername
-        inventory.Supplier_location = Supplier_location
-        inventory.note = note
-        inventory.created_at = created_at
-
         try:
+            # Extract and Convert Data
+            itemname = data.get('itemname', inventory.itemname)
+            initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))  # Convert to int
+            unitCost = float(data.get('unitCost', inventory.unitCost))  # Convert to float
+            unitPrice = float(data.get('unitPrice', inventory.unitPrice))  # Convert to float
+            totalCost = unitCost * initial_quantity  # Ensure this is a valid number
+            amountPaid = float(data.get('amountPaid', inventory.amountPaid))  # Convert to float
+            ballance = totalCost - amountPaid  # Calculate balance
+            Suppliername = data.get('Suppliername', inventory.Suppliername)
+            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+            note = data.get('note', inventory.note)
+            created_at = data.get('created_at', inventory.created_at)
+
+            # Update inventory details
+            inventory.itemname = itemname
+            inventory.initial_quantity = initial_quantity
+            inventory.unitCost = unitCost
+            inventory.unitPrice = unitPrice
+            inventory.totalCost = totalCost
+            inventory.amountPaid = amountPaid
+            inventory.ballance = ballance  # Update the balance
+            inventory.Suppliername = Suppliername
+            inventory.Supplier_location = Supplier_location
+            inventory.note = note
+            inventory.created_at = created_at
+
             # Update related transfer records
             transfers = Transfer.query.filter_by(inventory_id=inventory_id).all()
             for transfer in transfers:
@@ -365,13 +367,17 @@ class InventoryResourceById(Resource):
                 stock.itemname = itemname
                 stock.unitPrice = unitPrice
 
-            # Commit all changes to the database
+            # Commit changes to the database
             db.session.commit()
             return {'message': 'Inventory and related records updated successfully'}, 200
 
+        except ValueError as e:
+            db.session.rollback()
+            return {'message': 'Invalid data type', 'error': str(e)}, 400
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
+
  
 
     @jwt_required()

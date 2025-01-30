@@ -1,163 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import '../Styles/inventory.css'
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-const UpdateInventory = ({ inventoryId, onUpdateSuccess }) => {
-  const [inventoryData, setInventoryData] = useState({
+const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
+  const [updatedData, setUpdatedData] = useState({
     itemname: '',
-    initial_quantity: 0,
-    metric: '',
-    unitCost: 0,
-    unitPrice: 0,
-    totalCost: 0,
-    amountPaid: 0,
+    batchnumber: '',
+    quantity: '',
+    unitCost: '',
+    initinitial_quantity: '',
+    unitPrice: '',
+    totalCost: '',
+    amountPaid: '',
     Suppliername: '',
     Supplier_location: '',
     note: '',
     created_at: '',
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [initialData, setInitialData] = useState({}); // Store initial inventory data for reset
-  const [formVisible, setFormVisible] = useState(true); // State to control form visibility
-  const [cancelClicked, setCancelClicked] = useState(false); // Track cancel action
 
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [formVisible, setFormVisible] = useState(true);
+
+  // Fetch existing inventory details when component mounts
   useEffect(() => {
-    const fetchInventory = async () => {
+    const fetchInventoryDetails = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
         const response = await axios.get(`/api/diraja/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        setInventoryData(response.data);
-        setInitialData(response.data); // Save initial data for reset
-      } catch (err) {
-        setError('Error fetching inventory data.');
+
+        setUpdatedData(response.data);
+        setError("");
+      } catch (error) {
+        console.error("Error fetching inventory details:", error);
+        setError("Failed to load inventory data.");
       }
     };
 
-    fetchInventory();
+    if (inventoryId) {
+      fetchInventoryDetails();
+      window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to top when opened
+    }
   }, [inventoryId]);
 
+  // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setInventoryData((prevData) => {
-      const updatedData = { ...prevData, [name]: value };
-      if (name === 'initial_quantity' || name === 'unitCost') {
-        updatedData.totalCost = updatedData.unitCost * updatedData.initial_quantity;
-      }
-      return updatedData;
-    });
+    setUpdatedData({ ...updatedData, [e.target.name]: e.target.value });
+
+    // Auto-calculate total cost if quantity and unit cost exist
+    if (e.target.name === "quantity" || e.target.name === "unitCost") {
+      const quantity = e.target.name === "quantity" ? e.target.value : updatedData.quantity;
+      const unitCost = e.target.name === "unitCost" ? e.target.value : updatedData.unitCost;
+      setUpdatedData(prevData => ({ ...prevData, totalCost: quantity * unitCost }));
+    }
   };
 
-  const handleSubmit = async (e) => {
+  // Handle update request
+  const handleUpdate = async (e) => {
     e.preventDefault();
-    try {
-      // If note is empty, set it to null
-      const updatedInventoryData = {
-        ...inventoryData,
-        note: inventoryData.note.trim() === '' ? null : inventoryData.note,
-      };
+    console.log("Data being sent to backend:", updatedData)
+ 
+    setLoading(true);
+    setError("");
+    setSuccess("");
 
+    try {
       const accessToken = localStorage.getItem('access_token');
-      await axios.put(`/api/diraja/inventory/${inventoryId}`, updatedInventoryData, {
+      if (!accessToken) {
+        console.error("No access token found.");
+        setError("Unauthorized: Please log in again.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.put(`/api/diraja/inventory/${inventoryId}`, updatedData, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      setSuccess('Inventory updated successfully.');
-      setError('');
-      
-      // Set form visibility to false after 2 seconds
+
+      console.log("Update response:", response.data); // Debugging log
+      setSuccess("Inventory updated successfully!");
+      onUpdateSuccess(); // Refresh inventory list
+
+      // Delay closing for better UX
       setTimeout(() => {
         setFormVisible(false);
-        onUpdateSuccess(); // Trigger onUpdateSuccess after form disappears
-      }, 2000); // Delay to show success message before hiding the form
-    } catch (err) {
-      setError('Error updating inventory.');
-      setSuccess('');
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error("Error updating inventory:", error);
+      setError("Update failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleCancel = () => {
-    setInventoryData(initialData); // Reset to initial data
-    setCancelClicked(true); // Mark cancel as clicked
-    setSuccess(''); // Hide success message if the user cancels
-    setFormVisible(true); // Show the form again
-  };
-
-  useEffect(() => {
-    if (cancelClicked) {
-      setCancelClicked(false); // Reset cancel state after action
-      setSuccess(''); // Ensure no success message shows after cancel
-    }
-  }, [cancelClicked]);
 
   return (
     <div>
       {error && <p className="error-message" style={{ color: 'red' }}>{error}</p>}
+      {success && <p className="success-message" style={{ color: 'green' }}>{success}</p>}
 
-      {/* Show success message at the top of the form */}
-      {success && formVisible && (
-        <p className="success-message" style={{ color: 'green' }}>{success}</p>
-      )}
-
-      {/* Update Inventory Form */}
       {formVisible && (
-        <form onSubmit={handleSubmit} className='updateform'>
+        <form onSubmit={handleUpdate} className="updateform">
           <div>
-            <label>Item Name: </label>
-            <input type="text" name="itemname" value={inventoryData.itemname} onChange={handleChange} />
+            <label>Item Name:</label>
+            <input type="text" name="itemname" value={updatedData.itemname} onChange={handleChange} />
           </div>
           <div>
-            <label>Quantity: </label>
-            <input type="number" name="initial_quantity" value={inventoryData.initial_quantity} onChange={handleChange} />
+            <label>Quantity:</label>
+            <input type="number" name="quantity" value={updatedData.initial_quantity} onChange={handleChange} />
           </div>
           <div>
-            <label>Metric:</label>
-            <input type="text" name="metric" value={inventoryData.metric} onChange={handleChange} />
+            <label>Unit Cost (Ksh):</label>
+            <input type="number" name="unitCost" value={updatedData.unitCost} onChange={handleChange} />
           </div>
           <div>
-            <label>Unit Cost (Ksh): </label>
-            <input type="number" name="unitCost" value={inventoryData.unitCost} onChange={handleChange} />
+            <label>Unit Price (Ksh):</label>
+            <input type="number" name="unitPrice" value={updatedData.unitPrice} onChange={handleChange} />
           </div>
           <div>
-            <label>Unit Price (Ksh): </label>
-            <input type="number" name="unitPrice" value={inventoryData.unitPrice} onChange={handleChange} />
+            <label>Total Cost (Ksh):</label>
+            <input type="number" name="totalCost" value={updatedData.totalCost} disabled />
           </div>
           <div>
-            <label>Total Cost (Ksh): </label>
-            <input type="number" name="totalCost" value={inventoryData.totalCost} disabled />
+            <label>Amount Paid (Ksh):</label>
+            <input type="number" name="amountPaid" value={updatedData.amountPaid} onChange={handleChange} />
           </div>
           <div>
-            <label>Amount Paid (Ksh): </label>
-            <input type="number" name="amountPaid" value={inventoryData.amountPaid} onChange={handleChange} />
+            <label>Supplier Name:</label>
+            <input type="text" name="Suppliername" value={updatedData.Suppliername} onChange={handleChange} />
           </div>
           <div>
-            <label>Supplier Name: </label>
-            <input type="text" name="Suppliername" value={inventoryData.Suppliername} onChange={handleChange} />
+            <label>Supplier Location:</label>
+            <input type="text" name="Supplier_location" value={updatedData.Supplier_location} onChange={handleChange} />
           </div>
           <div>
-            <label>Supplier Location: </label>
-            <input type="text" name="Supplier_location" value={inventoryData.Supplier_location} onChange={handleChange} />
+            <label>Note:</label>
+            <textarea name="note" value={updatedData.note} onChange={handleChange} />
           </div>
           <div>
-            <label>Note: </label>
-            <textarea name="note" value={inventoryData.note} onChange={handleChange} />
+            <label>Date:</label>
+            <input type="date" name="created_at" value={updatedData.created_at} onChange={handleChange} />
           </div>
           <div>
-            <label>Date: </label>
-            <input type="date" name="created_at" value={inventoryData.created_at} onChange={handleChange} />
+            <button type="submit" className="button" disabled={loading}>
+              {loading ? "Updating..." : "Update Inventory"}
+            </button>
+            <button type="button" onClick={() => { setFormVisible(false); onClose(); }} className="button">
+              Cancel
+            </button>
           </div>
-          <div>
-          <button type="submit" className='button'>Update Inventory</button>
-           <p onClick={handleCancel}></p> {/*this is stupid should be made to work */}
-
-          </div>
-          
         </form>
       )}
-
-   
-    
     </div>
   );
 };

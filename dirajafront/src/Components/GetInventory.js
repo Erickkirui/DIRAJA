@@ -40,6 +40,13 @@ const Inventory = () => {
     fetchInventory();
   }, []);
 
+  useEffect(() => {
+    if (editingInventoryId !== null) {
+      // Ensure the smooth scroll to the UpdateInventory component when editingInventoryId changes
+      editInventoryRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [editingInventoryId]); // Triggered when editingInventoryId is updated
+
   const handleCheckboxChange = (inventoryId) => {
     setSelectedInventory((prevSelected) =>
       prevSelected.includes(inventoryId)
@@ -86,7 +93,6 @@ const Inventory = () => {
       setError('Error deleting inventory. Please try again.');
     }
   };
-  
 
   const handleDistributeSuccess = () => {
     setSelectedInventory([]);
@@ -96,11 +102,13 @@ const Inventory = () => {
   const filteredInventory = inventory.filter((inventoryItem) => {
     const searchString = searchTerm.toLowerCase();
     const matchesSearch =
-      inventoryItem.itemname.toLowerCase().includes(searchString) ||
-      inventoryItem.batchnumber.toLowerCase().includes(searchString) ||
-      inventoryItem.note.toLowerCase().includes(searchString);
+      (inventoryItem.itemname && inventoryItem.itemname.toLowerCase().includes(searchString)) ||
+      (inventoryItem.batchnumber && inventoryItem.batchnumber.toLowerCase().includes(searchString)) ||
+      (inventoryItem.note && inventoryItem.note.toLowerCase().includes(searchString));
+
     const matchesDateRange =
       selectedDate === '' || new Date(inventoryItem.created_at).toISOString().split('T')[0] === selectedDate;
+
     return matchesSearch && matchesDateRange;
   });
 
@@ -116,10 +124,11 @@ const Inventory = () => {
   };
 
   const handleEditClick = (inventoryId) => {
-    setEditingInventoryId(inventoryId); // Set editing inventory
-    if (editInventoryRef.current) {
-      editInventoryRef.current.scrollIntoView({ behavior: 'smooth' }); // Scroll to the update inventory component
-    }
+    setEditingInventoryId(inventoryId); // This will trigger the scroll effect
+  };
+
+  const handleCloseUpdate = () => {
+    setEditingInventoryId(null); // Hide UpdateInventory component
   };
 
   return (
@@ -169,13 +178,13 @@ const Inventory = () => {
 
       {/* Update Inventory Modal */}
       {editingInventoryId && (
-         <div ref={editInventoryRef}> {/* This is the target for scrolling */}
+        <div ref={editInventoryRef}> {/* This is the target for scrolling */}
            <UpdateInventory
              inventoryId={editingInventoryId}
-             onClose={() => setEditingInventoryId(null)} // Close the modal
-             onUpdateSuccess={() => setInventory([...inventory])} // Refresh inventory after update
+             onClose={handleCloseUpdate} // Properly pass the close function
+             onUpdateSuccess={() => setInventory([...inventory])} 
            />
-         </div>
+        </div>
       )}
 
       {/* Inventory Table */}
@@ -236,15 +245,21 @@ const Inventory = () => {
 
       {/* Pagination */}
       <div className="pagination">
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => (
-          <button
-            key={pageNumber}
-            onClick={() => handlePageChange(pageNumber)}
-            className={currentPage === pageNumber ? 'active' : ''}
-          >
-            {pageNumber}
-          </button>
-        ))}
+        <button
+          className="pagination-button"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          className="pagination-button"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
