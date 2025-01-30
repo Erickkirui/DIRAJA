@@ -58,10 +58,12 @@ class TotalAmountPaidAllSales(Resource):
         try:
             # Query for the sum of `amount_paid` from `SalesPaymentMethods` where `Sales.created_at` >= `start_date`
             total_sales = (
+
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to filter by created_at
                 .filter(Sales.created_at >= start_date)  # Filter by date range
                 .scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
+
             )
 
             # Format the total sales to 2 decimal places with commas

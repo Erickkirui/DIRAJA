@@ -21,7 +21,9 @@ def check_role(required_role):
         return decorator
     return wrapper
 
-class AddExpense(Resource):
+
+class AddExpence(Resource):
+
     @jwt_required()
     @check_role('manager')
     def post(self):
@@ -106,7 +108,6 @@ class AllExpenses(Resource):
 
         return make_response(jsonify(all_expenses), 200)
 
-    
 
 class GetShopExpenses(Resource):
     

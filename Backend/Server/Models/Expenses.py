@@ -18,12 +18,25 @@ class Expenses(db.Model):
     paidTo = db.Column (db.String(50), nullable=True)
     totalPrice = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
+
+
+
+    transfer_id = db.Column(db.Integer, db.ForeignKey('transfers.transfer_id'), nullable=True)
+
     created_at = db.Column(db.DateTime, nullable=False)
 
     #relationship 
 
     users = db.relationship('Users' ,backref='expenses', lazy=True)
-    shops = db.relationship('Shops' ,backref='expenses', lazy=True)   
+
+    shops = db.relationship('Shops' ,backref='expenses', lazy=True)
+
+
+    # transfer = db.relationship('Transfer', back_populates='expenses', lazy=True)
+
+
+
+
 
 
     
