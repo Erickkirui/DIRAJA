@@ -379,7 +379,7 @@ class InventoryResourceById(Resource):
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
 
  
-
+          
     @jwt_required()
     @check_role('manager')
     def delete(self, inventory_id):
