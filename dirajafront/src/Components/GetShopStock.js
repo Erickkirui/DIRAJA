@@ -33,7 +33,18 @@ const Shopstock = () => {
     const [selectedStocks, setSelectedStocks] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedAction, setSelectedAction] = useState('');
+    const [editingUnitPrice, setEditingUnitPrice] = useState(null);
+    const [newUnitPrice, setNewUnitPrice] = useState('');
     const itemsPerPage = 50;
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+    };
+
+    const handleDateChange = (e) => {
+        setSelectedDate(e.target.value);
+    };
 
     useEffect(() => {
         const fetchShopStockData = async () => {
@@ -97,9 +108,34 @@ const Shopstock = () => {
         }
     };
 
-    const confirmDelete = () => {
-        setIsModalOpen(false);
-        handleBulkDelete();
+    const handleUnitPriceUpdate = async (stockId) => {
+        try {
+            const accessToken = localStorage.getItem('access_token');
+            const response = await fetch(`/api/diraja/shopstock/${stockId}/update-unitprice`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ unitPrice: newUnitPrice }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update unit price');
+            }
+
+            const updatedStock = await response.json();
+            setShopStocks((prevStocks) =>
+                prevStocks.map((stock) =>
+                    stock.stock_id === stockId ? { ...stock, unitPrice: newUnitPrice } : stock
+                )
+            );
+            setEditingUnitPrice(null);
+            setNewUnitPrice('');
+            alert('Unit price updated successfully');
+        } catch (error) {
+            alert(`Error updating unit price: ${error.message}`);
+        }
     };
 
     const toggleSelectStock = (stockId) => {
@@ -136,32 +172,59 @@ const Shopstock = () => {
 
     return (
         <div className="shopStocks-container">
-            {/* Search and Date Filter */}
+
             <div className="filter-container">
                 <input
                     type="text"
-                    placeholder="Search by item, shop, or employee"
+                    placeholder="Search by itemname or shopname"
                     className="search-bar"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={handleSearchChange}
                 />
                 <input
                     type="date"
                     className="date-picker"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={handleDateChange}
                 />
             </div>
-
-            {/* Bulk Delete Button */}
+            {/* Action Dropdown */}
             <div className="actions-container">
-                <button
-                    className="bulk-delete-button"
-                    onClick={() => setIsModalOpen(true)}
-                    disabled={selectedStocks.length === 0}
+                <select
+                    value={selectedAction}
+                    onChange={(e) => setSelectedAction(e.target.value)}
+                    className="action-dropdown"
                 >
-                    Delete Selected
-                </button>
+                    <option value="">Select action</option>
+                    <option value="edit-price">Edit Unit Price</option>
+                    <option value="delete">Delete Selected</option>
+                </select>
+
+                {selectedAction === 'edit-price' && (
+                    <div className="edit-price-form">
+                        <input
+                            type="number"
+                            value={newUnitPrice}
+                            onChange={(e) => setNewUnitPrice(e.target.value)}
+                            placeholder="Enter new unit price"
+                        />
+                        <button
+                            onClick={() =>
+                                selectedStocks.forEach((stockId) => handleUnitPriceUpdate(stockId))
+                            }
+                            disabled={newUnitPrice === ''}
+                        >
+                            Update Unit Price
+                        </button>
+                    </div>
+                )}
+
+                {selectedAction === 'delete' && (
+                    <button onClick={() => setIsModalOpen(true)} disabled={selectedStocks.length === 0}>
+                        Delete Selected
+                    </button>
+                )}
+
                 <ExportExcel data={shopStocks} fileName="ShopstocksData" />
                 <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
             </div>
@@ -207,12 +270,23 @@ const Shopstock = () => {
                                     <td>{stock.item_name}</td>
                                     <td>{stock.batchnumber}</td>
                                     <td>{stock.quantity} {stock.metric}</td>
-                                    <td>{stock.unitPrice}</td>
+                                    <td>
+                                        {editingUnitPrice === stock.stock_id ? (
+                                            <input
+                                                type="number"
+                                                value={newUnitPrice}
+                                                onChange={(e) => setNewUnitPrice(e.target.value)}
+                                                placeholder="Enter new unit price"
+                                            />
+                                        ) : (
+                                            stock.unitPrice
+                                        )}
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                                
+
                     {/* Pagination */}
                     <div className="pagination">
                         {Array.from({ length: totalPages }, (_, index) => (
@@ -234,7 +308,7 @@ const Shopstock = () => {
             <DeleteConfirmationModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onConfirm={confirmDelete}
+                onConfirm={handleBulkDelete}
             />
         </div>
     );

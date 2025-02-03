@@ -60,31 +60,34 @@ const SingleSale = () => {
   };
 
   const handleSave = async (updatedSale) => {
-    try {
-      const response = await fetch(`/api/diraja/sale/${sale_id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(updatedSale),
-      });
+  try {
+    // Ensure total_price is recalculated before sending the update
+    const recalculatedTotalPrice = updatedSale.quantity * updatedSale.unit_price;
+    const saleData = { ...updatedSale, total_price: recalculatedTotalPrice };
 
-      if (!response.ok) throw new Error('Failed to save changes');
+    const response = await fetch(`/api/diraja/sale/${sale_id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      },
+      body: JSON.stringify(saleData),
+    });
 
-      const updatedSaleData = await response.json();
-      setSale(updatedSaleData);
-      setSuccessMessage('Sale successfully updated!'); // Show success message
-      setIsEditing(false); // Exit edit mode
+    if (!response.ok) throw new Error('Failed to save changes');
 
-      // Reload the page to reflect the updated data
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000); // Reload after 2 seconds to show success message
-    } catch (err) {
-      setError('Failed to save changes');
-    }
-  };
+    const updatedSaleData = await response.json();
+    setSale(updatedSaleData);
+    setSuccessMessage('Sale successfully updated!');
+    setIsEditing(false);
+
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  } catch (err) {
+    setError('Failed to save changes');
+  }
+};
 
   const handleCancel = () => {
     setIsEditing(false); // Cancel edit mode

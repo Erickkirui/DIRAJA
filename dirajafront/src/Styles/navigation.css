@@ -51,11 +51,11 @@
     border-top: 1px solid #ccc ;
 }
 /* Active Link Styling */
-.active {
+/* .active {
     background-color: var(--primary);
     color: #ffffff;
     border-radius: 8px;
-}
+} */
 
 /* List Styles */
 .navigation-container ul {

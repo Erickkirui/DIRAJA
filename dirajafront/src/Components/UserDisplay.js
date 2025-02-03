@@ -1,15 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // If using react-router
-import "../Styles/UserDisplay.css"; // Your CSS file for styling
+import { useNavigate, Link } from 'react-router-dom';
+import "../Styles/UserDisplay.css";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 
 const UserDisplay = () => {
   const [username, setUsername] = useState(null);
   const [role, setRole] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -17,7 +16,6 @@ const UserDisplay = () => {
     const storedRole = localStorage.getItem('role');
     
     if (!storedUsername || !storedRole) {
-      // If no username or role found, redirect to login page
       navigate('/login');
     } else {
       setUsername(storedUsername);
@@ -31,13 +29,17 @@ const UserDisplay = () => {
   };
 
   const toggleDropdown = () => {
-    setShowDropdown(!showDropdown);
+    setShowDropdown((prev) => !prev);
   };
 
   const handleClickOutside = (event) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
       setShowDropdown(false);
     }
+  };
+
+  const handleMenuClick = () => {
+    setShowDropdown(false); // Close dropdown when a menu item is clicked
   };
 
   useEffect(() => {
@@ -48,10 +50,11 @@ const UserDisplay = () => {
   }, []);
 
   if (!username || !role) {
-    return null; // Redirect happens in useEffect, so this part is just a safety net.
+    return null;
   }
 
   const firstLetter = username.charAt(0).toUpperCase();
+  const dropdownIcon = showDropdown ? faChevronUp : faChevronDown;
 
   return (
     <div className="user-display">
@@ -60,10 +63,27 @@ const UserDisplay = () => {
         <p className="username">{username} <span>({role})</span></p>
       </div>
       <div className={`dropdown-container ${showDropdown ? 'active' : ''}`} ref={dropdownRef}>
-        <FontAwesomeIcon onClick={toggleDropdown} className="dropdown-button" icon={faChevronDown} size="1x" />
-        <div className="dropdown-menu">
-          <button onClick={handleLogout}>Logout</button>
-        </div>
+        <FontAwesomeIcon 
+          onClick={toggleDropdown} 
+          className="dropdown-button" 
+          icon={dropdownIcon} 
+          size="1x" 
+        />
+        {showDropdown && (
+          <div className="dropdown-menu">
+            <Link to="/" onClick={handleMenuClick}>Home</Link>
+            {role === 'manager' && <Link to="/allinventory" onClick={handleMenuClick}>Inventory</Link>}
+            {role === 'manager' && <Link to="/sales" onClick={handleMenuClick}>Sales</Link>}
+            {role === 'manager' && <Link to="/expenses" onClick={handleMenuClick}>Expenses</Link>}
+            {role === 'manager' && <Link to="/allshops" onClick={handleMenuClick}>Shops</Link>}
+            {role === 'manager' && <Link to="/allcustomers" onClick={handleMenuClick}>Customers</Link>}
+            {role === 'manager' && <Link to="/allemployees" onClick={handleMenuClick}>Employees</Link>}
+            {role === 'manager' && <Link to="/purchases" onClick={handleMenuClick}>Purchases</Link>}
+            {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>}
+            {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
+            <button onClick={handleLogout}>Logout</button>
+          </div>
+        )}
       </div>
     </div>
   );

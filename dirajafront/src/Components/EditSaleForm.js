@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 
 const EditSaleForm = ({ sale, onSave, onCancel }) => {
-  const [editedSale, setEditedSale] = useState(sale);
+  const [editedSale, setEditedSale] = useState({ ...sale });
 
   const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay']; // Valid payment methods
 
   useEffect(() => {
-    setEditedSale(sale); // Reset form to current sale data when the sale prop changes
+    setEditedSale({ ...sale }); // Reset form to current sale data when the sale prop changes
   }, [sale]);
 
   const handleChange = (e) => {
@@ -16,6 +16,9 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
       [name]: value,
     });
   };
+
+  // Dynamically calculate total price
+  const totalPrice = editedSale.quantity * editedSale.unit_price || 0;
 
   const handlePaymentMethodChange = (index, e) => {
     const { name, value } = e.target;
@@ -35,7 +38,7 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
       ...editedSale,
       payment_methods: [
         ...editedSale.payment_methods,
-        { payment_method: '', amount_paid: '' }, // Removed balance
+        { payment_method: '', amount_paid: '' }, // Added empty payment method object
       ],
     });
   };
@@ -49,7 +52,7 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
   };
 
   const handleSaveClick = () => {
-    onSave(editedSale); // Call the onSave function passed from the parent
+    onSave({ ...editedSale, total_price: totalPrice }); // Pass updated total price to onSave
   };
 
   return (
@@ -63,6 +66,7 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
           onChange={handleChange}
         />
       </label>
+
       <label>
         Quantity:
         <input
@@ -72,8 +76,9 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
           onChange={handleChange}
         />
       </label>
+
       <label>
-        Unit Price:
+        Unit Price (Ksh):
         <input
           type="number"
           name="unit_price"
@@ -81,15 +86,12 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
           onChange={handleChange}
         />
       </label>
+
       <label>
-        Total Price:
-        <input
-          type="number"
-          name="total_price"
-          value={editedSale.total_price || ''}
-          onChange={handleChange}
-        />
+        Total Price (Ksh):
+        <p className="total-price-display">{totalPrice} Ksh</p>
       </label>
+
       <label>
         Status:
         <select
@@ -114,12 +116,12 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
             >
               {validPaymentMethods.map((method) => (
                 <option key={method} value={method}>
-                  {method.charAt(0).toUpperCase() + method.slice(1)} {/* Capitalize the first letter */}
+                  {method.charAt(0).toUpperCase() + method.slice(1)}
                 </option>
               ))}
             </select>
 
-            <label>Amount Paid:</label>
+            <label>Amount Paid (Ksh):</label>
             <input
               type="number"
               name="amount_paid"
@@ -127,19 +129,23 @@ const EditSaleForm = ({ sale, onSave, onCancel }) => {
               onChange={(e) => handlePaymentMethodChange(index, e)}
             />
 
-            <button type="button"  className="button remove"onClick={() => handleRemovePaymentMethod(index)}>
+            <button
+              type="button"
+              className="button remove"
+              onClick={() => handleRemovePaymentMethod(index)}
+            >
               Remove Payment Method
             </button>
           </div>
         ))}
-        <button type="button" className='payment-button' onClick={handleAddPaymentMethod}>
+        <button type="button" className="payment-button" onClick={handleAddPaymentMethod}>
           Add Payment Method
         </button>
       </div>
 
-      <div className='bottom-class'>
-      <button onClick={handleSaveClick} className='button'>Save Changes</button>
-      <button onClick={onCancel}  className='payment-button'>Cancel</button>
+      <div className="bottom-class">
+        <button onClick={handleSaveClick} className="button">Save Changes</button>
+        <button onClick={onCancel} className="payment-button">Cancel</button>
       </div>
     </div>
   );

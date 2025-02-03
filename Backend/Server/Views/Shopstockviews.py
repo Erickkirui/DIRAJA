@@ -614,3 +614,19 @@ class ShopStockByDate(Resource):
         except Exception as e:
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
+
+class UpdateShopStockUnitPrice(Resource):
+    def put(self, stock_id):
+        parser = reqparse.RequestParser()
+        parser.add_argument('unitPrice', type=float, required=True, help='unitPrice is required')
+        args = parser.parse_args()
+
+        shop_stock = ShopStock.query.get(stock_id)
+        
+        if not shop_stock:
+            return jsonify({'error': 'ShopStock not found'}), 404
+
+        shop_stock.unitPrice = args['unitPrice']
+        db.session.commit()
+
+        return jsonify({'message': 'unitPrice updated successfully', 'stock_id': stock_id, 'new_unitPrice': args['unitPrice']})
