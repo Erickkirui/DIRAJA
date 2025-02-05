@@ -37,6 +37,7 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
+
 class TotalAmountPaidAllSales(Resource):
     @jwt_required()
     def get(self):
@@ -52,6 +53,12 @@ class TotalAmountPaidAllSales(Resource):
             start_date = today - timedelta(days=7)
         elif period == 'month':
             start_date = today - timedelta(days=30)
+        elif period == 'date':
+            date_str = request.args.get('date')
+            try:
+                start_date = datetime.strptime(date_str, '%Y-%m-%d')
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
             return {"message": "Invalid period specified"}, 400
 
@@ -72,7 +79,6 @@ class TotalAmountPaidAllSales(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
-
 
 
 

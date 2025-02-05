@@ -51,11 +51,11 @@
     width: 80%;
     max-height: 300px;
 }
-.sales-table{
+/* .sales-table{
     table-layout: fixed;
     padding: 10px;
 
-}
+} */
 .sales-table thead{
     background-color: rgba(238, 240, 246, 1);
     padding: 10px;
