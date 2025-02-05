@@ -377,27 +377,34 @@ class SalesResources(Resource):
 
     @jwt_required()
     def delete(self, sales_id):
+        
+        # Fetch the sale record
+        sale = Sales.query.filter_by(sales_id=sales_id).first()
+        if not sale:
+            return {'message': 'Sale not found'}, 404
+
+        # Fetch the associated shop stock
+        shop_stock_item = ShopStock.query.filter_by(stock_id=sale.stock_id).first()
+        if shop_stock_item:
+            shop_stock_item.quantity += sale.quantity  # Restore the stock
+
+        # Delete associated payment methods
+        SalesPaymentMethods.query.filter_by(sale_id=sales_id).delete()
+
+        # Delete associated customer record
+        customer = Customers.query.filter_by(sales_id=sales_id).first()
+        if customer:
+            db.session.delete(customer)
+
+        # Delete the sale record
+        db.session.delete(sale)
+
         try:
-            # Fetch the sale by sales_id
-            sale = Sales.query.get(sales_id)
-
-            if not sale:
-                return {"message": "Sale not found"}, 404
-
-            # Delete related payment records
-            for payment in sale.payment:
-                db.session.delete(payment)
-            
-            # Delete the sale record
-            db.session.delete(sale)
-
-            # Commit changes to the database
             db.session.commit()
-
-            return {"message": "Sale deleted successfully"}, 200
-
+            return {'message': 'Sale deleted, stock restored, and customer removed successfully'}, 200
         except Exception as e:
-            return {"error": str(e)}, 500
+            db.session.rollback()
+            return {'message': 'Error deleting sale', 'error': str(e)}, 500
 
         
 
