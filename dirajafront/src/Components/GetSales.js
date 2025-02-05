@@ -156,7 +156,11 @@ const Sales = () => {
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.unit_price}</td>
                 <td>{sale.total_amount_paid}</td>
+
+                <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }).replace(',', '')}</td>
+
                 <td>{sale.created_at}</td>
+
 
                 <td>
                   <a href={`/sale/${sale.sale_id}`}>View more</a>
