@@ -15,6 +15,7 @@ const SingleShopSale = () => {
         amount_paid: '',
         BatchNumber: '',
         stock_id: '',
+        sale_date: '', // Added date field
         payment_methods: [{ method: '', amount: '' }]
     });
     const [batchNumbers, setBatchNumbers] = useState([]);
@@ -217,6 +218,7 @@ const SingleShopSale = () => {
                     onChange={handleChange}
                     placeholder="Quantity"
                 />
+               
 
                 {batchError ? (
                     <p>Error loading batch numbers. Please try again later.</p>
@@ -230,6 +232,15 @@ const SingleShopSale = () => {
                         ))}
                     </select>
                 )}
+
+                 {/* Date Selection */}
+                 <input
+                    type="date"
+                    name="sale_date"
+                    value={formData.sale_date}
+                    onChange={handleChange}
+                    required
+                />
 
                 <div>
                     <label>Item Name : </label>
@@ -275,6 +286,8 @@ const SingleShopSale = () => {
                     addPaymentMethod={addPaymentMethod}
                     removePaymentMethod={removePaymentMethod}
                 />
+
+             
 
                 <button className="add-sale-button" type="submit">
                     Add Sale

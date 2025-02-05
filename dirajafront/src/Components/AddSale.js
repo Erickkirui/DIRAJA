@@ -16,8 +16,10 @@ const AddSale = () => {
         unit_price: '',
         stock_id: '',
         amount_paid: '',
-        total_price: '', // New field for total price
+        total_price: '',
+        sale_date: '', // New field for selecting sale date
     });
+
     const [paymentMethods, setPaymentMethods] = useState([{ method: '', amount: '' }]);
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
@@ -70,14 +72,14 @@ const AddSale = () => {
         const { name, value } = e.target;
         setFormData((prevData) => {
             const updatedData = { ...prevData, [name]: value };
-    
-            // Recalculate total price if quantity or unit_price changes, unless editing total_price directly
+
+            // Recalculate total price if quantity or unit_price changes
             if ((name === 'quantity' || name === 'unit_price') && name !== 'total_price') {
                 const quantity = parseFloat(updatedData.quantity) || 0;
                 const unitPrice = parseFloat(updatedData.unit_price) || 0;
                 updatedData.total_price = quantity * unitPrice;
             }
-    
+
             return updatedData;
         });
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
@@ -92,38 +94,38 @@ const AddSale = () => {
             unit_price: details.unit_price,
             stock_id: details.stock_id,
             amount_paid: prevData.quantity ? prevData.quantity * details.unit_price : '',
-            total_price: prevData.quantity ? prevData.quantity * details.unit_price : '', // Update total price
+            total_price: prevData.quantity ? prevData.quantity * details.unit_price : '',
         }));
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
-        const requiredFields = ['shop_id', 'BatchNumber', 'quantity', 'item_name', 'stock_id'];
+
+        const requiredFields = ['shop_id', 'BatchNumber', 'quantity', 'item_name', 'stock_id', 'sale_date'];
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) {
                 newErrors[field] = `Please fill out the ${field.replace('_', ' ')} field.`;
             }
         });
-    
+
         if (paymentMethods.some((pm) => !pm.method || !pm.amount)) {
             newErrors.paymentMethods = 'Each payment method must have a valid type and amount.';
         }
-    
+
         if (Object.keys(newErrors).length > 0) {
             setFieldErrors(newErrors);
             return;
         }
-    
+
         const payload = {
             ...formData,
             payment_methods: paymentMethods,
         };
-    
+
         // Log the data being sent
         console.log("Payload data being sent:", payload);
-    
+
         try {
             const response = await axios.post('/api/diraja/newsale', payload, {
                 headers: {
@@ -144,6 +146,7 @@ const AddSale = () => {
                     unit_price: '',
                     total_price: '',
                     stock_id: '',
+                    sale_date: '',
                 });
                 setPaymentMethods([{ method: '', amount: '' }]);
                 setFieldErrors({});
@@ -189,58 +192,24 @@ const AddSale = () => {
                     ))}
                 </select>
                 <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
-                <input
-                    name="customer_name"
-                    value={formData.customer_name}
-                    onChange={handleChange}
-                    placeholder="Customer Name"
-                    className="input"
-                />
-                <input
-                    name="customer_number"
-                    value={formData.customer_number}
-                    onChange={handleChange}
-                    placeholder="Customer Number (optional)"
-                    className="input"
-                />
-                <input
-                    name="quantity"
-                    type="number"
-                    value={formData.quantity}
-                    onChange={handleChange}
-                    placeholder="Quantity"
-                    className="input"
-                />
-                <div>
-                    <input
-                        type="number"
-                        name="total_price"
-                        value={formData.total_price || ''}
-                        onChange={(e) => handleChange(e)}
-                        placeholder="Total Price"
-                        className="input"
-                    />
-                </div>
+                
+                <input type="date" name="sale_date" value={formData.sale_date} onChange={handleChange} className="input" />
 
-                <PaymentMethods
-                    paymentMethods={paymentMethods}
-                    validPaymentMethods={validPaymentMethods}
-                    handlePaymentChange={(index, field, value) =>
-                        setPaymentMethods((prev) =>
-                            prev.map((pm, idx) => (idx === index ? { ...pm, [field]: value } : pm))
-                        )
-                    }
-                    addPaymentMethod={() =>
-                        setPaymentMethods((prev) => [...prev, { method: '', amount: '' }])
-                    }
-                    removePaymentMethod={(index) =>
-                        setPaymentMethods((prev) => prev.filter((_, idx) => idx !== index))
-                    }
-                />
+                <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" className="input" />
+                <input name="customer_number" value={formData.customer_number} onChange={handleChange} placeholder="Customer Number (optional)" className="input" />
+                <input name="quantity" type="number" value={formData.quantity} onChange={handleChange} placeholder="Quantity" className="input" />
 
-                <button type="submit" className="button">
-                    Add Sale
-                </button>
+                <input type="number" name="total_price" value={formData.total_price || ''} onChange={handleChange} placeholder="Total Price" className="input" />
+
+                <PaymentMethods paymentMethods={paymentMethods} validPaymentMethods={validPaymentMethods} handlePaymentChange={(index, field, value) =>
+                    setPaymentMethods((prev) =>
+                        prev.map((pm, idx) => (idx === index ? { ...pm, [field]: value } : pm))
+                    )
+                } addPaymentMethod={() => setPaymentMethods((prev) => [...prev, { method: '', amount: '' }])} removePaymentMethod={(index) =>
+                    setPaymentMethods((prev) => prev.filter((_, idx) => idx !== index))
+                } />
+
+                <button type="submit" className="button">Add Sale</button>
             </form>
         </div>
     );
