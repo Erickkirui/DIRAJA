@@ -234,7 +234,7 @@ const Inventory = () => {
               <td>{inventoryItem.balance}</td>
               <td>{inventoryItem.note}</td>
               <td>{inventoryItem.unitPrice}</td>
-              <td>{new Date(inventoryItem.created_at).toLocaleDateString()}</td>
+              <td>{new Date(inventoryItem.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
               <td>
                 <button className='editeInventory' onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
               </td>

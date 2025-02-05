@@ -190,7 +190,7 @@ class GetTransfer(Resource):
                 "itemname": transfer.itemname,
                 "amountPaid": transfer.amountPaid,
                 "unitCost": transfer.unitCost,
-                "created_at": transfer.created_at.strftime('%Y-%m-%d') if transfer.created_at else None,
+                "created_at": transfer.created_at,
             })
 
         return make_response(jsonify(all_transfers), 200)
@@ -219,7 +219,7 @@ class AddInventory(Resource):
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
         note = data.get('note', '')  # Optional field, default to empty String
-        created_at = data.get('created_at')
+        created_at = datetime.utcnow()
 
         # Calculate totalCost and balance
         totalCost = unitCost * quantity
@@ -248,7 +248,7 @@ class AddInventory(Resource):
             Supplier_location=Supplier_location,
             ballance=balance,  # Balance calculated as totalCost - amountPaid
             note=note,
-            created_at=datetime.strptime(created_at, '%Y-%m-%d')
+            created_at=created_at
         )
 
         # Save to database
@@ -281,7 +281,7 @@ class GetAllInventory(Resource):
             "amountPaid": inventory.amountPaid,
             "balance":inventory.ballance,
             "note":inventory.note,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+            "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
         } for inventory in inventories]
 
@@ -309,7 +309,7 @@ class InventoryResourceById(Resource):
                 "amountPaid": inventory.amountPaid,
                 "balance": inventory.ballance,  # Corrected typo f'
                 "note": inventory.note,
-                "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+                "created_at": inventory.created_at,
                 "unitPrice": inventory.unitPrice,
                 "Suppliername": inventory.Suppliername,
                 "Supplier_location": inventory.Supplier_location
