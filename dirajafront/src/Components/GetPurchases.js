@@ -128,7 +128,7 @@ const Purchases = () => {
                   <td>{purchase.unitCost}</td>
                   <td>{purchase.totalCost}</td>
                   <td>{purchase.amountPaid}</td>
-                  <td>{new Date(purchase.created_at).toLocaleString()}</td>
+                  <td>{new Date(purchase.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }).replace(',', '')}</td>
                 </tr>
               ))}
             </tbody>
