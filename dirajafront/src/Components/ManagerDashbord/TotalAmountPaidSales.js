@@ -7,25 +7,27 @@ import LoadingAnimation from '../LoadingAnimation';
 
 const TotalAmountPaidSales = () => {
   const [period, setPeriod] = useState('today');
+  const [customDate, setCustomDate] = useState('');
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchTotalAmountPaid = async () => {
-      setLoading(true); // Start loading
+      setLoading(true);
       try {
+        const params = period === 'custom' ? { date: customDate } : { period };
+
         const response = await axios.get('/api/diraja/allshopstotal', {
-          params: { period },
+          params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
 
-        // Simulate a 3-second delay (optional, could be removed)
         setTimeout(() => {
           setTotalAmountPaid(response.data.total_sales_amount_paid);
-          setLoading(false); // Stop loading
+          setLoading(false);
         }, 3000);
 
         setError(null);
@@ -33,12 +35,14 @@ const TotalAmountPaidSales = () => {
         console.error('Error fetching total amount paid:', error);
         setError('Could not fetch total amount paid');
         setTotalAmountPaid(null);
-        setLoading(false); // Stop loading even on error
+        setLoading(false);
       }
     };
 
-    fetchTotalAmountPaid();
-  }, [period]);
+    if (period !== 'custom' || customDate) {
+      fetchTotalAmountPaid();
+    }
+  }, [period, customDate]);
 
   return (
     <div className="metrix-container">
@@ -48,7 +52,16 @@ const TotalAmountPaidSales = () => {
           <option value="today">Today</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
+          <option value="custom">Custom Date</option>
         </select>
+        {period === 'custom' && (
+          <input
+            type="date"
+            value={customDate}
+            onChange={(e) => setCustomDate(e.target.value)}
+            className="custom-date-picker"
+          />
+        )}
       </div>
       <h5>Total Sales</h5>
 
