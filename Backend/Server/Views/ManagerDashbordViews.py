@@ -37,59 +37,73 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
+from datetime import datetime, timedelta
+from flask import request
+from flask_restful import Resource
+from flask_jwt_extended import jwt_required
+from sqlalchemy.exc import SQLAlchemyError
+# Ensure you import your db, Sales, and SalesPaymentMethods models as needed.
 
 class TotalAmountPaidAllSales(Resource):
     @jwt_required()
     def get(self):
-        # Get period from query parameters
-        period = request.args.get('period', 'today')
-
         today = datetime.utcnow()
         start_date = None
+        end_date = None
 
-        # Set the start date based on the requested period
-        if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        elif period == 'week':
-            start_date = today - timedelta(days=7)
-        elif period == 'month':
-            start_date = today - timedelta(days=30)
-        elif period == 'date':
-            date_str = request.args.get('date')
-            if not date_str:
-                return {"message": "Date parameter is required when period is 'date'"}, 400
+        # First, check if a custom date is provided via the "date" parameter.
+        date_str = request.args.get('date')
+        if date_str:
             try:
                 start_date = datetime.strptime(date_str, '%Y-%m-%d')
-                # Set time range for the specific day
+                # Set the range to cover the entire day.
                 start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
                 end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            return {"message": "Invalid period specified"}, 400
+            # No custom date provided; use the period parameter (default to 'today').
+            period = request.args.get('period', 'today')
+
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            elif period == 'yesterday':
+                yesterday_date = today - timedelta(days=1)
+                start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+            else:
+                return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amount_paid` from `SalesPaymentMethods`
+            # Build the query to sum up the amount_paid.
             query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
             )
 
-            if period == 'date':
+            # If an end_date is defined (for custom date or yesterday), filter between start and end.
+            if end_date:
                 query = query.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
             else:
                 query = query.filter(Sales.created_at >= start_date)
 
-            total_sales = query.scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
+            total_sales = query.scalar() or 0
 
-            # Format the total sales to 2 decimal places with currency symbol
+            # Format the total sales amount to 2 decimal places with a currency symbol.
             formatted_sales = "Ksh {:,.2f}".format(total_sales)
             
             return {"total_sales_amount_paid": formatted_sales}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
+            return {
+                "error": "An error occurred while fetching the total sales amount", 
+                "details": str(e)
+            }, 500
 
 
 class TotalAmountPaidSalesPerShop(Resource):
