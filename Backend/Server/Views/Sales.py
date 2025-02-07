@@ -60,7 +60,14 @@ class AddSale(Resource):
             batch_number = data.get('BatchNumber')
             stock_id = data.get('stock_id')
             status = data.get('status', 'unpaid')
-            created_at = datetime.utcnow()
+            created_at = data.get('sale_date')  # Get from request data
+            if created_at is None or created_at.strip() == "":
+                return {'message': 'Sale date is required'}, 400
+            try:
+                created_at = datetime.strptime(created_at, "%Y-%m-%d")  # Ensure correct format
+            except ValueError:
+                return {'message': 'Invalid date format. Use YYYY-MM-DD'}, 400
+
         except ValueError:
             return {'message': 'Invalid input for quantity or unit price'}, 400
 

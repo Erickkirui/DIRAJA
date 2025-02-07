@@ -45,34 +45,45 @@ class TotalAmountPaidAllSales(Resource):
         period = request.args.get('period', 'today')
 
         today = datetime.utcnow()
-        
+        start_date = None
+
         # Set the start date based on the requested period
         if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
         elif period == 'week':
             start_date = today - timedelta(days=7)
         elif period == 'month':
             start_date = today - timedelta(days=30)
         elif period == 'date':
             date_str = request.args.get('date')
+            if not date_str:
+                return {"message": "Date parameter is required when period is 'date'"}, 400
             try:
                 start_date = datetime.strptime(date_str, '%Y-%m-%d')
+                # Set time range for the specific day
+                start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amount_paid` from `SalesPaymentMethods` where `Sales.created_at` >= `start_date`
-            total_sales = (
+            # Query for the sum of `amount_paid` from `SalesPaymentMethods`
+            query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
-                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to filter by created_at
-                .filter(Sales.created_at >= start_date)  # Filter by date range
-                .scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
             )
 
-            # Format the total sales to 2 decimal places with commas
-            formatted_sales = "ksh {:,.2f}".format(total_sales)
+            if period == 'date':
+                query = query.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
+            else:
+                query = query.filter(Sales.created_at >= start_date)
+
+            total_sales = query.scalar() or 0  # Use scalar() to get the sum result, default to 0 if None
+
+            # Format the total sales to 2 decimal places with currency symbol
+            formatted_sales = "Ksh {:,.2f}".format(total_sales)
             
             return {"total_sales_amount_paid": formatted_sales}, 200
 
@@ -81,10 +92,8 @@ class TotalAmountPaidAllSales(Resource):
             return {"error": "An error occurred while fetching the total sales amount", "details": str(e)}, 500
 
 
-
 class TotalAmountPaidSalesPerShop(Resource):
     @jwt_required()
-    # @check_role('manager')
     def get(self):
         # Get period and shop_id from query parameters
         period = request.args.get('period', 'today')
@@ -95,32 +104,52 @@ class TotalAmountPaidSalesPerShop(Resource):
             return {"message": "Shop ID is required"}, 400
 
         today = datetime.utcnow()
-        
+        start_date = None
+
         # Set the start date based on the requested period
         if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
         elif period == 'week':
             start_date = today - timedelta(days=7)
         elif period == 'month':
             start_date = today - timedelta(days=30)
+        elif period == 'date':
+            date_str = request.args.get('date')  # Get the specific date
+            if not date_str:
+                return {"message": "Date parameter is required when period is 'date'"}, 400
+            
+            try:
+                # Parse the provided date
+                start_date = datetime.strptime(date_str, "%Y-%m-%d")
+                # Set time range to cover the entire day
+                start_date = start_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amountPaid` from `SalesPaymentMethods` where `created_at` >= `start_date` and `shop_id` matches
-            total_sales = (
+            # Adjust query to handle both cases: period (today, week, month) and specific date
+            query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
-                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales with SalesPaymentMethods
-                .filter(Sales.created_at >= start_date, Sales.shop_id == shop_id)  # Apply filters
-                .scalar() or 0
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(Sales.shop_id == shop_id)
             )
+
+            if period == 'date':
+                query = query.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
+            else:
+                query = query.filter(Sales.created_at >= start_date)
+
+            total_sales = query.scalar() or 0
 
             # Format the total sales to 2 decimal places with commas
             formatted_sales = "{:,.2f}".format(total_sales)
-            
+
             return {"total_sales_amount_paid": formatted_sales}, 200
 
-        except SQLAlchemyError as e:
+        except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching the total sales amount"}, 500
 
