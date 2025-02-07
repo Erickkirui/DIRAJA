@@ -37,13 +37,6 @@ class CountEmployees(Resource):
         countUsers =Employees.query.count()
         return {"total employees": countUsers}, 200
 
-from datetime import datetime, timedelta
-from flask import request
-from flask_restful import Resource
-from flask_jwt_extended import jwt_required
-from sqlalchemy.exc import SQLAlchemyError
-# Ensure you import your db, Sales, and SalesPaymentMethods models as needed.
-
 class TotalAmountPaidAllSales(Resource):
     @jwt_required()
     def get(self):
