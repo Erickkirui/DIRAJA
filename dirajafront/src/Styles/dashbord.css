@@ -71,6 +71,33 @@
     
 }
 
+/* Default styling for mobile: display controls in a row */
+.controls {
+    display: flex;
+    flex-direction: column;
+    
+    align-items: center;
+    gap: 10px;
+  }
+  .controls input{
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+  }
+  
+  /* On larger screens, stack the select and date input vertically */
+  @media (min-width: 768px) {
+    .controls {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    /* Optional: Add spacing to the date input when stacked */
+    .custom-date-picker {
+      margin-top: 10px;
+    }
+  }
+  
 
 @media (max-width: 768px) {
     .metrix-container{
