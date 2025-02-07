@@ -133,7 +133,8 @@ const Sales = () => {
 
   return (
     <div className="sales-container">
-      {/* Search and Date Filter */}
+      {/* Search and Date Filter  for sales
+      */}
       <div className="filter-container">
         <input
           type="text"
