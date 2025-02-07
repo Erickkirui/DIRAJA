@@ -102,7 +102,7 @@ const ShopSales = () => {
           <table className="sales-table">
             <thead>
               <tr>
-                <th>Customer</th>
+                <th>Item name</th>
                 <th>Quantity</th>
                 <th>Amount</th>
                 <th>Date</th>
@@ -111,7 +111,7 @@ const ShopSales = () => {
             <tbody>
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
-                  <td>{sale.customer_name}</td>
+                  <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.total_amount_paid} Ksh</td>
                   {/* Format the date to show only the date (without time) */}
