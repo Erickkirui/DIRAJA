@@ -8,6 +8,7 @@ import LoadingAnimation from './LoadingAnimation';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
+  const [selectedSales, setSelectedSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -30,10 +31,10 @@ const Sales = () => {
         });
 
         setSales(response.data);
-        setError(''); // Clear any previous errors
+        setError('');
       } catch (err) {
         if (err.response?.status === 404) {
-          setSales([]); // Treat 404 as no sales data
+          setSales([]);
           setError('No sales found.');
         } else {
           setError('Error fetching sales. Please try again.');
@@ -46,13 +47,51 @@ const Sales = () => {
     fetchSales();
   }, []);
 
+  const handleCheckboxChange = (saleId) => {
+    setSelectedSales((prevSelected) =>
+      prevSelected.includes(saleId)
+        ? prevSelected.filter((id) => id !== saleId)
+        : [...prevSelected, saleId]
+    );
+  };
+
+  const deleteSelectedSales = async () => {
+    if (selectedSales.length === 0) {
+      alert('No sales selected for deletion.');
+      return;
+    }
+
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      alert('No access token found. Please log in.');
+      return;
+    }
+
+    try {
+      await Promise.all(
+        selectedSales.map(async (saleId) => {
+          await axios.delete(`/api/diraja/sale/${saleId}`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+        })
+      );
+
+      // Remove deleted sales from the state
+      setSales((prevSales) => prevSales.filter((sale) => !selectedSales.includes(sale.sale_id)));
+      setSelectedSales([]);
+      alert('Selected sales deleted successfully.');
+    } catch (error) {
+      alert('Error deleting selected sales. Please try again.');
+    }
+  };
+
   const getFirstName = (username) => username?.split(' ')[0] || '';
   const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const renderPaginationButtons = () => {
-    const range = 3; // Number of buttons to show around the current page
+    const range = 3;
     const pages = [];
     for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
       pages.push(i);
@@ -83,7 +122,6 @@ const Sales = () => {
     return matchesSearch && matchesDate;
   });
 
-  // Calculate the current items to display
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
@@ -122,11 +160,15 @@ const Sales = () => {
       <div className="actions-container">
         <ExportExcel data={filteredSales} fileName="SalesData" />
         <DownloadPDF tableId="sales-table" fileName="SalesData" />
+        <button className="delete-button" onClick={deleteSelectedSales} disabled={selectedSales.length === 0}>
+          Delete Selected
+        </button>
       </div>
 
       <table id="sales-table" className="sales-table" aria-label="Sales data">
         <thead>
           <tr>
+            <th>Select</th>
             <th>ID</th>
             <th>Employee</th>
             <th>Customer</th>
@@ -143,6 +185,13 @@ const Sales = () => {
           {currentSales.length > 0 ? (
             currentSales.map((sale) => (
               <tr key={sale.sale_id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedSales.includes(sale.sale_id)}
+                    onChange={() => handleCheckboxChange(sale.sale_id)}
+                  />
+                </td>
                 <td>{sale.sale_id}</td>
                 <td>
                   <div className="employee-info">
