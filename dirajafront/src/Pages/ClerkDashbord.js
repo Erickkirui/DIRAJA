@@ -6,6 +6,7 @@ import ShopTodaySales from '../Components/ClerkDashbord/ShopTodaySales';
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop';
 import '../Styles/clerkpage.css';
 import { Link } from 'react-router-dom';
+import ShopNameDisplay from '../Components/ClerkDashbord/ShopNameDisplay';
 
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation'); // Retrieve the designation from localStorage
@@ -18,10 +19,12 @@ function ClerkDashbord() {
       <div className='body-area'>
         <div className='body-header'>
           <UserDisplay />
+          
         </div>
 
         <div className='page-area'>
           <div className='nav-phone'>
+          <ShopNameDisplay />
             <Link className='clerk-button' to='/shopsale'>New Sale</Link>
             <Link className='clerk-button' to='/shopcustomers'>View Customers</Link>
             {/* Conditionally render the button for relievers */}
