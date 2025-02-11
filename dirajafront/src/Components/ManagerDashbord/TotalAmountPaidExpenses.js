@@ -9,7 +9,7 @@ import LoadingAnimation from '../LoadingAnimation';
 const TotalAmountPaidExpenses = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [error, setError] = useState('');
-  const [period, setPeriod] = useState('today');
+  const [period, setPeriod] = useState('yesterday');
   const [isLoading, setIsLoading] = useState(true); // Track loading state
 
   const fetchTotalAmountPaid = async (selectedPeriod) => {
@@ -50,6 +50,7 @@ const TotalAmountPaidExpenses = () => {
 
         <select id="period" value={period} onChange={handlePeriodChange}>
           <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
         </select>
@@ -61,7 +62,7 @@ const TotalAmountPaidExpenses = () => {
       ) : error ? (
         <p>{error}</p>
       ) : (
-        <h1>{`Ksh ${totalAmountPaid}`}</h1>
+        <h1>{`${totalAmountPaid}`}</h1>
       )}
       <Link to="/allexpenses">View Expenses</Link>
     </div>

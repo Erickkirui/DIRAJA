@@ -9,7 +9,7 @@ const TotalAmountPaidPurchases = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [period, setPeriod] = useState('today');
+  const [period, setPeriod] = useState('yesterday');
 
   const fetchTotalAmountPaid = async (selectedPeriod) => {
     setLoading(true); // Start loading
@@ -49,6 +49,7 @@ const TotalAmountPaidPurchases = () => {
 
         <select id="period" value={period} onChange={handlePeriodChange}>
           <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
         </select>
@@ -60,7 +61,7 @@ const TotalAmountPaidPurchases = () => {
       ) : error ? (
         <p>{error}</p>
       ) : (
-        <h1>{totalAmountPaid !== null ? `Ksh ${totalAmountPaid}` : 'No data available'}</h1>
+        <h1>{totalAmountPaid !== null ? ` ${totalAmountPaid}` : 'No data available'}</h1>
       )}
       <Link to="/purchases">View Purchases</Link>
     </div>
