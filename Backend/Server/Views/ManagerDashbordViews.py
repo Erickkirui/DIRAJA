@@ -9,6 +9,7 @@ from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
+from Server.Models.Transfer import Transfer
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
@@ -167,27 +168,37 @@ class TotalAmountPaidExpenses(Resource):
     def get(self):
         period = request.args.get('period', 'today')
         today = datetime.utcnow()
-        
-        # Set the start date based on the requested period
+
+        # Define the start and end dates based on the period
         if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = today
+        elif period == 'yesterday':
+            start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         elif period == 'week':
             start_date = today - timedelta(days=7)
+            end_date = today
         elif period == 'month':
             start_date = today - timedelta(days=30)
+            end_date = today
         else:
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amountPaid` from `Expenses` where `created_at` >= `start_date`
-            total_amount = (
-                db.session.query(db.func.sum(Expenses.amountPaid))
-                .filter(Expenses.created_at >= start_date)
-                .scalar() or 0
-            )
+            # Build query to sum the `amountPaid`
+            query = db.session.query(db.func.sum(Expenses.amountPaid))
 
-            # Format the total amount to 2 decimal places with commas
-            formatted_amount = "{:,.2f}".format(total_amount)
+            # Filter based on the date range
+            if end_date:
+                query = query.filter(Expenses.created_at.between(start_date, end_date))
+            else:
+                query = query.filter(Expenses.created_at >= start_date)
+
+            total_amount = query.scalar() or 0
+
+            # Format the total amount with currency symbol
+            formatted_amount = "Ksh {:,.2f}".format(total_amount)
 
             return {"total_amount_paid": formatted_amount}, 200
 
@@ -202,27 +213,37 @@ class TotalAmountPaidPurchases(Resource):
     def get(self):
         period = request.args.get('period', 'today')
         today = datetime.utcnow()
-        
-        # Set the start date based on the requested period
+
+        # Define the start and end dates based on the period
         if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)  # Beginning of today
+            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = today
+        elif period == 'yesterday':
+            start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         elif period == 'week':
             start_date = today - timedelta(days=7)
+            end_date = today
         elif period == 'month':
             start_date = today - timedelta(days=30)
+            end_date = today
         else:
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query for the sum of `amountPaid` from `Transfer` where `created_at` >= `start_date`
-            total_amount = (
-                db.session.query(db.func.sum(Transfer.amountPaid))
-                .filter(Transfer.created_at >= start_date)
-                .scalar() or 0
-            )
+            # Build query to sum the `amountPaid`
+            query = db.session.query(db.func.sum(Transfer.amountPaid))
 
-            # Format the total amount to 2 decimal places with commas
-            formatted_amount = "{:,.2f}".format(total_amount)
+            # Filter based on the date range
+            if end_date:
+                query = query.filter(Transfer.created_at.between(start_date, end_date))
+            else:
+                query = query.filter(Transfer.created_at >= start_date)
+
+            total_amount = query.scalar() or 0
+
+            # Format the total amount with currency symbol
+            formatted_amount = "Ksh {:,.2f}".format(total_amount)
 
             return {"total_amount_paid": formatted_amount}, 200
 
