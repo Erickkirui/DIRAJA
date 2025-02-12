@@ -170,7 +170,6 @@ const Sales = () => {
         <thead>
           <tr>
             <th>Select</th>
-            <th>ID</th>
             <th>Employee</th>
             <th>Customer</th>
             <th>Shop</th>
@@ -193,7 +192,6 @@ const Sales = () => {
                     onChange={() => handleCheckboxChange(sale.sale_id)}
                   />
                 </td>
-                <td>{sale.sale_id}</td>
                 <td>
                   <div className="employee-info">
                     <div className="employee-icon">{getFirstLetter(sale.username)}</div>
