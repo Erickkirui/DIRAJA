@@ -5,12 +5,15 @@ import axios from 'axios';
 const TotalPaidSales = () => {
   const [shopSales, setShopSales] = useState([]);
   const [error, setError] = useState('');
-  const [period, setPeriod] = useState('today');
+  const [period, setPeriod] = useState('yesterday');
+  const [customDate, setCustomDate] = useState('');
 
-  const fetchShopSales = async (selectedPeriod) => {
+  const fetchShopSales = async () => {
     try {
-      const response = await axios.get(' /api/diraja/totalsalespershop', {
-        params: { period: selectedPeriod },
+      const params = period === 'custom' ? { date: customDate } : { period };
+
+      const response = await axios.get('/api/diraja/totalsalespershop', {
+        params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -26,25 +29,34 @@ const TotalPaidSales = () => {
   };
 
   useEffect(() => {
-    fetchShopSales(period);
-  }, [period]);
-
-  const handlePeriodChange = (e) => {
-    setPeriod(e.target.value);
-  };
+    if (period !== 'custom' || customDate) {
+      fetchShopSales();
+    }
+  }, [period, customDate]);
 
   return (
     <div>
       <div className="metric-top">
-        
-        <select id="period" value={period} onChange={handlePeriodChange}>
+        <select id="period" value={period} onChange={(e) => setPeriod(e.target.value)}>
           <option value="today">Today</option>
+          <option value="yesterday">Yesterday</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
+          <option value="custom">Custom Date</option>
         </select>
+
+        {period === 'custom' && (
+          <input
+            type="date"
+            value={customDate}
+            onChange={(e) => setCustomDate(e.target.value)}
+            className="custom-date-picker"
+          />
+        )}
       </div>
+
       <h5>Total Sales per Shop</h5>
-  
+
       {error ? (
         <p>{error}</p>
       ) : (
@@ -53,8 +65,7 @@ const TotalPaidSales = () => {
             shopSales.map((shop) => (
               <div key={shop.shop_id} className="shop-sales-cards">
                 <h4>{shop.shop_name || `Shop ${shop.shop_id}`}</h4>
-                <h1>{`Ksh ${shop.total_sales_amount_paid}`}</h1>
-               
+                <h1>{`${shop.total_sales_amount_paid}`}</h1>
               </div>
             ))
           ) : (

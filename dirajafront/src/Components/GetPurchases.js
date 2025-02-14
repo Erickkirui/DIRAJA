@@ -28,7 +28,10 @@ const Purchases = () => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        setPurchases(response.data);
+
+        const sortedPurchases = response.data.sort((a, b) => b.transfer_id - a.transfer_id);
+
+        setPurchases(sortedPurchases);
       } catch (err) {
         setError('Error fetching purchases. Please try again.');
       }

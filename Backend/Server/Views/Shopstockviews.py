@@ -285,8 +285,14 @@ class GetShopStock(Resource):
                 shopname = shop.shopname if shop else "Unknown Shop"
 
                 # Handle missing inventory reference
-                item_name = stock.inventory.itemname if stock.inventory else "Unknown Item"
-                metric = stock.inventory.metric if stock.inventory else "Unknown Metric"
+                if stock.inventory:
+                    item_name = stock.inventory.itemname
+                    metric = stock.inventory.metric
+                else:
+                    # Fetch details from the transfer entry for manual stock
+                    transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
+                    item_name = transfer.itemname if transfer else "Unknown Item"
+                    metric = transfer.metric if transfer else "Unknown Metric"
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,

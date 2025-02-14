@@ -265,45 +265,65 @@ class TotalAmountPaidPerShop(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Get the period from query parameters
-        period = request.args.get('period', 'today')
-
         today = datetime.utcnow()
+        start_date = None
+        end_date = None
 
-        # Set the start date based on the requested period
-        if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        elif period == 'week':
-            start_date = today - timedelta(days=7)
-        elif period == 'month':
-            start_date = today - timedelta(days=30)
+        # Check if a custom date is provided via the "date" parameter.
+        date_str = request.args.get('date')
+        if date_str:
+            try:
+                start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            return {"message": "Invalid period specified. Valid periods are 'today', 'week', or 'month'."}, 400
+            # No custom date provided; use the period parameter (default to 'today').
+            period = request.args.get('period', 'today')
+
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'yesterday':
+                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'month':
+                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            else:
+                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or a custom date."}, 400
 
         try:
             # Query for all shop IDs
             shops = Shops.query.all()
 
-            # Calculate total sales for each shop by summing the `amount_paid` from `SalesPaymentMethods`
+            # Calculate total sales for each shop
             results = []
             for shop in shops:
                 shop_id = shop.shops_id
 
-                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for each shop
-                # Query to sum the `amount_paid` from the `SalesPaymentMethods` table for a specific shop
-                total_sales = (
+                # Query to sum `amount_paid` for each shop
+                query = (
                     db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                     .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to link sales_id
-                    .filter(Sales.shop_id == shop_id, Sales.created_at >= start_date)  # Filter by shop_id and start_date
-                    .scalar() or 0  # Default to 0 if no result
+                    .filter(Sales.shop_id == shop_id)
                 )
 
+                # Apply date filter
+                query = query.filter(Sales.created_at.between(start_date, end_date))
 
-             
+                total_sales = query.scalar() or 0  # Default to 0 if no result
+
+                # Format total sales with comma separators and 2 decimal places
+                formatted_sales = "Ksh {:,.2f}".format(total_sales)
+
                 results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,
-                    "total_sales_amount_paid": total_sales
+                    "total_sales_amount_paid": formatted_sales
                 })
 
             return {"total_sales_per_shop": results}, 200
