@@ -398,3 +398,80 @@ class InventoryResourceById(Resource):
             return {"error": "Inventory not found"}, 404
 
 
+class ManualTransfer(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+
+        # Define the allowed shop ID for manual transfers
+        MANUAL_TRANSFER_SHOP_ID = 2  # Replace with the actual shop ID
+
+        # Validate required fields (shop_id removed)
+        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'unitPrice', 'amountPaid']
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing required fields'}, 400
+
+        try:
+            # Extract and convert data to correct types
+            itemname = data['itemname']
+            quantity = float(data['quantity'])
+            metric = data['metric'].strip().lower()
+            unitCost = float(data['unitCost'])
+            unitPrice = float(data['unitPrice'])
+            amountPaid = float(data['amountPaid'])
+            batch_number = "N/A"  # Fixed value for manual transfers
+
+            # Convert trays to eggs only if the metric is "tray"
+            if metric == "tray":
+                quantity *= 30  # Convert trays to eggs
+                metric = "egg"  # Change metric to eggs
+            # If metric is already "egg", keep it as is
+
+            # Create new transfer record (shop_id is fixed)
+            new_transfer = Transfer(
+                shop_id=MANUAL_TRANSFER_SHOP_ID,
+                inventory_id= 0,  # Explicitly set to None
+                quantity=quantity,
+                metric=metric,
+                total_cost=unitCost * quantity,
+                BatchNumber=batch_number,
+                user_id=current_user_id,
+                itemname=itemname,
+                amountPaid=amountPaid,
+                unitCost=unitCost
+            )
+
+            # Save transfer
+            db.session.add(new_transfer)
+            db.session.commit()
+
+            # Create ShopStock entry with unitPrice
+            new_shop_stock = ShopStock(
+                shop_id=MANUAL_TRANSFER_SHOP_ID,
+                inventory_id= 0,
+                transfer_id=new_transfer.transfer_id,  # Link to transfer
+                quantity=quantity,
+                total_cost=unitCost * quantity,
+                itemname=itemname,
+                metric=metric,
+                BatchNumber=batch_number,
+                unitPrice=unitPrice  # Store unitPrice in ShopStock
+            )
+
+            # Save shop stock
+            db.session.add(new_shop_stock)
+            db.session.commit()
+
+            return {'message': 'Manual stock added successfully'}, 201
+
+        except ValueError:
+            db.session.rollback()
+            return {'message': 'Invalid data type provided'}, 400
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error processing request', 'error': str(e)}, 500
+
+
+
