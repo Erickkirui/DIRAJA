@@ -35,6 +35,7 @@ import SingleShopSale from './Components/ClerkDashbord/SingleShopSale';
 import NotFound from './Components/NotFound';
 import AnalyticsPage from './Pages/AnalyticsPage';
 import ManageUsers from './Pages/ManageUsers';
+import ManualTransfer from './Pages/AddStockPage';
 
 
 const Layout = ({ children }) => {
@@ -101,6 +102,7 @@ function App() {
             <Route path='/allshops' element={<Layout><ShopsPage/></Layout>} ></Route>
             <Route path='/expenses' element={<Layout><ExpensePage/></Layout>} ></Route>
             <Route path='/addexpence' element={<Layout><AddExpensePage/></Layout>} ></Route>
+            <Route path='/addstock' element={<Layout><ManualTransfer/></Layout>} ></Route>
             <Route path='/addemployee' element={<Layout><AddEmployeePage /></Layout>} ></Route>
             <Route path='/allemployees' element={<Layout><EmployeesPage/></Layout>} ></Route>
             <Route path='/allinventory' element={<Layout><InventoryPage/></Layout>} ></Route>
