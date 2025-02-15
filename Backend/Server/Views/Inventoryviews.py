@@ -426,12 +426,11 @@ class ManualTransfer(Resource):
             if metric == "tray":
                 quantity *= 30  # Convert trays to eggs
                 metric = "egg"  # Change metric to eggs
-            # If metric is already "egg", keep it as is
 
             # Create new transfer record (shop_id is fixed)
             new_transfer = Transfer(
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
-                inventory_id= 0,  # Explicitly set to None
+                inventory_id=0,  # Explicitly set to None
                 quantity=quantity,
                 metric=metric,
                 total_cost=unitCost * quantity,
@@ -442,25 +441,36 @@ class ManualTransfer(Resource):
                 unitCost=unitCost
             )
 
-            # Save transfer
             db.session.add(new_transfer)
             db.session.commit()
 
-            # Create ShopStock entry with unitPrice
-            new_shop_stock = ShopStock(
+            # Check if the item already exists in shop stock
+            existing_stock = ShopStock.query.filter_by(
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
-                inventory_id= 0,
-                transfer_id=new_transfer.transfer_id,  # Link to transfer
-                quantity=quantity,
-                total_cost=unitCost * quantity,
                 itemname=itemname,
-                metric=metric,
-                BatchNumber=batch_number,
-                unitPrice=unitPrice  # Store unitPrice in ShopStock
-            )
+                metric=metric
+            ).first()
 
-            # Save shop stock
-            db.session.add(new_shop_stock)
+            if existing_stock:
+                # Update existing stock by adding new quantity
+                existing_stock.quantity += quantity
+                existing_stock.total_cost += unitCost * quantity
+                existing_stock.unitPrice = unitPrice  # Update price if necessary
+            else:
+                # Create new shop stock record if not found
+                new_shop_stock = ShopStock(
+                    shop_id=MANUAL_TRANSFER_SHOP_ID,
+                    inventory_id=0,
+                    transfer_id=new_transfer.transfer_id,  # Link to transfer
+                    quantity=quantity,
+                    total_cost=unitCost * quantity,
+                    itemname=itemname,
+                    metric=metric,
+                    BatchNumber=batch_number,
+                    unitPrice=unitPrice  # Store unitPrice in ShopStock
+                )
+                db.session.add(new_shop_stock)
+
             db.session.commit()
 
             return {'message': 'Manual stock added successfully'}, 201
@@ -472,6 +482,7 @@ class ManualTransfer(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error processing request', 'error': str(e)}, 500
+
 
 
 
