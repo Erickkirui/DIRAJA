@@ -234,6 +234,8 @@ const SingleShopSale = () => {
                 )}
 
                  {/* Date Selection */}
+                 <div>
+                    <label>Select date : </label>
                  <input
                     type="date"
                     name="sale_date"
@@ -241,6 +243,7 @@ const SingleShopSale = () => {
                     onChange={handleChange}
                     required
                 />
+                </div>
 
                 <div>
                     <label>Item Name : </label>

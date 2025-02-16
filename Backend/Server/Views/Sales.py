@@ -201,7 +201,7 @@ class GetSales(Resource):
                     "total_price": sale.total_price,
                     "total_amount_paid": total_amount_paid,  # Include total amount paid
                     "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at.strftime('%Y-%m-%d'),  # Convert datetime to string
+                    "created_at": sale.created_at,  # Convert datetime to string
                     "balance": sale.balance,  # Include balance at the sale level
                     "note": sale.note,  # Include note field
                 })

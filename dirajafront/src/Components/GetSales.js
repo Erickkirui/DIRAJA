@@ -170,7 +170,6 @@ const Sales = () => {
         <thead>
           <tr>
             <th>Select</th>
-            <th>ID</th>
             <th>Employee</th>
             <th>Customer</th>
             <th>Shop</th>
@@ -193,7 +192,6 @@ const Sales = () => {
                     onChange={() => handleCheckboxChange(sale.sale_id)}
                   />
                 </td>
-                <td>{sale.sale_id}</td>
                 <td>
                   <div className="employee-info">
                     <div className="employee-icon">{getFirstLetter(sale.username)}</div>
@@ -206,8 +204,8 @@ const Sales = () => {
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.unit_price}</td>
                 <td>{sale.total_amount_paid}</td>
-                <td>{sale.created_at}</td>
 
+                <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(',', '')}</td>
                 <td>
                   <a href={`/sale/${sale.sale_id}`}>View more</a>
                 </td>

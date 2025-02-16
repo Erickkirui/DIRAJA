@@ -190,7 +190,7 @@ class GetTransfer(Resource):
                 "itemname": transfer.itemname,
                 "amountPaid": transfer.amountPaid,
                 "unitCost": transfer.unitCost,
-                "created_at": transfer.created_at.strftime('%Y-%m-%d') if transfer.created_at else None,
+                "created_at": transfer.created_at,
             })
 
         return make_response(jsonify(all_transfers), 200)
@@ -219,7 +219,7 @@ class AddInventory(Resource):
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
         note = data.get('note', '')  # Optional field, default to empty String
-        created_at = data.get('created_at')
+        created_at = datetime.utcnow()
 
         # Calculate totalCost and balance
         totalCost = unitCost * quantity
@@ -248,7 +248,7 @@ class AddInventory(Resource):
             Supplier_location=Supplier_location,
             ballance=balance,  # Balance calculated as totalCost - amountPaid
             note=note,
-            created_at=datetime.strptime(created_at, '%Y-%m-%d')
+            created_at=created_at
         )
 
         # Save to database
@@ -281,7 +281,7 @@ class GetAllInventory(Resource):
             "amountPaid": inventory.amountPaid,
             "balance":inventory.ballance,
             "note":inventory.note,
-            "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+            "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice
         } for inventory in inventories]
 
@@ -309,7 +309,7 @@ class InventoryResourceById(Resource):
                 "amountPaid": inventory.amountPaid,
                 "balance": inventory.ballance,  # Corrected typo f'
                 "note": inventory.note,
-                "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+                "created_at": inventory.created_at,
                 "unitPrice": inventory.unitPrice,
                 "Suppliername": inventory.Suppliername,
                 "Supplier_location": inventory.Supplier_location
@@ -396,5 +396,93 @@ class InventoryResourceById(Resource):
                 return jsonify({'error': 'Error deleting inventory', 'details': str(e)}), 500
         else:
             return {"error": "Inventory not found"}, 404
+
+
+class ManualTransfer(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+
+        # Define the allowed shop ID for manual transfers
+        MANUAL_TRANSFER_SHOP_ID = 2  # Replace with the actual shop ID
+
+        # Validate required fields (shop_id removed)
+        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'unitPrice', 'amountPaid']
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing required fields'}, 400
+
+        try:
+            # Extract and convert data to correct types
+            itemname = data['itemname']
+            quantity = float(data['quantity'])
+            metric = data['metric'].strip().lower()
+            unitCost = float(data['unitCost'])
+            unitPrice = float(data['unitPrice'])
+            amountPaid = float(data['amountPaid'])
+            batch_number = "N/A"  # Fixed value for manual transfers
+
+            # Convert trays to eggs only if the metric is "tray"
+            if metric == "tray":
+                quantity *= 30  # Convert trays to eggs
+                metric = "egg"  # Change metric to eggs
+
+            # Create new transfer record (shop_id is fixed)
+            new_transfer = Transfer(
+                shop_id=MANUAL_TRANSFER_SHOP_ID,
+                inventory_id=0,  # Explicitly set to None
+                quantity=quantity,
+                metric=metric,
+                total_cost=unitCost * quantity,
+                BatchNumber=batch_number,
+                user_id=current_user_id,
+                itemname=itemname,
+                amountPaid=amountPaid,
+                unitCost=unitCost
+            )
+
+            db.session.add(new_transfer)
+            db.session.commit()
+
+            # Check if the item already exists in shop stock
+            existing_stock = ShopStock.query.filter_by(
+                shop_id=MANUAL_TRANSFER_SHOP_ID,
+                itemname=itemname,
+                metric=metric
+            ).first()
+
+            if existing_stock:
+                # Update existing stock by adding new quantity
+                existing_stock.quantity += quantity
+                existing_stock.total_cost += unitCost * quantity
+                existing_stock.unitPrice = unitPrice  # Update price if necessary
+            else:
+                # Create new shop stock record if not found
+                new_shop_stock = ShopStock(
+                    shop_id=MANUAL_TRANSFER_SHOP_ID,
+                    inventory_id=0,
+                    transfer_id=new_transfer.transfer_id,  # Link to transfer
+                    quantity=quantity,
+                    total_cost=unitCost * quantity,
+                    itemname=itemname,
+                    metric=metric,
+                    BatchNumber=batch_number,
+                    unitPrice=unitPrice  # Store unitPrice in ShopStock
+                )
+                db.session.add(new_shop_stock)
+
+            db.session.commit()
+
+            return {'message': 'Manual stock added successfully'}, 201
+
+        except ValueError:
+            db.session.rollback()
+            return {'message': 'Invalid data type provided'}, 400
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error processing request', 'error': str(e)}, 500
+
+
 
 

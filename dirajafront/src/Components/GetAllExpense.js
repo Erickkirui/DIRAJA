@@ -196,7 +196,7 @@ const Expenses = () => {
               <td>{expense.amountPaid}</td>
               <td>{expense.balance}</td>
               <td>{expense.paidTo}</td>
-              <td>{new Date(expense.created_at).toLocaleString()}</td>
+              <td>{new Date(expense.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
             </tr>
           ))}
         </tbody>
