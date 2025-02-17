@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 
 const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const [selectedItem, setSelectedItem] = useState("");
@@ -18,6 +19,19 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const getSelectedItemMetric = () => {
     const item = stockData.find((stock) => stock.item_name === selectedItem);
     return item ? item.metric : "item"; // Default to "item" if metric not found
+  };
+
+  // Detect mismatch quantity and update mismatchReason if necessary
+  const handleQuantityChange = (e) => {
+    const inputQuantity = parseFloat(e.target.value);
+    setCheckInQuantity(inputQuantity);
+
+    const stockItem = stockData.find((stock) => stock.item_name === selectedItem);
+    if (stockItem) {
+      const previousQuantity = stockItem.current_quantity || 0;
+      const mismatch = inputQuantity !== previousQuantity ? inputQuantity - previousQuantity : 0;
+      setMismatchQuantity(mismatch);
+    }
   };
 
   // Handle form submission
@@ -77,7 +91,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
           <input
             type="number"
             value={checkInQuantity}
-            onChange={(e) => setCheckInQuantity(e.target.value ? parseFloat(e.target.value) : "")}
+            onChange={handleQuantityChange}
             min="1"
           />
         </div>
