@@ -1,6 +1,7 @@
 from flask_restful import Resource
 from Server.Models.LiveStock import LiveStock
 from Server.Models.Shops import Shops
+from datetime import datetime
 from app import db
 from Server.Models.Users import Users
 from flask import jsonify,request,make_response
@@ -29,18 +30,27 @@ class GetStock(Resource):
     def get(self, shop_id):
         today = datetime.utcnow().date()
         
-        # Fetch all today's stock records
-        today_stock = (
+        # Fetch all stock records for today and yesterday, ordered by creation date
+        stock_records = (
             LiveStock.query.filter(
-               LiveStock.shop_id == shop_id,
-                db.func.date(LiveStock.timestamp) == today
+                LiveStock.shop_id == shop_id
             )
-            .order_by(LiveStock.timestamp.desc())
+            .order_by(LiveStock.created_at.desc())
             .all()
         )
 
-        # If today's stock exists, return it (even if there are mismatches)
-        if today_stock:
+        # Filter to get only the most recent stock for each item (prioritize today's stock)
+        items_seen = set()
+        filtered_stock_records = []
+
+        for stock in stock_records:
+            # If the item has not been seen yet, or if it is from today, add it
+            if stock.item_name not in items_seen or db.func.date(stock.created_at) == today:
+                filtered_stock_records.append(stock)
+                items_seen.add(stock.item_name)
+
+        # If stock records are found, return them sorted by the creation date
+        if filtered_stock_records:
             return jsonify([
                 {
                     "stock_id": stock.id,
@@ -52,41 +62,13 @@ class GetStock(Resource):
                     "clock_out_quantity": stock.clock_out_quantity,
                     "mismatch_quantity": stock.mismatch_quantity,
                     "mismatch_reason": stock.mismatch_reason,
-                    "timestamp": stock.timestamp
+                    "created_at": stock.created_at
                 }
-                for stock in today_stock
+                for stock in filtered_stock_records
             ])
+        
+        return {"error": "No stock records found."}, 404
 
-        # If no stock found today, fetch yesterday's stock
-        yesterday = today - timedelta(days=1)
-        yesterday_stock = (
-            LiveStock.query.filter(
-                LiveStock.shop_id == shop_id,
-                db.func.date(LiveStock.timestamp) == yesterday
-            )
-            .order_by(LiveStock.timestamp.desc())
-            .all()
-        )
-
-        if yesterday_stock:
-            return jsonify([
-                {
-                    "stock_id": stock.id,
-                    "item_name": stock.item_name,
-                    "metric": stock.metric,
-                    "clock_in_quantity": stock.clock_in_quantity,
-                    "added_stock": stock.added_stock,
-                    "current_quantity": stock.current_quantity,
-                    "clock_out_quantity": stock.clock_out_quantity,
-                    "mismatch_quantity": stock.mismatch_quantity,
-                    "mismatch_reason": stock.mismatch_reason,
-                    "timestamp": stock.timestamp
-                }
-                for stock in yesterday_stock
-            ])
-
-        return {"error": "No stock records found for today or yesterday."}, 404
-    
 
 
 
@@ -106,28 +88,25 @@ class RegisterStock(Resource):
             metric = data["metric"]
             added_stock = float(data["added_stock"])
 
-            # Get custom date if provided, otherwise use current time
-            timestamp = data.get("timestamp")
-            if timestamp:
+            # Get custom date if provided, otherwise use the current time
+            created_at = data.get("created_at")
+            if created_at:
                 try:
-                    timestamp = datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+                    created_at = datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S")
                 except ValueError:
                     return {"error": "Invalid date format. Use 'YYYY-MM-DD HH:MM:SS'."}, 400
             else:
-                timestamp = datetime.utcnow()
+                created_at = datetime.utcnow()  # Use current UTC time
 
             # Get the last stock entry for this item and shop
             last_stock = (
                 LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
-                .order_by(LiveStock.timestamp.desc())
+                .order_by(LiveStock.created_at.desc())
                 .first()
             )
 
             # If previous stock exists, add the new stock to the last `current_quantity`
-            if last_stock:
-                new_current_quantity = last_stock.current_quantity + added_stock
-            else:
-                new_current_quantity = added_stock  # First entry
+            new_current_quantity = last_stock.current_quantity + added_stock if last_stock else added_stock
 
             new_stock = LiveStock(
                 shop_id=shop_id,
@@ -139,7 +118,7 @@ class RegisterStock(Resource):
                 mismatch_quantity=0,
                 mismatch_reason=None,
                 clock_out_quantity=0,
-                timestamp=timestamp
+                created_at=created_at
             )
 
             db.session.add(new_stock)
@@ -149,7 +128,7 @@ class RegisterStock(Resource):
                 "message": "Stock registered successfully",
                 "stock_id": new_stock.id,
                 "current_quantity": new_stock.current_quantity,
-                "timestamp": timestamp.strftime("%Y-%m-%d %H:%M:%S")
+                "created_at": created_at.strftime("%Y-%m-%d %H:%M:%S")
             }, 201
 
         except Exception as e:
@@ -176,7 +155,7 @@ class CheckInStock(Resource):
         # Fetch the last recorded stock entry
         last_stock = (
             LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
-            .order_by(LiveStock.timestamp.desc())
+            .order_by(LiveStock.created_at.desc())
             .first()
         )
 
@@ -201,7 +180,7 @@ class CheckInStock(Resource):
             mismatch_quantity=mismatch_quantity,
             mismatch_reason=mismatch_reason,
             clock_out_quantity=0.0,
-            timestamp=datetime.utcnow()
+            created_at=datetime.utcnow()
         )
 
         try:
@@ -240,7 +219,7 @@ class CheckoutStock(Resource):
         # Fetch today's stock record
         today_stock = (
             LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
-            .order_by(LiveStock.timestamp.desc())
+            .order_by(LiveStock.created_at.desc())
             .first()
         )
 

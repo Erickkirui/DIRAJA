@@ -17,17 +17,17 @@ class LiveStock(db.Model):
     mismatch_quantity = db.Column(db.Float, default=0.0)  # Difference between clock-in and actual stock
     mismatch_reason = db.Column(db.String(255), nullable=True)  # Reason for mismatch
     clock_out_quantity = db.Column(db.Float, nullable=False)  # Stock at the end of the day
-    timestamp = db.Column(db.DateTime, server_default=func.now(), nullable=False)
+    created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
 
-     
     #validations for metrics
     
     @validates('metric')
-    def validate_metric(self, key,metric):
+    def validate_metric(self, key, metric):
         valid_metric = ['item', 'kg', 'ltrs']
-        assert metric in metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
+        assert metric in valid_metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
         return metric
+
 
     def __repr__(self):
         return f"Stock(id={self.id}, shop_id={self.shop_id}, item_name='{self.item_name}', metric='{self.metric}', clock_in_quantity={self.clock_in_quantity}, added_stock={self.added_stock}, current_quantity={self.current_quantity}, mismatch_quantity={self.mismatch_quantity}, clock_out_quantity={self.clock_out_quantity})"

@@ -118,7 +118,7 @@ api.add_resource(ManualTransfer,'/manualtransfer')
 
 
 #Live stock 
-api.add_resource(GetStock, 'getlivestock')
+api.add_resource(GetStock,"/get-stock/<int:shop_id>")
 api.add_resource(RegisterStock , '/registerstock')
 api.add_resource(CheckInStock, '/stockcheckin')
 api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
