@@ -3,17 +3,17 @@ import axios from "axios";
 import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
-import CheckInForm from "./CheckInForm"; // Import the CheckInForm component
-import RegisterStockForm from "./RegisterStockForm"; // Import RegisterStockForm component
-import AddStockForm from "./AddStockForm"; // Import AddStockForm component
+import CheckInForm from "./CheckInForm";
+import RegisterStockForm from "./RegisterStockForm";
+import AddStockForm from "./AddStockForm";
 
 const StockTable = () => {
   const [stockData, setStockData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [isRegisterFormOpen, setIsRegisterFormOpen] = useState(false); // State to show Register Stock form
-  const [isAddStockFormOpen, setIsAddStockFormOpen] = useState(false); // State to show Add Stock form
-  const [checkingIn, setCheckingIn] = useState(false); // State to show CheckInForm
+  const [isRegisterFormOpen, setIsRegisterFormOpen] = useState(false);
+  const [isAddStockFormOpen, setIsAddStockFormOpen] = useState(false);
+  const [checkingIn, setCheckingIn] = useState(false);
 
   const shopId = localStorage.getItem("shop_id");
 
@@ -50,66 +50,7 @@ const StockTable = () => {
     fetchStock();
   }, [shopId]);
 
-  // Function to determine stock status
-  const getStockStatus = (timestamp) => {
-    const stockDate = dayjs(timestamp).format("YYYY-MM-DD");
-    const todayDate = dayjs().format("YYYY-MM-DD");
-    const yesterdayDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-
-    if (stockDate === todayDate) {
-      return "today"; // ✅ Stock checked in today
-    } else if (stockDate === yesterdayDate) {
-      return "yesterday"; // ❌ Stock checked in yesterday
-    } else {
-      return "older"; // ❌ Stock older than yesterday
-    }
-  };
-
-  // Handle check-in submission from the CheckInForm component
-  const handleCheckInSubmit = async (selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason) => {
-    setCheckingIn(true);
-    setError("");
-
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      if (!accessToken || !shopId) {
-        setError("No access token or shop ID found, please log in.");
-        return;
-      }
-
-      const payload = {
-        shop_id: shopId,
-        item_name: selectedItem,
-        metric: metric, // ✅ Sending correct metric
-        clock_in_quantity: parseFloat(checkInQuantity),
-        mismatch_reason: mismatchQuantity !== 0 ? mismatchReason : null,
-      };
-
-      console.log("Sending request with payload:", payload);
-
-      const response = await axios.post("/api/diraja/stockcheckin", payload, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      console.log("Response Data:", response.data);
-      alert(response.data.message);
-
-      // Refresh stock data after successful check-in
-      setStockData((prevStock) =>
-        prevStock.map((stock) =>
-          stock.item_name === selectedItem
-            ? { ...stock, clock_in_quantity: parseFloat(checkInQuantity), timestamp: new Date().toISOString() }
-            : stock
-        )
-      );
-    } catch (err) {
-      console.error("Error during check-in:", err);
-      setError(err.response?.data?.error || "Failed to check in stock");
-    } finally {
-      setCheckingIn(false);
-    }
-  };
-  const handleAddStock = async (itemName, metric, addedStock) => {
+  const handleCheckout = async () => {
     setLoading(true);
     setError("");
 
@@ -120,78 +61,16 @@ const StockTable = () => {
         return;
       }
 
-      const payload = {
-        shop_id: shopId,
-        item_name: itemName,
-        metric: metric,
-        added_stock: parseFloat(addedStock),
-      };
+      const payload = { shop_id: shopId, stock_data: stockData };
 
-      const response = await axios.post("/api/diraja/addstock", payload, {
+      const response = await axios.post("/api/diraja/checkout", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
       alert(response.data.message);
-
-      // Refresh stock data after successful stock addition
-      setStockData((prevStock) =>
-        prevStock.map((stock) =>
-          stock.item_name === itemName
-            ? {
-                ...stock,
-                current_quantity: stock.current_quantity + parseFloat(addedStock),
-              }
-            : stock
-        )
-      );
     } catch (err) {
-      console.error("Error during stock addition:", err);
-      setError(err.response?.data?.error || "Failed to add stock");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle register stock submission
-  const handleRegisterStockSubmit = async (itemName, metric, addedStock) => {
-    setLoading(true);
-    setError("");
-
-    try {
-      const accessToken = localStorage.getItem("access_token");
-      if (!accessToken || !shopId) {
-        setError("No access token or shop ID found, please log in.");
-        return;
-      }
-
-      const payload = {
-        shop_id: shopId,
-        item_name: itemName,
-        metric: metric,
-        added_stock: parseFloat(addedStock),
-      };
-
-      const response = await axios.post("/api/diraja/registerstock", payload, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      alert(response.data.message);
-
-      // Refresh stock data after successful stock registration
-      setStockData((prevStock) => [
-        ...prevStock,
-        {
-          ...response.data,
-          item_name: itemName,
-          metric: metric,
-          added_stock: 0, // As specified in the API
-          current_quantity: response.data.current_quantity,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    } catch (err) {
-      console.error("Error during stock registration:", err);
-      setError(err.response?.data?.error || "Failed to register stock");
+      console.error("Error during checkout:", err);
+      setError(err.response?.data?.error || "Failed to checkout stock");
     } finally {
       setLoading(false);
     }
@@ -208,6 +87,9 @@ const StockTable = () => {
       </button>
       <button onClick={() => setCheckingIn(true)} className="check-in-button">
         Check In Stock
+      </button>
+      <button onClick={handleCheckout} className="checkout-button">
+        Checkout Stock
       </button>
 
       {loading && <p className="loading-text">Loading stock data...</p>}
@@ -227,12 +109,10 @@ const StockTable = () => {
           {stockData.map((stock, index) => (
             <tr key={index}>
               <td className="status-icon">
-                {getStockStatus(stock.created_at) === "today" ? (
+                {dayjs(stock.created_at).format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD") ? (
                   <FontAwesomeIcon icon={faCircleCheck} className="text-green-500 text-xl" />
-                ) : getStockStatus(stock.created_at) === "yesterday" ? (
-                  <FontAwesomeIcon icon={faCircleXmark} className="text-red-500 text-xl" />
                 ) : (
-                  <FontAwesomeIcon icon={faCircleXmark} className="text-gray-500 text-xl" />
+                  <FontAwesomeIcon icon={faCircleXmark} className="text-red-500 text-xl" />
                 )}
               </td>
               <td>{stock.item_name}</td>
@@ -244,27 +124,16 @@ const StockTable = () => {
         </tbody>
       </table>
 
-      {/* Show AddStockForm, CheckInForm, and RegisterStockForm below the table */}
       {isAddStockFormOpen && (
-        <AddStockForm
-          onSubmit={handleAddStock}
-          onClose={() => setIsAddStockFormOpen(false)}
-        />
+        <AddStockForm onSubmit={() => {}} onClose={() => setIsAddStockFormOpen(false)} />
       )}
 
       {isRegisterFormOpen && (
-        <RegisterStockForm
-          onSubmit={handleRegisterStockSubmit}
-          onClose={() => setIsRegisterFormOpen(false)}
-        />
+        <RegisterStockForm onSubmit={() => {}} onClose={() => setIsRegisterFormOpen(false)} />
       )}
 
       {checkingIn && (
-        <CheckInForm
-          stockData={stockData}
-          onSubmit={handleCheckInSubmit}
-          onClose={() => setCheckingIn(false)}
-        />
+        <CheckInForm stockData={stockData} onSubmit={() => {}} onClose={() => setCheckingIn(false)} />
       )}
     </div>
   );

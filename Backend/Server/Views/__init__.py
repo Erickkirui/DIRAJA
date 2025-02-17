@@ -123,7 +123,8 @@ api.add_resource(RegisterStock , '/registerstock')
 api.add_resource(CheckInStock, '/stockcheckin')
 api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
 api.add_resource(AddStock, "/addstock")
-
+api.add_resource(CheckoutStock, "/checkout")
+    
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')

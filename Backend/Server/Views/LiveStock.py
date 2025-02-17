@@ -245,49 +245,53 @@ class CheckInStock(Resource):
             return {"error": str(e)}, 500
         
 
-
 class CheckoutStock(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
 
-        required_fields = ["shop_id", "item_name", "clock_out_quantity"]
-        for field in required_fields:
-            if field not in data:
-                return {"error": f"Missing field: {field}"}, 400
+        if "shop_id" not in data:
+            return {"error": "Missing field: shop_id"}, 400
 
         shop_id = data["shop_id"]
-        item_name = data["item_name"]
-        clock_out_quantity = data["clock_out_quantity"]
 
-        # Fetch today's stock record
-        today_stock = (
-            LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
-            .order_by(LiveStock.created_at.desc())
-            .first()
+        # Get current date
+        today = datetime.utcnow().date()
+
+        # Fetch all stock records for the shop for the current date
+        today_stocks = (
+            LiveStock.query.filter_by(shop_id=shop_id)
+            .filter(LiveStock.created_at >= today)
+            .all()
         )
 
-        if not today_stock:
-            return {"error": "No stock check-in found for today. Please check in first."}, 400
-
-        # Update stock with clock-out quantity
-        today_stock.clock_out_quantity = clock_out_quantity
+        if not today_stocks:
+            return {"error": "No stock check-in records found for today."}, 400
 
         try:
+            # Update each stock entry with the current quantity as the clock-out quantity
+            for stock in today_stocks:
+                stock.clock_out_quantity = stock.current_quantity
+
             db.session.commit()
+
             return {
                 "message": "Stock checked out successfully",
-                "item_name": today_stock.item_name,
-                "clock_in_quantity": today_stock.clock_in_quantity,
-                "added_stock": today_stock.added_stock,
-                "current_quantity": today_stock.current_quantity,
-                "clock_out_quantity": today_stock.clock_out_quantity,
+                "items": [
+                    {
+                        "item_name": stock.item_name,
+                        "clock_in_quantity": stock.clock_in_quantity,
+                        "added_stock": stock.added_stock,
+                        "current_quantity": stock.current_quantity,
+                        "clock_out_quantity": stock.clock_out_quantity,
+                    }
+                    for stock in today_stocks
+                ],
             }, 200
 
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
-        
 
 class DeleteStock(Resource):
     @jwt_required()
