@@ -221,3 +221,66 @@ class CheckInStock(Resource):
             db.session.rollback()
             return {"error": str(e)}, 500
         
+
+
+class CheckoutStock(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+
+        required_fields = ["shop_id", "item_name", "clock_out_quantity"]
+        for field in required_fields:
+            if field not in data:
+                return {"error": f"Missing field: {field}"}, 400
+
+        shop_id = data["shop_id"]
+        item_name = data["item_name"]
+        clock_out_quantity = data["clock_out_quantity"]
+
+        # Fetch today's stock record
+        today_stock = (
+            LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
+            .order_by(LiveStock.timestamp.desc())
+            .first()
+        )
+
+        if not today_stock:
+            return {"error": "No stock check-in found for today. Please check in first."}, 400
+
+        # Update stock with clock-out quantity
+        today_stock.clock_out_quantity = clock_out_quantity
+
+        try:
+            db.session.commit()
+            return {
+                "message": "Stock checked out successfully",
+                "item_name": today_stock.item_name,
+                "clock_in_quantity": today_stock.clock_in_quantity,
+                "added_stock": today_stock.added_stock,
+                "current_quantity": today_stock.current_quantity,
+                "clock_out_quantity": today_stock.clock_out_quantity,
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
+        
+
+class DeleteStock(Resource):
+    @jwt_required()
+    def delete(self, stock_id):
+        # Find the stock record by stock_id
+        stock = LiveStock.query.get(stock_id)
+
+        if not stock:
+            return {"error": "Stock record not found."}, 404
+
+        try:
+            db.session.delete(stock)
+            db.session.commit()
+            return {"message": "Stock record deleted successfully."}, 200
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
+        
+        
