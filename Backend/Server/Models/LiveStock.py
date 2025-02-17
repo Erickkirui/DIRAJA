@@ -21,7 +21,7 @@ class LiveStock(db.Model):
 
 
      
-    #validations
+    #validations for metrics
     
     @validates('metric')
     def validate_metric(self, key,metric):
