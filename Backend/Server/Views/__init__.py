@@ -8,14 +8,8 @@ from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLo
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
-
-
-# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
-
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
-
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop
-
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
@@ -123,14 +117,11 @@ api.add_resource(GetTransfer,'/alltransfers')
 api.add_resource(ManualTransfer,'/manualtransfer')
 
 
-###  Manager dashbord 
-# 1. Total sales 
-# 2. Total expenses 
-# 3. Count all Shops
-# 4. Count Employess
-# 5. Sales filter by current date 
-# 6. Current date expenses 
-# 7. Check items that are close >-10 0 - out of stock 
+#Live stock 
+api.add_resource(GetStock, 'getlivestock')
+api.add_resource(RegisterStock , '/registerstock')
+api.add_resource(CheckInStock, '/stockcheckin')
+api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
 
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
