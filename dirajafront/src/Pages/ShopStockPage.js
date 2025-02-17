@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom';
 import ShopStock from '../Components/GetShopStock'
 
 function ShopStockPage() {
@@ -6,6 +7,7 @@ function ShopStockPage() {
     <div>
     <div className='header-container'>
     <h1>Shopstock</h1>
+    <Link to="/addstock"  className='add-button' >Add Mabanda Stock ＋</Link>
     </div>
       <ShopStock />
   </div>

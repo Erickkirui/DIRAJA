@@ -17,6 +17,7 @@ from sqlalchemy.orm import aliased
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
+from flask import current_app
 
 def check_role(required_role):
     def wrapper(fn):
@@ -345,15 +346,17 @@ class StockAlert(Resource):
             # Query ShopStock data, optionally filtered by shop name if provided
             if shop_name:
                 # Query ShopStock with a join on Shops to get shop names
-                shop_stock_items = db.session.query(ShopStock, Shops.shopname).join(Shops, Shops.shops_id == ShopStock.shop_id).filter(Shops.shopname == shop_name).all()
+                shop_stock_items = db.session.query(ShopStock, Shops.shopname, ShopStock.itemname).join(
+                    Shops, Shops.shops_id == ShopStock.shop_id).filter(Shops.shopname == shop_name).all()
             else:
-                shop_stock_items = db.session.query(ShopStock, Shops.shopname).join(Shops, Shops.shops_id == ShopStock.shop_id).all()
+                shop_stock_items = db.session.query(ShopStock, Shops.shopname, ShopStock.itemname).join(
+                    Shops, Shops.shops_id == ShopStock.shop_id).all()
 
             # Create a dictionary to group items by shop and item name
             grouped_items = {}
 
-            for stock, shopname in shop_stock_items:
-                key = (shopname, stock.inventory.itemname)  # Use shop name and item name as the key
+            for stock, shopname, itemname in shop_stock_items:
+                key = (shopname, itemname)  # Use shop name and item name as the key
                 if key not in grouped_items:
                     grouped_items[key] = 0
                 grouped_items[key] += stock.quantity  # Sum up the quantities for the same item
@@ -387,7 +390,10 @@ class StockAlert(Resource):
                 "low_stock_items": low_stock_items,
                 "out_of_stock_items": out_of_stock_items
             })
-        except SQLAlchemyError:
-            # Handle database query errors
+
+        except SQLAlchemyError as e:
+            # Handle database query errors and log the error message
+            current_app.logger.error(f"Error fetching shop stock data: {str(e)}")
             return {"error": "Unable to fetch shop stock data"}, 500
+
 

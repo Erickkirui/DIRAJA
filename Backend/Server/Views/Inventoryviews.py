@@ -13,6 +13,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from sqlalchemy.orm import joinedload
 import logging
+from flask import jsonify
+from flask import current_app
+
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -377,27 +381,47 @@ class InventoryResourceById(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
-
- 
-          
+        
+class StockDeletionResource(Resource):     
     @jwt_required()
     @check_role('manager')
-    def delete(self, inventory_id):
-        # Fetch inventory by ID
-        inventory = Inventory.query.get(inventory_id)
-        
-        if inventory:
-            try:
-                db.session.delete(inventory)
-                db.session.commit()
-                return {"message": "Inventory deleted successfully"}, 200
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'error': 'Error deleting inventory', 'details': str(e)}), 500
-        else:
-            return {"error": "Inventory not found"}, 404
+    def delete(self, stock_id):
+        stock = ShopStock.query.get(stock_id)
 
+        if not stock:
+            return {"error": "Stock not found"}, 404
 
+        try:
+            # Fetch all transfer records related to this stock, checking by shop_id and itemname for manual transfer
+            if stock.inventory_id == 0:
+                related_transfers = Transfer.query.filter_by(shop_id=stock.shop_id, itemname=stock.itemname).all()
+            else:
+                related_transfers = Transfer.query.filter_by(stock_id=stock_id).all()
+
+            # Delete related transfer records
+            if related_transfers:
+                for transfer in related_transfers:
+                    db.session.delete(transfer)
+
+            # If stock originated from normal inventory transfer (not manual transfer)
+            if stock.inventory_id != 0:
+                inventory = Inventory.query.get(stock.inventory_id)
+                if inventory:
+                    inventory.quantity += stock.quantity  # Return stock to inventory instead of deleting
+
+            # Delete the stock record
+            db.session.delete(stock)
+            db.session.commit()
+
+            return make_response(jsonify({"message": "Stock deleted successfully"}), 200)
+
+        except Exception as e:
+            db.session.rollback()
+            error_message = str(e)
+            current_app.logger.error(f"Error occurred: {error_message}")
+            return jsonify({'error': 'Error deleting stock', 'details': error_message}), 500
+
+             
 class ManualTransfer(Resource):
     @jwt_required()
     def post(self):
