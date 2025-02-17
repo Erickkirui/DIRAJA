@@ -27,6 +27,7 @@ def initialize_models():
     from Server.Models.Paymnetmethods import SalesPaymentMethods
     # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
+    from Server.Models.LiveStock import LiveStock
 
     # from Server.Models.Purchases import Purchases
 
