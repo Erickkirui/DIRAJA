@@ -69,7 +69,51 @@ class GetStock(Resource):
         
         return {"error": "No stock records found."}, 404
 
+   
+class AddStock(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
 
+        required_fields = ["shop_id", "item_name", "added_stock"]
+        for field in required_fields:
+            if field not in data:
+                return {"error": f"Missing field: {field}"}, 400
+
+        shop_id = data["shop_id"]
+        item_name = data["item_name"]
+        added_stock = data["added_stock"]
+
+        if added_stock < 0:
+            return {"error": "Added stock cannot be negative"}, 400
+
+        # Fetch today's stock record
+        today_stock = (
+            LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name)
+            .order_by(LiveStock.created_at.desc())
+            .first()
+        )
+
+        if not today_stock:
+            return {"error": "No stock check-in found for today. Please check in first."}, 400
+
+        # Update stock: Add new stock to both `added_stock` and `current_quantity`
+        today_stock.added_stock += added_stock
+        today_stock.current_quantity += added_stock
+
+        try:
+            db.session.commit()
+            return {
+                "message": "Stock updated successfully",
+                "item_name": today_stock.item_name,
+                "clock_in_quantity": today_stock.clock_in_quantity,
+                "added_stock": today_stock.added_stock,
+                "current_quantity": today_stock.current_quantity,
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
 
 
 class RegisterStock(Resource):

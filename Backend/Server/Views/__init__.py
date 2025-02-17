@@ -8,7 +8,7 @@ from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLo
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
 from Server.Views.Bankviews import AddBank, BankResourceById
@@ -122,6 +122,7 @@ api.add_resource(GetStock,"/get-stock/<int:shop_id>")
 api.add_resource(RegisterStock , '/registerstock')
 api.add_resource(CheckInStock, '/stockcheckin')
 api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
+api.add_resource(AddStock, "/addstock")
 
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')

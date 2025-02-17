@@ -5,12 +5,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import CheckInForm from "./CheckInForm"; // Import the CheckInForm component
 import RegisterStockForm from "./RegisterStockForm"; // Import RegisterStockForm component
+import AddStockForm from "./AddStockForm"; // Import AddStockForm component
 
 const StockTable = () => {
   const [stockData, setStockData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isRegisterFormOpen, setIsRegisterFormOpen] = useState(false); // State to show Register Stock form
+  const [isAddStockFormOpen, setIsAddStockFormOpen] = useState(false); // State to show Add Stock form
   const [checkingIn, setCheckingIn] = useState(false); // State to show CheckInForm
 
   const shopId = localStorage.getItem("shop_id");
@@ -107,6 +109,48 @@ const StockTable = () => {
       setCheckingIn(false);
     }
   };
+  const handleAddStock = async (itemName, metric, addedStock) => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      if (!accessToken || !shopId) {
+        setError("No access token or shop ID found, please log in.");
+        return;
+      }
+
+      const payload = {
+        shop_id: shopId,
+        item_name: itemName,
+        metric: metric,
+        added_stock: parseFloat(addedStock),
+      };
+
+      const response = await axios.post("/api/diraja/addstock", payload, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      alert(response.data.message);
+
+      // Refresh stock data after successful stock addition
+      setStockData((prevStock) =>
+        prevStock.map((stock) =>
+          stock.item_name === itemName
+            ? {
+                ...stock,
+                current_quantity: stock.current_quantity + parseFloat(addedStock),
+              }
+            : stock
+        )
+      );
+    } catch (err) {
+      console.error("Error during stock addition:", err);
+      setError(err.response?.data?.error || "Failed to add stock");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle register stock submission
   const handleRegisterStockSubmit = async (itemName, metric, addedStock) => {
@@ -127,7 +171,7 @@ const StockTable = () => {
         added_stock: parseFloat(addedStock),
       };
 
-      const response = await axios.post("/api/diraja/register-stock", payload, {
+      const response = await axios.post("/api/diraja/registerstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -158,6 +202,9 @@ const StockTable = () => {
       <h2 className="stock-table-title">Stock Information (Shop ID: {shopId})</h2>
       <button onClick={() => setIsRegisterFormOpen(true)} className="register-stock-button">
         Register Stock
+      </button>
+      <button onClick={() => setIsAddStockFormOpen(true)} className="add-stock-button">
+        Add Stock
       </button>
       <button onClick={() => setCheckingIn(true)} className="check-in-button">
         Check In Stock
@@ -197,7 +244,14 @@ const StockTable = () => {
         </tbody>
       </table>
 
-      {/* Show CheckInForm and RegisterStockForm below the table */}
+      {/* Show AddStockForm, CheckInForm, and RegisterStockForm below the table */}
+      {isAddStockFormOpen && (
+        <AddStockForm
+          onSubmit={handleAddStock}
+          onClose={() => setIsAddStockFormOpen(false)}
+        />
+      )}
+
       {isRegisterFormOpen && (
         <RegisterStockForm
           onSubmit={handleRegisterStockSubmit}

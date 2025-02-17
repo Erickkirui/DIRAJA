@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+
 
 const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const [selectedItem, setSelectedItem] = useState("");
