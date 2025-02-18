@@ -6,10 +6,12 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
   const [addedStock, setAddedStock] = useState("");
   const [metric, setMetric] = useState("kg"); // Default is "kg"
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage("");
 
     if (!itemName || !addedStock || !metric) {
       setError("Please fill in all fields.");
@@ -34,13 +36,14 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
       };
 
       // Make the request to the RegisterStock endpoint
-      const response = await axios.post("/api/diraja/registerstock", payload, {
+      await axios.post("/api/diraja/registerstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      alert(response.data.message); // Display the success message
-      onSubmit(); // Notify parent to update stock data
-      onClose(); // Close the modal
+      setSuccessMessage("Stock registered successfully!");
+      setTimeout(() => {
+        window.location.reload(); // Refresh the page
+      }, 1500);
     } catch (err) {
       setError(err.response?.data?.error || "Failed to register stock");
     }
@@ -48,54 +51,45 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
 
   return (
     <div className="stock-form-container">
-      <h3>Register Stock</h3>
+      <h3>Add new items</h3>
+      {successMessage && <p className="success-text">{successMessage}</p>}
       {error && <p className="error-text">{error}</p>}
 
       <form onSubmit={handleSubmit} className="stock-mange-form">
-      
-          
-          <input
-             placeholder="Item name"
-            type="text"
-            id="item-name"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            required
-          />
-     
+        <input
+          placeholder="Item name"
+          type="text"
+          value={itemName}
+          onChange={(e) => setItemName(e.target.value)}
+          required
+        />
 
-        
-          
-          <input
-            placeholder="Quantity"
-            type="number"
-            id="added-stock"
-            value={addedStock}
-            onChange={(e) => setAddedStock(e.target.value)}
-            required
-          />
-        
+        <input
+          placeholder="Quantity"
+          type="number"
+          value={addedStock}
+          onChange={(e) => setAddedStock(e.target.value)}
+          required
+        />
 
-      
-          <label htmlFor="metric">Metric:</label>
-          <select
-            id="metric"
-            value={metric}
-            onChange={(e) => setMetric(e.target.value)}
-            required
-          >
-            <option value="kg">kg</option>
-            <option value="ltrs">ltrs</option>
-            <option value="item">item</option>
-          </select>
-       
+        <label htmlFor="metric">Metric:</label>
+        <select
+          id="metric"
+          value={metric}
+          onChange={(e) => setMetric(e.target.value)}
+          required
+        >
+          <option value="kg">kg</option>
+          <option value="ltrs">ltrs</option>
+          <option value="item">item</option>
+        </select>
 
         <div className="stock-form-actions">
           <button type="submit" className="submit-stock">Register Stock</button>
           <button type="button" className="cancel-button" onClick={onClose}>
             Cancel
           </button>
-          </div>
+        </div>
       </form>
     </div>
   );

@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 const AddStockForm = ({ onSubmit, onClose }) => {
-  const [items, setItems] = useState([]); // Store fetched items
-  const [itemName, setItemName] = useState(""); // Selected item name
-  const [metric, setMetric] = useState(""); // Automatically set metric
-  const [addedStock, setAddedStock] = useState(""); // Amount of added stock
-  const [error, setError] = useState(""); // Error handling
+  const [items, setItems] = useState([]);
+  const [itemName, setItemName] = useState("");
+  const [metric, setMetric] = useState("");
+  const [addedStock, setAddedStock] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -14,21 +15,13 @@ const AddStockForm = ({ onSubmit, onClose }) => {
         const accessToken = localStorage.getItem("access_token");
         const shopId = localStorage.getItem("shop_id");
 
-        if (!accessToken) {
-          setError("No access token found, please log in.");
+        if (!accessToken || !shopId) {
+          setError("No access token or shop ID found, please log in.");
           return;
         }
 
-        if (!shopId) {
-          setError("No shop ID found in local storage.");
-          return;
-        }
-
-        // Fetch stock items for the shop
         const response = await axios.get(`/api/diraja/get-stock/${shopId}`, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         if (response.data && response.data.length > 0) {
@@ -37,7 +30,6 @@ const AddStockForm = ({ onSubmit, onClose }) => {
           setError("No stock items found.");
         }
       } catch (err) {
-        console.error("Error fetching items:", err);
         setError("Error fetching stock items. Please try again.");
       }
     };
@@ -48,60 +40,56 @@ const AddStockForm = ({ onSubmit, onClose }) => {
   const handleItemChange = (e) => {
     const selectedItem = e.target.value;
     setItemName(selectedItem);
-    
-    // Find the metric from the selected item
     const selectedItemObj = items.find(item => item.item_name === selectedItem);
-    if (selectedItemObj) {
-      setMetric(selectedItemObj.metric);
-    } else {
-      setMetric("");
-    }
+    setMetric(selectedItemObj ? selectedItemObj.metric : "");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+
     if (!itemName || !addedStock) {
       setError("All fields are required.");
       return;
     }
 
-    onSubmit(itemName, metric, addedStock);
+    try {
+      await onSubmit(itemName, metric, addedStock);
+      setSuccess("Stock added successfully!");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      setError("Failed to add stock. Please try again.");
+    }
   };
 
   return (
     <div className="stock-form-container">
       <h3>Add Stock</h3>
+      {error && <p className="error-text">{error}</p>}
+      {success && <p className="success-text">{success}</p>}
       <form onSubmit={handleSubmit} className="stock-mange-form">
-        {error && <p className="error-text">{error}</p>}
-
+        <label>Item Name</label>
+        <select value={itemName} onChange={handleItemChange} required>
+          <option value="">Select an item</option>
+          {items.map((item) => (
+            <option key={item.item_name} value={item.item_name}>
+              {item.item_name}
+            </option>
+          ))}
+        </select>
         
-          <label>Item Name</label>
-          <select value={itemName} onChange={handleItemChange} required>
-            <option value="">Select an item</option>
-            {items.map((item) => (
-              <option key={item.item_name} value={item.item_name}>
-                {item.item_name}
-              </option>
-            ))}
-          </select>
-      
+        <label>Metric</label>
+        <input type="text" value={metric} readOnly />
 
-       
-          <label>Metric</label>
-          <input type="text" value={metric} readOnly />
-      
-
-        <div className="form-group">
-        
-          <input
-          placeholder="Quantity Added Stock"
-            type="number"
-            value={addedStock}
-            onChange={(e) => setAddedStock(e.target.value)}
-            required
-            min="0"
-          />
-        </div>
+        <label>Quantity Added Stock</label>
+        <input
+          type="number"
+          value={addedStock}
+          onChange={(e) => setAddedStock(e.target.value)}
+          required
+          min="0"
+        />
 
         <div className="stock-form-actions">
           <button type="submit" className="submit-stock">Submit</button>

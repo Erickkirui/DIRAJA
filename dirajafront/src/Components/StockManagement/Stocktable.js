@@ -57,18 +57,18 @@ const StockTable = () => {
     if (stockDate === yesterdayDate) return "yesterday";
     return "older";
   };
-
+  
   const handleCheckInSubmit = async (selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason) => {
     setCheckingIn(true);
     setError("");
-
+  
     try {
       const accessToken = localStorage.getItem("access_token");
       if (!accessToken || !shopId) {
         setError("No access token or shop ID found, please log in.");
         return;
       }
-
+  
       const payload = {
         shop_id: shopId,
         item_name: selectedItem,
@@ -76,15 +76,14 @@ const StockTable = () => {
         clock_in_quantity: parseFloat(checkInQuantity),
         mismatch_reason: mismatchQuantity !== 0 ? mismatchReason : null,
       };
-
+  
       console.log("Sending request with payload:", payload);
-
+  
       const response = await axios.post("/api/diraja/stockcheckin", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      alert(response.data.message);
-
+  
+      // Use the response to update the stock data correctly
       setStockData((prevStock) =>
         prevStock.map((stock) =>
           stock.item_name === selectedItem
@@ -99,31 +98,30 @@ const StockTable = () => {
       setCheckingIn(false);
     }
   };
-
+  
   const handleAddStock = async (itemName, metric, addedStock) => {
     setLoading(true);
     setError("");
-
+  
     try {
       const accessToken = localStorage.getItem("access_token");
       if (!accessToken || !shopId) {
         setError("No access token or shop ID found, please log in.");
         return;
       }
-
+  
       const payload = {
         shop_id: shopId,
         item_name: itemName,
         metric,
         added_stock: parseFloat(addedStock),
       };
-
+  
       const response = await axios.post("/api/diraja/addstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      alert(response.data.message);
-
+  
+      // Use the response to update the stock data correctly
       setStockData((prevStock) =>
         prevStock.map((stock) =>
           stock.item_name === itemName
@@ -141,35 +139,34 @@ const StockTable = () => {
       setLoading(false);
     }
   };
-
+  
   const handleRegisterStockSubmit = async (itemName, metric, addedStock) => {
     setLoading(true);
     setError("");
-
+  
     try {
       const accessToken = localStorage.getItem("access_token");
       if (!accessToken || !shopId) {
         setError("No access token or shop ID found, please log in.");
         return;
       }
-
+  
       const payload = {
         shop_id: shopId,
         item_name: itemName,
         metric,
         added_stock: parseFloat(addedStock),
       };
-
+  
       const response = await axios.post("/api/diraja/registerstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      alert(response.data.message);
-
+  
+      // Use the response to add the new stock item
       setStockData((prevStock) => [
         ...prevStock,
         {
-          ...response.data,
+          ...response.data,  // Use the response data to update the stock list
           item_name: itemName,
           metric,
           added_stock: 0,
@@ -184,15 +181,16 @@ const StockTable = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="stock-table-container">
       <div className="stock-nav-buttons">
       <button onClick={() => setCheckingIn(true)} className="stock-button-checkin">
-        Check In Stock
+        Open Stock
       </button>
       <button onClick={() => setIsRegisterFormOpen(true)} className="stock-button">
-        Register Stock
+        New Items
       </button>
       <button onClick={() => setIsAddStockFormOpen(true)} className="stock-button">
         Add Stock

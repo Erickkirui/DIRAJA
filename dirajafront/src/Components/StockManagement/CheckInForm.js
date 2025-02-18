@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 
-
 const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const [selectedItem, setSelectedItem] = useState("");
   const [checkInQuantity, setCheckInQuantity] = useState("");
   const [mismatchQuantity, setMismatchQuantity] = useState(0);
   const [mismatchReason, setMismatchReason] = useState("");
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(""); // Success message state
 
   // Set default selected item when stockData is available
   useEffect(() => {
@@ -38,6 +38,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
+    setSuccessMessage(""); // Reset success message
 
     if (!selectedItem || checkInQuantity === "" || isNaN(checkInQuantity) || checkInQuantity <= 0) {
       setError("Please select an item and enter a valid check-in quantity.");
@@ -60,6 +61,14 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
     });
 
     onSubmit(selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason);
+
+    // Show success message
+    setSuccessMessage("Check-in successful!");
+
+    // Optionally, refresh the page after successful submission
+    setTimeout(() => {
+      window.location.reload(); // Reload the page after 2 seconds
+    }, 2000);
   };
 
   // Handle cancel button click
@@ -75,34 +84,36 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
     <div className="stock-form-container">
       <h2>Check In Stock</h2>
       {error && <p className="error-text">{error}</p>}
+      {successMessage && <p className="success-text">{successMessage}</p>} {/* Show success message */}
       <form onSubmit={handleSubmit} className="stock-mange-form">
-      
-         
-          <label>Select Item:</label>
-          <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
-            {stockData.map((stock, index) => (
-              <option key={index} value={stock.item_name}>
-                {stock.item_name}
-              </option>
-            ))}
-          </select>
-      
-          <input
-            type="number"
-            value={checkInQuantity}
-            onChange={handleQuantityChange}
-            min="1"
-            placeholder="Check-in Quantity:"
-          />
-        
+        <label>Select Item:</label>
+        <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
+          {stockData.map((stock, index) => (
+            <option key={index} value={stock.item_name}>
+              {stock.item_name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          value={checkInQuantity}
+          onChange={handleQuantityChange}
+          min="1"
+          placeholder="Check-in Quantity:"
+        />
+
         {mismatchQuantity !== 0 && (
           <div>
-            
-            <textarea value={mismatchReason} onChange={(e) => setMismatchReason(e.target.value)}  placeholder="Mismatch Reason:"/>
+            <textarea
+              value={mismatchReason}
+              onChange={(e) => setMismatchReason(e.target.value)}
+              placeholder="Mismatch Reason:"
+            />
           </div>
         )}
+
         <div className="stock-form-actions">
-          
           <button type="submit" className="submit-stock">
             Confirm Check In
           </button>
@@ -111,8 +122,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
           </button>
         </div>
       </form>
-      </div>
-    
+    </div>
   );
 };
 
