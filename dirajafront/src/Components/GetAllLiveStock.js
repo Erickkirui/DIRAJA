@@ -5,10 +5,12 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import LoadingAnimation from "./LoadingAnimation";
 
-const GetAllLiveStock = ({ accessToken }) => {  // Only using accessToken now
+const GetAllLiveStock = ({ accessToken }) => {
   const [stockData, setStockData] = useState([]);
+  const [filteredStockData, setFilteredStockData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");  // To hold the search input
 
   useEffect(() => {
     const fetchStock = async () => {
@@ -28,6 +30,7 @@ const GetAllLiveStock = ({ accessToken }) => {  // Only using accessToken now
         });
 
         setStockData(response.data || []);
+        setFilteredStockData(response.data || []); // Initialize filtered data
       } catch (err) {
         console.error("Error fetching stock:", err);
         setError(err.response?.data?.error || "Error fetching stock. Please try again.");
@@ -49,9 +52,35 @@ const GetAllLiveStock = ({ accessToken }) => {  // Only using accessToken now
     return "older";
   };
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    // Filter stock data based on shop_name and item_name
+    const filtered = stockData.filter(
+      (stock) =>
+        stock.shop_name.toLowerCase().includes(value.toLowerCase()) ||
+        stock.item_name.toLowerCase().includes(value.toLowerCase())
+    );
+
+    setFilteredStockData(filtered);
+  };
+
   return (
     <div className="stock-table-container">
-        <h1>Shop Stock Status</h1>
+      <h1>Shop Stock Status</h1>
+
+      {/* Search Bar */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search by Shop Name or Item Name"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          className="search-bar"
+        />
+      </div>
+
       {loading && <LoadingAnimation />}
       {error && <p className="error-text">{error}</p>}
 
@@ -70,7 +99,7 @@ const GetAllLiveStock = ({ accessToken }) => {  // Only using accessToken now
           </tr>
         </thead>
         <tbody>
-          {stockData.map((stock, index) => (
+          {filteredStockData.map((stock, index) => (
             <tr key={index}>
               <td className="status-icon">
                 <FontAwesomeIcon
@@ -81,7 +110,6 @@ const GetAllLiveStock = ({ accessToken }) => {  // Only using accessToken now
               </td>
               <td>{stock.shop_name}</td>
               <td>{stock.item_name}</td>
-              
               <td>{stock.current_quantity} <span>{stock.metric}</span></td>
               <td>{stock.added_stock} <span>{stock.metric}</span></td>
               <td>{stock.clock_in_quantity} <span>{stock.metric}</span></td>
