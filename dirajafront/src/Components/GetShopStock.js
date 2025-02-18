@@ -88,7 +88,7 @@ const Shopstock = () => {
         try {
             const accessToken = localStorage.getItem('access_token');
             const deletePromises = selectedStocks.map((stockId) =>
-                fetch(`/api/diraja/deleteshopstock/${stockId}`, {
+                fetch(`/api/diraja/stock-delete/${stockId}`, {
                     method: 'DELETE',
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -96,17 +96,21 @@ const Shopstock = () => {
                     },
                 })
             );
-
+    
             await Promise.all(deletePromises);
-
+    
             // Remove the deleted stocks from the state
             setShopStocks((prevStocks) => prevStocks.filter((stock) => !selectedStocks.includes(stock.stock_id)));
             setSelectedStocks([]); // Clear selected items
-            alert('Selected shop stocks deleted successfully');
+            
+            // Close the modal automatically after successful deletion
+            setIsModalOpen(false); // Close the modal
+            alert('Selected shop stocks deleted successfully'); // Optional system prompt (can be removed if not needed)
         } catch (error) {
             alert(`Error deleting shop stocks: ${error.message}`);
         }
     };
+    
 
     const handleUnitPriceUpdate = async (stockId) => {
         try {
@@ -172,7 +176,6 @@ const Shopstock = () => {
 
     return (
         <div className="shopStocks-container">
-
             <div className="filter-container">
                 <input
                     type="text"
@@ -188,6 +191,7 @@ const Shopstock = () => {
                     onChange={handleDateChange}
                 />
             </div>
+
             {/* Action Dropdown */}
             <div className="actions-container">
                 <select
@@ -315,3 +319,4 @@ const Shopstock = () => {
 };
 
 export default Shopstock;
+
