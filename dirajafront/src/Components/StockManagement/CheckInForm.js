@@ -75,9 +75,13 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
     <div className="check-in-form-container">
       <h2>Check In Stock</h2>
       {error && <p className="error-text">{error}</p>}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="stock-mange-form">
         <div>
+          <div>
           <label>Select Item:</label>
+          
+          </div>
+          
           <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
             {stockData.map((stock, index) => (
               <option key={index} value={stock.item_name}>
@@ -87,12 +91,13 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
           </select>
         </div>
         <div>
-          <label>Check-in Quantity:</label>
+          
           <input
             type="number"
             value={checkInQuantity}
             onChange={handleQuantityChange}
             min="1"
+            placeholder="Check-in Quantity:"
           />
         </div>
         {mismatchQuantity !== 0 && (
@@ -101,7 +106,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
             <textarea value={mismatchReason} onChange={(e) => setMismatchReason(e.target.value)} />
           </div>
         )}
-        <div className="form-actions">
+        <div className="stock-form-actions">
           <button type="button" onClick={handleCancel} className="cancel-button">
             Cancel
           </button>

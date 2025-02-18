@@ -80,69 +80,70 @@ border: 1px solid #ccc;
 
 /* StockTable Styles */
 
-.stock-table-title {
-  font-size: 1.25rem;
-  font-weight: bold;
-  margin-bottom: 16px;
+.stock-button{
+  background-color: white ;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 10px;
+  border-radius: 6px;
 }
-
-.check-in-button {
-  background-color: #38a169;
+.stock-button-ckeckout{
+  background-color: red ;
   color: white;
-  padding: 10px 16px;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
 }
-
-.loading-text {
-  color: #6b7280;
+.stock-button-checkin{
+  background-color: var(--primary) ;
+  color: white;
+  border: 1px solid var(--primary);
+  padding: 10px;
+  border-radius: 6px;
+  
 }
-
-.error-text {
-  color: #ef4444;
-}
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
+.stock-nav-buttons{
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(31, 41, 55, 0.5); /* Semi-transparent background */
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stock-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  table-layout: fixed;
+}
+.stock-table td {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+  text-align: left;
+  padding: 15px;
 }
 
-.modal-content {
-  background-color: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  width: 380px;
+.stock-table  th{
+  font-size: 14px;
+  background-color: var(--background);
+  padding: 10px;
+  text-align: left;
 }
 
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
-
-.form-actions {
+.stock-mange-form{
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.cancel-button,
-.submit-button {
-  padding: 8px 16px;
-  border-radius: 4px;
+.stock-mange-form input{
+  padding: 15px;
+
 }
 
-.cancel-button {
-  background-color: #9ca3af;
-  color: white;
+.stock-form-actions{
+  display: flex;
+
 }
 
-.submit-button {
-  background-color: #3b82f6;
-  color: white;
-}
+
+
+
+
