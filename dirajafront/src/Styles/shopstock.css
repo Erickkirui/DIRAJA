@@ -135,15 +135,42 @@ border: 1px solid #ccc;
 
 .stock-mange-form input{
   padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 
+}
+
+
+
+.stock-form-container{
+  width: 90%;
+  
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 6px;
+  margin: auto;
+  margin-top: 20px;
 }
 
 .stock-form-actions{
   display: flex;
+  justify-content: space-between;
 
 }
+.submit-stock{
+  background-color: var(--primary) ;
+  color: white;
+  border: 1px solid var(--background);
+  padding: 10px;
+  border-radius: 6px;
 
-
+}
+.cancel-button{
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius:6px ;
+  padding: 10px;
+}
 
 
 

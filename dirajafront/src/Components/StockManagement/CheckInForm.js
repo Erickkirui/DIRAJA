@@ -72,16 +72,13 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   };
 
   return (
-    <div className="check-in-form-container">
+    <div className="stock-form-container">
       <h2>Check In Stock</h2>
       {error && <p className="error-text">{error}</p>}
       <form onSubmit={handleSubmit} className="stock-mange-form">
-        <div>
-          <div>
+      
+         
           <label>Select Item:</label>
-          
-          </div>
-          
           <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
             {stockData.map((stock, index) => (
               <option key={index} value={stock.item_name}>
@@ -89,9 +86,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
               </option>
             ))}
           </select>
-        </div>
-        <div>
-          
+      
           <input
             type="number"
             value={checkInQuantity}
@@ -99,23 +94,25 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
             min="1"
             placeholder="Check-in Quantity:"
           />
-        </div>
+        
         {mismatchQuantity !== 0 && (
           <div>
-            <label>Mismatch Reason:</label>
-            <textarea value={mismatchReason} onChange={(e) => setMismatchReason(e.target.value)} />
+            
+            <textarea value={mismatchReason} onChange={(e) => setMismatchReason(e.target.value)}  placeholder="Mismatch Reason:"/>
           </div>
         )}
         <div className="stock-form-actions">
+          
+          <button type="submit" className="submit-stock">
+            Confirm Check In
+          </button>
           <button type="button" onClick={handleCancel} className="cancel-button">
             Cancel
           </button>
-          <button type="submit" className="submit-button">
-            Confirm Check In
-          </button>
         </div>
       </form>
-    </div>
+      </div>
+    
   );
 };
 

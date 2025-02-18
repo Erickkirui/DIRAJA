@@ -69,12 +69,12 @@ const AddStockForm = ({ onSubmit, onClose }) => {
   };
 
   return (
-    <div className="add-stock-form">
+    <div className="stock-form-container">
       <h3>Add Stock</h3>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="stock-mange-form">
         {error && <p className="error-text">{error}</p>}
 
-        <div className="form-group">
+        
           <label>Item Name</label>
           <select value={itemName} onChange={handleItemChange} required>
             <option value="">Select an item</option>
@@ -84,16 +84,17 @@ const AddStockForm = ({ onSubmit, onClose }) => {
               </option>
             ))}
           </select>
-        </div>
+      
 
-        <div className="form-group">
+       
           <label>Metric</label>
           <input type="text" value={metric} readOnly />
-        </div>
+      
 
         <div className="form-group">
-          <label>Added Stock</label>
+        
           <input
+          placeholder="Quantity Added Stock"
             type="number"
             value={addedStock}
             onChange={(e) => setAddedStock(e.target.value)}
@@ -102,8 +103,8 @@ const AddStockForm = ({ onSubmit, onClose }) => {
           />
         </div>
 
-        <div className="form-actions">
-          <button type="submit" className="submit-button">Submit</button>
+        <div className="stock-form-actions">
+          <button type="submit" className="submit-stock">Submit</button>
           <button type="button" onClick={onClose} className="cancel-button">Cancel</button>
         </div>
       </form>

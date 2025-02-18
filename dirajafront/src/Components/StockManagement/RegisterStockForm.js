@@ -47,34 +47,36 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
   };
 
   return (
-    <div className="register-stock-form">
+    <div className="stock-form-container">
       <h3>Register Stock</h3>
       {error && <p className="error-text">{error}</p>}
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="item-name">Item Name:</label>
+      <form onSubmit={handleSubmit} className="stock-mange-form">
+      
+          
           <input
+             placeholder="Item name"
             type="text"
             id="item-name"
             value={itemName}
             onChange={(e) => setItemName(e.target.value)}
             required
           />
-        </div>
+     
 
-        <div className="form-group">
-          <label htmlFor="added-stock">Added Stock:</label>
+        
+          
           <input
+            placeholder="Quantity"
             type="number"
             id="added-stock"
             value={addedStock}
             onChange={(e) => setAddedStock(e.target.value)}
             required
           />
-        </div>
+        
 
-        <div className="form-group">
+      
           <label htmlFor="metric">Metric:</label>
           <select
             id="metric"
@@ -86,12 +88,14 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
             <option value="ltrs">ltrs</option>
             <option value="item">item</option>
           </select>
-        </div>
+       
 
-        <button type="submit" className="submit-button">Register Stock</button>
-        <button type="button" className="cancel-button" onClick={onClose}>
-          Cancel
-        </button>
+        <div className="stock-form-actions">
+          <button type="submit" className="submit-stock">Register Stock</button>
+          <button type="button" className="cancel-button" onClick={onClose}>
+            Cancel
+          </button>
+          </div>
       </form>
     </div>
   );
