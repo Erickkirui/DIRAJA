@@ -139,6 +139,11 @@ border: 1px solid #ccc;
   border-radius: 6px;
 
 }
+.stock-mange-form textarea{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
 
 
 

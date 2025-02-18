@@ -24,6 +24,10 @@ function ClerkNavbar() {
             <img src='/images/Customers.png' alt='menu-icon' />
             <li>Customers</li>
           </NavLink>
+          <NavLink to="/managestock" className="menu-item" activeClassName="active">
+            <img src='/images/Shop.png' alt='menu-icon' />
+            <li> Stock </li>
+          </NavLink>
           
         </ul>
       </div>

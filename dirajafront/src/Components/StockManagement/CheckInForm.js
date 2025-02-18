@@ -104,13 +104,13 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
         />
 
         {mismatchQuantity !== 0 && (
-          <div>
+       
             <textarea
               value={mismatchReason}
               onChange={(e) => setMismatchReason(e.target.value)}
               placeholder="Mismatch Reason:"
             />
-          </div>
+        
         )}
 
         <div className="stock-form-actions">

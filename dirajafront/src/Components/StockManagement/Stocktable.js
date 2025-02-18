@@ -57,7 +57,7 @@ const StockTable = () => {
     if (stockDate === yesterdayDate) return "yesterday";
     return "older";
   };
-  
+
   const handleCheckInSubmit = async (selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason) => {
     setCheckingIn(true);
     setError("");
@@ -220,8 +220,12 @@ const StockTable = () => {
           {stockData.map((stock, index) => (
             <tr key={index}>
               <td className="status-icon">
-                <FontAwesomeIcon icon={getStockStatus(stock.created_at) === "today" ? faCircleCheck : faCircleXmark} className="text-xl" />
-              </td>
+              <FontAwesomeIcon 
+                icon={getStockStatus(stock.created_at) === "today" ? faCircleCheck : faCircleXmark} 
+                size="1x"
+                style={{ color: getStockStatus(stock.created_at) === "today" ? '#088F8F' : '#e53e3e' }}  // Purple for check, Red for X
+              />
+            </td>
               <td>{stock.item_name}</td>
               <td>{stock.current_quantity}<span> {stock.metric}</span></td>
               <td>{stock.added_stock} <span> {stock.metric}</span></td>
