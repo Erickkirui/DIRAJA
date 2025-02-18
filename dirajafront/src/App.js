@@ -36,6 +36,7 @@ import NotFound from './Components/NotFound';
 import AnalyticsPage from './Pages/AnalyticsPage';
 import ManageUsers from './Pages/ManageUsers';
 import ManualTransfer from './Pages/AddStockPage';
+import ClerkStockManagement from './Components/StockManagement/ClerkStockManagement';
 
 
 const Layout = ({ children }) => {
@@ -95,7 +96,6 @@ function App() {
       <Router>
         <ScrollTotop />
           <Routes>
-
             <Route path='/login' element={<LoginPage/>} ></Route>
             <Route path='/' element={<Layout><Managerdashord/></Layout>} ></Route>
             <Route path='/allexpenses' element={<Layout><ExpensePage/></Layout>} ></Route>
@@ -127,7 +127,7 @@ function App() {
             <Route path='/ProfitAndLoss' element={<Layout><ProfitAndLoss/></Layout>} ></Route>
             <Route path='/CashFlowStatement' element={<Layout><CashFlowStatement/></Layout>} ></Route>
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
- 
+            <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>} ></Route>
           </Routes>
        
       </Router>

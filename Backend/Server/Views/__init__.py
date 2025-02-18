@@ -7,15 +7,9 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer, StockDeletionResource
-
-
-# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
-
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
-
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop
-
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
@@ -60,8 +54,6 @@ api.add_resource(GetAllStock, '/allstock')
 api.add_resource(GetStockValueByShop, '/shop/<int:shop_id>/stock-value')
 api.add_resource(TotalStockValue, '/shopstock/value')
 api.add_resource(UpdateShopStockUnitPrice, '/shopstock/<int:stock_id>/update-unitprice')
-api.add_resource(StockDeletionResource, '/stock-delete/<int:stock_id>')
-
 #Shopstock date range
 api.add_resource(ShopStockByDate, '/shopstock/bydate')
 
@@ -125,15 +117,14 @@ api.add_resource(GetTransfer,'/alltransfers')
 api.add_resource(ManualTransfer,'/manualtransfer')
 
 
-###  Manager dashbord 
-# 1. Total sales 
-# 2. Total expenses 
-# 3. Count all Shops
-# 4. Count Employess
-# 5. Sales filter by current date 
-# 6. Current date expenses 
-# 7. Check items that are close >-10 0 - out of stock 
-
+#Live stock 
+api.add_resource(GetStock,"/get-stock/<int:shop_id>")
+api.add_resource(RegisterStock , '/registerstock')
+api.add_resource(CheckInStock, '/stockcheckin')
+api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
+api.add_resource(AddStock, "/addstock")
+api.add_resource(CheckoutStock, "/checkout")
+    
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')
