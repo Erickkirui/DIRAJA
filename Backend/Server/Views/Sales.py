@@ -39,8 +39,7 @@ class AddSale(Resource):
         # Validate required fields for sale
         required_fields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
-            'quantity', 'metric', 'unit_price', 'payment_methods', 
-            'BatchNumber', 'stock_id'
+            'quantity', 'metric', 'unit_price', 'payment_methods'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
@@ -51,20 +50,19 @@ class AddSale(Resource):
         customer_number = data.get('customer_number')
         item_name = data.get('item_name')
 
-        # Convert to float where necessary
         try:
-            quantity = float(data.get('quantity', 0))  # Accepting float values now
+            quantity = float(data.get('quantity', 0))
             metric = data.get('metric')
             unit_price = float(data.get('unit_price', 0.0))
             payment_methods = data.get('payment_methods')
-            batch_number = data.get('BatchNumber')
-            stock_id = data.get('stock_id')
             status = data.get('status', 'unpaid')
-            created_at = data.get('sale_date')  # Get from request data
+            created_at = data.get('sale_date')
+
             if created_at is None or created_at.strip() == "":
                 return {'message': 'Sale date is required'}, 400
+
             try:
-                created_at = datetime.strptime(created_at, "%Y-%m-%d")  # Ensure correct format
+                created_at = datetime.strptime(created_at, "%Y-%m-%d")
             except ValueError:
                 return {'message': 'Invalid date format. Use YYYY-MM-DD'}, 400
 
@@ -77,50 +75,76 @@ class AddSale(Resource):
         ):
             return {'message': 'Invalid payment methods format'}, 400
 
-        # Calculate total price
+        # Calculate total price and balance
         total_price = unit_price * quantity
-
-        # Calculate total amount paid
         try:
             total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
         except ValueError as e:
             return {'message': f'Invalid amount value in payment methods: {e}'}, 400
 
-        # Calculate balance
         balance = total_amount_paid - total_price
 
-        # Create new sale record
+        # ✅ **Step 1: Get total stock across all batches**
+        total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
+            ShopStock.itemname == item_name,
+            ShopStock.shop_id == shop_id,
+            ShopStock.quantity > 0
+        ).scalar() or 0  # Default to 0 if no stock
+
+        if total_available_stock < quantity:
+            return {'message': 'Insufficient inventory quantity'}, 400  # 🔥 This error happens here!
+
+        # ✅ **Step 2: Deduct stock using FIFO (oldest batch first)**
+        remaining_quantity = quantity
+        batches = ShopStock.query.filter(
+            ShopStock.itemname == item_name,
+            ShopStock.shop_id == shop_id,
+            ShopStock.quantity > 0
+        ).order_by(ShopStock.BatchNumber).all()  # Sort by batch number
+
+        batch_deductions = []  # Store batch details
+        stock_ids_used = []  # Store stock IDs used in this sale
+
+        for batch in batches:
+            if remaining_quantity <= 0:
+                break  # Stop once enough stock is deducted
+
+            if batch.quantity >= remaining_quantity:
+                batch.quantity -= remaining_quantity
+                batch_deductions.append((batch.BatchNumber, remaining_quantity))
+                stock_ids_used.append(str(batch.stock_id))  # ✅ Store stock_id
+                remaining_quantity = 0
+            else:
+                batch_deductions.append((batch.BatchNumber, batch.quantity))
+                stock_ids_used.append(str(batch.stock_id))  # ✅ Store stock_id
+                remaining_quantity -= batch.quantity
+                batch.quantity = 0
+
+
+        # ✅ **Step 3: Save sale record**
         new_sale = Sales(
-            user_id=current_user_id,
-            shop_id=shop_id,
-            customer_name=customer_name,
-            customer_number=customer_number,
-            item_name=item_name,
-            quantity=quantity,  # Now stores float quantity
-            metric=metric,
-            unit_price=unit_price,
-            total_price=total_price,
-            BatchNumber=batch_number,
-            stock_id=stock_id,
-            balance=balance,
-            status=status,
-            created_at=created_at
-        )
+        user_id=current_user_id,
+        shop_id=shop_id,
+        customer_name=customer_name,
+        customer_number=customer_number,
+        item_name=item_name,
+        quantity=quantity,
+        metric=metric,
+        unit_price=unit_price,
+        total_price=total_price,
+        BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),  # ✅ Store batches used
+        stock_id=", ".join(stock_ids_used),  # ✅ Store all stock IDs used
+        balance=balance,
+        status=status,
+        created_at=created_at
+    )
 
-        # Check inventory availability
-        shop_stock_item = ShopStock.query.filter_by(stock_id=stock_id).first()
-        if not shop_stock_item or shop_stock_item.quantity < quantity:
-            return {'message': 'Insufficient inventory quantity'}, 400
-
-        # Update the shop stock quantity
-        shop_stock_item.quantity -= quantity  # Now subtracting float quantity
 
         try:
-            # Save the sale to the database
             db.session.add(new_sale)
-            db.session.flush()  # Flush to get the sale ID
+            db.session.flush()  # Flush to get sale ID
 
-            # Save payment methods to the database
+            # ✅ **Step 4: Save payment methods**
             for payment in payment_methods:
                 payment_record = SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
@@ -129,12 +153,12 @@ class AddSale(Resource):
                 )
                 db.session.add(payment_record)
 
-            # Create new customer record
+            # ✅ **Step 5: Create customer record**
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
                 shop_id=shop_id,
-                sales_id=new_sale.sales_id,  
+                sales_id=new_sale.sales_id,
                 user_id=current_user_id,
                 item=item_name,
                 amount_paid=total_amount_paid,
@@ -144,10 +168,12 @@ class AddSale(Resource):
             db.session.add(new_customer)
 
             db.session.commit()
-            return {'message': 'Sale and customer added successfully with multiple payment methods'}, 201
+            return {'message': 'Sale and customer added successfully! '}, 201
+
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
+
 
 class GetSales(Resource):
     @jwt_required()
