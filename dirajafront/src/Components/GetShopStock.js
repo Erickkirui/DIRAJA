@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../Styles/shopstock.css';
 import ExportExcel from '../Components/Download/ExportExcel'; // Ensure correct import path
 import DownloadPDF from '../Components/Download/DownloadPDF'; // Ensure correct import path
+import LoadingAnimation from './LoadingAnimation';
 
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
     if (!isOpen) return null;
@@ -167,7 +168,7 @@ const Shopstock = () => {
     };
 
     if (loading) {
-        return <p>Loading...</p>;
+        return <LoadingAnimation />;
     }
 
     if (error) {
