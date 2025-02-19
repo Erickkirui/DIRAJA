@@ -49,8 +49,13 @@ function Navbar() {
           </NavLink>
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />
-            <li>Shop Stock</li>
+            <li>System Stocks</li>
           </NavLink>
+          <NavLink exact to="/stockstatus" className="menu-item" activeClassName="active">
+            <img src='/images/Shop.png' alt='menu-icon' />
+            <li> Shop Stocks</li>
+          </NavLink>
+          
         </ul>
       </div>
 
