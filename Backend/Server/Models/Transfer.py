@@ -9,7 +9,7 @@ class Transfer(db.Model):
 
     transfer_id = db.Column(db.Integer, primary_key=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=False)
+    inventory_id = db.Column(db.Integer, db.ForeignKey('inventory.inventory_id'), nullable=True)
     quantity = db.Column(db.Float, nullable=False)
     total_cost = db.Column(db.Float, nullable=False)  # New Field
     BatchNumber = db.Column(db.String(50), nullable=False)

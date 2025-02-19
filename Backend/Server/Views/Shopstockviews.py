@@ -261,8 +261,6 @@ class ShopStockDelete(Resource):
             current_app.logger.error(f"Unexpected error occurred: {str(e)}")
             return {"error": "An unexpected error occurred"}, 500
 
-        
-
 class GetShopStock(Resource):
     @jwt_required()
     def get(self):
@@ -276,7 +274,7 @@ class GetShopStock(Resource):
 
             if shop_id:
                 query = query.filter_by(shop_id=shop_id)
-            if inventory_id:
+            if inventory_id is not None:  # Ensure it handles None correctly
                 query = query.filter_by(inventory_id=inventory_id)
 
             # Execute query
@@ -289,24 +287,28 @@ class GetShopStock(Resource):
                 shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Handle missing inventory reference
-                if stock.inventory:
-                    item_name = stock.inventory.itemname
-                    metric = stock.inventory.metric
-                else:
-                    # Fetch details from the transfer entry for manual stock
-                    transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
-                    item_name = transfer.itemname if transfer else "Unknown Item"
-                    metric = transfer.metric if transfer else "Unknown Metric"
+                # Default values
+                item_name, metric = "Unknown Item", "Unknown Metric"
+
+                # First, check Transfer
+                transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
+                if transfer:
+                    item_name = transfer.itemname if transfer.itemname else None
+                    metric = transfer.metric if transfer.metric else "Unknown Metric"
+
+                # If Transfer is missing item name, fallback to Inventory
+                if not item_name and stock.inventory:
+                    item_name = stock.inventory.itemname if stock.inventory.itemname else "Unnamed Item"
+                    metric = stock.inventory.metric if stock.inventory.metric else "Unknown Metric"
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,
                     "shop_id": stock.shop_id,
                     "shop_name": shopname,
-                    "inventory_id": stock.inventory_id if stock.inventory else None,
-                    "item_name": item_name,
+                    "inventory_id": stock.inventory_id,  # This will be None if manual stock
+                    "item_name": item_name,  # Prioritizes Transfer, then Inventory
                     "batchnumber": stock.BatchNumber,
-                    "metric": metric,
+                    "metric": metric,  # Prioritizes Transfer, then Inventory
                     "quantity": stock.quantity,
                     "total_cost": stock.total_cost,
                     "unitPrice": stock.unitPrice
@@ -319,10 +321,9 @@ class GetShopStock(Resource):
 
             return make_response(jsonify(response), 200)
 
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching shop stock data"}, 500
-
+            return {"error": "An error occurred while fetching shop stock data", "details": str(e)}, 500
 
 
 
