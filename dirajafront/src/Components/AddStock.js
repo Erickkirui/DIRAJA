@@ -59,7 +59,7 @@ const ManualTransfer = () => {
             });
 
             if (response.status === 201) {
-                setMessage({ text: 'Manual stock added successfully!', type: 'success' });
+                setMessage({ text: 'Stock added successfully!', type: 'success' });
                 setFormData({
                     itemname: '',
                     quantity: '',
@@ -80,7 +80,7 @@ const ManualTransfer = () => {
 
     return (
         <div>
-            <h1>Manual Stock Transfer</h1>
+            <h1>Mabanda Stock</h1>
             {Object.keys(fieldErrors).length > 0 && (
                 <div className="alert alert-error">
                     {Object.values(fieldErrors).map((error, index) => (

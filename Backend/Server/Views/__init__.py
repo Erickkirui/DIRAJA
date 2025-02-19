@@ -6,7 +6,7 @@ api_endpoint = Blueprint
 # add all file inputs 
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
-from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
+from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice,AvailableItemsByShopResource,ItemDetailsResourceForShop
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer, StockDeletionResource
 
 
@@ -64,6 +64,12 @@ api.add_resource(StockDeletionResource, '/stock-delete/<int:stock_id>')
 
 #Shopstock date range
 api.add_resource(ShopStockByDate, '/shopstock/bydate')
+
+#Shopstock by item
+api.add_resource(AvailableItemsByShopResource, '/items/available-by-shop')
+api.add_resource(ItemDetailsResourceForShop, '/shop-itemdetails')
+
+
 
 
 

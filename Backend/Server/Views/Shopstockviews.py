@@ -55,6 +55,8 @@ class AvailableBatchesByShopResource(Resource):
 
         # Return the batch numbers as a JSON response
         return jsonify(batch_numbers)
+
+
     
 class AvailableBatchesResource(Resource):
     @jwt_required()
@@ -104,6 +106,9 @@ class BatchDetailsResourceForShop(Resource):
         }
         
         return sales_details, 200
+
+
+
 
 
 class BatchDetailsResource(Resource):
@@ -636,3 +641,59 @@ class UpdateShopStockUnitPrice(Resource):
         db.session.commit()
 
         return jsonify({'message': 'unitPrice updated successfully', 'stock_id': stock_id, 'new_unitPrice': args['unitPrice']})
+
+
+
+class AvailableItemsByShopResource(Resource):
+    @jwt_required()
+    def get(self):
+        # Get the shop_id from query parameters
+        shop_id = request.args.get('shop_id')
+
+        # Check if shop_id is provided
+        if not shop_id:
+            return jsonify({"error": "shop_id parameter is required"}), 400
+
+        # Query for distinct item names with available stock in the shop
+        items = db.session.query(ShopStock.itemname).filter(
+            ShopStock.shop_id == shop_id,
+            ShopStock.quantity > 0
+        ).distinct().all()
+
+        # Extract item names into a list
+        item_names = [item.itemname for item in items]
+
+        return jsonify(item_names)
+
+
+class ItemDetailsResourceForShop(Resource):
+    @jwt_required()
+    def get(self):
+        item_name = request.args.get('item_name')
+        shop_id = request.args.get('shop_id')
+
+        if not item_name or not shop_id:
+            return {'message': 'Item name and shop ID are required'}, 400
+
+        # Query all batches for the given item and shop where quantity > 0
+        shop_stock_items = ShopStock.query.filter_by(itemname=item_name, shop_id=shop_id).filter(ShopStock.quantity > 0).all()
+
+        if not shop_stock_items:
+            return {'message': 'No available stock for the given item'}, 404
+
+        # Sum up the quantity across all batches
+        total_quantity = sum(stock.quantity for stock in shop_stock_items)
+
+        # Use the first available batch for other details (assuming unit_price and metric are the same)
+        first_batch = shop_stock_items[0]
+
+        sales_details = {
+            'itemname': first_batch.itemname,
+            'metric': first_batch.metric,
+            'unit_price': first_batch.unitPrice,
+            'stock_id': first_batch.stock_id,  # Just for reference, might not be needed
+            'BatchNumber': first_batch.BatchNumber,  # First available batch
+            'quantity': total_quantity  # Sum of all batches
+        }
+
+        return sales_details, 200
