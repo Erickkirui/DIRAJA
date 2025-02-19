@@ -27,6 +27,7 @@ def initialize_models():
     from Server.Models.Paymnetmethods import SalesPaymentMethods
     # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
+    from Server.Models.LiveStock import LiveStock
 
     # from Server.Models.Purchases import Purchases
 
@@ -38,8 +39,8 @@ def initialize_views():
 
 def create_app(config_name):
     app.config.from_object(config_name)
-    app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
-    # app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/Diraja'
+    # app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
+    app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/Diraja'
 
 
 

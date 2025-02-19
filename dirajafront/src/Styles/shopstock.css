@@ -74,3 +74,108 @@ border: 1px solid #ccc;
   font-weight: 300; /* Light font weight for a faint look */
 }
 
+
+
+/* manage stock table css */
+
+/* StockTable Styles */
+
+.stock-button{
+  background-color: white ;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 10px;
+  border-radius: 6px;
+}
+.stock-button-ckeckout{
+  background-color: red ;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+}
+.stock-button-checkin{
+  background-color: var(--primary) ;
+  color: white;
+  border: 1px solid var(--primary);
+  padding: 10px;
+  border-radius: 6px;
+  
+}
+.stock-nav-buttons{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.stock-table{
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  table-layout: fixed;
+}
+.stock-table td {
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+  text-align: left;
+  padding: 15px;
+}
+
+.stock-table  th{
+  font-size: 14px;
+  background-color: var(--background);
+  padding: 10px;
+  text-align: left;
+}
+
+.stock-mange-form{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stock-mange-form input{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+
+}
+.stock-mange-form textarea{
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+
+
+.stock-form-container{
+  width: 90%;
+  
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 6px;
+  margin: auto;
+  margin-top: 20px;
+}
+
+.stock-form-actions{
+  display: flex;
+  justify-content: space-between;
+
+}
+.submit-stock{
+  background-color: var(--primary) ;
+  color: white;
+  border: 1px solid var(--background);
+  padding: 10px;
+  border-radius: 6px;
+
+}
+.cancel-button{
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius:6px ;
+  padding: 10px;
+}
+
+
+
