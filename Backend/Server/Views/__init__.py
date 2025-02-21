@@ -30,7 +30,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -165,3 +165,5 @@ api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
 
 # Sales dashboard
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
+
+api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
