@@ -81,12 +81,12 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
   };
 
   return (
-    <div className={`transfer-stock-form ${isVisible ? "visible" : "hidden"}`}>
+    <div className="stock-form-container">
+      <div className={`transfer-stock-form ${isVisible ? "visible" : "hidden"}`} >
       <h2>Transfer Stock</h2>
       {error && <p className="error-text">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <label>
-          Select Item:
+      <form onSubmit={handleSubmit} className="stock-mange-form">
+        
           <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)} required>
             <option value="">-- Select an item --</option>
             {stockData.map((stock, index) => (
@@ -95,21 +95,18 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
               </option>
             ))}
           </select>
-        </label>
+       
 
-        <label>
-          Transfer Quantity:
           <input
             type="number"
+            placeholder="Transfer Qunatity"
             value={transferQuantity}
             onChange={(e) => setTransferQuantity(e.target.value)}
             min="1"
             required
           />
-        </label>
+       
 
-        <label>
-          Receiving Shop:
           <select
             value={receivingShopId}
             onChange={(e) => setReceivingShopId(e.target.value)}
@@ -126,17 +123,19 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
               <option disabled>No shops available</option>
             )}
           </select>
-        </label>
         
         {shopError && <p className="text-red-500 mt-1">No shops available</p>}
 
-        <button type="submit" disabled={loading}>
+        <div  className="stock-form-actions">
+        <button type="submit" disabled={loading}  className="submit-stock">
           {loading ? "Transferring..." : "Transfer"}
         </button>
-        <button type="button" onClick={onClose}>
+        <button type="button"  className="cancel-button" onClick={onClose}>
           Cancel
         </button>
+        </div>
       </form>
+    </div>
     </div>
   );
 };
