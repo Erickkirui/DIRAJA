@@ -44,8 +44,8 @@ const ShopNameDisplay = () => {
   }, []);
 
   return (
-    <div>
-      {error ? <p className="error-text">{error}</p> : <p>Shop Name: {shopName}</p>}
+    <div className="shop-name">
+      {error ? <p className="error-text">{error}</p> : <p> {shopName}</p>}
     </div>
   );
 };

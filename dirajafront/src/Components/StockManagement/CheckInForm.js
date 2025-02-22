@@ -6,22 +6,19 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
   const [mismatchQuantity, setMismatchQuantity] = useState(0);
   const [mismatchReason, setMismatchReason] = useState("");
   const [error, setError] = useState("");
-  const [successMessage, setSuccessMessage] = useState(""); // Success message state
+  const [successMessage, setSuccessMessage] = useState("");
 
-  // Set default selected item when stockData is available
   useEffect(() => {
     if (stockData.length > 0) {
       setSelectedItem(stockData[0].item_name);
     }
   }, [stockData]);
 
-  // Get metric of selected item
   const getSelectedItemMetric = () => {
     const item = stockData.find((stock) => stock.item_name === selectedItem);
-    return item ? item.metric : "item"; // Default to "item" if metric not found
+    return item ? item.metric : "item";
   };
 
-  // Detect mismatch quantity and update mismatchReason if necessary
   const handleQuantityChange = (e) => {
     const inputQuantity = parseFloat(e.target.value);
     setCheckInQuantity(inputQuantity);
@@ -34,23 +31,22 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
     }
   };
 
-  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-    setSuccessMessage(""); // Reset success message
+    setSuccessMessage("");
 
     if (!selectedItem || checkInQuantity === "" || isNaN(checkInQuantity) || checkInQuantity <= 0) {
       setError("Please select an item and enter a valid check-in quantity.");
       return;
     }
 
-    if (mismatchQuantity !== 0 && !mismatchReason) {
+    if (mismatchQuantity !== 0 && !mismatchReason.trim()) {
       setError("Mismatch detected! Please provide a reason.");
       return;
     }
 
-    const metric = getSelectedItemMetric(); // Get correct metric
+    const metric = getSelectedItemMetric();
 
     console.log("Submitting Check-in Data:", {
       selectedItem,
@@ -61,30 +57,26 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
     });
 
     onSubmit(selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason);
-
-    // Show success message
     setSuccessMessage("Check-in successful!");
 
-    // Optionally, refresh the page after successful submission
     setTimeout(() => {
-      window.location.reload(); // Reload the page after 2 seconds
+      window.location.reload();
     }, 2000);
   };
 
-  // Handle cancel button click
   const handleCancel = () => {
     setMismatchQuantity(0);
     setMismatchReason("");
     setCheckInQuantity("");
-    setSelectedItem(stockData[0]?.item_name || ""); // Reset to default item
-    onClose(); // Call onClose to close the form
+    setSelectedItem(stockData[0]?.item_name || "");
+    onClose();
   };
 
   return (
     <div className="stock-form-container">
       <h2>Check In Stock</h2>
       {error && <p className="error-text">{error}</p>}
-      {successMessage && <p className="success-text">{successMessage}</p>} {/* Show success message */}
+      {successMessage && <p className="success-text">{successMessage}</p>}
       <form onSubmit={handleSubmit} className="stock-mange-form">
         <label>Select Item:</label>
         <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
@@ -104,17 +96,19 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
         />
 
         {mismatchQuantity !== 0 && (
-       
-            <textarea
-              value={mismatchReason}
-              onChange={(e) => setMismatchReason(e.target.value)}
-              placeholder="Mismatch Reason:"
-            />
-        
+          <textarea
+            value={mismatchReason}
+            onChange={(e) => setMismatchReason(e.target.value)}
+            placeholder="Mismatch Reason:"
+          />
         )}
 
         <div className="stock-form-actions">
-          <button type="submit" className="submit-stock">
+          <button 
+            type="submit" 
+            className="submit-stock" 
+            disabled={mismatchQuantity !== 0 && mismatchReason.trim() === ""}
+          >
             Confirm Check In
           </button>
           <button type="button" onClick={handleCancel} className="cancel-button">
@@ -127,3 +121,4 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
 };
 
 export default CheckInForm;
+

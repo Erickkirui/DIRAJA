@@ -360,3 +360,78 @@ class DeleteStock(Resource):
             return {"error": str(e)}, 500
         
         
+class TransferStock(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+
+        required_fields = ["from_shop_id", "to_shop_id", "item_name", "transfer_quantity"]
+        for field in required_fields:
+            if field not in data:
+                return {"error": f"Missing field: {field}"}, 400
+
+        try:
+            from_shop_id = data["from_shop_id"]
+            to_shop_id = data["to_shop_id"]
+            item_name = data["item_name"]
+            transfer_quantity = float(data["transfer_quantity"])
+
+            if from_shop_id == to_shop_id:
+                return {"error": "Shops must be different for stock transfer"}, 400
+
+            # Get the latest stock entry for the item in the sending shop
+            sending_stock = (
+                LiveStock.query.filter_by(shop_id=from_shop_id, item_name=item_name)
+                .order_by(LiveStock.created_at.desc())
+                .first()
+            )
+
+            if not sending_stock or sending_stock.current_quantity < transfer_quantity:
+                return {"error": "Insufficient stock for transfer"}, 400
+
+            # Subtract stock from the sending shop
+            sending_stock.current_quantity -= transfer_quantity
+            db.session.add(sending_stock)
+
+            # Get the latest stock entry for the receiving shop
+            receiving_stock = (
+                LiveStock.query.filter_by(shop_id=to_shop_id, item_name=item_name)
+                .order_by(LiveStock.created_at.desc())
+                .first()
+            )
+
+            # If the receiving shop already has stock, update it
+            if receiving_stock:
+                receiving_stock.added_stock += transfer_quantity
+                receiving_stock.current_quantity += transfer_quantity
+            else:
+                # Create a new stock entry for the receiving shop
+                receiving_stock = LiveStock(
+                    shop_id=to_shop_id,
+                    item_name=item_name,
+                    metric=sending_stock.metric,  # Use the same metric as the sending shop
+                    added_stock=transfer_quantity,
+                    current_quantity=transfer_quantity,
+                    clock_in_quantity=0,
+                    mismatch_quantity=0,
+                    mismatch_reason=None,
+                    clock_out_quantity=0,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(receiving_stock)
+
+            db.session.commit()
+
+            return {
+                "message": "Stock transferred successfully",
+                "from_shop_id": from_shop_id,
+                "to_shop_id": to_shop_id,
+                "item_name": item_name,
+                "transferred_quantity": transfer_quantity,
+                "remaining_stock_in_sending_shop": sending_stock.current_quantity,
+                "new_stock_in_receiving_shop": receiving_stock.current_quantity
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500

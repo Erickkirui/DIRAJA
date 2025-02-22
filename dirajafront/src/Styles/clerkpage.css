@@ -105,3 +105,11 @@
       80%{background-position:0%  50%, 50%  50%,100% 100%}
   
 }
+.shop-name{
+    border: 1px solid var(--primary);
+    margin-bottom: 15px;
+    text-align: center;
+    border-radius: 3px;
+    padding: 0px;
+    
+}

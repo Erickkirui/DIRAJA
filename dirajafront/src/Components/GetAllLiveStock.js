@@ -68,7 +68,7 @@ const GetAllLiveStock = ({ accessToken }) => {
 
   return (
     <div className="stock-table-container">
-      <h1>Shop Stock Status</h1>
+      <h1>Shop Stock </h1>
 
       {/* Search Bar */}
       <div className="search-container">

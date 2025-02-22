@@ -2,7 +2,7 @@ import React from 'react';
 import ClerkNavbar from '../Components/ClerkDashbord/ClerkNavbar';
 import UserDisplay from '../Components/UserDisplay';
 
-import ShopTodaySales from '../Components/ClerkDashbord/ShopTodaySales';
+
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop';
 import '../Styles/clerkpage.css';
 import { Link } from 'react-router-dom';
@@ -36,7 +36,7 @@ function ClerkDashbord() {
           </div>
           <div className='analytics-clerk'>
             <TotalShopSales />
-            <ShopTodaySales />
+           
           </div>
         </div>
       </div>

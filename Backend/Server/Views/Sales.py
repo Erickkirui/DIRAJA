@@ -1,6 +1,7 @@
 from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
+from Server.Models.LiveStock import LiveStock
 from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
@@ -58,7 +59,7 @@ class AddSale(Resource):
             status = data.get('status', 'unpaid')
             created_at = data.get('sale_date')
 
-            if created_at is None or created_at.strip() == "":
+            if not created_at or created_at.strip() == "":
                 return {'message': 'Sale date is required'}, 400
 
             try:
@@ -84,7 +85,18 @@ class AddSale(Resource):
 
         balance = total_amount_paid - total_price
 
-        # ✅ **Step 1: Get total stock across all batches**
+        # ✅ **Step 1: Check stock in LiveStock**
+        live_stock = LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name).first()
+        if not live_stock:
+            return {'message': f'No stock found for {item_name} in shop {shop_id}'}, 400
+
+        if live_stock.current_quantity < quantity:
+            return {'message': 'Insufficient stock quantity in LiveStock table'}, 400  # 🔥 Prevents overselling
+
+        # ✅ **Step 2: Deduct stock**
+        live_stock.current_quantity -= quantity
+
+        # ✅ **Step 3: Get total stock across all batches (for FIFO deduction)**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
@@ -92,59 +104,57 @@ class AddSale(Resource):
         ).scalar() or 0  # Default to 0 if no stock
 
         if total_available_stock < quantity:
-            return {'message': 'Insufficient inventory quantity'}, 400  # 🔥 This error happens here!
+            return {'message': 'Insufficient inventory quantity in batches'}, 400
 
-        # ✅ **Step 2: Deduct stock using FIFO (oldest batch first)**
+        # ✅ **Step 4: Deduct stock using FIFO (oldest batch first)**
         remaining_quantity = quantity
         batches = ShopStock.query.filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
             ShopStock.quantity > 0
-        ).order_by(ShopStock.BatchNumber).all()  # Sort by batch number
+        ).order_by(ShopStock.BatchNumber).all()
 
-        batch_deductions = []  # Store batch details
-        stock_ids_used = []  # Store stock IDs used in this sale
+        batch_deductions = []  
+        stock_ids_used = []  
 
         for batch in batches:
             if remaining_quantity <= 0:
-                break  # Stop once enough stock is deducted
+                break  
 
             if batch.quantity >= remaining_quantity:
                 batch.quantity -= remaining_quantity
                 batch_deductions.append((batch.BatchNumber, remaining_quantity))
-                stock_ids_used.append(str(batch.stock_id))  # ✅ Store stock_id
+                stock_ids_used.append(str(batch.stock_id))  
                 remaining_quantity = 0
             else:
                 batch_deductions.append((batch.BatchNumber, batch.quantity))
-                stock_ids_used.append(str(batch.stock_id))  # ✅ Store stock_id
+                stock_ids_used.append(str(batch.stock_id))  
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-
-        # ✅ **Step 3: Save sale record**
+        # ✅ **Step 5: Save sale record**
         new_sale = Sales(
-        user_id=current_user_id,
-        shop_id=shop_id,
-        customer_name=customer_name,
-        customer_number=customer_number,
-        item_name=item_name,
-        quantity=quantity,
-        metric=metric,
-        unit_price=unit_price,
-        total_price=total_price,
-        BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),  # ✅ Store batches used
-        stock_id=", ".join(stock_ids_used),  # ✅ Store all stock IDs used
-        balance=balance,
-        status=status,
-        created_at=created_at
-    )
-
+            user_id=current_user_id,
+            shop_id=shop_id,
+            customer_name=customer_name,
+            customer_number=customer_number,
+            item_name=item_name,
+            quantity=quantity,
+            metric=metric,
+            unit_price=unit_price,
+            total_price=total_price,
+            BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
+            stock_id=", ".join(stock_ids_used),  
+            balance=balance,
+            status=status,
+            created_at=created_at
+        )
 
         try:
             db.session.add(new_sale)
-            db.session.flush()  # Flush to get sale ID
+            db.session.flush()  
 
-            # ✅ **Step 4: Save payment methods**
+            # ✅ **Step 6: Save payment methods**
             for payment in payment_methods:
                 payment_record = SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
@@ -153,7 +163,7 @@ class AddSale(Resource):
                 )
                 db.session.add(payment_record)
 
-            # ✅ **Step 5: Create customer record**
+            # ✅ **Step 7: Create customer record**
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
@@ -167,12 +177,15 @@ class AddSale(Resource):
             )
             db.session.add(new_customer)
 
+            # ✅ **Step 8: Update stock**
+            db.session.add(live_stock)  
+
             db.session.commit()
-            return {'message': 'Sale and customer added successfully! '}, 201
+            return {'message': 'Sale and customer added successfully! Stock updated!'}, 201
 
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error adding sale and customer', 'error': str(e)}, 500
+            return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
 
 
 class GetSales(Resource):

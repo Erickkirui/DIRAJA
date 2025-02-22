@@ -20,7 +20,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
@@ -144,6 +144,7 @@ api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
 api.add_resource(AddStock, "/addstock")
 api.add_resource(CheckoutStock, "/checkout")
 api.add_resource(GetAllLiveStock , "/all-shop-stocks")
+api.add_resource(TransferStock , "/transfer-shop-stock")
     
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')

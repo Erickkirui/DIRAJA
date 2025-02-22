@@ -107,7 +107,6 @@ class ShopsResourceById(Resource):
          
 
 class GetAllShops(Resource):
-
     @jwt_required()
     def get(self):
 

@@ -3,11 +3,11 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 
 const ShopSales = () => {
-  const [sales, setSales] = useState([]); // Initialize sales as an array
+  const [sales, setSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState(''); // Search query state
-  const [selectedDate, setSelectedDate] = useState(''); // Selected date state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -21,21 +21,19 @@ const ShopSales = () => {
           return;
         }
 
-        const response = await axios.get(` /api/diraja/sales/shop/${shopId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` }
+        const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        // Log the response to check its structure
         console.log('Sales data fetched:', response.data);
 
-        // Check if the response contains the sales data
-        if (response.data && response.data.sales) {
-          setSales(response.data.sales); // Update to match the response structure
+        if (response.data && Array.isArray(response.data.sales)) {
+          setSales(response.data.sales);
         } else {
-          setError('Unexpected data format received.'); // Set error if not in expected format
+          setError('Unexpected data format received.');
         }
       } catch (err) {
-        console.error('Error fetching sales:', err); // Log the error
+        console.error('Error fetching sales:', err);
         setError('Error fetching sales. Please try again.');
       }
     };
@@ -43,15 +41,18 @@ const ShopSales = () => {
     fetchSales();
   }, []);
 
-
-
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Filter sales based on search query and selected date
+  // Improved Search & Sorting
   const filteredSales = sales.filter((sale) => {
-    const matchesSearch = sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+    const itemName = sale.item_name?.toLowerCase() || '';
+    const shopName = sale.shopname?.toLowerCase() || '';
+    const userName = sale.username?.toLowerCase() || '';
+
+    const matchesSearch =
+      itemName.includes(searchQuery.toLowerCase()) ||
+      shopName.includes(searchQuery.toLowerCase()) ||
+      userName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
       ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
@@ -60,12 +61,14 @@ const ShopSales = () => {
     return matchesSearch && matchesDate;
   });
 
-  // Calculate the current items to display
+  // **Sort in Descending Order**
+  const sortedSales = [...filteredSales].sort((a, b) => b.sale_id - a.sale_id);
+
+  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
-
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
+  const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -97,7 +100,7 @@ const ShopSales = () => {
         />
       </div>
 
-      {filteredSales.length > 0 ? (
+      {sortedSales.length > 0 ? (
         <>
           <table className="sales-table">
             <thead>
@@ -114,7 +117,6 @@ const ShopSales = () => {
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.total_amount_paid} Ksh</td>
-                  {/* Format the date to show only the date (without time) */}
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
@@ -138,8 +140,7 @@ const ShopSales = () => {
         <p>No sales found.</p>
       )}
 
-      <Link  className="nav-clerk-button" to='/clerk'>Home</Link>
-      
+      <Link className="nav-clerk-button" to="/clerk">Home</Link>
     </div>
   );
 };

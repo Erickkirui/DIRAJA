@@ -421,7 +421,8 @@ class StockDeletionResource(Resource):
             current_app.logger.error(f"Error occurred: {error_message}")
             return jsonify({'error': 'Error deleting stock', 'details': error_message}), 500
 
-             
+
+
 class ManualTransfer(Resource):
     @jwt_required()
     def post(self):
@@ -429,15 +430,15 @@ class ManualTransfer(Resource):
         current_user_id = get_jwt_identity()
 
         # Define the allowed shop ID for manual transfers
-        MANUAL_TRANSFER_SHOP_ID = 2  # Replace with the actual shop ID
+        MANUAL_TRANSFER_SHOP_ID = 12  # Replace with the actual shop ID
 
-        # Validate required fields (shop_id removed)
+        # Validate required fields
         required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'unitPrice', 'amountPaid']
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
         try:
-            # Extract and convert data to correct types
+            # Extract and convert data
             itemname = data['itemname']
             quantity = float(data['quantity'])
             metric = data['metric'].strip().lower()
@@ -446,19 +447,19 @@ class ManualTransfer(Resource):
             amountPaid = float(data['amountPaid'])
             batch_number = itemname  # Set batch number to item name
 
-            # Convert trays to eggs only if the metric is "tray"
+            # Convert trays to eggs if metric is "tray"
             if metric == "tray":
                 quantity *= 30  # Convert trays to eggs
-                metric = "egg"  # Change metric to eggs
+                metric = "egg"
 
-            # Create new transfer record
+            # Create new transfer record with inventory_id set to None
             new_transfer = Transfer(
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
-                inventory_id=0,  # Explicitly set to None
+                inventory_id= None,  # Set to None to avoid foreign key constraint issue
                 quantity=quantity,
                 metric=metric,
                 total_cost=unitCost * quantity,
-                BatchNumber=batch_number,  # Use itemname as batch number
+                BatchNumber=batch_number,
                 user_id=current_user_id,
                 itemname=itemname,
                 amountPaid=amountPaid,
@@ -473,7 +474,7 @@ class ManualTransfer(Resource):
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
                 itemname=itemname,
                 metric=metric,
-                BatchNumber=batch_number  # Check batch number as itemname
+                BatchNumber=batch_number
             ).first()
 
             if existing_stock:
@@ -485,14 +486,14 @@ class ManualTransfer(Resource):
                 # Create new shop stock record
                 new_shop_stock = ShopStock(
                     shop_id=MANUAL_TRANSFER_SHOP_ID,
-                    inventory_id=0,
+                    inventory_id=None,  # Ensure consistency in related tables
                     transfer_id=new_transfer.transfer_id,  # Link to transfer
                     quantity=quantity,
                     total_cost=unitCost * quantity,
                     itemname=itemname,
                     metric=metric,
-                    BatchNumber=batch_number,  # Set batch number to item name
-                    unitPrice=unitPrice  # Store unitPrice in ShopStock
+                    BatchNumber=batch_number,
+                    unitPrice=unitPrice
                 )
                 db.session.add(new_shop_stock)
 
@@ -507,7 +508,6 @@ class ManualTransfer(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error processing request', 'error': str(e)}, 500
-
 
 
 
