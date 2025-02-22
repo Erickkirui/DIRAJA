@@ -38,6 +38,9 @@ import ManageUsers from './Pages/ManageUsers';
 import ManualTransfer from './Pages/AddStockPage';
 import ClerkStockManagement from './Components/StockManagement/ClerkStockManagement';
 import GetAllLiveStock from './Components/GetAllLiveStock';
+import ShopSalesDetails from './Components/SingleShopSales';
+
+
 
 
 const Layout = ({ children }) => {
@@ -130,6 +133,9 @@ function App() {
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
             <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>} ></Route>
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
+
+            <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
+
           </Routes> 
        
       </Router>

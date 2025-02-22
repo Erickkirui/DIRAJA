@@ -287,19 +287,16 @@ class GetShopStock(Resource):
                 shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Default values
-                item_name, metric = "Unknown Item", "Unknown Metric"
-
-                # First, check Transfer
-                transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
-                if transfer:
-                    item_name = transfer.itemname if transfer.itemname else None
-                    metric = transfer.metric if transfer.metric else "Unknown Metric"
-
-                # If Transfer is missing item name, fallback to Inventory
-                if not item_name and stock.inventory:
-                    item_name = stock.inventory.itemname if stock.inventory.itemname else "Unnamed Item"
-                    metric = stock.inventory.metric if stock.inventory.metric else "Unknown Metric"
+                # Handle missing inventory reference
+                if stock.inventory:
+                    item_name = stock.inventory.itemname
+                    metric = stock.inventory.metric
+                else:
+                    # Fetch details from the transfer entry for manual stock
+                    transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
+                    item_name = transfer.itemname if transfer else "Unknown Item"
+                    metric = transfer.metric if transfer else "Unknown Metric"
+                
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,
@@ -323,9 +320,7 @@ class GetShopStock(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching shop stock data", "details": str(e)}, 500
-
-
+            return {"error": "An error occurred while fetching shop stock data"}, 500
 
         
 

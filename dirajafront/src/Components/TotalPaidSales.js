@@ -64,7 +64,11 @@ const TotalPaidSales = () => {
           {shopSales.length > 0 ? (
             shopSales.map((shop) => (
               <div key={shop.shop_id} className="shop-sales-cards">
-                <h4>{shop.shop_name || `Shop ${shop.shop_id}`}</h4>
+                {/* <h4>{shop.shop_name || `Shop ${shop.shop_id}`}</h4> */}
+                <h4>
+                <a href={`/salesbyshop/${shop.shop_id}`}>{shop.shop_name}</a>
+                </h4>
+
                 <h1>{`${shop.total_sales_amount_paid}`}</h1>
               </div>
             ))

@@ -397,3 +397,101 @@ class StockAlert(Resource):
             return {"error": "Unable to fetch shop stock data"}, 500
 
 
+
+class TotalSalesByShop(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self, shop_id):
+        today = datetime.utcnow()
+        start_date = None
+        end_date = None
+
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            period = request.args.get('period', 'today')
+
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'yesterday':
+                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'month':
+                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            else:
+                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or provide start_date and end_date."}, 400
+
+        try:
+            shop = Shops.query.filter_by(shops_id=shop_id).first()
+            if not shop:
+                return {"message": "Shop not found."}, 404
+
+            query = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(Sales.shop_id == shop_id, Sales.created_at.between(start_date, end_date))
+            )
+
+            total_sales = query.scalar() or 0
+            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+
+            sales_records = Sales.query.filter(Sales.shop_id == shop_id, Sales.created_at.between(start_date, end_date)).all()
+            sales_list = []
+            for sale in sales_records:
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                username = user.username if user else "Unknown User"
+
+                payment_data = [
+                    {
+                        "payment_method": payment.payment_method,
+                        "amount_paid": payment.amount_paid,
+                        "balance": payment.balance,
+                    }
+                    for payment in sale.payment
+                ]
+                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+
+                sales_list.append({
+                    "sale_id": sale.sales_id,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "user_id": sale.user_id,
+                    "username": username,
+                    "customer_name": sale.customer_name,
+                    "status": sale.status,
+                    "customer_number": sale.customer_number,
+                    "item_name": sale.item_name,
+                    "quantity": sale.quantity,
+                    "batchnumber": sale.BatchNumber,
+                    "metric": sale.metric,
+                    "unit_price": sale.unit_price,
+                    "total_price": sale.total_price,
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "balance": sale.balance,
+                    "note": sale.note,
+                })
+
+            return {
+                "shop_id": shop_id,
+                "shop_name": shop.shopname,
+                "total_sales_amount_paid": formatted_sales,
+                "sales_records": sales_list
+            }, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching total sales for the shop", "details": str(e)}, 500
+
+
