@@ -298,6 +298,7 @@ class GetShopStock(Resource):
                     transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
                     item_name = transfer.itemname if transfer else "Unknown Item"
                     metric = transfer.metric if transfer else "Unknown Metric"
+                
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,
@@ -322,9 +323,6 @@ class GetShopStock(Resource):
         except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching shop stock data"}, 500
-
-
-
 
         
 

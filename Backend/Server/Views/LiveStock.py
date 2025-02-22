@@ -25,6 +25,55 @@ def check_role(required_role):
     return wrapper
 
 
+class GetAllLiveStock(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        today = datetime.utcnow().date()
+        
+        # Fetch all stock records for today and yesterday, ordered by creation date
+        stock_records = (
+            LiveStock.query
+            .order_by(LiveStock.created_at.desc())
+            .all()
+        )
+
+        # Filter to get only the most recent stock for each item (prioritize today's stock)
+        items_seen = set()
+        filtered_stock_records = []
+
+        for stock in stock_records:
+            # If the item has not been seen yet, or if it is from today, add it
+            if stock.item_name not in items_seen or db.func.date(stock.created_at) == today:
+                filtered_stock_records.append(stock)
+                items_seen.add(stock.item_name)
+
+        # If stock records are found, return them sorted by the creation date
+        if filtered_stock_records:
+            # Fetch the shop details for each shop_id
+            shop_ids = {stock.shop_id for stock in filtered_stock_records}
+            shops = {shop.shops_id: shop.shopname for shop in Shops.query.filter(Shops.shops_id.in_(shop_ids)).all()}
+
+            return jsonify([{
+                "stock_id": stock.id,
+                "shop_id": stock.shop_id,  # Include shop_id to identify which shop the stock belongs to
+                "shop_name": shops.get(stock.shop_id, "Unknown"),  # Get the shop name related to the shop_id
+                "item_name": stock.item_name,
+                "metric": stock.metric,
+                "clock_in_quantity": stock.clock_in_quantity,
+                "added_stock": stock.added_stock,
+                "current_quantity": stock.current_quantity,
+                "clock_out_quantity": stock.clock_out_quantity,
+                "mismatch_quantity": stock.mismatch_quantity,
+                "mismatch_reason": stock.mismatch_reason,
+                "created_at": stock.created_at
+            } for stock in filtered_stock_records])
+
+        return {"error": "No stock records found."}, 404
+
+
+
+
 class GetStock(Resource):
     @jwt_required()
     def get(self, shop_id):

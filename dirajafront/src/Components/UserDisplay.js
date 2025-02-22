@@ -81,6 +81,7 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/purchases" onClick={handleMenuClick}>Purchases</Link>}
             {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>}
             {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
+            {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}

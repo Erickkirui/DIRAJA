@@ -20,7 +20,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
@@ -30,7 +30,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -143,6 +143,7 @@ api.add_resource(CheckInStock, '/stockcheckin')
 api.add_resource(DeleteStock, "/delete-stock/<int:stock_id>" )
 api.add_resource(AddStock, "/addstock")
 api.add_resource(CheckoutStock, "/checkout")
+api.add_resource(GetAllLiveStock , "/all-shop-stocks")
     
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
@@ -164,3 +165,5 @@ api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
 
 # Sales dashboard
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
+
+api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
