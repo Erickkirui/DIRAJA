@@ -19,7 +19,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
 from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 
@@ -133,7 +133,9 @@ api.add_resource(TotalBalanceSummary, '/accountspayable')
 #Distribution
 api.add_resource(DistributeInventory,'/transfer')
 api.add_resource(GetTransfer,'/alltransfers')
+api.add_resource(UpdateTransfer, "/updatetransfer/<int:transfer_id>")
 api.add_resource(ManualTransfer,'/manualtransfer')
+api.add_resource(GetTransferById, '/singletransfer/<int:transfer_id>')
 
 
 #Live stock 

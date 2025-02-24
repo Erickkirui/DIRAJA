@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
+import UpdateTransfer from './UpdtaeTransfers';
 import '../Styles/purchases.css';
 
 const Purchases = () => {
@@ -10,6 +11,7 @@ const Purchases = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTransferId, setSelectedTransferId] = useState(null); // Track which transfer is being updated
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -21,16 +23,11 @@ const Purchases = () => {
           return;
         }
 
-
-        const response = await axios.get(' /api/diraja/alltransfers', {
-
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const response = await axios.get('/api/diraja/alltransfers', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
 
         const sortedPurchases = response.data.sort((a, b) => b.transfer_id - a.transfer_id);
-
         setPurchases(sortedPurchases);
       } catch (err) {
         setError('Error fetching purchases. Please try again.');
@@ -40,10 +37,13 @@ const Purchases = () => {
     fetchPurchases();
   }, []);
 
-  const getFirstName = (username) => username.split(' ')[0];
-  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
+  const handleEdit = (transferId) => {
+    setSelectedTransferId(transferId);
+  };
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const closeUpdateForm = () => {
+    setSelectedTransferId(null);
+  };
 
   const filteredPurchases = purchases.filter((purchase) => {
     const matchesSearch =
@@ -63,10 +63,6 @@ const Purchases = () => {
   const currentPurchases = filteredPurchases.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
 
-  if (error) {
-    return <div className="error-message">{error}</div>;
-  }
-
   return (
     <div className="purchases-container">
       <div className="filter-container">
@@ -80,7 +76,6 @@ const Purchases = () => {
             setCurrentPage(1);
           }}
         />
-        
         <input
           type="date"
           className="date-picker"
@@ -91,11 +86,18 @@ const Purchases = () => {
           }}
         />
       </div>
-      
-      <div className='actions-container' >
+
+      <div className='actions-container'>
         <ExportExcel data={filteredPurchases} fileName="PurchasesData" />
         <DownloadPDF tableId="purchases-table" fileName="PurchasesData" />
       </div>
+
+      {selectedTransferId && (
+        <div className="update-form-container">
+          <UpdateTransfer transferId={selectedTransferId} />
+          <button className="close-btn" onClick={closeUpdateForm}>Close</button>
+        </div>
+      )}
 
       {filteredPurchases.length > 0 ? (
         <>
@@ -108,22 +110,18 @@ const Purchases = () => {
                 <th>Item</th>
                 <th>Batch</th>
                 <th>Quantity</th>
-                <th>Unit Cost(ksh)</th>
-                <th>Total Cost(ksh)</th>
-                <th>Amount Paid(ksh)</th>
+                <th>Unit Cost (Ksh)</th>
+                <th>Total Cost (Ksh)</th>
+                <th>Amount Paid (Ksh)</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentPurchases.map((purchase) => (
                 <tr key={purchase.transfer_id}>
                   <td>{purchase.transfer_id}</td>
-                  <td>
-                    <div className="employee-info">
-                      <div className="employee-icon">{getFirstLetter(purchase.username)}</div>
-                      <span className="employee-name">{getFirstName(purchase.username)}</span>
-                    </div>
-                  </td>
+                  <td>{purchase.username}</td>
                   <td>{purchase.shop_name}</td>
                   <td>{purchase.itemname}</td>
                   <td>{purchase.batchnumber}</td>
@@ -131,7 +129,15 @@ const Purchases = () => {
                   <td>{purchase.unitCost}</td>
                   <td>{purchase.totalCost}</td>
                   <td>{purchase.amountPaid}</td>
-                  <td>{new Date(purchase.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true }).replace(',', '')}</td>
+                  <td>{new Date(purchase.created_at).toLocaleString()}</td>
+                  <td>
+                    <button
+                      className="edit-btn"
+                      onClick={() => handleEdit(purchase.transfer_id)}
+                    >
+                      Edit
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -142,7 +148,7 @@ const Purchases = () => {
               <button
                 key={index}
                 className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(index + 1)}
+                onClick={() => setCurrentPage(index + 1)}
               >
                 {index + 1}
               </button>
