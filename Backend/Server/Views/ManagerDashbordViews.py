@@ -228,6 +228,9 @@ class TotalAmountPaidPurchases(Resource):
         elif period == 'month':
             start_date = today - timedelta(days=30)
             end_date = today
+        elif period == 'alltime':  # New condition for "all time"
+            start_date = None  # No start date filter
+            end_date = None  # No end date filter
         else:
             return {"message": "Invalid period specified"}, 400
 
@@ -235,10 +238,10 @@ class TotalAmountPaidPurchases(Resource):
             # Build query to sum the `amountPaid`
             query = db.session.query(db.func.sum(Transfer.amountPaid))
 
-            # Filter based on the date range
-            if end_date:
+            # Apply date filtering only if a specific period is selected
+            if start_date and end_date:
                 query = query.filter(Transfer.created_at.between(start_date, end_date))
-            else:
+            elif start_date:
                 query = query.filter(Transfer.created_at >= start_date)
 
             total_amount = query.scalar() or 0
