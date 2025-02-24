@@ -12,7 +12,7 @@ const TotalAmountPaidPurchases = () => {
   const [period, setPeriod] = useState('yesterday');
 
   const fetchTotalAmountPaid = async (selectedPeriod) => {
-    setLoading(true); // Start loading
+    setLoading(true);
     try {
       const response = await axios.get(`/api/diraja/totalpurchases?period=${selectedPeriod}`, {
         headers: {
@@ -23,14 +23,14 @@ const TotalAmountPaidPurchases = () => {
       // Simulate a 3-second delay
       setTimeout(() => {
         setTotalAmountPaid(response.data.total_amount_paid);
-        setLoading(false); // Stop loading
+        setLoading(false);
       }, 3000);
       setError('');
     } catch (error) {
       console.error('Error fetching total amount paid:', error);
       setError('Error fetching total amount paid');
       setTotalAmountPaid(null);
-      setLoading(false); // Stop loading even on error
+      setLoading(false);
     }
   };
 
@@ -52,6 +52,7 @@ const TotalAmountPaidPurchases = () => {
           <option value="yesterday">Yesterday</option>
           <option value="week">This Week</option>
           <option value="month">This Month</option>
+          <option value="alltime">All Time</option> {/* New Option */}
         </select>
       </div>
       <h5>Total Purchases</h5>

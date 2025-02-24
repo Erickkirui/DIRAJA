@@ -133,7 +133,7 @@ const Purchases = () => {
                   <td>{new Date(purchase.created_at).toLocaleString()}</td>
                   <td>
                     <button
-                      className="edit-btn"
+                      className='editeInventory'
                       onClick={() => handleEdit(purchase.transfer_id)}
                     >
                       Edit
