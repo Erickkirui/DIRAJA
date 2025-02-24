@@ -80,11 +80,12 @@ const UpdateTransfer = ({ transferId }) => {
       <h2 className="title">Update Transfer</h2>
       {message && <p className="success-message">{message}</p>}
       {error && <p className="error-message">{error}</p>}
-      <form onSubmit={handleSubmit} className="update-form">
+
+      <form onSubmit={handleSubmit} className="updateform">
         {["itemname", "unitCost", "quantity", "amountPaid", "totalCost"].map((key) => (
           <div className="input-group" key={key}>
             <label htmlFor={key} className="input-label">
-              {key.replace(/_/g, "  : ")}
+              {key.replace(/_/g, " : ")}
             </label>
             <input
               type="text"
@@ -97,9 +98,10 @@ const UpdateTransfer = ({ transferId }) => {
             />
           </div>
         ))}
-        <button type="submit" className="submit-button">
+        <button type="submit" className="button">
           Update Transfer
         </button>
+        
       </form>
     </div>
   );

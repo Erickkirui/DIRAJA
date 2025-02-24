@@ -39,6 +39,7 @@ const Purchases = () => {
 
   const handleEdit = (transferId) => {
     setSelectedTransferId(transferId);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const closeUpdateForm = () => {
@@ -95,7 +96,7 @@ const Purchases = () => {
       {selectedTransferId && (
         <div className="update-form-container">
           <UpdateTransfer transferId={selectedTransferId} />
-          <button className="close-btn" onClick={closeUpdateForm}>Close</button>
+          <button className="button" onClick={closeUpdateForm}>Close</button>
         </div>
       )}
 
