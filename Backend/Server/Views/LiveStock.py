@@ -400,16 +400,34 @@ class TransferStock(Resource):
                 .first()
             )
 
-            # If the receiving shop already has stock, update it
+            today = datetime.utcnow().date()
+
             if receiving_stock:
-                receiving_stock.added_stock += transfer_quantity
-                receiving_stock.current_quantity += transfer_quantity
+                # If stock exists, check if the last update was today
+                if receiving_stock.created_at.date() == today:
+                    receiving_stock.added_stock += transfer_quantity
+                    receiving_stock.current_quantity += transfer_quantity
+                else:
+                    # Create a new stock entry for today
+                    new_stock_entry = LiveStock(
+                        shop_id=to_shop_id,
+                        item_name=item_name,
+                        metric=sending_stock.metric,  # Use the same metric
+                        added_stock=transfer_quantity,
+                        current_quantity=transfer_quantity,
+                        clock_in_quantity=0,
+                        mismatch_quantity=0,
+                        mismatch_reason=None,
+                        clock_out_quantity=0,
+                        created_at=datetime.utcnow()
+                    )
+                    db.session.add(new_stock_entry)
             else:
-                # Create a new stock entry for the receiving shop
+                # Create a new stock entry for the receiving shop if item does not exist
                 receiving_stock = LiveStock(
                     shop_id=to_shop_id,
                     item_name=item_name,
-                    metric=sending_stock.metric,  # Use the same metric as the sending shop
+                    metric=sending_stock.metric,  # Use the same metric
                     added_stock=transfer_quantity,
                     current_quantity=transfer_quantity,
                     clock_in_quantity=0,
