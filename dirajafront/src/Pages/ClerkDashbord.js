@@ -27,7 +27,7 @@ function ClerkDashbord() {
           <ShopNameDisplay />
             <Link className='clerk-button' to='/shopsale'>New Sale</Link>
             <Link className='clerk-button' to='/shopcustomers'>View Customers</Link>
-            {/* <Link className='clerk-button' to='/managestock'>Manage Stock</Link> */}
+            <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
             {/* Conditionally render the button for relievers */}
             {designation === "reliever" && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
