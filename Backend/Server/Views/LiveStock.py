@@ -1,5 +1,6 @@
 from flask_restful import Resource
 from Server.Models.LiveStock import LiveStock
+from Server.Models.ShopTransfers import ShopTransfer
 from Server.Models.Shops import Shops
 from datetime import datetime
 from app import db
@@ -403,16 +404,14 @@ class TransferStock(Resource):
             today = datetime.utcnow().date()
 
             if receiving_stock:
-                # If stock exists, check if the last update was today
                 if receiving_stock.created_at.date() == today:
                     receiving_stock.added_stock += transfer_quantity
                     receiving_stock.current_quantity += transfer_quantity
                 else:
-                    # Create a new stock entry for today
                     new_stock_entry = LiveStock(
                         shop_id=to_shop_id,
                         item_name=item_name,
-                        metric=sending_stock.metric,  # Use the same metric
+                        metric=sending_stock.metric,
                         added_stock=transfer_quantity,
                         current_quantity=transfer_quantity,
                         clock_in_quantity=0,
@@ -423,11 +422,10 @@ class TransferStock(Resource):
                     )
                     db.session.add(new_stock_entry)
             else:
-                # Create a new stock entry for the receiving shop if item does not exist
                 receiving_stock = LiveStock(
                     shop_id=to_shop_id,
                     item_name=item_name,
-                    metric=sending_stock.metric,  # Use the same metric
+                    metric=sending_stock.metric,
                     added_stock=transfer_quantity,
                     current_quantity=transfer_quantity,
                     clock_in_quantity=0,
@@ -438,6 +436,22 @@ class TransferStock(Resource):
                 )
                 db.session.add(receiving_stock)
 
+            # Fetch shop names
+            from_shop = Shops.query.filter_by(shops_id=from_shop_id).first()
+            to_shop = Shops.query.filter_by(shops_id=to_shop_id).first()
+
+            # Store transfer record in ShopTransfer table
+            transfer_record = ShopTransfer(
+                shop_id=to_shop_id,
+                item_name=item_name,
+                quantity=transfer_quantity,
+                metric=sending_stock.metric,
+                fromshop=from_shop.shopname if from_shop else None,
+                toshop=to_shop.shopname if to_shop else None,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(transfer_record)
+
             db.session.commit()
 
             return {
@@ -447,9 +461,38 @@ class TransferStock(Resource):
                 "item_name": item_name,
                 "transferred_quantity": transfer_quantity,
                 "remaining_stock_in_sending_shop": sending_stock.current_quantity,
-                "new_stock_in_receiving_shop": receiving_stock.current_quantity
+                "new_stock_in_receiving_shop": receiving_stock.current_quantity,
+                "transfer_record_id": transfer_record.id
             }, 200
 
         except Exception as e:
             db.session.rollback()
+            return {"error": str(e)}, 500
+        
+
+
+class GetShopTransfers(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Fetch all shop transfer records, ordered by most recent
+            transfers = ShopTransfer.query.order_by(ShopTransfer.created_at.desc()).all()
+
+            # Serialize the transfer records
+            transfer_list = []
+            for transfer in transfers:
+                transfer_list.append({
+                    "id": transfer.id,
+                    "shop_id": transfer.shop_id,
+                    "item_name": transfer.item_name,
+                    "quantity": transfer.quantity,
+                    "metric": transfer.metric,
+                    "fromshop": transfer.fromshop,
+                    "toshop": transfer.toshop,
+                    "created_at": transfer.created_at.strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+            return {"transfers": transfer_list}, 200
+        
+        except Exception as e:
             return {"error": str(e)}, 500

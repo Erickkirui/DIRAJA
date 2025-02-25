@@ -28,6 +28,7 @@ def initialize_models():
     # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
     from Server.Models.LiveStock import LiveStock
+    from Server.Models.ShopTransfers import ShopTransfer
 
     # from Server.Models.Purchases import Purchases
 

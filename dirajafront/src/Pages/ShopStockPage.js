@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom';
 import ShopStock from '../Components/GetShopStock'
 
+
 function ShopStockPage() {
   return (
     <div>
@@ -10,6 +11,7 @@ function ShopStockPage() {
     <Link to="/addstock"  className='add-button' >Add Mabanda Stock ＋</Link>
     </div>
       <ShopStock />
+   
   </div>
   )
 }
