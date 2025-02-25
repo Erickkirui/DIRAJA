@@ -200,6 +200,68 @@ class GetTransfer(Resource):
         return make_response(jsonify(all_transfers), 200)
 
 
+class GetTransferById(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self, transfer_id):
+        transfer = Transfer.query.filter_by(transfer_id=transfer_id).first()
+        
+        if not transfer:
+            return make_response(jsonify({"message": "Transfer not found"}), 404)
+        
+        # Fetch username and shop name manually using user_id and shop_id
+        user = Users.query.filter_by(users_id=transfer.user_id).first()
+        shop = Shops.query.filter_by(shops_id=transfer.shop_id).first()
+        
+        # Handle cases where user or shop may not be found
+        username = user.username if user else "Unknown User"
+        shopname = shop.shopname if shop else "Unknown Shop"
+    
+        transfer_data = {
+            "transfer_id": transfer.transfer_id,
+            "shop_id": transfer.shop_id,
+            "inventory_id": transfer.inventory_id,      
+            "quantity": transfer.quantity,             
+            "metric": transfer.metric,
+            "totalCost": transfer.total_cost,
+            "batchnumber": transfer.BatchNumber,
+            "user_id": transfer.user_id,
+            "username": username,
+            "shop_name": shopname,
+            "itemname": transfer.itemname,
+            "amountPaid": transfer.amountPaid,
+            "unitCost": transfer.unitCost,
+            "created_at": transfer.created_at,
+        }
+
+        return make_response(jsonify(transfer_data), 200)
+
+class UpdateTransfer(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def put(self, transfer_id):
+        data = request.get_json()
+        transfer = Transfer.query.filter_by(transfer_id=transfer_id).first()
+        
+        if not transfer:
+            return make_response(jsonify({"message": "Transfer not found"}), 404)
+        
+        # Update transfer fields if they exist in the request data
+        transfer.shop_id = data.get("shop_id", transfer.shop_id)
+        transfer.inventory_id = data.get("inventory_id", transfer.inventory_id)
+        transfer.quantity = data.get("quantity", transfer.quantity)
+        transfer.metric = data.get("metric", transfer.metric)
+        transfer.total_cost = data.get("totalCost", transfer.total_cost)
+        transfer.BatchNumber = data.get("batchnumber", transfer.BatchNumber)
+        transfer.user_id = data.get("user_id", transfer.user_id)
+        transfer.itemname = data.get("itemname", transfer.itemname)
+        transfer.amountPaid = data.get("amountPaid", transfer.amountPaid)
+        transfer.unitCost = data.get("unitCost", transfer.unitCost)
+        
+        db.session.commit()
+        
+        return make_response(jsonify({"message": "Transfer updated successfully"}), 200)
+
 
 class AddInventory(Resource):
     @jwt_required()
@@ -291,8 +353,6 @@ class GetAllInventory(Resource):
 
         return make_response(jsonify(all_inventory), 200)
     
-
-
 class InventoryResourceById(Resource):
     @jwt_required()
     @check_role('manager')
@@ -313,7 +373,7 @@ class InventoryResourceById(Resource):
                 "amountPaid": inventory.amountPaid,
                 "balance": inventory.ballance,  # Corrected typo f'
                 "note": inventory.note,
-                "created_at": inventory.created_at,
+                "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
                 "unitPrice": inventory.unitPrice,
                 "Suppliername": inventory.Suppliername,
                 "Supplier_location": inventory.Supplier_location
