@@ -99,8 +99,8 @@ const ShopSalesDetails = () => {
                 {/* <th>Customer</th> */}
                 <th>Item</th>
                 <th>Quantity</th>
+                <th>Total price</th>
                 <th>Amount paid</th>
-                <th>Payment methods</th>
                 <th>Sale date</th>
               </tr>
             </thead>
