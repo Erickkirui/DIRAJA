@@ -4,6 +4,7 @@ import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import LoadingAnimation from "./LoadingAnimation";
+import ShopTransferTable from "./ShopTransferTable";
 
 const GetAllLiveStock = ({ accessToken }) => {
   const [stockData, setStockData] = useState([]);
@@ -120,6 +121,7 @@ const GetAllLiveStock = ({ accessToken }) => {
           ))}
         </tbody>
       </table>
+      <ShopTransferTable />
     </div>
   );
 };
