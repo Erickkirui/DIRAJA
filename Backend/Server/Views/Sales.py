@@ -16,7 +16,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify, request
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 def check_role(required_role):
@@ -30,6 +30,7 @@ def check_role(required_role):
             return fn(*args, **kwargs)
         return decorator
     return wrapper
+
 
 
 class AddSale(Resource):
@@ -82,24 +83,33 @@ class AddSale(Resource):
 
         balance = total_amount_paid - total_price
 
-        # ✅ **Step 1: Get latest stock entry in LiveStock**
-        live_stock = (
-            LiveStock.query
-            .filter_by(shop_id=shop_id, item_name=item_name)
-            .order_by(LiveStock.created_at.desc())  # Get latest stock entry
-            .first()
-        )
-        if not live_stock:
-            return {'message': f'No stock found for {item_name} in shop {shop_id}'}, 400
+        # ✅ **Check if Sale Date is Today or Yesterday**
+        today = datetime.today().date()
+        yesterday = today - timedelta(days=1)
 
-        if live_stock.current_quantity < quantity:
-            return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
+        # ✅ **Deduct from LiveStock only if the sale date is today or yesterday**
+        live_stock = None
+        if created_at.date() in [today, yesterday]:  
+            live_stock = (
+                LiveStock.query
+                .filter_by(shop_id=shop_id, item_name=item_name)
+                .order_by(LiveStock.created_at.desc())  # Get latest stock entry
+                .first()
+            )
 
-        # ✅ **Step 2: Deduct from latest LiveStock entry**
-        live_stock.current_quantity -= quantity
-        remaining_stock = live_stock.current_quantity
+            if live_stock:
+                if live_stock.current_quantity < quantity:
+                    return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
 
-        # ✅ **Step 3: Deduct from ShopStock using FIFO logic**
+                # ✅ Deduct from LiveStock if it exists
+                live_stock.current_quantity -= quantity
+                remaining_stock = live_stock.current_quantity
+            else:
+                remaining_stock = None
+        else:
+            remaining_stock = None  # Don't track LiveStock updates for old sales
+
+        # ✅ **Step 2: Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
@@ -134,7 +144,7 @@ class AddSale(Resource):
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-        # ✅ **Step 4: Save sale record**
+        # ✅ **Step 3: Save sale record**
         new_sale = Sales(
             user_id=current_user_id,
             shop_id=shop_id,
@@ -177,16 +187,20 @@ class AddSale(Resource):
             )
             db.session.add(new_customer)
 
-            db.session.add(live_stock)  
+            if live_stock:  # ✅ Only update LiveStock if it exists and sale is from today or yesterday
+                db.session.add(live_stock)
+
             db.session.commit()
             return {
                 'message': 'Sale and customer added successfully! Stock updated!',
-                'remaining_stock': remaining_stock  # ✅ Include remaining stock in response
+                'remaining_stock': remaining_stock  # ✅ Include remaining stock only if LiveStock exists
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
+
+
 
 
 

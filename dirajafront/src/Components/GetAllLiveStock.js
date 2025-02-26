@@ -103,10 +103,10 @@ const GetAllLiveStock = ({ accessToken }) => {
           {filteredStockData.map((stock, index) => (
             <tr key={index}>
               <td className="status-icon">
-                <FontAwesomeIcon
-                  icon={getStockStatus(stock.created_at) === "today" ? faCircleCheck : faCircleXmark}
-                  size="1x"
-                  style={{ color: getStockStatus(stock.created_at) === "today" ? '#088F8F' : '#e53e3e' }}
+              <FontAwesomeIcon 
+                  icon={stock.clock_out_quantity === 0 ? faCircleCheck : faCircleXmark} 
+                  size="1x" 
+                  style={{ color: stock.clock_out_quantity === 0 ? '#088F8F' : '#e53e3e' }} 
                 />
               </td>
               <td>{stock.shop_name}</td>
