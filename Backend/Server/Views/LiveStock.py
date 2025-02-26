@@ -32,33 +32,34 @@ class GetAllLiveStock(Resource):
     def get(self):
         today = datetime.utcnow().date()
         
-        # Fetch all stock records for today and yesterday, ordered by creation date
+        # Fetch all stock records ordered by creation date (latest first)
         stock_records = (
             LiveStock.query
             .order_by(LiveStock.created_at.desc())
             .all()
         )
 
-        # Filter to get only the most recent stock for each item (prioritize today's stock)
+        # Ensure we track unique items per shop
         items_seen = set()
         filtered_stock_records = []
 
         for stock in stock_records:
-            # If the item has not been seen yet, or if it is from today, add it
-            if stock.item_name not in items_seen or db.func.date(stock.created_at) == today:
+            key = (stock.item_name, stock.shop_id)  # Track by item and shop
+            
+            # If the item for the shop is not seen yet, or if it's from today, add it
+            if key not in items_seen or db.func.date(stock.created_at) == today:
                 filtered_stock_records.append(stock)
-                items_seen.add(stock.item_name)
+                items_seen.add(key)
 
-        # If stock records are found, return them sorted by the creation date
         if filtered_stock_records:
-            # Fetch the shop details for each shop_id
+            # Fetch shop details for shop IDs
             shop_ids = {stock.shop_id for stock in filtered_stock_records}
             shops = {shop.shops_id: shop.shopname for shop in Shops.query.filter(Shops.shops_id.in_(shop_ids)).all()}
 
             return jsonify([{
                 "stock_id": stock.id,
-                "shop_id": stock.shop_id,  # Include shop_id to identify which shop the stock belongs to
-                "shop_name": shops.get(stock.shop_id, "Unknown"),  # Get the shop name related to the shop_id
+                "shop_id": stock.shop_id,
+                "shop_name": shops.get(stock.shop_id, "Unknown"),
                 "item_name": stock.item_name,
                 "metric": stock.metric,
                 "clock_in_quantity": stock.clock_in_quantity,
@@ -71,6 +72,7 @@ class GetAllLiveStock(Resource):
             } for stock in filtered_stock_records])
 
         return {"error": "No stock records found."}, 404
+
 
 
 
@@ -294,7 +296,6 @@ class CheckInStock(Resource):
             db.session.rollback()
             return {"error": str(e)}, 500
         
-
 class CheckoutStock(Resource):
     @jwt_required()
     def post(self):
@@ -342,6 +343,8 @@ class CheckoutStock(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+
+
 
 class DeleteStock(Resource):
     @jwt_required()

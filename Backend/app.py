@@ -29,9 +29,9 @@ def initialize_models():
     from Server.Models.Transfer import Transfer
     from Server.Models.LiveStock import LiveStock
     from Server.Models.ShopTransfers import ShopTransfer
-
+    from Server.Models.SystemStockTransfer import  SystemStockTransfer
+    
     # from Server.Models.Purchases import Purchases
-
 
 def initialize_views():
     from  Server.Views import api_endpoint

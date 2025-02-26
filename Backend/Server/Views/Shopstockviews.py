@@ -3,6 +3,7 @@
 from flask_restful import Resource, reqparse
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
+from Server.Models.SystemStockTransfer import SystemStockTransfer
 from Server.Models.Users import Users
 from Server.Models.Inventory import Inventory, db
 from Server.Models.Expenses import Expenses  # Import Expenses model
@@ -693,3 +694,90 @@ class ItemDetailsResourceForShop(Resource):
         }
 
         return sales_details, 200
+
+
+
+class TransferSystemStock(Resource):
+    @jwt_required()
+    def post(self):
+        try:
+            data = request.get_json()
+
+            from_shop_id = data.get("from_shop_id")
+            to_shop_id = data.get("to_shop_id")
+            stock_id = data.get("stock_id")  # Stock record in ShopStock
+            transfer_quantity = data.get("quantity")
+
+            # Get the current user ID from JWT
+            current_user_id = get_jwt_identity()
+
+            # Fetch stock from source shop
+            stock = ShopStock.query.filter_by(stock_id=stock_id, shop_id=from_shop_id).first()
+            if not stock:
+                return jsonify({"error": "Stock not found in the source shop"}), 404
+
+            # Check if there is enough stock to transfer
+            if stock.quantity < transfer_quantity:
+                return jsonify({"error": "Insufficient stock to transfer"}), 400
+
+            # Deduct stock from source shop
+            stock.quantity -= transfer_quantity
+
+            # Check if the destination shop already has this stock
+            dest_stock = ShopStock.query.filter_by(shop_id=to_shop_id, BatchNumber=stock.BatchNumber).first()
+
+            if dest_stock:
+                # Update the existing stock record
+                dest_stock.quantity += transfer_quantity
+            else:
+                # Create a new stock entry for the destination shop
+                new_stock = ShopStock(
+                    shop_id=to_shop_id,
+                    inventory_id=stock.inventory_id,
+                    BatchNumber=stock.BatchNumber,
+                    quantity=transfer_quantity,
+                    total_cost=stock.unitPrice * transfer_quantity,
+                    unitPrice=stock.unitPrice
+                )
+                db.session.add(new_stock)
+
+            # Record the transfer
+            transfer_record = SystemStockTransfer(
+                from_shop_id=from_shop_id,
+                to_shop_id=to_shop_id,
+                user_id=current_user_id,
+                itemname=stock.itemname,
+                inventory_id=stock.inventory_id,
+                quantity=transfer_quantity,
+                batch_number=stock.BatchNumber,
+                transfer_date=datetime.utcnow(),
+                total_cost=stock.unitPrice * transfer_quantity,
+                unit_price=stock.unitPrice
+            )
+            db.session.add(transfer_record)
+
+            # Commit changes
+            db.session.commit()
+
+            return jsonify({
+                "message": "Stock transferred successfully",
+                "transfer_details": {
+                    "from_shop_id": from_shop_id,
+                    "to_shop_id": to_shop_id,
+                    "user_id": current_user_id,
+                    "itemname": stock.itemname,
+                    "inventory_id": stock.inventory_id,
+                    "quantity": transfer_quantity,
+                    "batch_number": stock.BatchNumber,
+                    "transfer_date": datetime.utcnow().isoformat(),
+                    "total_cost": stock.unitPrice * transfer_quantity,
+                    "unit_price": stock.unitPrice
+                }
+            }), 201
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return jsonify({"error": "An error occurred during transfer", "details": str(e)}), 500
+
+        except Exception as e:
+            return jsonify({"error": "Unexpected error", "details": str(e)}), 500

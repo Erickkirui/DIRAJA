@@ -31,13 +31,13 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
 class AddSale(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Validate required fields for sale
         required_fields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
             'quantity', 'metric', 'unit_price', 'payment_methods'
@@ -45,7 +45,6 @@ class AddSale(Resource):
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
-        # Extract and convert data
         shop_id = data.get('shop_id')
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
@@ -70,13 +69,11 @@ class AddSale(Resource):
         except ValueError:
             return {'message': 'Invalid input for quantity or unit price'}, 400
 
-        # Validate payment methods format
         if not isinstance(payment_methods, list) or not all(
             isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
         ):
             return {'message': 'Invalid payment methods format'}, 400
 
-        # Calculate total price and balance
         total_price = unit_price * quantity
         try:
             total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
@@ -85,28 +82,33 @@ class AddSale(Resource):
 
         balance = total_amount_paid - total_price
 
-        # ✅ **Step 1: Check stock in LiveStock**
-        live_stock = LiveStock.query.filter_by(shop_id=shop_id, item_name=item_name).first()
+        # ✅ **Step 1: Get latest stock entry in LiveStock**
+        live_stock = (
+            LiveStock.query
+            .filter_by(shop_id=shop_id, item_name=item_name)
+            .order_by(LiveStock.created_at.desc())  # Get latest stock entry
+            .first()
+        )
         if not live_stock:
             return {'message': f'No stock found for {item_name} in shop {shop_id}'}, 400
 
         if live_stock.current_quantity < quantity:
-            return {'message': 'Insufficient stock quantity in LiveStock table'}, 400  # 🔥 Prevents overselling
+            return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
 
-        # ✅ **Step 2: Deduct stock**
+        # ✅ **Step 2: Deduct from latest LiveStock entry**
         live_stock.current_quantity -= quantity
+        remaining_stock = live_stock.current_quantity
 
-        # ✅ **Step 3: Get total stock across all batches (for FIFO deduction)**
+        # ✅ **Step 3: Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
             ShopStock.quantity > 0
-        ).scalar() or 0  # Default to 0 if no stock
+        ).scalar() or 0
 
         if total_available_stock < quantity:
             return {'message': 'Insufficient inventory quantity in batches'}, 400
 
-        # ✅ **Step 4: Deduct stock using FIFO (oldest batch first)**
         remaining_quantity = quantity
         batches = ShopStock.query.filter(
             ShopStock.itemname == item_name,
@@ -132,7 +134,7 @@ class AddSale(Resource):
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-        # ✅ **Step 5: Save sale record**
+        # ✅ **Step 4: Save sale record**
         new_sale = Sales(
             user_id=current_user_id,
             shop_id=shop_id,
@@ -154,7 +156,6 @@ class AddSale(Resource):
             db.session.add(new_sale)
             db.session.flush()  
 
-            # ✅ **Step 6: Save payment methods**
             for payment in payment_methods:
                 payment_record = SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
@@ -163,7 +164,6 @@ class AddSale(Resource):
                 )
                 db.session.add(payment_record)
 
-            # ✅ **Step 7: Create customer record**
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
@@ -177,15 +177,18 @@ class AddSale(Resource):
             )
             db.session.add(new_customer)
 
-            # ✅ **Step 8: Update stock**
             db.session.add(live_stock)  
-
             db.session.commit()
-            return {'message': 'Sale and customer added successfully! Stock updated!'}, 201
+            return {
+                'message': 'Sale and customer added successfully! Stock updated!',
+                'remaining_stock': remaining_stock  # ✅ Include remaining stock in response
+            }, 201
 
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
+
+
 
 
 class GetSales(Resource):
