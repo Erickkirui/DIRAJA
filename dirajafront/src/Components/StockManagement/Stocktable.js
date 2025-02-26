@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import CheckInForm from "./CheckInForm";
@@ -50,15 +49,6 @@ const StockTable = () => {
     fetchStock();
   }, [shopId]);
 
-  const getStockStatus = (timestamp) => {
-    const stockDate = dayjs(timestamp).format("YYYY-MM-DD");
-    const todayDate = dayjs().format("YYYY-MM-DD");
-    const yesterdayDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-
-    if (stockDate === todayDate) return "today";
-    if (stockDate === yesterdayDate) return "yesterday";
-    return "older";
-  };
 
   const handleCheckInSubmit = async (selectedItem, checkInQuantity, metric, mismatchQuantity, mismatchReason) => {
     setCheckingIn(true);
