@@ -198,7 +198,7 @@ const Inventory = () => {
                 checked={selectedInventory.length === inventory.length}
               />
             </th>
-            <th>ID</th>
+            {/* <th>ID</th> */}
             <th>Item</th>
             <th>Batch No</th>
             <th>Initial Quantity</th>
@@ -223,7 +223,7 @@ const Inventory = () => {
                   onChange={() => handleCheckboxChange(inventoryItem.inventory_id)}
                 />
               </td>
-              <td>{inventoryItem.inventory_id}</td>
+              {/* <td>{inventoryItem.inventory_id}</td> */}
               <td>{inventoryItem.itemname}</td>
               <td>{inventoryItem.batchnumber}</td>
               <td>{inventoryItem.initial_quantity} {inventoryItem.metric}</td>

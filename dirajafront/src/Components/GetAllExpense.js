@@ -156,7 +156,7 @@ const Expenses = () => {
                 checked={selectedExpenses.length === expenses.length}
               />
             </th>
-            <th>ID</th>
+            {/* <th>ID</th> */}
             <th>Employee</th>
             <th>Shop Name</th>
             <th>Item</th>
@@ -180,7 +180,7 @@ const Expenses = () => {
                   onChange={() => handleCheckboxChange(expense.expense_id)}
                 />
               </td>
-              <td>{expense.expense_id}</td>
+              {/* <td>{expense.expense_id}</td> */}
               <td>
                 <div className="employee-info">
                   <div className="employee-icon">{getFirstLetter(expense.username)}</div>

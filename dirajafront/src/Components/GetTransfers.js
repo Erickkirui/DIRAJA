@@ -120,7 +120,7 @@ const Transfers = () => {
           <table id="transfers-table" className="transfers-table">
             <thead>
               <tr>
-                <th>ID</th>
+                {/* <th>ID</th> */}
                 <th>Employee</th>
                 <th>Shop</th>
                 <th>Item</th>
@@ -135,7 +135,7 @@ const Transfers = () => {
             <tbody>
               {currentTransfers.map((transfer) => (
                 <tr key={transfer.transfer_id}>
-                  <td>{transfer.transfer_id}</td>
+                  {/* <td>{transfer.transfer_id}</td> */}
                   <td>
                     <div className="employee-info">
                       <div className="employee-icon">{getFirstLetter(transfer.username)}</div>
