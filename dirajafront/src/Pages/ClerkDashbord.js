@@ -10,6 +10,7 @@ import ShopNameDisplay from '../Components/ClerkDashbord/ShopNameDisplay';
 
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation'); // Retrieve the designation from localStorage
+  const shopId = localStorage.getItem('shop_id')
 
   return (
     <div className='Page-continer'>
@@ -27,7 +28,13 @@ function ClerkDashbord() {
           <ShopNameDisplay />
             <Link className='clerk-button' to='/shopsale'>New Sale</Link>
             <Link className='clerk-button' to='/shopcustomers'>View Customers</Link>
-            <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
+            
+              {
+                shopId === "2" &&(
+                  <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
+              )}
+            
+            
             {/* Conditionally render the button for relievers */}
             {designation === "reliever" && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>

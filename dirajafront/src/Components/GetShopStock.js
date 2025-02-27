@@ -3,6 +3,8 @@ import '../Styles/shopstock.css';
 import ExportExcel from '../Components/Download/ExportExcel'; // Ensure correct import path
 import DownloadPDF from '../Components/Download/DownloadPDF'; // Ensure correct import path
 import LoadingAnimation from './LoadingAnimation';
+import StockTransfer from '../Components/StockTransfer'; // Adjust path if needed
+
 
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
     if (!isOpen) return null;
@@ -27,6 +29,8 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm }) => {
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
+    const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -195,15 +199,22 @@ const Shopstock = () => {
 
             {/* Action Dropdown */}
             <div className="actions-container">
-                <select
-                    value={selectedAction}
-                    onChange={(e) => setSelectedAction(e.target.value)}
-                    className="action-dropdown"
-                >
-                    <option value="">Select action</option>
-                    <option value="edit-price">Edit Unit Price</option>
-                    <option value="delete">Delete Selected</option>
-                </select>
+            <select
+                value={selectedAction}
+                onChange={(e) => {
+                    setSelectedAction(e.target.value);
+                    if (e.target.value === 'transfer') {
+                        setIsTransferModalOpen(true);
+                    }
+                }}
+                className="action-dropdown"
+            >
+                <option value="">Select action</option>
+                <option value="edit-price">Edit Unit Price</option>
+                <option value="delete">Delete Selected</option>
+                <option value="transfer">Transfer Stock</option> 
+            </select>
+
 
                 {selectedAction === 'edit-price' && (
                     <div className="edit-price-form">
@@ -315,6 +326,13 @@ const Shopstock = () => {
                 onClose={() => setIsModalOpen(false)}
                 onConfirm={handleBulkDelete}
             />
+
+            <StockTransfer
+                isOpen={isTransferModalOpen}
+                onClose={() => setIsTransferModalOpen(false)}
+                selectedStocks={selectedStocks} // Pass selected stocks
+            />
+
         </div>
     );
 };

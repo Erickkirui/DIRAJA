@@ -7,7 +7,7 @@ api_endpoint = Blueprint
 from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
 from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
 
-from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice,AvailableItemsByShopResource,ItemDetailsResourceForShop
+from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice,AvailableItemsByShopResource,ItemDetailsResourceForShop,TransferSystemStock
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer, StockDeletionResource
 
 
@@ -21,7 +21,6 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
 from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate,BatchDetailsResourceForShop
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
 from Server.Views.Bankviews import AddBank, BankResourceById
@@ -67,6 +66,8 @@ api.add_resource(GetAllStock, '/allstock')
 api.add_resource(GetStockValueByShop, '/shop/<int:shop_id>/stock-value')
 api.add_resource(TotalStockValue, '/shopstock/value')
 api.add_resource(UpdateShopStockUnitPrice, '/shopstock/<int:stock_id>/update-unitprice')
+api.add_resource(TransferSystemStock, "/transfer-system-stock")
+
 #Shopstock date range
 api.add_resource(ShopStockByDate, '/shopstock/bydate')
 

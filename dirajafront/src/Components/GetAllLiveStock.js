@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import dayjs from "dayjs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleCheck, faCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import LoadingAnimation from "./LoadingAnimation";
@@ -43,16 +42,7 @@ const GetAllLiveStock = ({ accessToken }) => {
     fetchStock();
   }, [accessToken]);
 
-  const getStockStatus = (timestamp) => {
-    const stockDate = dayjs(timestamp).format("YYYY-MM-DD");
-    const todayDate = dayjs().format("YYYY-MM-DD");
-    const yesterdayDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-
-    if (stockDate === todayDate) return "today";
-    if (stockDate === yesterdayDate) return "yesterday";
-    return "older";
-  };
-
+ 
   const handleSearchChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
@@ -103,10 +93,10 @@ const GetAllLiveStock = ({ accessToken }) => {
           {filteredStockData.map((stock, index) => (
             <tr key={index}>
               <td className="status-icon">
-                <FontAwesomeIcon
-                  icon={getStockStatus(stock.created_at) === "today" ? faCircleCheck : faCircleXmark}
-                  size="1x"
-                  style={{ color: getStockStatus(stock.created_at) === "today" ? '#088F8F' : '#e53e3e' }}
+              <FontAwesomeIcon 
+                  icon={stock.clock_out_quantity === 0 ? faCircleCheck : faCircleXmark} 
+                  size="1x" 
+                  style={{ color: stock.clock_out_quantity === 0 ? '#088F8F' : '#e53e3e' }} 
                 />
               </td>
               <td>{stock.shop_name}</td>
