@@ -37,6 +37,16 @@ const Purchases = () => {
     fetchPurchases();
   }, []);
 
+
+  const getFirstName = (username) => {
+    return username.split(' ')[0];
+  };
+
+  const getFirstLetter = (username) => {
+    return username.charAt(0).toUpperCase();
+  };
+
+
   const handleEdit = (transferId) => {
     setSelectedTransferId(transferId);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -105,7 +115,7 @@ const Purchases = () => {
           <table id="purchases-table" className="purchases-table">
             <thead>
               <tr>
-                <th>ID</th>
+                {/* <th>ID</th> */}
                 <th>Employee</th> 
                 <th>Shop</th>
                 <th>Item</th>
@@ -121,7 +131,13 @@ const Purchases = () => {
             <tbody>
               {currentPurchases.map((purchase) => (
                 <tr key={purchase.transfer_id}>
-                  <td>{purchase.transfer_id}</td>
+                  {/* <td>{purchase.transfer_id}</td> */}
+                  <td>
+                    <div className="employee-info">
+                      <div className="employee-icon">{getFirstLetter(purchase.username)}</div>
+                      <span className="employee-name">{getFirstName(purchase.username)}</span>
+                    </div>
+                  </td>
                   <td>{purchase.username}</td>
                   <td>{purchase.shop_name}</td>
                   <td>{purchase.itemname}</td>

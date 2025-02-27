@@ -71,7 +71,7 @@ const Customers = () => {
           <table id="customers-table" className="customers-table">
             <thead>
               <tr>
-                <th>ID</th>
+                {/* <th>ID</th> */}
                 <th>Name</th>
                 <th>Mobile no.</th>
                 <th>Shop</th>
@@ -84,7 +84,7 @@ const Customers = () => {
             <tbody>
               {currentCustomers.map(customer => (
                 <tr key={customer.customer_id}>
-                  <td>{customer.customer_id}</td>
+                  {/* <td>{customer.customer_id}</td> */}
                   <td>{customer.customer_name}</td>
                   <td>{customer.customer_number}</td>
                   <td>{customer.shop_id}</td>

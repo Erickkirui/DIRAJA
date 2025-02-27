@@ -263,7 +263,7 @@ const Shopstock = () => {
                                         checked={selectedStocks.length === filteredShopsStock.length && filteredShopsStock.length > 0}
                                     />
                                 </th>
-                                <th>Stock ID</th>
+                                {/* <th>Stock ID</th> */}
                                 <th>Shop Name</th>
                                 <th>Item Name</th>
                                 <th>Batch Number</th>
@@ -281,7 +281,7 @@ const Shopstock = () => {
                                             onChange={() => toggleSelectStock(stock.stock_id)}
                                         />
                                     </td>
-                                    <td>{stock.stock_id}</td>
+                                    {/* <td>{stock.stock_id}</td> */}
                                     <td>{stock.shop_name}</td>
                                     <td>{stock.item_name}</td>
                                     <td>{stock.batchnumber}</td>
