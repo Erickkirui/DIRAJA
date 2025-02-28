@@ -26,4 +26,4 @@ class SystemStockTransfer(db.Model):
 
     def __repr__(self):
         return (f"<StockTransfer {self.transfer_id}: {self.quantity} {self.itemname} "
-                f"from Shop {self.from_shop_id} to Shop {self.to_shop_id} by User {self.user_id}>")
+                f"from Shop {self.from_shop_id} to Shop {self.to_shop_id} by User {self.users_id}>")
