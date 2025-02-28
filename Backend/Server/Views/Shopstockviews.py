@@ -696,7 +696,6 @@ class ItemDetailsResourceForShop(Resource):
         return sales_details, 200
 
 
-
 class TransferSystemStock(Resource):
     @jwt_required()
     def post(self):
@@ -705,7 +704,7 @@ class TransferSystemStock(Resource):
 
             from_shop_id = data.get("from_shop_id")
             to_shop_id = data.get("to_shop_id")
-            stock_id = data.get("stock_id")  # Stock record in ShopStock
+            stock_id = data.get("stock_id")  
             transfer_quantity = data.get("quantity")
 
             # Get the current user ID from JWT
@@ -737,15 +736,18 @@ class TransferSystemStock(Resource):
                     BatchNumber=stock.BatchNumber,
                     quantity=transfer_quantity,
                     total_cost=stock.unitPrice * transfer_quantity,
-                    unitPrice=stock.unitPrice
+                    unitPrice=stock.unitPrice,
+                    itemname=stock.itemname,
+                    metric=stock.metric
                 )
                 db.session.add(new_stock)
 
-            # Record the transfer
+            # Record the transfer in SystemStockTransfer
             transfer_record = SystemStockTransfer(
+                shops_id=from_shop_id,  # Main shop reference
                 from_shop_id=from_shop_id,
                 to_shop_id=to_shop_id,
-                user_id=current_user_id,
+                users_id=current_user_id,
                 itemname=stock.itemname,
                 inventory_id=stock.inventory_id,
                 quantity=transfer_quantity,
@@ -762,22 +764,20 @@ class TransferSystemStock(Resource):
             return jsonify({
                 "message": "Stock transferred successfully",
                 "transfer_details": {
+                    "shops_id": from_shop_id,
                     "from_shop_id": from_shop_id,
                     "to_shop_id": to_shop_id,
-                    "user_id": current_user_id,
+                    "users_id": current_user_id,
                     "itemname": stock.itemname,
                     "inventory_id": stock.inventory_id,
                     "quantity": transfer_quantity,
                     "batch_number": stock.BatchNumber,
-                    "transfer_date": datetime.utcnow().isoformat(),
+                    "transfer_date": transfer_record.transfer_date.isoformat(),  # Fix datetime serialization
                     "total_cost": stock.unitPrice * transfer_quantity,
                     "unit_price": stock.unitPrice
                 }
-            }), 201
-
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return jsonify({"error": "An error occurred during transfer", "details": str(e)}), 500
+            })  # Ensure jsonify is correctly used
 
         except Exception as e:
-            return jsonify({"error": "Unexpected error", "details": str(e)}), 500
+            db.session.rollback()
+            return jsonify({"error": "Unexpected error", "details": str(e)})  # Fix response formatting
