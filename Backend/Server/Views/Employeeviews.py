@@ -120,41 +120,37 @@ class AddNewemployee(Resource):
 class GetAllemployees(Resource):
     @jwt_required() 
     @check_role('manager')
-    
     def get(self):
-    
         employees = Employees.query.all()
 
-        all_employess = [ {
-            'employee_id' : employee.employee_id,
-            'first_name' : employee.first_name,
-            'middle_name' : employee.middle_name,
-            'surname' : employee.surname,
-            'phone_number' : employee.phone_number,
-            'work_email' : employee.work_email,
-            'account_status' :employee. account_status,
-            'shop_id' : employee.shop_id,
-            'role' : employee.role,
-            'personal_email' :  employee.personal_email,
-            'designation' : employee.designation ,
-            'date_of_birth' : employee.date_of_birth,
-            'national_id_number':employee.national_id_number,
-            'kra_pin' : employee.kra_pin,
+        all_employees = [{
+            'employee_id': employee.employee_id,
+            'first_name': employee.first_name,
+            'middle_name': employee.middle_name,
+            'surname': employee.surname,
+            'phone_number': employee.phone_number,
+            'work_email': employee.work_email,
+            'account_status': employee.account_status,
+            'shop_id': employee.shop_id,
+            'shop_name': employee.shops.shopname if employee.shops else None,  # Fetching shop name
+            'role': employee.role,
+            'personal_email': employee.personal_email,
+            'designation': employee.designation,
+            'date_of_birth': employee.date_of_birth,
+            'national_id_number': employee.national_id_number,
+            'kra_pin': employee.kra_pin,
             'monthly_gross_salary': employee.monthly_gross_salary,
-            'payment_method' : employee.payment_method,
-            'bank_account_number' : employee.bank_account_number,
+            'payment_method': employee.payment_method,
+            'bank_account_number': employee.bank_account_number,
             'bank_name': employee.bank_name,
-            'department':employee.department,
-            'starting_date' : employee.starting_date,
+            'department': employee.department,
+            'starting_date': employee.starting_date,
             'contract_termination_date': employee.contract_termination_date,
             'contract_renewal_date': employee.contract_renewal_date,
             "created_at": employee.created_at
+        } for employee in employees]
 
-        } for employee in employees ]
-
-
-        return make_response(jsonify(all_employess), 200)
-    
+        return make_response(jsonify(all_employees), 200) 
 
 
 

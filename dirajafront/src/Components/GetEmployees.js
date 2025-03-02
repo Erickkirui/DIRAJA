@@ -168,7 +168,7 @@ const Employees = () => {
             <th>ID</th>
             <th>Name</th>
             <th>Mail</th>
-            <th>Username</th>
+            <th>Shopname</th>
             <th>Role</th>
             <th>Status</th>
             <th>Created at</th>
@@ -194,7 +194,7 @@ const Employees = () => {
                 </div>
               </td>
               <td>{employee.work_email}</td>
-              <td>{getFirstName(employee.first_name)}</td>
+              <td>{employee.shop_name}</td>
               <td>{employee.role}</td>
               <td>{employee.account_status}</td>
               <td>{new Date(employee.created_at).toLocaleString()}</td>
