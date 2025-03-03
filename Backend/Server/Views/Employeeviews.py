@@ -115,8 +115,6 @@ class AddNewemployee(Resource):
         return None
 
 
-
-
 class GetAllemployees(Resource):
     @jwt_required() 
     @check_role('manager')

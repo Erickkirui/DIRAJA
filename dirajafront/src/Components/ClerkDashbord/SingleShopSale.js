@@ -92,9 +92,28 @@ const SingleShopSale = () => {
 
     const handlePaymentChange = (index, field, value) => {
         const newPaymentMethods = [...formData.payment_methods];
+    
         newPaymentMethods[index][field] = value;
+    
+        if (field === "method") {
+            if (value.toLowerCase() === "cash") {
+                // If payment method is cash, clear the transaction code
+                newPaymentMethods[index]["transactionCode"] = "";
+            } else {
+                // Ensure transactionCode field exists for non-cash payments
+                newPaymentMethods[index]["transactionCode"] = newPaymentMethods[index]["transactionCode"] || "None";
+            }
+        }
+    
+        // Ensure transactionCode defaults to "N/A" if left empty
+        if (field === "transactionCode" && !value.trim()) {
+            newPaymentMethods[index]["transactionCode"] = "N/A";
+        }
+    
         setFormData({ ...formData, payment_methods: newPaymentMethods });
     };
+    
+    
 
     const addPaymentMethod = () => {
         setFormData({
@@ -111,7 +130,9 @@ const SingleShopSale = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-
+    
+        console.log("Submitting Sale Data:", JSON.stringify(formData, null, 2)); // ✅ Log data before sending
+    
         try {
             const response = await axios.post('/api/diraja/newsale', formData, {
                 headers: {
@@ -119,7 +140,7 @@ const SingleShopSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-
+    
             if (response.status === 201) {
                 setMessageType('success');
                 setMessage(response.data.message);
@@ -142,12 +163,14 @@ const SingleShopSale = () => {
                 setMessage('Failed to add sale');
             }
         } catch (error) {
+            console.error("Error submitting sale:", error.response ? error.response.data : error.message); // ✅ Log errors
             setMessageType('error');
             setMessage('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
+    
 
     return (
         <div>
