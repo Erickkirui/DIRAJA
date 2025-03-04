@@ -420,22 +420,7 @@ class SalesResources(Resource):
             if 'BatchNumber' in data:
                 sale.BatchNumber = data['BatchNumber']
 
-            # Handle payment methods update
-            if 'payment_methods' in data:
-                # First, delete the old payment methods
-                for payment in sale.payment:
-                    db.session.delete(payment)
-
-                # Add updated payment methods
-                for payment_data in data['payment_methods']:
-                    # Create new payment method records and associate them with the sale
-                    payment = SalesPaymentMethods(
-                        sale_id=sale.sales_id,
-                        payment_method=payment_data.get('payment_method'),
-                        amount_paid=payment_data.get('amount_paid'),
-                        balance=payment_data.get('balance')
-                    )
-                    db.session.add(payment)
+            # **Payment methods are no longer handled here**
 
             # Commit changes to the database
             db.session.commit()
@@ -445,10 +430,8 @@ class SalesResources(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
-
     @jwt_required()
     def delete(self, sales_id):
-        
         # Fetch the sale record
         sale = Sales.query.filter_by(sales_id=sales_id).first()
         if not sale:
@@ -476,6 +459,7 @@ class SalesResources(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error deleting sale', 'error': str(e)}, 500
+
 
         
 
