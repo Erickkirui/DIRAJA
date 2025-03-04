@@ -627,3 +627,46 @@ class TotalBalance(Resource):
             return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
         except Exception as e:
             return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)
+        
+        
+class GetUnpaidSales(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            unpaid_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially paid"])).all()
+            
+            if not unpaid_sales:
+                return {'message': 'No unpaid or partially paid sales found'}, 404
+            
+            sales_list = []
+            for sale in unpaid_sales:
+                payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
+                payment_details = [
+                    {
+                        "method": payment.payment_method,
+                        "amount_paid": payment.amount_paid
+                    }
+                    for payment in payments
+                ]
+                
+                sales_list.append({
+                    "sales_id": sale.sales_id,
+                    "shop_id": sale.shop_id,
+                    "customer_name": sale.customer_name,
+                    "customer_number": sale.customer_number,
+                    "item_name": sale.item_name,
+                    "quantity": sale.quantity,
+                    "metric": sale.metric,
+                    "unit_price": sale.unit_price,
+                    "total_price": sale.total_price,
+                    "balance": sale.balance,
+                    "status": sale.status,
+                    "created_at": sale.created_at.strftime("%Y-%m-%d"),
+                    "payment_methods": payment_details
+                })
+            
+            return {"unpaid_sales": sales_list}, 200
+        
+        except Exception as e:
+            return {"message": f"An error occurred: {str(e)}"}, 500
