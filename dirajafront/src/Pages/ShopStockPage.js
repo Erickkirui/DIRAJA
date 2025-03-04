@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
-import ShopStock from '../Components/GetShopStock'
+import ShopStock from '../Components/SystemStock/GetShopStock'
 
 
 function ShopStockPage() {

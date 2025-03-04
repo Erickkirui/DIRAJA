@@ -1,126 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from "react";
+import axios from "axios";
 
-const StockTransfer = ({ isOpen, onClose, selectedStocks }) => {
-    const [targetShop, setTargetShop] = useState('');
-    const [transferQuantity, setTransferQuantity] = useState('');
-    const [availableShops, setAvailableShops] = useState([]);
+
+const StockTransfer = () => {
+    const [formData, setFormData] = useState({
+        from_shop_id: "",
+        to_shop_id: "",
+        stock_id: "",
+        quantity: ""
+    });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const fromShopId = localStorage.getItem('shop_id'); // Get shop_id from local storage
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
 
-    useEffect(() => {
-        const fetchShops = async () => {
-            try {
-                const accessToken = localStorage.getItem('access_token');
-                const response = await fetch('/api/diraja/allshops', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch shops');
-                }
-
-                const data = await response.json();
-                setAvailableShops(data);
-            } catch (err) {
-                setError(err.message);
-            }
-        };
-
-        if (isOpen) {
-            fetchShops();
-        }
-    }, [isOpen]);
-
-    const handleTransfer = async () => {
-        if (!targetShop || !transferQuantity || selectedStocks.length === 0) {
-            alert("Please select a target shop, enter quantity, and select at least one stock item.");
-            return;
-        }
-
-        if (!fromShopId) {
-            alert("Source shop ID is missing.");
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            const accessToken = localStorage.getItem('access_token');
-            const transferData = selectedStocks.map((stockId) => ({
-                stock_id: stockId,
-                from_shop_id: fromShopId, // Added source shop ID
-                to_shop_id: targetShop,   // Destination shop ID
-                quantity: parseFloat(transferQuantity),
-            }));
-
-            console.log("Sending transfer data:", JSON.stringify(transferData, null, 2));
-
-            const response = await fetch('/api/diraja/transfer', {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(transferData),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to transfer stock');
-            }
-
-            alert('Stock transferred successfully');
-            setTransferQuantity('');
-            setTargetShop('');
-            onClose();
-        } catch (err) {
-            alert(`Error: ${err.message}`);
-        } finally {
-            setLoading(false);
-        }
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    if (!isOpen) return null;
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage("");
+        setError("");
+
+        try {
+            const response = await axios.post("/api/diraja/transfer-sysytem-stock", formData, {
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            });
+            setMessage(response.data.message);
+            setFormData({ from_shop_id: "", to_shop_id: "", stock_id: "", quantity: "" });
+        } catch (err) {
+            setError(err.response?.data?.error || "An error occurred");
+        }
+        setLoading(false);
+    };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h2>Stock Transfer</h2>
-                <p>Selected Stock: {selectedStocks?.join(', ') || 'None'}</p>
-
-                {error && <p className="error-message">{error}</p>}
-
-                <label>Select Target Shop:</label>
-                <select value={targetShop} onChange={(e) => setTargetShop(e.target.value)}>
-                    <option value="">Select a shop</option>
-                    {availableShops.map((shop) => (
-                        <option key={shop.shop_id} value={shop.shop_id}>
-                            {shop.shopname}
-                        </option>
-                    ))}
-                </select>
-
-                <label>Transfer Quantity:</label>
+        <div className="container">
+            <h2>Transfer Stock</h2>
+            {message && <p className="success-message">{message}</p>}
+            {error && <p className="error-message">{error}</p>}
+            <form onSubmit={handleSubmit} className="stock-form">
+                <input
+                    type="text"
+                    name="from_shop_id"
+                    value={formData.from_shop_id}
+                    onChange={handleChange}
+                    placeholder="From Shop ID"
+                    required
+                />
+                <input
+                    type="text"
+                    name="to_shop_id"
+                    value={formData.to_shop_id}
+                    onChange={handleChange}
+                    placeholder="To Shop ID"
+                    required
+                />
+                <input
+                    type="text"
+                    name="stock_id"
+                    value={formData.stock_id}
+                    onChange={handleChange}
+                    placeholder="Stock ID"
+                    required
+                />
                 <input
                     type="number"
-                    value={transferQuantity}
-                    onChange={(e) => setTransferQuantity(e.target.value)}
-                    placeholder="Enter quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    placeholder="Quantity"
+                    required
                 />
-
-                <div className="modal-actions">
-                    <button className="cancel-button" onClick={onClose} disabled={loading}>
-                        Cancel
-                    </button>
-                    <button className="confirm-button" onClick={handleTransfer} disabled={loading}>
-                        {loading ? 'Transferring...' : 'Transfer'}
-                    </button>
-                </div>
-            </div>
+                <button type="submit" className="submit-button" disabled={loading}>
+                    {loading ? "Transferring..." : "Transfer Stock"}
+                </button>
+            </form>
         </div>
     );
 };

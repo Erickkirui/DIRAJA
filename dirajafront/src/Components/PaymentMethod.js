@@ -31,6 +31,17 @@ const PaymentMethods = ({
                         placeholder="Amount"
                         className="input"
                     />
+                    {method.method && method.method.toLowerCase() !== 'cash' && (
+                        <input
+                            type="text"
+                            value={method.transaction_code || ''}  // ✅ Use transaction_code instead of transactionCode
+                            onChange={(e) => handlePaymentChange(index, 'transaction_code', e.target.value)} // ✅ Use transaction_code
+                            onBlur={(e) => handlePaymentChange(index, 'transaction_code', e.target.value || "none")} // ✅ Default to "N/A" if empty
+                            placeholder="Transaction Code"
+                            className="input"
+                            required={method.method.toLowerCase() !== 'cash'} 
+                        />
+                    )}
                     {index > 0 && (
                         <button 
                             type="button" 
@@ -42,7 +53,7 @@ const PaymentMethods = ({
                     )}
                 </div>
             ))}
-            <button type="button" onClick={addPaymentMethod} className='payment-button' >
+            <button type="button" onClick={addPaymentMethod} className='payment-button'>
                 Add Another Payment Method
             </button>
         </div>
@@ -50,4 +61,3 @@ const PaymentMethods = ({
 };
 
 export default PaymentMethods;
-

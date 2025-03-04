@@ -156,8 +156,11 @@
 .payment-method input{
   width: 25%;
 }
+
 .payment-method{
   display: flex;
+  width: 100%;
+  flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -212,12 +215,15 @@
     width: 90%;
   }
   .payment-method input{
-    width: 50%;
+    width: 100%;
   }
   .payment-method select{
-    width: 50%;
+    width: 100%;
   }
   .item-details{
     width: auto;
+  }
+  .payment-button{
+    width: 100%;
   }
 }

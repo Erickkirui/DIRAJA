@@ -135,6 +135,47 @@
 }
 
 .cancel-button {
-  background-color: #bbb;
+  background-color: #ffffff;
+  border: 1px solid #cccc;
   color: black;
+}
+
+
+/* date picker  */
+.date-range-picker {
+  position: relative;
+  display: inline-block;
+}
+
+.select-period-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  padding: 10px ;
+  font-size: 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #ffffff;
+  
+}
+.confirm-btn-date{
+  background-color: var(--primary);
+  color: white;
+  padding: 5px;
+  margin-top: 5px;
+  border: none;
+  border-radius: 5px;
+}
+
+.date-picker-container {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  z-index: 100;
 }

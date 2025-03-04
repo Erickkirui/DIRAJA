@@ -17,7 +17,7 @@ class Sales(db.Model):
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
-    BatchNumber = db.Column(db.String(50), nullable=False)
+    BatchNumber = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
     balance = db.Column(db.Float)

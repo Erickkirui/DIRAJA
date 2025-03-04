@@ -29,8 +29,13 @@ from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,Expense
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
+
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, GetUnpaidSales
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop, TotalUnpaidAmountAllSales
+
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop
+
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -130,7 +135,11 @@ api.add_resource(SalesResources,'/sale/<int:sales_id>')
 api.add_resource(GetPaymentTotals, '/get_payment_totals')
 api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
 api.add_resource(TotalBalanceSummary, '/accountspayable')
+
 api.add_resource(GetUnpaidSales,'/unpaidsales')
+
+
+api.add_resource(UpdateSalePayment, '/sale/<int:sale_id>/payment')
 
 
 
