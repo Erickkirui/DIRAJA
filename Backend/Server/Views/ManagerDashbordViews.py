@@ -497,8 +497,6 @@ class TotalSalesByShop(Resource):
             db.session.rollback()
             return {"error": "An error occurred while fetching total sales for the shop", "details": str(e)}, 500
  
- 
-        
 
 
 class TotalUnpaidAmountAllSales(Resource):

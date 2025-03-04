@@ -141,7 +141,6 @@ api.add_resource(GetUnpaidSales,'/unpaidsales')
 
 
 api.add_resource(UpdateSalePayment, '/sale/<int:sale_id>/payment')
-api.add_resource(GetUnpaidSales,'/unpaidsales')
 
 
 #Distribution
