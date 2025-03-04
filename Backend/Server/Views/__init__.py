@@ -133,7 +133,6 @@ api.add_resource(GetPaymentTotals, '/get_payment_totals')
 api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
 api.add_resource(TotalBalanceSummary, '/accountspayable')
 
-api.add_resource(GetUnpaidSales,'/unpaidsales')
 
 
 api.add_resource(UpdateSalePayment, '/sale/<int:sale_id>/payment')
