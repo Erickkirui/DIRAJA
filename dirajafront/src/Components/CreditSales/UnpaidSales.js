@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-// import ExportExcel from '../Components/Download/ExportExcel';
 import ExportExcel from '../Download/ExportExcel';
-// import DownloadPDF from '../Components/Download/DownloadPDF';
 import DownloadPDF from '../Download/DownloadPDF';
-// import '../Styles/sales.css';
 import { isSameDay } from 'date-fns';
 import LoadingAnimation from '../LoadingAnimation';
 
@@ -32,7 +29,11 @@ const UnpaidSales = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setSales(response.data.unpaid_sales || []);
+        // Sort sales by sale_id in descending order
+        const sortedSales = response.data.unpaid_sales || [];
+        sortedSales.sort((a, b) => b.sales_id - a.sales_id);
+
+        setSales(sortedSales);
         setError('');
       } catch (err) {
         if (err.response?.status === 404) {
@@ -105,8 +106,8 @@ const UnpaidSales = () => {
 
   return (
     <div className="sales-container">
-    <h1> Credit Sales</h1>
-      {/* Search and Date Filter  for unpaid sales */}
+      <h1>Credit Sales</h1>
+      {/* Search and Date Filter for unpaid sales */}
       <div className="filter-container">
         <input
           type="text"
@@ -118,7 +119,6 @@ const UnpaidSales = () => {
             setCurrentPage(1);
           }}
         />
-        
         <input
           type="date"
           className="date-picker"
@@ -138,7 +138,6 @@ const UnpaidSales = () => {
       <table id="unpaid-sales-table" className="sales-table" aria-label="Unpaid Sales data">
         <thead>
           <tr>
-            
             <th>Employee</th>
             <th>Customer</th>
             <th>Shop</th>
@@ -153,7 +152,6 @@ const UnpaidSales = () => {
           {currentSales.length > 0 ? (
             currentSales.map((sale) => (
               <tr key={sale.sales_id}>
-                
                 <td>
                   <div className="employee-info">
                     <div className="employee-icon">{getFirstLetter(sale.username)}</div>

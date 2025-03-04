@@ -22,7 +22,7 @@ const TotalCreditSales = () => {
         // Otherwise, send the period parameter (including "yesterday").
         const params = period === 'custom' ? { date: customDate } : { period };
 
-        const response = await axios.get('/api/diraja/allshopstotal', {
+        const response = await axios.get('/api/diraja/allunpaidtotal', {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
