@@ -533,7 +533,6 @@ class GetPaymentTotals(Resource):
             return {"error": "An unexpected error occurred", "details": str(e)}, 500
 
 
-
 class SalesBalanceResource(Resource):
     @jwt_required()
     def get(self):
@@ -641,7 +640,7 @@ class UpdateSalePayment(Resource):
     
     @jwt_required()
     @check_role('manager')
-    
+
     def put(self, sale_id):
         current_user_id = get_jwt_identity()
         data = request.get_json()

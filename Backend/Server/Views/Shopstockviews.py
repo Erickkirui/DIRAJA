@@ -781,3 +781,39 @@ class TransferSystemStock(Resource):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": "Unexpected error", "details": str(e)})  # Fix response formatting
+        
+
+class GetBatchStock(Resource):
+    @jwt_required()
+    @check_role('manager')  # Ensure only managers can access this endpoint
+    def get(self):
+        try:
+            # ✅ Aggregate stock by BatchNumber across all shops, including metric
+            batch_stock = db.session.query(
+                ShopStock.BatchNumber, 
+                func.sum(ShopStock.quantity).label("total_quantity"),
+                Inventory.metric  # ✅ Get the metric from Inventory table
+            ).join(Inventory, ShopStock.inventory_id == Inventory.inventory_id) \
+            .group_by(ShopStock.BatchNumber, Inventory.metric).all()
+
+            # ✅ Serialize the data
+            batch_stock_list = [
+                {
+                    "batch_number": batch,
+                    "total_quantity": round(total_quantity, 2),  # ✅ Round to 2 decimal places
+                    "metric": metric
+                }
+                for batch, total_quantity, metric in batch_stock
+            ]
+
+            # ✅ Prepare the response
+            response = {
+                "total_batches": len(batch_stock_list),
+                "batch_stocks": batch_stock_list
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching batch stock data", "details": str(e)}, 500
