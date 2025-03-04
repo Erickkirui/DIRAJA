@@ -41,7 +41,7 @@ class AddSale(Resource):
 
         required_fields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
-            'quantity', 'metric', 'unit_price', 'payment_methods'
+            'quantity', 'metric', 'unit_price', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
@@ -70,18 +70,21 @@ class AddSale(Resource):
         except ValueError:
             return {'message': 'Invalid input for quantity or unit price'}, 400
 
-        if not isinstance(payment_methods, list) or not all(
+        if status.lower() != "unpaid" and (not isinstance(payment_methods, list) or not all(
             isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
-        ):
+        )):
             return {'message': 'Invalid payment methods format'}, 400
 
         total_price = unit_price * quantity
-        try:
-            total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
-        except ValueError as e:
-            return {'message': f'Invalid amount value in payment methods: {e}'}, 400
+        total_amount_paid = 0
 
-        balance =  total_price - total_amount_paid 
+        if status.lower() != "unpaid":
+            try:
+                total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
+            except ValueError as e:
+                return {'message': f'Invalid amount value in payment methods: {e}'}, 400
+
+        balance = total_price - total_amount_paid
 
         # ✅ **Check if Sale Date is Today or Yesterday**
         today = datetime.today().date()
@@ -101,7 +104,6 @@ class AddSale(Resource):
                 if live_stock.current_quantity < quantity:
                     return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
 
-                # ✅ Deduct from LiveStock if it exists
                 live_stock.current_quantity -= quantity
                 remaining_stock = live_stock.current_quantity
             else:
@@ -109,7 +111,7 @@ class AddSale(Resource):
         else:
             remaining_stock = None  # Don't track LiveStock updates for old sales
 
-        # ✅ **Step 2: Deduct from ShopStock using FIFO logic**
+        # ✅ **Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
@@ -144,7 +146,7 @@ class AddSale(Resource):
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-        # ✅ **Step 3: Save sale record**
+        # ✅ **Save sale record**
         new_sale = Sales(
             user_id=current_user_id,
             shop_id=shop_id,
@@ -162,28 +164,29 @@ class AddSale(Resource):
             created_at=created_at
         )
 
-
-
         try:
             db.session.add(new_sale)
-            db.session.flush()  
+            db.session.flush()  # Flush to get sales_id for later use
 
-            for payment in payment_methods:
-                payment_method = payment['method']
-                transaction_code = payment.get('transaction_code')
+            # ✅ Only add payment methods if status is NOT "unpaid"
+            if status.lower() != "unpaid":
+                for payment in payment_methods:
+                    payment_method = payment['method']
+                    transaction_code = payment.get('transaction_code')
 
-                # ✅ Ensure transaction code is never NULL
-                if not transaction_code or transaction_code.strip() == "":
-                    transaction_code = "N/A"  # Set default value
+                    if not transaction_code or transaction_code.strip() == "":
+                        transaction_code = "N/A"
 
-                payment_record = SalesPaymentMethods(
-                    sale_id=new_sale.sales_id,
-                    payment_method=payment_method,
-                    amount_paid=payment['amount'],
-                    transaction_code=transaction_code  # ✅ Include transaction code for non-cash payments
-                )
-                db.session.add(payment_record)
+                    payment_record = SalesPaymentMethods(
+                        sale_id=new_sale.sales_id,
+                        payment_method=payment_method,
+                        amount_paid=payment['amount'],
+                        transaction_code=transaction_code,
+                        created_at=new_sale.created_at
+                    )
+                    db.session.add(payment_record)
 
+            # ✅ Always add customer details
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
@@ -191,8 +194,8 @@ class AddSale(Resource):
                 sales_id=new_sale.sales_id,
                 user_id=current_user_id,
                 item=item_name,
-                amount_paid=total_amount_paid,
-                payment_method=", ".join(pm['method'] for pm in payment_methods),
+                amount_paid=total_amount_paid if status.lower() != "unpaid" else 0,  # Set amount_paid to 0 if unpaid
+                payment_method=", ".join(pm['method'] for pm in payment_methods) if status.lower() != "unpaid" else "N/A",
                 created_at=created_at
             )
             db.session.add(new_customer)
@@ -632,3 +635,82 @@ class TotalBalance(Resource):
             return make_response(jsonify({"error": "Database error occurred", "details": str(e)}), 500)
         except Exception as e:
             return make_response(jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500)
+       
+
+class UpdateSalePayment(Resource):
+    @jwt_required()
+    def put(self, sale_id):
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+
+        # Check if sale exists
+        sale = Sales.query.filter_by(sales_id=sale_id).first()
+        if not sale:
+            return make_response(jsonify({"message": "Sale not found"}), 404)
+
+        payment_methods = data.get("payment_methods", [])
+        payment_date = data.get("payment_date", datetime.utcnow().strftime("%Y-%m-%d"))  # Allow manual input or default to today
+
+        # Validate payment methods format
+        if not isinstance(payment_methods, list) or not all(
+            isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
+        ):
+            return make_response(jsonify({"message": "Invalid payment methods format"}), 400)
+
+        try:
+            # Convert payment_date string to datetime object
+            try:
+                payment_date_obj = datetime.strptime(payment_date, "%Y-%m-%d")
+            except ValueError:
+                return make_response(jsonify({"message": "Invalid date format. Use YYYY-MM-DD"}), 400)
+
+            # ✅ Step 1: Fetch Existing Payments for the Sale
+            existing_payments = SalesPaymentMethods.query.filter_by(sale_id=sale_id).all()
+            total_paid = sum(payment.amount_paid for payment in existing_payments)  # Get total already paid
+
+            # ✅ Step 2: Process new payment methods
+            new_total_paid = total_paid  # Start with previous total
+
+            for payment in payment_methods:
+                payment_method = payment["method"]
+                amount_paid = float(payment["amount"])
+                transaction_code = payment.get("transaction_code", "N/A")  # Default transaction code
+
+                # ✅ If the new payment amount is zero, update an existing payment method
+                if amount_paid == 0 and existing_payments:
+                    for existing_payment in existing_payments:
+                        if existing_payment.payment_method == payment_method:
+                            existing_payment.transaction_code = transaction_code  # Update only transaction_code
+                            existing_payment.created_at = payment_date_obj  # Update payment date
+                            db.session.add(existing_payment)  # Save changes
+                            break  # Stop once an update is done
+                else:
+                    new_total_paid += amount_paid  # Add new payment amount
+
+                    # ✅ Step 3: Insert new payment if it's greater than 0
+                    new_payment = SalesPaymentMethods(
+                        sale_id=sale_id,
+                        payment_method=payment_method,
+                        amount_paid=amount_paid,
+                        transaction_code=transaction_code,
+                        created_at=payment_date_obj  # Use the provided payment date
+                    )
+                    db.session.add(new_payment)
+
+            # ✅ Step 4: Update Sale Balance
+            new_balance = sale.total_price - new_total_paid
+            sale.balance = new_balance
+            sale.status = "paid" if sale.balance <= 0 else "unpaid"
+
+            db.session.commit()
+
+            return make_response(jsonify({
+                "message": "Payment updated successfully",
+                "new_balance": sale.balance,
+                "status": sale.status,
+                "updated_payment_date": payment_date  # ✅ Return updated payment date
+            }), 200)
+
+        except Exception as e:
+            db.session.rollback()
+            return make_response(jsonify({"message": "Error updating payment method", "error": str(e)}), 500)

@@ -11,6 +11,7 @@ class SalesPaymentMethods(db.Model):
     amount_paid = db.Column(db.Float, nullable=False)
     balance = db.Column(db.Float, nullable=True)  # Balance field
     transaction_code = db.Column(db.String(100), nullable=True)  # New optional field
+    created_at = db.Column(db.DateTime, nullable=False)
     
 
     # Validation for payment method
@@ -25,5 +26,5 @@ class SalesPaymentMethods(db.Model):
         return (
             f"SalesPaymentMethods(id={self.id}, sale_id={self.sale_id}, "
             f"payment_method='{self.payment_method}', amount_paid={self.amount_paid}, "
-            f"balance={self.balance}, transaction_code='{self.transaction_code}')"
+            f"balance={self.balance}, transaction_code='{self.transaction_code}' created_at ='{self.created_at}')"
         )           
