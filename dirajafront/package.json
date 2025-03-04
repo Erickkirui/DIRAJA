@@ -5,6 +5,7 @@
   "proxy": "http://127.0.0.1:5000/",
   "private": true,
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@testing-library/jest-dom": "^5.17.0",
@@ -12,7 +13,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
     "bootstrap": "^5.3.3",
-    "date-fns": "^2.30.0",
+    "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "datepicker": "^0.0.0",
     "dayjs": "^1.11.13",
