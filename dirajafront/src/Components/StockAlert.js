@@ -1,3 +1,5 @@
+// Component is no longer live
+
 import React, { useState, useEffect } from "react";
 import "../Styles/LowStockAlert.css"; // Import the CSS for styling
 import axios from "axios";

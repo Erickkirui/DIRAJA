@@ -4,8 +4,9 @@ import CountEmployees from '../Components/ManagerDashbord/CountEmployees';
 import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses';
 import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales';
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases';
-import LowStockAlert from '../Components/StockAlert';
 import { Link } from 'react-router-dom';
+import BatchStockList from '../Components/BatchStockList';
+import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 
 function Managerdashord() {
   // Check the role in local storage
@@ -18,11 +19,14 @@ function Managerdashord() {
 
   return (
     <>
-      <h2>Dashboard</h2>
-      <p>Analytics</p>
-      <div className="shortcuts">
-        <Link to="/allusers" className="button">Manage Users</Link>
+      <div className='dashord-top-part'>
+        <h2>Dashboard</h2>
+        
+        <div className="shortcuts">
+          <Link to="/allusers" className="button">Manage Users</Link>
+        </div>
       </div>
+      <p>Analytics </p>
 
       <div className="top-row">
         <div className="metrix-card-container">
@@ -34,22 +38,38 @@ function Managerdashord() {
               <TotalAmountPaidPurchases />
             </div>
           </div>
-          <div className="metrix-pair">
-            <div>
-              <CountShops />
-              <div className="single-card">
+
+         
+
+          <div className="metrix-pair"> 
+              
+                <div>
                 <TotalAmountPaidExpenses />
-              </div>
-            </div>
-            <div>
-              <CountEmployees />
-            </div>
+                </div>
+                <div>
+                <TotalCreditSales />
+                </div>
+              
           </div>
+
+          <div className="metrix-pair">
+           
+           <div>
+             <CountShops />
+           </div>
+       
+           <div>
+             <CountEmployees />
+           </div>
+       </div>
+
         </div>
         <div>
-          <LowStockAlert />
+          <BatchStockList />
         </div>
       </div>
+      
+      
     </>
   );
 }

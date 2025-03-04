@@ -7,19 +7,28 @@
 }
 .metrix-pair{
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 
 /* dashbord elements  */
+.dashord-top-part{
+    display: flex;
+    justify-content: space-between;
+    
+    align-items: center;
+}
 .single-card{
     margin-top: 10px;
 
 }
+.metrix-container h1{
+    font-size: 27px;
+}
 .metrix-container{
     border:  1px solid #ccc;
-    padding: 10px;
+    padding: 15px;
     border-radius: 8px;
     width: 250px;
     background-color: #ffffff;
@@ -71,6 +80,30 @@
     
 }
 
+.stock-level-container{
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.stock-level-container a { 
+    text-decoration: none;
+    color: var(--secondary);
+    font-size: 12px;
+}
+
+.stock-level-pagination{
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+padding: 15px;
+}
+
+.stock-level-pagination button{
+    border: 1px solid var(--primary);
+    background-color: white;
+    border-radius: 3px;
+}
 /* Default styling for mobile: display controls in a row */
 .controls {
     display: flex;
@@ -106,8 +139,8 @@
     .metrix-pair{
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        margin-bottom: 10px;
+        gap: 15px;
+        margin-bottom: 15px;
     }
     .top-row{
         display: flex;
