@@ -81,7 +81,7 @@ const TotalCreditSales = () => {
       ) : (
         <h1>{totalAmountPaid ? totalAmountPaid : '0.00'}</h1>
       )}
-      <Link to="/analytics">View Sales</Link>
+      <Link to="/credit-sale">View Sales</Link>
     </div>
   );
 };

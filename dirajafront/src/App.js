@@ -39,6 +39,7 @@ import ManualTransfer from './Pages/AddStockPage';
 import ClerkStockManagement from './Components/StockManagement/ClerkStockManagement';
 import GetAllLiveStock from './Components/GetAllLiveStock';
 import ShopSalesDetails from './Components/SingleShopSales';
+import UnpaidSales from './Components/CreditSales/UnpaidSales';
 
 
 
@@ -135,6 +136,7 @@ function App() {
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
 
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
+            <Route path='/credit-sale' element ={<Layout><UnpaidSales /></Layout>} ></Route>
 
           </Routes> 
        

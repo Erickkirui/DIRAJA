@@ -718,12 +718,12 @@ class UpdateSalePayment(Resource):
             return make_response(jsonify({"message": "Error updating payment method", "error": str(e)}), 500)
         
 
-
 class GetUnpaidSales(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
         try:
+            # Query for all unpaid and partially paid sales
             unpaid_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially paid"])).all()
             
             if not unpaid_sales:
@@ -731,6 +731,15 @@ class GetUnpaidSales(Resource):
             
             sales_list = []
             for sale in unpaid_sales:
+                # Fetch user and shop details
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+
+                # Handle cases where user or shop may not be found
+                username = user.username if user else "Unknown User"
+                shopname = shop.shopname if shop else "Unknown Shop"
+                
+                # Fetch payment methods related to the sale
                 payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
                 payment_details = [
                     {
@@ -740,9 +749,13 @@ class GetUnpaidSales(Resource):
                     for payment in payments
                 ]
                 
+                # Append sale data with user and shop info
                 sales_list.append({
                     "sales_id": sale.sales_id,
+                    "user_id": sale.user_id,
+                    "username": username,  # Added username
                     "shop_id": sale.shop_id,
+                    "shopname": shopname,  # Added shopname
                     "customer_name": sale.customer_name,
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
