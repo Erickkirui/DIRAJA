@@ -638,7 +638,10 @@ class TotalBalance(Resource):
        
 
 class UpdateSalePayment(Resource):
+    
     @jwt_required()
+    @check_role('manager')
+    
     def put(self, sale_id):
         current_user_id = get_jwt_identity()
         data = request.get_json()

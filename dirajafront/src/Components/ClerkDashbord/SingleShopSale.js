@@ -223,14 +223,18 @@ const SingleShopSale = () => {
                         <option value="Select"> Select Payment Status</option>
                         <option value="unpaid">Unpaid</option>
                         <option value="paid">Paid</option>
+                        <option value="partially_paid">Partially paid</option>
                 </select>
-                <PaymentMethods
-                    paymentMethods={formData.payment_methods}
-                    validPaymentMethods={validPaymentMethods}
-                    handlePaymentChange={handlePaymentChange}
-                    addPaymentMethod={addPaymentMethod}
-                    removePaymentMethod={removePaymentMethod}
-                />
+                {formData.status !== "unpaid" && (
+                    <PaymentMethods
+                        paymentMethods={formData.payment_methods}
+                        validPaymentMethods={validPaymentMethods}
+                        handlePaymentChange={handlePaymentChange}
+                        addPaymentMethod={addPaymentMethod}
+                        removePaymentMethod={removePaymentMethod}
+                    />
+                )}
+
 
                 <button className="add-sale-button" type="submit">
                     Add Sale
