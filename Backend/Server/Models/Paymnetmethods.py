@@ -11,11 +11,12 @@ class SalesPaymentMethods(db.Model):
     amount_paid = db.Column(db.Float, nullable=False)
     balance = db.Column(db.Float, nullable=True)  # Balance field
     transaction_code = db.Column(db.String(100), nullable=True)  # New optional field
+    
 
     # Validation for payment method
     @validates('payment_method')
     def validate_payment_method(self, key, payment_method):
-        valid_methods = ['bank', 'cash', 'mpesa', 'sasapay']
+        valid_methods = ['bank', 'cash', 'mpesa', 'sasapay' ,'not payed']
         assert payment_method in valid_methods, f"Invalid payment method. Must be one of: {', '.join(valid_methods)}"
         return payment_method
     

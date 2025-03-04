@@ -81,7 +81,7 @@ class AddSale(Resource):
         except ValueError as e:
             return {'message': f'Invalid amount value in payment methods: {e}'}, 400
 
-        balance = total_amount_paid - total_price
+        balance =  total_price - total_amount_paid 
 
         # ✅ **Check if Sale Date is Today or Yesterday**
         today = datetime.today().date()
