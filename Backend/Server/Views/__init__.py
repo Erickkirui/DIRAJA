@@ -17,6 +17,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop
 
+from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
@@ -28,8 +29,13 @@ from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,Expense
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
+
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, GetUnpaidSales
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop, TotalUnpaidAmountAllSales
+
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop
+
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -129,7 +135,12 @@ api.add_resource(SalesResources,'/sale/<int:sales_id>')
 api.add_resource(GetPaymentTotals, '/get_payment_totals')
 api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
 api.add_resource(TotalBalanceSummary, '/accountspayable')
+
+api.add_resource(GetUnpaidSales,'/unpaidsales')
+
+
 api.add_resource(UpdateSalePayment, '/sale/<int:sale_id>/payment')
+
 
 
 #Distribution
@@ -159,6 +170,10 @@ api.add_resource(TotalAmountPaidSalesPerShop,'/totalsales')
 api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
 api.add_resource(TotalAmountPaidPurchases,"/totalpurchases")
 api.add_resource(StockAlert,"/checkstock")
+api.add_resource(TotalUnpaidAmountAllSales,"/allunpaidtotal")
+
+
+
 
 
 ## clerak Dashbord
@@ -173,3 +188,16 @@ api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
 
 api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
+
+# Mabanda shop 
+api.add_resource(AddMabandaSale,'/newmabandasale')
+api.add_resource(AddMabandaExpense,'/newmabandaexpense')
+api.add_resource(AddMabandaPurchase,'/newmabandapurchase')
+api.add_resource(AddMabandaStock,'/newmabandastock')
+api.add_resource(MabandaSaleResource,'/getmabandasale')
+api.add_resource(MabandaPurchaseResource,'/getmabandapurchase')
+api.add_resource(MabandaStockResource,'/getmabandastock')
+api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
+
+
+

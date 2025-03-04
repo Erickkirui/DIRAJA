@@ -14,6 +14,8 @@ const UserDisplay = () => {
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
     const storedRole = localStorage.getItem('role');
+    const shopId = localStorage.getItem('shop_id')
+
     
     if (!storedUsername || !storedRole) {
       navigate('/login');
@@ -82,6 +84,14 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>}
             {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
             {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
+
+            {/* Items visible only to clerks of a specific shop
+            {role === 'clerk' && shopId === "2" && (
+              <>
+                <Link to="/mabandastocks" onClick={handleMenuClick}>View Stock</Link>
+                <Link to="/mabandaexpenses" onClick={handleMenuClick}>view stocks</Link>
+              </>
+            )} */}
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}
