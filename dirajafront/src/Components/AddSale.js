@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import BatchDetails from './BatchDetails';
@@ -21,6 +22,7 @@ const AddSale = () => {
     });
 
     const [paymentMethods, setPaymentMethods] = useState([{ method: '', amount: '' }]);
+    const [items, setItems] = useState([]);
     const [shops, setShops] = useState([]);
     const [batchNumbers, setBatchNumbers] = useState([]);
     const [fieldErrors, setFieldErrors] = useState({});
@@ -45,6 +47,25 @@ const AddSale = () => {
         fetchShops();
     }, []);
 
+    useEffect(() => {
+        const fetchItems = async () => {
+            if (!formData.shop_id) {
+                setItems([]);
+                return;
+            }
+            try {
+                const response = await axios.get('/api/diraja/items/available-by-shop', {
+                    params: { shop_id: formData.shop_id },
+                    headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+                });
+                setItems(response.data);
+            } catch (error) {
+                console.error('Error fetching items:', error);
+            }
+        };
+        fetchItems();
+    }, [formData.shop_id]);
+
     // Fetch batch numbers based on shop_id
     useEffect(() => {
         const fetchBatchNumbers = async () => {
@@ -67,6 +88,29 @@ const AddSale = () => {
         fetchBatchNumbers();
     }, [formData.shop_id]);
 
+    const handleItemSelect = async (e) => {
+        const selectedItemName = e.target.value;
+        setFormData((prevData) => ({ ...prevData, item_name: selectedItemName }));
+
+        try {
+            const response = await axios.get('/api/diraja/shop-itemdetails', {
+                params: { shop_id: formData.shop_id, item_name: selectedItemName },
+                headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+            });
+            const details = response.data;
+            setFormData((prevData) => ({
+                ...prevData,
+                metric: details.metric,
+                unit_price: details.unit_price,
+                stock_id: details.stock_id,
+                amount_paid: prevData.quantity ? prevData.quantity * details.unit_price : '',
+                total_price: prevData.quantity ? prevData.quantity * details.unit_price : '',
+            }));
+        } catch (error) {
+            console.error('Error fetching item details:', error);
+        }
+    };
+
     // Handle input changes for form data
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -85,23 +129,11 @@ const AddSale = () => {
         setFieldErrors((prevErrors) => ({ ...prevErrors, [name]: '' }));
     };
 
-    // Handle batch details fetched
-    const handleBatchDetailsFetched = useCallback((details) => {
-        setFormData((prevData) => ({
-            ...prevData,
-            item_name: details.itemname,
-            metric: details.metric,
-            unit_price: details.unit_price,
-            stock_id: details.stock_id,
-            amount_paid: prevData.quantity ? prevData.quantity * details.unit_price : '',
-            total_price: prevData.quantity ? prevData.quantity * details.unit_price : '',
-        }));
-    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        const requiredFields = ['shop_id', 'BatchNumber', 'quantity', 'item_name', 'stock_id', 'sale_date'];
+        const requiredFields = ['shop_id', 'quantity', 'item_name', 'stock_id', 'sale_date'];
         const newErrors = {};
         requiredFields.forEach((field) => {
             if (!formData[field]) {
@@ -183,15 +215,13 @@ const AddSale = () => {
                         </option>
                     ))}
                 </select>
-                <select name="BatchNumber" value={formData.BatchNumber} onChange={handleChange} className="input">
-                    <option value="">Select Batch Number</option>
-                    {batchNumbers.map((batch, index) => (
-                        <option key={index} value={batch}>
-                            {batch}
-                        </option>
+                <select name="item_name" value={formData.item_name} onChange={handleItemSelect} className="input">
+                    <option value="">Select Item</option>
+                    {items.map((item) => (
+                        <option key={item} value={item}>{item}</option>
                     ))}
                 </select>
-                <BatchDetails batchNumber={formData.BatchNumber} onDetailsFetched={handleBatchDetailsFetched} />
+                
                 
                 <input type="date" name="sale_date" value={formData.sale_date} onChange={handleChange} className="input" />
 
@@ -216,3 +246,5 @@ const AddSale = () => {
 };
 
 export default AddSale;
+
+

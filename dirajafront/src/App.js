@@ -39,7 +39,18 @@ import ManualTransfer from './Pages/AddStockPage';
 import ClerkStockManagement from './Components/StockManagement/ClerkStockManagement';
 import GetAllLiveStock from './Components/GetAllLiveStock';
 import ShopSalesDetails from './Components/SingleShopSales';
+
 import UnpaidSales from './Components/CreditSales/UnpaidSales';
+
+import AddMSale from './Components/ClerkDashbord/MabandaShop/Newsale';
+import AddMExpense from './Components/ClerkDashbord/MabandaShop/Newexpense';
+import AddMPurchase from './Components/ClerkDashbord/MabandaShop/Newpurchase';
+import AddMStock from './Components/ClerkDashbord/MabandaShop/Newstock';
+import Sales from './Components/ClerkDashbord/MabandaShop/GetMabandasales';
+import Purchases from './Components/ClerkDashbord/MabandaShop/GetMabandaPurchase';
+import Stock from './Components/ClerkDashbord/MabandaShop/GetMabandaStock';
+import Expenses from './Components/ClerkDashbord/MabandaShop/GetMabandaExpenses';
+
 
 
 
@@ -134,9 +145,28 @@ function App() {
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
             <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>} ></Route>
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
-
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
+
             <Route path='/credit-sale' element ={<Layout><UnpaidSales /></Layout>} ></Route>
+
+            <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
+            <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>
+            <Route path='/mabandapurchase' element={<ClerkLayout><AddMPurchase /></ClerkLayout>} ></Route>
+            <Route path='/mabandastock' element={<ClerkLayout><AddMStock /></ClerkLayout>} ></Route>
+            <Route path='/mabandasales' element={<ClerkLayout><Sales /></ClerkLayout>} ></Route>
+            <Route path='/mabandasalesmanager' element={<Layout><Sales /></Layout>} ></Route>
+            <Route path='/mabandapurchases' element={<ClerkLayout><Purchases /></ClerkLayout>} ></Route>
+            <Route path='/mabandapurchasesmanager' element={<Layout><Purchases /></Layout>} ></Route>
+            <Route path='/mabandastocks' element={<ClerkLayout><Stock /></ClerkLayout>} ></Route>
+            <Route path='/mabandastocksmanager' element={<Layout><Stock /></Layout>} ></Route>
+            <Route path='/mabandaexpenses' element={<ClerkLayout><Expenses /></ClerkLayout>} ></Route>
+            <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
+
+
+
+
+
+
 
           </Routes> 
        
