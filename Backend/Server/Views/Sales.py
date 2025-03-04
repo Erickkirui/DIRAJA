@@ -81,7 +81,7 @@ class AddSale(Resource):
         except ValueError as e:
             return {'message': f'Invalid amount value in payment methods: {e}'}, 400
 
-        balance = total_amount_paid - total_price
+        balance =  total_price - total_amount_paid 
 
         # ✅ **Check if Sale Date is Today or Yesterday**
         today = datetime.today().date()
@@ -162,15 +162,25 @@ class AddSale(Resource):
             created_at=created_at
         )
 
+
+
         try:
             db.session.add(new_sale)
             db.session.flush()  
 
             for payment in payment_methods:
+                payment_method = payment['method']
+                transaction_code = payment.get('transaction_code')
+
+                # ✅ Ensure transaction code is never NULL
+                if not transaction_code or transaction_code.strip() == "":
+                    transaction_code = "N/A"  # Set default value
+
                 payment_record = SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
-                    payment_method=payment['method'],
-                    amount_paid=payment['amount']
+                    payment_method=payment_method,
+                    amount_paid=payment['amount'],
+                    transaction_code=transaction_code  # ✅ Include transaction code for non-cash payments
                 )
                 db.session.add(payment_record)
 
@@ -193,16 +203,11 @@ class AddSale(Resource):
             db.session.commit()
             return {
                 'message': 'Sale and customer added successfully! Stock updated!',
-                'remaining_stock': remaining_stock  # ✅ Include remaining stock only if LiveStock exists
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
-
-
-
-
 
 
 class GetSales(Resource):

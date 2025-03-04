@@ -17,14 +17,16 @@
 
 .shopStocks-table td {
   border-bottom: 1px solid #ccc;
-  padding-bottom: 10px;
+  padding-top: 15px;
+  padding-bottom: 15px;
   text-align: left;
 
   
 }
+
 .shopStocks-table th, .expenses-table td {
   border-bottom: 1px solid #ccc;
-  padding: 10px;
+  padding-top: 10px;
   text-align: left;
   font-size: 14px;
 }
