@@ -71,13 +71,18 @@ const ShopSalesDetails = () => {
           <div className="actions-container">
             {salesData.shop_name ? (
               <>
-                <ExportExcel data={salesData} fileName={salesData.shop_name.replace(/\s+/g, '_')} />
-                <DownloadPDF tableId="singleshopstock-table" fileName={salesData.shop_name.replace(/\s+/g, '_')} />
+                <ExportExcel data={salesData} fileName="ShopSalesData" />
+
+                <DownloadPDF 
+                  tableId="singleshopstock-table" 
+                  fileName={salesData?.shop_name ? salesData.shop_name.replace(/\s+/g, '_') : 'ShopSalesData'} 
+                />
+
               </>
             ) : (
               <>
-                <ExportExcel data={salesData} fileName="ShopSalesData" />
-                <DownloadPDF tableId="singleshopstock-table" fileName="ShopSalesData" />
+                {/* <ExportExcel data={salesData} fileName="ShopSalesData" /> */}
+                {/* <DownloadPDF tableId="singleshopstock-table" fileName="ShopSalesData" /> */}
               </>
             )}
           </div>
