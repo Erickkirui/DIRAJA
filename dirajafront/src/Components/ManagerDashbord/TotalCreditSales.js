@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import LoadingAnimation from '../LoadingAnimation';
 
-
 const TotalCreditSales = () => {
   // Set default period to 'yesterday'
   const [period, setPeriod] = useState('yesterday');
@@ -31,7 +30,7 @@ const TotalCreditSales = () => {
 
         // Simulate delay for the loading animation.
         setTimeout(() => {
-          setTotalAmountPaid(response.data.total_sales_amount_paid);
+          setTotalAmountPaid(response.data.total_unpaid_amount); // Corrected key
           setLoading(false);
         }, 3000);
 
@@ -79,7 +78,7 @@ const TotalCreditSales = () => {
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
-        <h1>{totalAmountPaid ? totalAmountPaid : '0.00'}</h1>
+        <h1>{totalAmountPaid ? totalAmountPaid : 'Ksh 0.00'}</h1>
       )}
       <Link to="/credit-sale">View Sales</Link>
     </div>
