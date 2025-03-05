@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
 import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
 import '../Styles/expenses.css';
@@ -141,6 +142,7 @@ const Expenses = () => {
         
           <ExportExcel data={expenses} fileName="ExpensesData" />
           <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
+          <Link to="/mabandaexpensesmanager"  className='add-button' >View Mabanda Expenses </Link>
         
 
       </div>

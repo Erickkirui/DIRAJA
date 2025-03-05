@@ -32,19 +32,19 @@ function ClerkDashbord() {
               )}
 
             <Link className='clerk-button' to='/shopsale'>New Sale</Link> */}
-                {shopId === "2" && (
+                {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandasale">
                     New Sale
                   </Link>
                 )}
 
-                {shopId !== "2" && (
+                {shopId !== "12" && (
                   <Link className="clerk-button" to="/shopsale">
                     New Sale
                   </Link>
                 )}
 
-                {shopId !== "2" && (
+                {shopId !== "12" && (
                   <Link className="clerk-button" to="/shopcustomers">
                     View Customers
                   </Link>
@@ -53,29 +53,29 @@ function ClerkDashbord() {
                 
             {/* <Link className='clerk-button' to='/shopcustomers'>View Customers</Link> */}
               
-              {shopId !== "2" && (
+              {/* {shopId !== "12" && (
                   <Link className="clerk-button" to="/managestock">
                     Manage Stock
                   </Link>
-                )}
-              {/* {
+                )} */}
+              {
                 shopId === "2" &&(
                   <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
-              )} */}
+              )}
 
-              {shopId === "2" && (
+              {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandastock">
                     Add Stock
                   </Link>
                 )}
 
-              {shopId === "2" && (
+              {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandaexpense">
                     Add Expense
                   </Link>
                 )}
 
-              {shopId === "2" && (
+              {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandapurchase">
                     Add Purchase
                   </Link>
@@ -87,13 +87,13 @@ function ClerkDashbord() {
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
             )}
 
-                {shopId === "2" && (
+                {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandasales">
                     View Sales
                   </Link>
                 )}
 
-                {shopId !== "2" && (
+                {shopId !== "12" && (
                   <Link className="clerk-button" to="/shopsales">
                     View Sales
                   </Link>

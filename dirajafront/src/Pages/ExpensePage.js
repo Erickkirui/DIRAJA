@@ -8,8 +8,8 @@ export default function ExpensePage() {
        <div className='header-container'>
         <h1>Expenses</h1>
         <Link to="/addexpence" className='add-button'>AddExpense ＋ </Link>
-
        </div>
+
      
       <Expenses/>
  

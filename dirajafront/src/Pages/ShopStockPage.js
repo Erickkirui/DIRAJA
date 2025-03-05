@@ -8,10 +8,9 @@ function ShopStockPage() {
     <div>
     <div className='header-container'>
     <h1>System Stock</h1>
-    {/* <Link to="/addstock"  className='add-button' >Add Mabanda Stock ＋</Link> */}
     </div>
       <ShopStock />
-   
+  
   </div>
   )
 }

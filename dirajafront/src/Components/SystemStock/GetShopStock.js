@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import '../../Styles/shopstock.css';
 import LoadingAnimation from '../LoadingAnimation';
 import ActionsDropdown from './ActionsDropdown';
+import { Link } from 'react-router-dom';
+
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
@@ -78,7 +80,9 @@ const Shopstock = () => {
                     value={selectedDate}
                     onChange={handleDateChange}
                 />
+
             </div>
+
 
             {/* Actions Dropdown */}
             <ActionsDropdown
@@ -87,6 +91,11 @@ const Shopstock = () => {
                 selectedStocks={selectedStocks}
                 setSelectedStocks={setSelectedStocks}
             />
+
+            <Link to="/mabandastocksmanager"  className='add-button' >View Mabanda Stock </Link>
+
+
+
 
             {/* Table */}
             <table className="shopStocks-table">

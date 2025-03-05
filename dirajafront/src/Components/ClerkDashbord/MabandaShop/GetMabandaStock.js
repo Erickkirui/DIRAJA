@@ -119,7 +119,7 @@ const Stock = () => {
           </div>
         </>
       ) : (
-        <p>No sales found.</p>
+        <p>No stock found.</p>
       )}
     </div>
   );
