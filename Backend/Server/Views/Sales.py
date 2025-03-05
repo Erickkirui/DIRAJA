@@ -174,8 +174,12 @@ class AddSale(Resource):
                     payment_method = payment['method']
                     transaction_code = payment.get('transaction_code')
 
+                    # Ensure the transaction_code is not empty and convert it to uppercase
                     if not transaction_code or transaction_code.strip() == "":
                         transaction_code = "N/A"
+                    else:
+                        # Convert the transaction code to uppercase
+                        transaction_code = transaction_code.upper()
 
                     payment_record = SalesPaymentMethods(
                         sale_id=new_sale.sales_id,
@@ -185,6 +189,7 @@ class AddSale(Resource):
                         created_at=new_sale.created_at
                     )
                     db.session.add(payment_record)
+
 
             # ✅ Always add customer details
             new_customer = Customers(

@@ -29,7 +29,9 @@ const ShopSalesDetails = () => {
         let url = `/api/diraja/totalsalesbyshop/${shop_id}`;
 
         const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
-        const formattedEnd = dateRange.endDate ? format(dateRange.endDate, "yyyy-MM-dd") : formattedStart;
+        const formattedEnd = dateRange.endDate
+          ? format(dateRange.endDate, "yyyy-MM-dd")
+          : formattedStart;
 
         url += `?start_date=${formattedStart}&end_date=${formattedEnd}`;
 
@@ -60,19 +62,26 @@ const ShopSalesDetails = () => {
       ) : salesData ? (
         <div>
           <h2>Sales for {salesData.shop_name}</h2>
-          <p><strong>Sales total:</strong> {salesData.total_sales_amount_paid}</p>
-          
-          <div className="date-filters">
+          <p>
+            <strong>Sales total:</strong> {salesData.total_sales_amount_paid}
+          </p>
 
+          <div className="input-container">
+            <label>Filter by Date Range:</label>
             <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
-
           </div>
-          
+
           <div className="actions-container">
             {salesData.shop_name ? (
               <>
-                <ExportExcel data={salesData} fileName={salesData.shop_name.replace(/\s+/g, '_')} />
-                <DownloadPDF tableId="singleshopstock-table" fileName={salesData.shop_name.replace(/\s+/g, '_')} />
+                <ExportExcel
+                  data={salesData}
+                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
+                />
+                <DownloadPDF
+                  tableId="singleshopstock-table"
+                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
+                />
               </>
             ) : (
               <>
@@ -97,7 +106,9 @@ const ShopSalesDetails = () => {
               {salesData.sales_records.map((sale) => (
                 <tr key={sale.sale_id}>
                   <td>{sale.item_name}</td>
-                  <td>{sale.quantity} {sale.metric}</td>
+                  <td>
+                    {sale.quantity} {sale.metric}
+                  </td>
                   <td>Ksh {sale.total_price}</td>
                   <td>
                     {sale.payment_methods.map((payment, index) => (
@@ -106,7 +117,16 @@ const ShopSalesDetails = () => {
                       </div>
                     ))}
                   </td>
-                  <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
+                  <td>
+                    {new Date(sale.created_at)
+                      .toLocaleString(undefined, {
+                        year: "numeric",
+                        month: "2-digit",
+                        day: "2-digit",
+                        hour12: true,
+                      })
+                      .replace(",", "")}
+                  </td>
                 </tr>
               ))}
             </tbody>
