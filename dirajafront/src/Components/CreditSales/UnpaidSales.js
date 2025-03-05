@@ -5,9 +5,9 @@ import DownloadPDF from '../Download/DownloadPDF';
 import { isSameDay } from 'date-fns';
 import LoadingAnimation from '../LoadingAnimation';
 
+
 const UnpaidSales = () => {
   const [sales, setSales] = useState([]);
-  const [selectedSales, setSelectedSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -50,13 +50,7 @@ const UnpaidSales = () => {
     fetchSales();
   }, []);
 
-  const handleCheckboxChange = (saleId) => {
-    setSelectedSales((prevSelected) =>
-      prevSelected.includes(saleId)
-        ? prevSelected.filter((id) => id !== saleId)
-        : [...prevSelected, saleId]
-    );
-  };
+
 
   const getFirstName = (username) => username?.split(' ')[0] || '';
   const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
