@@ -10,11 +10,12 @@ const UserDisplay = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
+  const shopId = localStorage.getItem('shop_id')
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
     const storedRole = localStorage.getItem('role');
-    const shopId = localStorage.getItem('shop_id')
+    
 
     
     if (!storedUsername || !storedRole) {
@@ -85,13 +86,15 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
             {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
 
-            {/* Items visible only to clerks of a specific shop
-            {role === 'clerk' && shopId === "2" && (
+            {/* Items visible only to clerks of a specific shop */}
+            {role === 'clerk' && shopId === "12" && (
               <>
                 <Link to="/mabandastocks" onClick={handleMenuClick}>View Stock</Link>
-                <Link to="/mabandaexpenses" onClick={handleMenuClick}>view stocks</Link>
+                <Link to="/mabandaexpenses" onClick={handleMenuClick}>view Expenses</Link>
+                <Link to="/mabandapurchases" onClick={handleMenuClick}>view Purchases</Link>
+
               </>
-            )} */}
+            )}
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}

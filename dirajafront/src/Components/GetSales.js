@@ -5,6 +5,8 @@ import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/sales.css';
 import { isSameDay } from 'date-fns';
 import LoadingAnimation from './LoadingAnimation';
+import { Link } from 'react-router-dom';
+
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
@@ -164,7 +166,10 @@ const Sales = () => {
         <button className="delete-button" onClick={deleteSelectedSales} disabled={selectedSales.length === 0}>
           Delete Selected
         </button>
+        <Link to="/mabandasalesmanager"  className='add-button' >View Mabanda Sales </Link>
+
       </div>
+      
 
       <table id="sales-table" className="sales-table" aria-label="Sales data">
         <thead>

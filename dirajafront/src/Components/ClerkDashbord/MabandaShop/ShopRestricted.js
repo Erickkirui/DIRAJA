@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const ShopRestricted = ({ children }) => {
     const [userShop, setUserShop] = useState(null);
-    const allowedShopId = "2"; 
+    const allowedShopId = "12"; 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

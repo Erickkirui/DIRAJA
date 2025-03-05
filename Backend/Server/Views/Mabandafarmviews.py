@@ -28,7 +28,7 @@ class AddMabandaStock(Resource):
             itemname=data['itemname'],
             quantity=data['quantity'],
             price=data.get('price', 0),
-            shop_id=2,
+            shop_id=12,
             date_added=datetime.strptime(data['date_added'], '%Y-%m-%d')
         )
         db.session.add(new_stock)
@@ -45,7 +45,7 @@ class AddMabandaSale(Resource):
             quantity_sold=data['quantity_sold'],
             amount_paid=data['amount_paid'],
             sale_date=datetime.strptime(data['sale_date'], '%Y-%m-%d'),
-            shop_id=2  # Hardcoded shop_id to 2
+            shop_id=12  # Hardcoded shop_id to 2
         )
 
         db.session.add(new_sale)
@@ -64,7 +64,7 @@ class AddMabandaPurchase(Resource):
             quantity=data['quantity'],
             price=data['price'],
             purchase_date=datetime.strptime(data['purchase_date'], '%Y-%m-%d'),
-            shop_id=2
+            shop_id=12
         )
         db.session.add(new_purchase)
         db.session.commit()
@@ -79,7 +79,7 @@ class AddMabandaExpense(Resource):
             description=data['description'],
             amount=data['amount'],
             expense_date=datetime.strptime(data['expense_date'], '%Y-%m-%d'),
-            shop_id=2
+            shop_id=12
         )
         db.session.add(new_expense)
         db.session.commit()
@@ -89,10 +89,10 @@ class AddMabandaExpense(Resource):
 class MabandaStockResource(Resource):
     @jwt_required()
     def get(self):
-        stocks = MabandaStock.query.filter_by(shop_id=2).all()  # Fetch sales for shop_id = 2
+        stocks = MabandaStock.query.filter_by(shop_id=12).all()  # Fetch sales for shop_id = 2
         
         if not stocks:
-            return {"error": "No stock found for shop 2"}, 404
+            return {"error": "No stock found for shop 12"}, 404
 
         return [
             {
@@ -132,10 +132,10 @@ class MabandaStockResource(Resource):
 class MabandaSaleResource(Resource):
     @jwt_required()
     def get(self):
-        sales = MabandaSale.query.filter_by(shop_id=2).all()  # Fetch sales for shop_id = 2
+        sales = MabandaSale.query.filter_by(shop_id=12).all()  # Fetch sales for shop_id = 2
         
         if not sales:
-            return {"error": "No sales found for shop 2"}, 404
+            return {"error": "No sales found for shop 12"}, 404
 
         return [
             {
@@ -174,10 +174,10 @@ class MabandaSaleResource(Resource):
 class MabandaPurchaseResource(Resource):
     @jwt_required()
     def get(self):
-        purchases = MabandaPurchase.query.filter_by(shop_id=2).all()  # Fetch sales for shop_id = 2
+        purchases = MabandaPurchase.query.filter_by(shop_id=12).all()  # Fetch sales for shop_id = 2
         
         if not purchases:
-            return {"error": "No purchases found for shop 2"}, 404
+            return {"error": "No purchases found for shop 12"}, 404
 
         return [
             {
@@ -216,10 +216,10 @@ class MabandaPurchaseResource(Resource):
 class MabandaExpenseResource(Resource):
     @jwt_required()
     def get(self):
-        expenses = MabandaExpense.query.filter_by(shop_id=2).all()  # Fetch sales for shop_id = 2
+        expenses = MabandaExpense.query.filter_by(shop_id=12).all()  # Fetch sales for shop_id = 2
         
         if not expenses:
-            return {"error": "No sales found for shop 2"}, 404
+            return {"error": "No sales found for shop 12"}, 404
 
         return [
             {
