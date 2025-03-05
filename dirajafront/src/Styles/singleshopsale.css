@@ -146,6 +146,33 @@
     .modal-content button {
       margin: 0 5px;
     }
+
+
+    .edit-sale-form{
+      display: flex;
+      flex-direction: column;
+      width: 50%;
+      gap: 10px;
+    }
+    .edit-sale-form input{
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    .payment-date-form{
+      margin-top: 10px;
+    }
+    
+    
+    /* media query */
+    @media (max-width: 768px) {
+      .edit-sale-form{
+        width: 100%;
+      }
+      .sale-details-table{
+        width: 100%;
+      }
+    }
     
   
 .edit-sale-form{
