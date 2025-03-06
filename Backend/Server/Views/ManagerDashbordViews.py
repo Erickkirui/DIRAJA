@@ -608,10 +608,11 @@ class TotalUnpaidAmountAllSales(Resource):
                     return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query to sum up the unpaid balances from the Sales table within the selected date range
+            # Query to sum up balances for partially_paid or unpaid sales within the date range
             query = (
                 db.session.query(db.func.sum(Sales.balance))
                 .filter(Sales.created_at.between(start_date, end_date))
+                .filter(Sales.status.in_(["partially_paid", "unpaid"]))
             )
 
             total_unpaid = query.scalar() or 0
