@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import ShopRestricted from './ShopRestricted';
 
-
 const AddSale = () => {
     const [formData, setFormData] = useState({
         shop_id: '',
         itemname: '',
         quantity_sold: '',
         amount_paid: '',
-        sale_date: ''
+        sale_date: '',
+        mode_of_payment: '' 
     });
+
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +31,14 @@ const AddSale = () => {
 
             setMessage(response.data.message);
             setMessageType('success');
-            setFormData({ shop_id: '', itemname: '', quantity_sold: '', amount_paid: '', sale_date: '' });
+            setFormData({ 
+                shop_id: '', 
+                itemname: '', 
+                quantity_sold: '', 
+                amount_paid: '', 
+                sale_date: '', 
+                mode_of_payment: 'Cash' // Reset to default
+            });
         } catch (error) {
             setMessageType('error');
             setMessage('Error adding sale: ' + (error.response?.data?.message || error.message));
@@ -48,8 +56,20 @@ const AddSale = () => {
                     <input name="quantity_sold" value={formData.quantity_sold} onChange={handleChange} placeholder="Quantity Sold" required />
                     <input name="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} placeholder="Amount Paid" required />
                     <input type="date" name="sale_date" value={formData.sale_date} onChange={handleChange} required />
-                    <button className="add-sale-button" type="submit">Add Sale</button>
+                    
+                    {/* Mode of Payment Dropdown */}
+                    <select name="mode_of_payment" value={formData.mode_of_payment} onChange={handleChange} required>
+                        <option value="Cash">Cash</option>
+                        <option value="Mpesa">Mpesa</option>
+                        <option value="Sasapay">Sasapay</option>
+                    </select>
+
+                    <button className="add-sale-button" type="submit" disabled={isLoading}>
+                        {isLoading ? 'Adding...' : 'Add Sale'}
+                    </button>
                 </form>
+
+                {message && <p className={messageType}>{message}</p>}
             </div>
         </ShopRestricted>
     );

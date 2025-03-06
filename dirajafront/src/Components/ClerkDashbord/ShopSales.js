@@ -43,7 +43,7 @@ const ShopSales = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Improved Search & Sorting
+  // **Filter sales based on search & selected date**
   const filteredSales = sales.filter((sale) => {
     const itemName = sale.item_name?.toLowerCase() || '';
     const shopName = sale.shopname?.toLowerCase() || '';
@@ -55,20 +55,34 @@ const ShopSales = () => {
       userName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      ? new Date(sale.sale_date).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
       : true;
 
     return matchesSearch && matchesDate;
   });
 
-  // **Sort in Descending Order**
-  const sortedSales = [...filteredSales].sort((a, b) => b.sale_id - a.sale_id);
+  // **Sort sales by date (newest first)**
+  const sortedSales = [...filteredSales].sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
 
-  // Pagination
+  // **Pagination**
+  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
+
+  // **Pagination Logic - Show 4 Pages at a Time**
+  const maxPageNumbers = 4;
+  let startPage = Math.max(1, currentPage - 1);
+  let endPage = Math.min(totalPages, startPage + maxPageNumbers - 1);
+
+  if (endPage - startPage < maxPageNumbers - 1) {
+    startPage = Math.max(1, endPage - maxPageNumbers + 1);
+  }
+
+  const pageNumbers = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -77,6 +91,7 @@ const ShopSales = () => {
   return (
     <div className="sales-container">
       <h1>Sales</h1>
+      
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
@@ -105,7 +120,7 @@ const ShopSales = () => {
           <table className="sales-table">
             <thead>
               <tr>
-                <th>Item name</th>
+                <th>Item Name</th>
                 <th>Quantity</th>
                 <th>Amount</th>
                 <th>Date</th>
@@ -117,7 +132,7 @@ const ShopSales = () => {
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.total_amount_paid} Ksh</td>
-                  <td>{new Date(sale.created_at).toLocaleDateString()}</td>
+                  <td>{new Date(sale.sale_date).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -125,15 +140,31 @@ const ShopSales = () => {
 
           {/* Pagination */}
           <div className="pagination">
-            {Array.from({ length: totalPages }, (_, index) => (
+            <button 
+              className="page-button" 
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              Prev
+            </button>
+
+            {pageNumbers.map((number) => (
               <button
-                key={index}
-                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(index + 1)}
+                key={number}
+                className={`page-button ${currentPage === number ? 'active' : ''}`}
+                onClick={() => handlePageChange(number)}
               >
-                {index + 1}
+                {number}
               </button>
             ))}
+
+            <button 
+              className="page-button" 
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </button>
           </div>
         </>
       ) : (

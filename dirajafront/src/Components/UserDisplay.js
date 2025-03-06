@@ -95,6 +95,15 @@ const UserDisplay = () => {
 
               </>
             )}
+
+            { /* Items visible only to user ID 3 */ }
+            {userId === "3" && (
+              <>
+                  <Link to="/mabandaexpense" onClick={handleMenuClick}>Add Mabanda Expense</Link>
+                  <Link to="/mabandapurchase" onClick={handleMenuClick}>Add Mabanda Purchases</Link>
+              </>
+            )}
+
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}

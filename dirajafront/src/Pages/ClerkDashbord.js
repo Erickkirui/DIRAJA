@@ -101,10 +101,15 @@ function ClerkDashbord() {
 
             {/* <Link className='clerk-button' to='/shopsales'>View Sales</Link> */}
           </div>
+
           <div className='analytics-clerk'>
+            {shopId === "12" ? <TotalMabandaSales /> : <TotalShopSales />}
+          </div>
+
+          {/* <div className='analytics-clerk'>
             <TotalShopSales />
            
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
