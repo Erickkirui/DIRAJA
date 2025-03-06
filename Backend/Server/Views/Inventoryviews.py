@@ -285,7 +285,13 @@ class AddInventory(Resource):
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
         note = data.get('note', '')  # Optional field, default to empty String
-        created_at = datetime.utcnow()
+        created_at_str = data.get('created_at')
+
+        try:
+            created_at = datetime.strptime(created_at_str, "%Y-%m-%d")  # Assuming the format YYYY-MM-DD
+        except ValueError:
+            return jsonify({'message': 'Invalid date format. Please use YYYY-MM-DD for created_at.'}), 400
+
 
         # Calculate totalCost and balance
         totalCost = unitCost * quantity
@@ -399,11 +405,21 @@ class InventoryResourceById(Resource):
             unitPrice = float(data.get('unitPrice', inventory.unitPrice))  # Convert to float
             totalCost = unitCost * initial_quantity  # Ensure this is a valid number
             amountPaid = float(data.get('amountPaid', inventory.amountPaid))  # Convert to float
-            ballance = totalCost - amountPaid  # Calculate balance
+            balance = totalCost - amountPaid  # Calculate balance
             Suppliername = data.get('Suppliername', inventory.Suppliername)
             Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
             note = data.get('note', inventory.note)
-            created_at = data.get('created_at', inventory.created_at)
+
+            # Handle 'created_at' field
+            created_at_str = data.get('created_at', None)
+            if created_at_str:
+                # Ensure the date string is in the correct format
+                try:
+                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d')  # Parse as datetime object
+                except ValueError:
+                    return jsonify({'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}), 400
+            else:
+                created_at = inventory.created_at  # Use the original 'created_at' if not provided
 
             # Update inventory details
             inventory.itemname = itemname
@@ -412,11 +428,11 @@ class InventoryResourceById(Resource):
             inventory.unitPrice = unitPrice
             inventory.totalCost = totalCost
             inventory.amountPaid = amountPaid
-            inventory.ballance = ballance  # Update the balance
+            inventory.balance = balance  # Update the balance with the correct spelling
             inventory.Suppliername = Suppliername
             inventory.Supplier_location = Supplier_location
             inventory.note = note
-            inventory.created_at = created_at
+            inventory.created_at = created_at  # Update the created_at field
 
             # Update related transfer records
             transfers = Transfer.query.filter_by(inventory_id=inventory_id).all()
@@ -441,7 +457,8 @@ class InventoryResourceById(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
-        
+
+    
 class StockDeletionResource(Resource):     
     @jwt_required()
     @check_role('manager')
