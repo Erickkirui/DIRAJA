@@ -59,7 +59,7 @@ const BatchStockList = () => {
             <thead>
               <tr>
                 <th>Batch Number</th>
-                <th>Total Quantity</th>
+                <th>Total  Remaining</th>
                 
               </tr>
             </thead>

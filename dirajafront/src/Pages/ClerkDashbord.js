@@ -2,6 +2,7 @@ import React from 'react';
 import ClerkNavbar from '../Components/ClerkDashbord/ClerkNavbar';
 import UserDisplay from '../Components/UserDisplay';
 
+import TotalMabandaSales from '../Components/ClerkDashbord/MabandaShop/Totalsalesmabanda';
 
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop';
 import '../Styles/clerkpage.css';

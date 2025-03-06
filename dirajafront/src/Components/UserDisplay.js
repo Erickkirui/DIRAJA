@@ -11,6 +11,8 @@ const UserDisplay = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const shopId = localStorage.getItem('shop_id')
+  const userId = localStorage.getItem('user_id')
+
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
