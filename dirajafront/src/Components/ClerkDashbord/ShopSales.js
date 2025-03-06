@@ -115,7 +115,7 @@ const ShopSales = () => {
             <tbody>
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
-                  <td>{sale.itemname}</td>
+                  <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.total_amount_paid} </td>
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
