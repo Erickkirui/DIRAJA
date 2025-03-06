@@ -499,49 +499,120 @@ class TotalSalesByShop(Resource):
  
 
 
+# class TotalUnpaidAmountAllSales(Resource):
+#     @jwt_required()
+#     @check_role('manager')
+#     def get(self):
+#         today = datetime.utcnow()
+#         start_date = None
+#         end_date = None
+
+#         # Check if both start_date and end_date are provided
+#         start_date_str = request.args.get('start_date')
+#         end_date_str = request.args.get('end_date')
+
+#         if start_date_str and end_date_str:
+#             try:
+#                 start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+#                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+#             except ValueError:
+#                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+#         else:
+#             # If no custom date range is provided, use the period parameter
+#             period = request.args.get('period', 'today')
+
+#             if period == 'today':
+#                 start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+#                 end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+#             elif period == 'yesterday':
+#                 yesterday_date = today - timedelta(days=1)
+#                 start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
+#                 end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+#             elif period == 'week':
+#                 start_date = today - timedelta(days=7)
+#                 end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+#             elif period == 'month':
+#                 start_date = today - timedelta(days=30)
+#                 end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+#             else:
+#                 return {"message": "Invalid period specified"}, 400
+
+#         try:
+#             # Query to sum up the unpaid balances from the Sales table within the selected date range
+#             query = (
+#                 db.session.query(db.func.sum(Sales.balance))
+#                 .filter(Sales.created_at.between(start_date, end_date))
+#             )
+
+#             total_unpaid = query.scalar() or 0
+
+#             # Format the total unpaid amount with currency formatting
+#             formatted_unpaid = "Ksh {:,.2f}".format(total_unpaid)
+            
+#             return {"total_unpaid_amount": formatted_unpaid}, 200
+
+#         except SQLAlchemyError as e:
+#             db.session.rollback()
+#             return {
+#                 "error": "An error occurred while fetching the total unpaid amount", 
+#                 "details": str(e)
+#             }, 500
+
+
+
+
 class TotalUnpaidAmountAllSales(Resource):
     @jwt_required()
-    @check_role('manager')
     def get(self):
         today = datetime.utcnow()
         start_date = None
         end_date = None
 
-        # Check if both start_date and end_date are provided
-        start_date_str = request.args.get('start_date')
-        end_date_str = request.args.get('end_date')
-
-        if start_date_str and end_date_str:
+        # Check if a custom date is provided
+        date_str = request.args.get('date')
+        if date_str:
             try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+                start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            # If no custom date range is provided, use the period parameter
-            period = request.args.get('period', 'today')
+            # Check if both start_date and end_date are provided
+            start_date_str = request.args.get('start_date')
+            end_date_str = request.args.get('end_date')
 
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'yesterday':
-                yesterday_date = today - timedelta(days=1)
-                start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'week':
-                start_date = today - timedelta(days=7)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'month':
-                start_date = today - timedelta(days=30)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            if start_date_str and end_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+                except ValueError:
+                    return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
             else:
-                return {"message": "Invalid period specified"}, 400
+                # If no custom date or date range is provided, use the period parameter
+                period = request.args.get('period', 'today')
+
+                if period == 'today':
+                    start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+                elif period == 'yesterday':
+                    yesterday_date = today - timedelta(days=1)
+                    start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                elif period == 'week':
+                    start_date = today - timedelta(days=7)
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+                elif period == 'month':
+                    start_date = today - timedelta(days=30)
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+                else:
+                    return {"message": "Invalid period specified"}, 400
 
         try:
-            # Query to sum up the unpaid balances from the Sales table within the selected date range
+            # Query to sum up balances for partially_paid or unpaid sales within the date range
             query = (
                 db.session.query(db.func.sum(Sales.balance))
                 .filter(Sales.created_at.between(start_date, end_date))
+                .filter(Sales.status.in_(["partially_paid", "unpaid"]))
             )
 
             total_unpaid = query.scalar() or 0
@@ -558,63 +629,3 @@ class TotalUnpaidAmountAllSales(Resource):
                 "details": str(e)
             }, 500
 
-
-
-class TotalUnpaidAmountAllSales(Resource):
-    @jwt_required()
-    @check_role('manager')
-    def get(self):
-        today = datetime.utcnow()
-        start_date = None
-        end_date = None
-
-        # Check if both start_date and end_date are provided
-        start_date_str = request.args.get('start_date')
-        end_date_str = request.args.get('end_date')
-
-        if start_date_str and end_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
-            except ValueError:
-                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
-        else:
-            # If no custom date range is provided, use the period parameter
-            period = request.args.get('period', 'today')
-
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'yesterday':
-                yesterday_date = today - timedelta(days=1)
-                start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'week':
-                start_date = today - timedelta(days=7)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'month':
-                start_date = today - timedelta(days=30)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            else:
-                return {"message": "Invalid period specified"}, 400
-
-        try:
-            # Query to sum up the unpaid balances from the Sales table within the selected date range
-            query = (
-                db.session.query(db.func.sum(Sales.balance))
-                .filter(Sales.created_at.between(start_date, end_date))
-            )
-
-            total_unpaid = query.scalar() or 0
-
-            # Format the total unpaid amount with currency formatting
-            formatted_unpaid = "Ksh {:,.2f}".format(total_unpaid)
-            
-            return {"total_unpaid_amount": formatted_unpaid}, 200
-
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            return {
-                "error": "An error occurred while fetching the total unpaid amount", 
-                "details": str(e)
-            }, 500

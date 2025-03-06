@@ -11,6 +11,8 @@ const UserDisplay = () => {
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
   const shopId = localStorage.getItem('shop_id')
+  const userId = localStorage.getItem('user_id')
+
 
   useEffect(() => {
     const storedUsername = localStorage.getItem('username');
@@ -95,6 +97,15 @@ const UserDisplay = () => {
 
               </>
             )}
+
+            { /* Items visible only to user ID 3 */ }
+            {userId === "3" && (
+              <>
+                  <Link to="/mabandaexpense" onClick={handleMenuClick}>Add Mabanda Expense</Link>
+                  <Link to="/mabandapurchase" onClick={handleMenuClick}>Add Mabanda Purchases</Link>
+              </>
+            )}
+
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}

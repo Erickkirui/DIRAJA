@@ -9,6 +9,7 @@ const ShopSales = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
+  const pageGroupSize = 4; // Display only 4 page numbers at a time
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -41,34 +42,33 @@ const ShopSales = () => {
     fetchSales();
   }, []);
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
-  // Improved Search & Sorting
+  // Search and filter logic
   const filteredSales = sales.filter((sale) => {
-    const itemName = sale.item_name?.toLowerCase() || '';
-    const shopName = sale.shopname?.toLowerCase() || '';
-    const userName = sale.username?.toLowerCase() || '';
-
-    const matchesSearch =
-      itemName.includes(searchQuery.toLowerCase()) ||
-      shopName.includes(searchQuery.toLowerCase()) ||
-      userName.includes(searchQuery.toLowerCase());
+    const itemName = sale.itemname?.toLowerCase() || '';
+    const matchesSearch = itemName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? new Date(sale.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      ? new Date(sale.created_at).toISOString().split('T')[0] === selectedDate
       : true;
 
     return matchesSearch && matchesDate;
   });
 
-  // **Sort in Descending Order**
-  const sortedSales = [...filteredSales].sort((a, b) => b.sale_id - a.sale_id);
+  // **Sort sales by `created_at` in descending order**
+  const sortedSales = [...filteredSales].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
+  // **Pagination logic (ensuring latest entries are on page 1)**
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
+  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+  const indexOfLastItem = indexOfFirstItem + itemsPerPage;
+  const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  // **Pagination Display (4 page numbers at a time)**
+  const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1;
+  const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
+  const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -77,11 +77,12 @@ const ShopSales = () => {
   return (
     <div className="sales-container">
       <h1>Sales</h1>
+
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item, shop, or employee"
+          placeholder="Search by item"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -100,7 +101,7 @@ const ShopSales = () => {
         />
       </div>
 
-      {sortedSales.length > 0 ? (
+      {currentSales.length > 0 ? (
         <>
           <table className="sales-table">
             <thead>
@@ -116,24 +117,30 @@ const ShopSales = () => {
                 <tr key={sale.sale_id}>
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.total_amount_paid} Ksh</td>
+                  <td>{sale.total_amount_paid} </td>
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Pagination */}
+          {/* Pagination Controls */}
           <div className="pagination">
-            {Array.from({ length: totalPages }, (_, index) => (
+            {startPage > 1 && (
+              <button onClick={() => handlePageChange(startPage - 1)}>«</button>
+            )}
+            {pageNumbers.map((num) => (
               <button
-                key={index}
-                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-                onClick={() => handlePageChange(index + 1)}
+                key={num}
+                className={`page-button ${currentPage === num ? 'active' : ''}`}
+                onClick={() => handlePageChange(num)}
               >
-                {index + 1}
+                {num}
               </button>
             ))}
+            {endPage < totalPages && (
+              <button onClick={() => handlePageChange(endPage + 1)}>»</button>
+            )}
           </div>
         </>
       ) : (

@@ -713,7 +713,7 @@ class GetUnpaidSales(Resource):
     def get(self):
         try:
             # Query for all unpaid and partially paid sales
-            unpaid_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially paid"])).all()
+            unpaid_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially_paid"])).all()
             
             if not unpaid_sales:
                 return {'message': 'No unpaid or partially paid sales found'}, 404

@@ -89,7 +89,7 @@ const Sales = () => {
               <tr>
                 <th>Item</th>
                 <th>Quantity</th>
-                <th>Total Price (Ksh)</th>
+                <th>Price(Ksh)</th>
                 <th>Date</th>
               </tr>
             </thead>

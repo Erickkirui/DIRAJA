@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 
-const TotalShopSales = () => {
+const TotalMabandaSales = () => {
   const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState('');
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [error, setError] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     const fetchTotalAmountPaid = async () => {
@@ -16,17 +17,24 @@ const TotalShopSales = () => {
         const accessToken = localStorage.getItem('access_token');
         const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId) {
-          setError('Missing authentication or shop information.');
+        if (!accessToken) {
+          setError('Missing authentication token.');
           return;
         }
 
-        const params = { period, shop_id: shopId };
-        if (period === 'date' && selectedDate) {
-          params.date = selectedDate; // Include date if "date" is selected
+        if (shopId !== "12") {
+          setIsAuthorized(false);
+          return;
         }
 
-        const response = await axios.get('/api/diraja/totalsales', {
+        setIsAuthorized(true);
+
+        const params = { period };
+        if (period === 'date' && selectedDate) {
+          params.date = selectedDate; // Add date if "date" period is selected
+        }
+
+        const response = await axios.get('/api/diraja/totalsalesmabanda', {
           params,
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -40,6 +48,10 @@ const TotalShopSales = () => {
 
     fetchTotalAmountPaid();
   }, [period, selectedDate]);
+
+  if (!isAuthorized) {
+    return null; // Hide if user is not from shop 12
+  }
 
   return (
     <div className='metrix-container'>
@@ -62,7 +74,7 @@ const TotalShopSales = () => {
         )}
       </div>
       
-      <h5>Total Sales</h5>
+      <h5>Total Sales (Mabanda Shop)</h5>
   
       {error && <p style={{ color: 'red' }}>{error}</p>}
       {totalAmountPaid !== null ? (
@@ -70,9 +82,9 @@ const TotalShopSales = () => {
       ) : (
         <p>Loading...</p>
       )}
-      <Link to='/allsales'>View Sales</Link>
+      <Link to='/mabandasales'>View Sales</Link>
     </div>
   );
 };
 
-export default TotalShopSales;
+export default TotalMabandaSales;
