@@ -64,13 +64,13 @@ const ShopSales = () => {
   // **Sort sales by date (newest first)**
   const sortedSales = [...filteredSales].sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
 
-  // **Pagination**
+  // **Pagination Logic (Newest Sales Appear on Page 1)**
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const indexOfFirstItem = 0; // Always start from index 0 (most recent)
+  const indexOfLastItem = Math.min(itemsPerPage, sortedSales.length);
   const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
 
-  // **Pagination Logic - Show 4 Pages at a Time**
+  // **Pagination - Show 4 Pages at a Time**
   const maxPageNumbers = 4;
   let startPage = Math.max(1, currentPage - 1);
   let endPage = Math.min(totalPages, startPage + maxPageNumbers - 1);
@@ -122,7 +122,7 @@ const ShopSales = () => {
               <tr>
                 <th>Item Name</th>
                 <th>Quantity</th>
-                <th>Amount</th>
+                <th>Amount(ksh)</th>
                 <th>Date</th>
               </tr>
             </thead>
@@ -131,8 +131,8 @@ const ShopSales = () => {
                 <tr key={sale.sale_id}>
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.total_amount_paid} Ksh</td>
-                  <td>{new Date(sale.sale_date).toLocaleDateString()}</td>
+                  <td>{sale.total_amount_paid}</td>
+                  <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
