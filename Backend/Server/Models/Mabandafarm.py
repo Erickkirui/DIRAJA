@@ -26,6 +26,7 @@ class MabandaSale(db.Model):
     itemname = db.Column(db.String(100), nullable=False)
     quantity_sold = db.Column(db.String (100), nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
+    mode_of_payment = db.Column(db.String(50), nullable=False)
     sale_date = db.Column(db.Date, nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)    
     

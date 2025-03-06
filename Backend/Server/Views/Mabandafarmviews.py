@@ -1,10 +1,12 @@
 from flask import jsonify,request,make_response
 from Server.Models.Users import Users
 from flask_restful import Resource
-from datetime import datetime
 from Server.Models.Mabandafarm import db, MabandaStock, MabandaSale, MabandaPurchase, MabandaExpense
 from flask_jwt_extended import jwt_required,get_jwt_identity
+from sqlalchemy.exc import SQLAlchemyError
 from functools import wraps
+from datetime import datetime, timedelta
+
 
 
 def check_role(required_role):
@@ -45,6 +47,7 @@ class AddMabandaSale(Resource):
             quantity_sold=data['quantity_sold'],
             amount_paid=data['amount_paid'],
             sale_date=datetime.strptime(data['sale_date'], '%Y-%m-%d'),
+            mode_of_payment=data['mode_of_payment'],
             shop_id=12  # Hardcoded shop_id to 2
         )
 
@@ -142,7 +145,8 @@ class MabandaSaleResource(Resource):
                 "itemname": sale.itemname,
                 "quantity_sold": sale.quantity_sold,
                 "amount_paid": sale.amount_paid,
-                "sale_date": sale.sale_date.strftime('%Y-%m-%d')
+                "sale_date": sale.sale_date.strftime('%Y-%m-%d'),
+                "mode_of_payment": sale.mode_of_payment
             }
             for sale in sales
         ], 200
@@ -252,3 +256,54 @@ class MabandaExpenseResource(Resource):
             db.session.commit()
             return {"message": "Expense deleted successfully"}, 200
         return {"error": "Expense not found"}, 404
+    
+    
+
+class TotalAmountPaidSalesMabanda(Resource):
+    @jwt_required()
+    def get(self):
+        # Get period from query parameters (default to 'today')
+        period = request.args.get('period', 'today')
+
+        today = datetime.utcnow().date()  # Ensure we work with dates only
+        start_date = None
+
+        # Set the start date based on the requested period
+        if period == 'today':
+            start_date = today
+        elif period == 'week':
+            start_date = today - timedelta(days=7)
+        elif period == 'month':
+            start_date = today - timedelta(days=30)
+        elif period == 'date':
+            date_str = request.args.get('date')  # Get the specific date
+            if not date_str:
+                return {"message": "Date parameter is required when period is 'date'"}, 400
+
+            try:
+                # Parse the provided date
+                start_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Query total amount paid for shop 12
+            query = db.session.query(db.func.sum(MabandaSale.amount_paid)).filter(MabandaSale.shop_id == 12)
+
+            if period == 'date':
+                query = query.filter(MabandaSale.sale_date == start_date)
+            else:
+                query = query.filter(MabandaSale.sale_date >= start_date)
+
+            total_sales = query.scalar() or 0
+
+            # Format the total sales to 2 decimal places with commas
+            formatted_sales = "{:,.2f}".format(total_sales)
+
+            return {"total_sales_amount_paid": formatted_sales}, 200
+
+        except SQLAlchemyError:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching the total sales amount"}, 500
