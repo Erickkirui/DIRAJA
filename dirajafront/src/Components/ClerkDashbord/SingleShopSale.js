@@ -17,7 +17,7 @@ const SingleShopSale = () => {
         stock_id: '',
         status: '',
         sale_date: '',
-        payment_methods: [{ method: '', amount: '' }]
+        payment_methods: [{ method: '', amount: '', transaction_code: '' }] // Added transaction_code field
     });
     const [item, setItems] = useState([]);
     const [message, setMessage] = useState('');
@@ -46,7 +46,7 @@ const SingleShopSale = () => {
     useEffect(() => {
         const fetchItemDetails = async () => {
             if (!formData.item_name || !formData.shop_id) return;
-    
+
             try {
                 const response = await axios.get('/api/diraja/shop-itemdetails', {
                     params: {
@@ -55,11 +55,9 @@ const SingleShopSale = () => {
                     },
                     headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
                 });
-    
-                console.log("Item Details Response:", response.data); // ✅ Log response to check data
-    
+
                 const { metric, unit_price, stock_id, quantity, BatchNumber } = response.data;
-    
+
                 setFormData((prevData) => ({
                     ...prevData,
                     metric: metric || '',
@@ -68,17 +66,16 @@ const SingleShopSale = () => {
                     BatchNumber: BatchNumber || '',
                     amount_paid: prevData.quantity * (unit_price || 0),
                 }));
-    
-                setRemainingStock(quantity); 
+
+                setRemainingStock(quantity);
             } catch (error) {
                 setMessageType('error');
                 setMessage('Error fetching item details. Please try again.');
             }
         };
-    
+
         fetchItemDetails();
     }, [formData.item_name, formData.shop_id]);
-    
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -93,33 +90,31 @@ const SingleShopSale = () => {
 
     const handlePaymentChange = (index, field, value) => {
         const newPaymentMethods = [...formData.payment_methods];
-    
+
         newPaymentMethods[index][field] = value;
-    
+
+        // Ensure that the transaction_code field is properly set when required
         if (field === "method") {
             if (value.toLowerCase() === "cash") {
-                // If payment method is cash, clear the transaction code
-                newPaymentMethods[index]["transactionCode"] = "";
+                newPaymentMethods[index]["transaction_code"] = ""; // Clear transaction code if cash
             } else {
-                // Ensure transactionCode field exists for non-cash payments
-                newPaymentMethods[index]["transactionCode"] = newPaymentMethods[index]["transactionCode"] || "None";
+                // Ensure transaction_code field exists for non-cash payments
+                newPaymentMethods[index]["transaction_code"] = newPaymentMethods[index]["transaction_code"] || "";
             }
         }
-    
-        // Ensure transactionCode defaults to "N/A" if left empty
-        if (field === "transactionCode" && !value.trim()) {
-            newPaymentMethods[index]["transactionCode"] = "N/A";
+
+        // Ensure transaction_code defaults to "none" if left empty
+        if (field === "transaction_code" && !value.trim()) {
+            newPaymentMethods[index]["transaction_code"] = "none";
         }
-    
+
         setFormData({ ...formData, payment_methods: newPaymentMethods });
     };
-    
-    
 
     const addPaymentMethod = () => {
         setFormData({
             ...formData,
-            payment_methods: [...formData.payment_methods, { method: '', amount: '' }],
+            payment_methods: [...formData.payment_methods, { method: '', amount: '', transaction_code: '' }],
         });
     };
 
@@ -132,10 +127,20 @@ const SingleShopSale = () => {
         e.preventDefault();
         setIsLoading(true);
 
-        console.log("Submitting Sale Data:", JSON.stringify(formData, null, 2)); // ✅ Log data before sending
+        // Ensure transaction_code is set to "none" if it is empty
+        const formDataToSubmit = { ...formData };
+        formDataToSubmit.payment_methods = formData.payment_methods.map(payment => {
+            if (!payment.transaction_code || payment.transaction_code.trim() === "") {
+                payment.transaction_code = "none"; // Default to "none" if empty
+            }
+            return payment;
+        });
 
         try {
-            const response = await axios.post('/api/diraja/newsale', formData, {
+            // Log the form data before sending to backend
+            console.log("Submitting Sale Data:", JSON.stringify(formDataToSubmit, null, 2));
+
+            const response = await axios.post('/api/diraja/newsale', formDataToSubmit, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -144,8 +149,9 @@ const SingleShopSale = () => {
 
             if (response.status === 201) {
                 setMessageType('success');
-                setMessage(response.data.message);
+                setMessage(response.data.message); // Show success message
 
+                // Reset the form
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',
                     customer_name: '',
@@ -157,29 +163,27 @@ const SingleShopSale = () => {
                     amount_paid: '',
                     BatchNumber: '',
                     stock_id: '',
-                    payment_methods: [{ method: '', amount: '' }],
+                    payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                 });
 
                 setRemainingStock(0);
 
-                // Wait for 2 seconds and refresh the page
+                // Wait for 2 seconds and reload the page
                 setTimeout(() => {
                     window.location.reload();
-                }, 2000); // Adjust delay as needed (2000ms = 2s)
-
+                }, 2000);
             } else {
                 setMessageType('error');
                 setMessage('Failed to add sale');
             }
         } catch (error) {
-            console.error("Error submitting sale:", error.response ? error.response.data : error.message); // ✅ Log errors
+            console.error("Error submitting sale:", error.response ? error.response.data : error.message);
             setMessageType('error');
             setMessage('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
         }
     };
-    
 
     return (
         <div>
@@ -197,14 +201,14 @@ const SingleShopSale = () => {
                 </select>
                 {/* Date Selection */}
                 <div>
-                    <label>Select date : </label>
-                 <input
-                    type="date"
-                    name="sale_date"
-                    value={formData.sale_date}
-                    onChange={handleChange}
-                    required
-                />
+                    <label>Select date:</label>
+                    <input
+                        type="date"
+                        name="sale_date"
+                        value={formData.sale_date}
+                        onChange={handleChange}
+                        required
+                    />
                 </div>
                 <div>
                     <label>Metric:</label>
@@ -220,10 +224,10 @@ const SingleShopSale = () => {
                 </div>
                 <input name="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} placeholder="Amount" />
                 <select name="status" value={formData.status} onChange={handleChange}>
-                        <option value="Select"> Select Payment Status</option>
-                        <option value="unpaid">Unpaid</option>
-                        <option value="paid">Paid</option>
-                        <option value="partially_paid">Partially paid</option>
+                    <option value="Select">Select Payment Status</option>
+                    <option value="unpaid">Unpaid</option>
+                    <option value="paid">Paid</option>
+                    <option value="partially_paid">Partially paid</option>
                 </select>
                 {formData.status !== "unpaid" && (
                     <PaymentMethods
@@ -234,8 +238,6 @@ const SingleShopSale = () => {
                         removePaymentMethod={removePaymentMethod}
                     />
                 )}
-
-
                 <button className="add-sale-button" type="submit">
                     Add Sale
                 </button>
