@@ -108,7 +108,7 @@ const ShopSales = () => {
               <tr>
                 <th>Item name</th>
                 <th>Quantity</th>
-                <th>Amount(ksh)</th>
+                <th>Amount</th>
                 <th>Date</th>
               </tr>
             </thead>
