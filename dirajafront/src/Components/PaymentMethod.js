@@ -34,12 +34,10 @@ const PaymentMethods = ({
                     {method.method && method.method.toLowerCase() !== 'cash' && (
                         <input
                             type="text"
-                            value={method.transaction_code || ''}  // ✅ Use transaction_code instead of transactionCode
-                            onChange={(e) => handlePaymentChange(index, 'transaction_code', e.target.value)} // ✅ Use transaction_code
-                            onBlur={(e) => handlePaymentChange(index, 'transaction_code', e.target.value || "none")} // ✅ Default to "N/A" if empty
-                            placeholder="Transaction Code"
+                            value={method.transaction_code || ''}  // Allow the field to remain empty
+                            onChange={(e) => handlePaymentChange(index, 'transaction_code', e.target.value)} // Handle transaction_code change
+                            placeholder="Transaction Code (optional)"
                             className="input"
-                            required={method.method.toLowerCase() !== 'cash'} 
                         />
                     )}
                     {index > 0 && (
