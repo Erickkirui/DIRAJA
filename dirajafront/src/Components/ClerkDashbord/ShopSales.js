@@ -106,7 +106,7 @@ const ShopSales = () => {
           <table className="sales-table">
             <thead>
               <tr>
-                <th>Item name </th>
+                <th>Item name</th>
                 <th>Quantity</th>
                 <th>Amount(ksh)</th>
                 <th>Date</th>
