@@ -132,7 +132,7 @@ const ShopSales = () => {
                   <td>{sale.item_name}</td>
                   <td>{sale.quantity} {sale.metric}</td>
                   <td>{sale.total_amount_paid} Ksh</td>
-                  <td>{new Date(sale.sale_date).toLocaleDateString()}</td>
+                  <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
