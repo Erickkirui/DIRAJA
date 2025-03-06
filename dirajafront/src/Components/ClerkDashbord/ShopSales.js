@@ -9,6 +9,7 @@ const ShopSales = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
+  const pageGroupSize = 4; // Display only 4 page numbers at a time
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -41,48 +42,33 @@ const ShopSales = () => {
     fetchSales();
   }, []);
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
-  // **Filter sales based on search & selected date**
+  // Search and filter logic
   const filteredSales = sales.filter((sale) => {
-    const itemName = sale.item_name?.toLowerCase() || '';
-    const shopName = sale.shopname?.toLowerCase() || '';
-    const userName = sale.username?.toLowerCase() || '';
-
-    const matchesSearch =
-      itemName.includes(searchQuery.toLowerCase()) ||
-      shopName.includes(searchQuery.toLowerCase()) ||
-      userName.includes(searchQuery.toLowerCase());
+    const itemName = sale.itemname?.toLowerCase() || '';
+    const matchesSearch = itemName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? new Date(sale.sale_date).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      ? new Date(sale.created_at).toISOString().split('T')[0] === selectedDate
       : true;
 
     return matchesSearch && matchesDate;
   });
 
-  // **Sort sales by date (newest first)**
-  const sortedSales = [...filteredSales].sort((a, b) => new Date(b.sale_date) - new Date(a.sale_date));
+  // **Sort sales by `created_at` in descending order**
+  const sortedSales = [...filteredSales].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // **Pagination Logic (Newest Sales Appear on Page 1)**
+  // **Pagination logic (ensuring latest entries are on page 1)**
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
-  const indexOfFirstItem = 0; // Always start from index 0 (most recent)
-  const indexOfLastItem = Math.min(itemsPerPage, sortedSales.length);
+  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
+  const indexOfLastItem = indexOfFirstItem + itemsPerPage;
   const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
 
-  // **Pagination - Show 4 Pages at a Time**
-  const maxPageNumbers = 4;
-  let startPage = Math.max(1, currentPage - 1);
-  let endPage = Math.min(totalPages, startPage + maxPageNumbers - 1);
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  if (endPage - startPage < maxPageNumbers - 1) {
-    startPage = Math.max(1, endPage - maxPageNumbers + 1);
-  }
-
-  const pageNumbers = [];
-  for (let i = startPage; i <= endPage; i++) {
-    pageNumbers.push(i);
-  }
+  // **Pagination Display (4 page numbers at a time)**
+  const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1;
+  const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
+  const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -91,12 +77,12 @@ const ShopSales = () => {
   return (
     <div className="sales-container">
       <h1>Sales</h1>
-      
+
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item, shop, or employee"
+          placeholder="Search by item"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -115,12 +101,12 @@ const ShopSales = () => {
         />
       </div>
 
-      {sortedSales.length > 0 ? (
+      {currentSales.length > 0 ? (
         <>
           <table className="sales-table">
             <thead>
               <tr>
-                <th>Item Name</th>
+                <th>Item name </th>
                 <th>Quantity</th>
                 <th>Amount(ksh)</th>
                 <th>Date</th>
@@ -129,42 +115,32 @@ const ShopSales = () => {
             <tbody>
               {currentSales.map((sale) => (
                 <tr key={sale.sale_id}>
-                  <td>{sale.item_name}</td>
+                  <td>{sale.itemname}</td>
                   <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.total_amount_paid}</td>
+                  <td>{sale.total_amount_paid} </td>
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* Pagination */}
+          {/* Pagination Controls */}
           <div className="pagination">
-            <button 
-              className="page-button" 
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Prev
-            </button>
-
-            {pageNumbers.map((number) => (
+            {startPage > 1 && (
+              <button onClick={() => handlePageChange(startPage - 1)}>«</button>
+            )}
+            {pageNumbers.map((num) => (
               <button
-                key={number}
-                className={`page-button ${currentPage === number ? 'active' : ''}`}
-                onClick={() => handlePageChange(number)}
+                key={num}
+                className={`page-button ${currentPage === num ? 'active' : ''}`}
+                onClick={() => handlePageChange(num)}
               >
-                {number}
+                {num}
               </button>
             ))}
-
-            <button 
-              className="page-button" 
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
+            {endPage < totalPages && (
+              <button onClick={() => handlePageChange(endPage + 1)}>»</button>
+            )}
           </div>
         </>
       ) : (
