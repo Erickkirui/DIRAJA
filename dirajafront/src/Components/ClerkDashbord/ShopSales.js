@@ -48,8 +48,9 @@ const ShopSales = () => {
     const matchesSearch = itemName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? new Date(sale.created_at).toISOString().split('T')[0] === selectedDate
+      ? new Date(sale.created_at).toLocaleDateString('en-CA') === selectedDate
       : true;
+
 
     return matchesSearch && matchesDate;
   });
