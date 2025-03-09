@@ -48,7 +48,7 @@ class AddMabandaSale(Resource):
             amount_paid=data['amount_paid'],
             sale_date=datetime.strptime(data['sale_date'], '%Y-%m-%d'),
             mode_of_payment=data['mode_of_payment'],
-            shop_id=12  # Hardcoded shop_id to 2
+            shop_id= 12  # Hardcoded shop_id to 2
         )
 
         db.session.add(new_sale)

@@ -386,6 +386,37 @@ class InventoryResourceById(Resource):
             }, 200
         else:
             return {"error": "Inventory not found"}, 404
+        
+    @jwt_required()
+    @check_role('manager')
+    def delete(self, inventory_id):
+        # Fetch inventory by ID
+        inventory = Inventory.query.get(inventory_id)
+
+        if not inventory:
+            return {"error": "Inventory not found"}, 404
+        
+        try:
+            # You can add logic here to check for related records like transfers, shop stocks, etc., and delete them as necessary
+            # For example, if there are related `Transfer` records, delete them too
+            transfers = Transfer.query.filter_by(inventory_id=inventory_id).all()
+            for transfer in transfers:
+                db.session.delete(transfer)
+            
+            # Similarly, if there are related `ShopStock` records, delete them
+            shop_stocks = ShopStock.query.filter_by(inventory_id=inventory_id).all()
+            for stock in shop_stocks:
+                db.session.delete(stock)
+
+            # Finally, delete the inventory record
+            db.session.delete(inventory)
+            db.session.commit()
+
+            return {"message": "Inventory deleted successfully"}, 200
+        
+        except Exception as e:
+            db.session.rollback()
+            return {"message": "Error deleting inventory", "error": str(e)}, 500
 
     @jwt_required()
     @check_role('manager')

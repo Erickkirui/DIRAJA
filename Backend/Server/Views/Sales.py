@@ -19,6 +19,29 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 
+
+# def check_role(allowed_roles):
+#     def wrapper(fn):
+#         @wraps(fn)
+#         def decorator(*args, **kwargs):
+#             current_user_id = get_jwt_identity()
+#             user = Users.query.get(current_user_id)
+#             if user and user.role not in allowed_roles:
+#                 return make_response(jsonify({"error": "Unauthorized access"}), 403)
+#             return fn(*args, **kwargs)
+#         return decorator
+#     return wrapper
+
+
+# class TotalBalanceSummary(Resource):
+#     @jwt_required()
+#     @check_role(['manager', 'clerk'])
+#     def get(self):
+#         # Your endpoint logic here
+#         return jsonify({"message": "Success"})
+
+
+
 def check_role(required_role):
     def wrapper(fn):
         @wraps(fn)
