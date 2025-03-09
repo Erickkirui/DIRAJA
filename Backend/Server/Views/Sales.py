@@ -191,27 +191,25 @@ class AddSale(Resource):
             db.session.add(new_sale)
             db.session.flush()  # Flush to get sales_id for later use
 
-            # ✅ Only add payment methods if status is NOT "unpaid"
-            if status.lower() != "unpaid":
-                for payment in payment_methods:
-                    payment_method = payment['method']
-                    transaction_code = payment.get('transaction_code')
+            for payment in payment_methods:
+                payment_method = payment['method']
+                transaction_code = payment.get('transaction_code')
 
-                    # Ensure the transaction_code is not empty and convert it to uppercase
-                    if not transaction_code or transaction_code.strip() == "":
-                        transaction_code = "N/A"
-                    else:
-                        # Convert the transaction code to uppercase
-                        transaction_code = transaction_code.upper()
+                # Ensure the transaction_code is not empty and convert it to uppercase
+                if not transaction_code or transaction_code.strip() == "":
+                    transaction_code = "N/A"
+                else:
+                    # Convert the transaction code to uppercase
+                    transaction_code = transaction_code.upper()
 
-                    payment_record = SalesPaymentMethods(
-                        sale_id=new_sale.sales_id,
-                        payment_method=payment_method,
-                        amount_paid=payment['amount'],
-                        transaction_code=transaction_code,
-                        created_at=new_sale.created_at
-                    )
-                    db.session.add(payment_record)
+                payment_record = SalesPaymentMethods(
+                    sale_id=new_sale.sales_id,
+                    payment_method=payment_method,
+                    amount_paid=payment['amount'],
+                    transaction_code=transaction_code,
+                    created_at=new_sale.created_at
+                )
+                db.session.add(payment_record)
 
 
             # ✅ Always add customer details

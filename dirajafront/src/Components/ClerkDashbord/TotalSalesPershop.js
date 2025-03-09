@@ -70,7 +70,7 @@ const TotalShopSales = () => {
       ) : (
         <p>Loading...</p>
       )}
-      <Link to='/allsales'>View Sales</Link>
+      <Link to='/shopsales'>View Sales</Link>
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import PaymentMethods from '../PaymentMethod';
 
 const SingleShopSale = () => {
@@ -187,7 +189,7 @@ const SingleShopSale = () => {
 
     return (
         <div>
-            {message && <div className={`message ${messageType}`}>{message}</div>}
+            {message && <Stack><Alert  variant="outlined" severity="success" >{message}</Alert></Stack>}
             <h1>Record a Sale</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />
@@ -229,7 +231,7 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-                {formData.status !== "unpaid" && (
+                
                     <PaymentMethods
                         paymentMethods={formData.payment_methods}
                         validPaymentMethods={validPaymentMethods}
@@ -237,7 +239,7 @@ const SingleShopSale = () => {
                         addPaymentMethod={addPaymentMethod}
                         removePaymentMethod={removePaymentMethod}
                     />
-                )}
+                
                 <button className="add-sale-button" type="submit">
                     Add Sale
                 </button>
