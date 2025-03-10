@@ -19,6 +19,29 @@ from functools import wraps
 from datetime import datetime, timedelta
 
 
+
+# def check_role(allowed_roles):
+#     def wrapper(fn):
+#         @wraps(fn)
+#         def decorator(*args, **kwargs):
+#             current_user_id = get_jwt_identity()
+#             user = Users.query.get(current_user_id)
+#             if user and user.role not in allowed_roles:
+#                 return make_response(jsonify({"error": "Unauthorized access"}), 403)
+#             return fn(*args, **kwargs)
+#         return decorator
+#     return wrapper
+
+
+# class TotalBalanceSummary(Resource):
+#     @jwt_required()
+#     @check_role(['manager', 'clerk'])
+#     def get(self):
+#         # Your endpoint logic here
+#         return jsonify({"message": "Success"})
+
+
+
 def check_role(required_role):
     def wrapper(fn):
         @wraps(fn)
@@ -168,27 +191,25 @@ class AddSale(Resource):
             db.session.add(new_sale)
             db.session.flush()  # Flush to get sales_id for later use
 
-            # ✅ Only add payment methods if status is NOT "unpaid"
-            if status.lower() != "unpaid":
-                for payment in payment_methods:
-                    payment_method = payment['method']
-                    transaction_code = payment.get('transaction_code')
+            for payment in payment_methods:
+                payment_method = payment['method']
+                transaction_code = payment.get('transaction_code')
 
-                    # Ensure the transaction_code is not empty and convert it to uppercase
-                    if not transaction_code or transaction_code.strip() == "":
-                        transaction_code = "N/A"
-                    else:
-                        # Convert the transaction code to uppercase
-                        transaction_code = transaction_code.upper()
+                # Ensure the transaction_code is not empty and convert it to uppercase
+                if not transaction_code or transaction_code.strip() == "":
+                    transaction_code = "N/A"
+                else:
+                    # Convert the transaction code to uppercase
+                    transaction_code = transaction_code.upper()
 
-                    payment_record = SalesPaymentMethods(
-                        sale_id=new_sale.sales_id,
-                        payment_method=payment_method,
-                        amount_paid=payment['amount'],
-                        transaction_code=transaction_code,
-                        created_at=new_sale.created_at
-                    )
-                    db.session.add(payment_record)
+                payment_record = SalesPaymentMethods(
+                    sale_id=new_sale.sales_id,
+                    payment_method=payment_method,
+                    amount_paid=payment['amount'],
+                    transaction_code=transaction_code,
+                    created_at=new_sale.created_at
+                )
+                db.session.add(payment_record)
 
 
             # ✅ Always add customer details
@@ -245,6 +266,7 @@ class GetSales(Resource):
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
+                        "created_at": payment.created_at,
                         "balance": payment.balance,  # Include balance field
                     }
                     for payment in sale.payment  # Updated to use the correct relationship
@@ -304,6 +326,7 @@ class GetSalesByShop(Resource):
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
+                        
                     }
                     for payment in sale.payment  # Using the defined relationship in the Sales model
                 ]
@@ -763,6 +786,239 @@ class GetUnpaidSales(Resource):
         except Exception as e:
             return {"message": f"An error occurred: {str(e)}"}, 500
 
+        
+
+class PaymentMethodsResource(Resource):
+    @jwt_required()
+    def get(self, sale_id):
+        try:
+            # Fetch all payment methods for this sale
+            payment_methods = SalesPaymentMethods.query.filter_by(sale_id=sale_id).all()
+
+            # If no payment methods found
+            if not payment_methods:
+                return {"message": "No payment methods found for this sale"}, 404
+
+            # Format the payment data
+            payment_data = [
+                {
+                    "payment_method": payment.payment_method,
+                    "amount_paid": payment.amount_paid,
+                    "balance": payment.balance,
+                    "transaction_code": payment.transaction_code,
+                    "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S') 
+                    if isinstance(payment.created_at, datetime) else payment.created_at
+                }
+                for payment in payment_methods
+            ]
+
+            return make_response(jsonify(payment_data), 200)
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+        
+class CapturePaymentResource(Resource):
+    @jwt_required()
+    def post(self, sale_id):
+        try:
+            data = request.get_json()
+            payment_method = data.get("payment_method")
+            amount_paid = data.get("amount_paid")
+            transaction_code = data.get("transaction_code", "NONE")  # Default to "NONE"
+
+            # Validate required fields
+            if not payment_method or amount_paid is None:
+                return {"message": "Payment method and amount_paid are required"}, 400
+
+            # Check if the sale exists
+            sale = Sales.query.filter_by(sales_id=sale_id).first()
+            if not sale:
+                return {"message": "Sale not found"}, 404
+
+            # Find the default "not payed" record
+            unpaid_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method="not payed").first()
+
+            # Reduce the "not payed" amount or remove it if fully paid
+            if unpaid_payment:
+                if unpaid_payment.amount_paid > amount_paid:
+                    unpaid_payment.amount_paid -= amount_paid  # Deduct amount from unpaid balance
+                else:
+                    db.session.delete(unpaid_payment)  # Remove "not payed" if fully covered
+
+            # Check if a payment record already exists for this sale & method
+            existing_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method=payment_method).first()
+
+            if existing_payment:
+                # Update the existing payment method
+                existing_payment.amount_paid += amount_paid
+                existing_payment.transaction_code = transaction_code  # Update transaction code if provided
+            else:
+                # Create a new payment record
+                new_payment = SalesPaymentMethods(
+                    sale_id=sale_id,
+                    payment_method=payment_method,
+                    amount_paid=amount_paid,
+                    balance=None,  # Balance is managed at the sale level
+                    transaction_code=transaction_code,
+                    created_at=datetime.utcnow(),
+                )
+                db.session.add(new_payment)
+
+            # Recalculate total amount paid for the sale
+            total_paid = db.session.query(db.func.sum(SalesPaymentMethods.amount_paid)).filter_by(sale_id=sale_id).scalar() or 0
+            sale.balance = max(0, sale.total_price - total_paid)  # Ensure balance is non-negative
+
+            # **Automatically update sale status**
+            if sale.balance == 0:
+                sale.status = "paid"
+            elif total_paid > 0 and sale.balance > 0:
+                sale.status = "partially_paid"
+
+            # Commit changes
+            db.session.commit()
+
+            # Return updated payment records
+            updated_payments = SalesPaymentMethods.query.filter_by(sale_id=sale_id).all()
+            payment_data = [
+                {
+                    "payment_method": pm.payment_method,
+                    "amount_paid": pm.amount_paid,
+                    "balance": pm.balance,
+                    "transaction_code": pm.transaction_code,
+                    "created_at": pm.created_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(pm.created_at, datetime) else pm.created_at
+                }
+                for pm in updated_payments
+            ]
+
+            return make_response(jsonify({
+                "message": "Payment recorded successfully",
+                "sale_id": sale_id,
+                "sale_status": sale.status,  # Include updated sale status
+                "remaining_balance": sale.balance,
+                "payment_methods": payment_data  # Return updated payments
+            }), 200)
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
+
+
+
+class CreditHistoryResource(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Query sales with payments where the timestamps do not match
+            sales_with_payments = db.session.query(Sales).join(SalesPaymentMethods).all()
+
+            credit_sales = []
+            for sale in sales_with_payments:
+                # Handle invalid timestamps
+                if sale.created_at in ["0000-00-00 00:00:00", None]:
+                    continue  # Skip invalid sale records
+
+                # Convert sale.created_at to datetime
+                sale_created_at = sale.created_at
+                if isinstance(sale_created_at, str):
+                    sale_created_at = datetime.strptime(sale_created_at, '%Y-%m-%d %H:%M:%S')
+
+                # Get all payments linked to the sale
+                payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
+
+                # Check if any payment timestamp is different from the sale timestamp
+                mismatched_payments = []
+                for payment in payments:
+                    if payment.created_at in ["0000-00-00 00:00:00", None]:
+                        continue  # Skip invalid payment records
+
+                    # Convert payment.created_at to datetime
+                    payment_created_at = payment.created_at
+                    if isinstance(payment_created_at, str):
+                        payment_created_at = datetime.strptime(payment_created_at, '%Y-%m-%d %H:%M:%S')
+
+                    if payment_created_at.date() != sale_created_at.date():
+                        mismatched_payments.append({
+                            "payment_method": payment.payment_method,
+                            "amount_paid": payment.amount_paid,
+                            "payment_created_at": payment_created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                            "sale_created_at": sale_created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        })
+
+                if mismatched_payments:
+                    credit_sales.append({
+                        "sale_id": sale.sales_id,
+                        "customer_name": sale.customer_name,
+                        "shop_id": sale.shop_id,
+                        "total_price": sale.total_price,
+                        "balance": sale.balance,
+                        "status": sale.status,
+                        "sale_created_at": sale_created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "mismatched_payments": mismatched_payments,
+                    })
+
+            if not credit_sales:
+                return {"message": "No credit sales found"}, 404
+
+            return make_response(jsonify(credit_sales), 200)
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
+
+class GetSingleSaleByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id, sales_id):
+        try:
+            # Query the Sales table for the specific sale related to the given shop_id and sales_id
+            sale = Sales.query.filter_by(shop_id=shop_id, sales_id=sales_id).first()
+
+            # If no sale is found
+            if not sale:
+                return {"message": "Sale not found for this shop"}, 404
+
+            # Fetch username and shop name using relationships
+            username = sale.users.username if sale.users else "Unknown User"
+            shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
+
+            # Process multiple payment methods and calculate total amount paid
+            payment_data = [
+                {
+                    "payment_method": payment.payment_method,
+                    "amount_paid": payment.amount_paid,
+                    "balance": payment.balance,
+                }
+                for payment in sale.payment  # Using the defined relationship in the Sales model
+            ]
+            total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+
+            # Format the sale data
+            sale_data = {
+                "sale_id": sale.sales_id,
+                "user_id": sale.user_id,
+                "username": username,
+                "shop_id": sale.shop_id,
+                "shop_name": shopname,
+                "customer_name": sale.customer_name,
+                "status": sale.status,
+                "customer_number": sale.customer_number,
+                "item_name": sale.item_name,
+                "quantity": sale.quantity,
+                "batch_number": sale.BatchNumber,
+                "metric": sale.metric,
+                "unit_price": sale.unit_price,
+                "total_price": sale.total_price,
+                "total_amount_paid": total_amount_paid,
+                "payment_methods": payment_data,
+                "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+            }
+
+            return {"sale": sale_data}, 200
+
+        except Exception as e:
+            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
+
+
 
 #Get unpaid sales by shop
 class GetUnpaidSalesByClerk(Resource):
@@ -822,5 +1078,6 @@ class GetUnpaidSalesByClerk(Resource):
         
         except Exception as e:
             return {"message": f"An error occurred: {str(e)}"}, 500
+
 
 
