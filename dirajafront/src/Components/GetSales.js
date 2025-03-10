@@ -180,7 +180,6 @@ const Sales = () => {
             <th>Shop</th>
             <th>Item</th>
             <th>Quantity</th>
-            <th>Unit Price (ksh)</th>
             <th>Amount Paid (ksh)</th>
             <th>Date</th>
             <th>Action</th>
@@ -207,7 +206,6 @@ const Sales = () => {
                 <td>{sale.shopname}</td>
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity} {sale.metric}</td>
-                <td>{sale.unit_price}</td>
                 <td>{sale.total_amount_paid}</td>
 
                 <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(',', '')}</td>

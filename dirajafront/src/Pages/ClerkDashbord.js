@@ -2,6 +2,8 @@ import React from 'react';
 import ClerkNavbar from '../Components/ClerkDashbord/ClerkNavbar';
 import UserDisplay from '../Components/UserDisplay';
 
+import Totalcreditpershop from '../Components/ClerkDashbord/Totalcreditpershop'
+
 import TotalMabandaSales from '../Components/ClerkDashbord/MabandaShop/Totalsalesmabanda';
 
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop';
@@ -100,6 +102,13 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
+                {shopId !== "12" && (
+                  <Link className="clerk-button" to="/shopcredit">
+                    View Credit Sales
+                  </Link>
+                )}
+
+
             {/* <Link className='clerk-button' to='/shopsales'>View Sales</Link> */}
           </div>
 
@@ -107,10 +116,10 @@ function ClerkDashbord() {
             {shopId === "12" ? <TotalMabandaSales /> : <TotalShopSales />}
           </div>
 
-          {/* <div className='analytics-clerk'>
-            <TotalShopSales />
+          <div className='analytics-clerk'>
+            <Totalcreditpershop />
            
-          </div> */}
+          </div>
         </div>
       </div>
     </div>

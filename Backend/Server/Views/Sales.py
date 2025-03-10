@@ -762,3 +762,65 @@ class GetUnpaidSales(Resource):
         
         except Exception as e:
             return {"message": f"An error occurred: {str(e)}"}, 500
+
+
+#Get unpaid sales by shop
+class GetUnpaidSalesByClerk(Resource):
+    @jwt_required()
+    @check_role('clerk')  # Ensures only clerks can access this
+    def get(self):
+        try:
+            # Get the logged-in clerk's user ID
+            current_user_id = get_jwt_identity()
+
+            # Fetch only unpaid sales recorded by this specific clerk
+            unpaid_sales = Sales.query.filter(
+                Sales.user_id == current_user_id,  # Sales recorded by this clerk
+                Sales.status.in_(["unpaid", "partially_paid"])  # Credit sales only
+            ).all()
+
+            if not unpaid_sales:
+                return {'message': 'No unpaid or partially paid sales found for you'}, 404
+
+            sales_list = []
+            for sale in unpaid_sales:
+                # Fetch user details
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                username = user.username if user else "Unknown User"
+
+                # Fetch shop details
+                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+                shopname = shop.shopname if shop else "Unknown Shop"
+
+                # Fetch payment methods
+                payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
+                payment_details = [
+                    {"method": payment.payment_method, "amount_paid": payment.amount_paid}
+                    for payment in payments
+                ]
+
+                sales_list.append({
+                    "sales_id": sale.sales_id,
+                    "user_id": sale.user_id,
+                    "username": username,  # Now fetched correctly
+                    "shop_id": sale.shop_id,
+                    "shopname": shopname,  # Now fetched correctly
+                    "customer_name": sale.customer_name,
+                    "customer_number": sale.customer_number,
+                    "item_name": sale.item_name,
+                    "quantity": sale.quantity,
+                    "metric": sale.metric,
+                    "unit_price": sale.unit_price,
+                    "total_price": sale.total_price,
+                    "balance": sale.balance,
+                    "status": sale.status,
+                    "created_at": sale.created_at.strftime("%Y-%m-%d"),
+                    "payment_methods": payment_details
+                })
+            
+            return {"unpaid_sales": sales_list}, 200
+        
+        except Exception as e:
+            return {"message": f"An error occurred: {str(e)}"}, 500
+
+
