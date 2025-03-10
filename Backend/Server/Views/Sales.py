@@ -962,3 +962,59 @@ class CreditHistoryResource(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
+
+
+class GetSingleSaleByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id, sales_id):
+        try:
+            # Query the Sales table for the specific sale related to the given shop_id and sales_id
+            sale = Sales.query.filter_by(shop_id=shop_id, sales_id=sales_id).first()
+
+            # If no sale is found
+            if not sale:
+                return {"message": "Sale not found for this shop"}, 404
+
+            # Fetch username and shop name using relationships
+            username = sale.users.username if sale.users else "Unknown User"
+            shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
+
+            # Process multiple payment methods and calculate total amount paid
+            payment_data = [
+                {
+                    "payment_method": payment.payment_method,
+                    "amount_paid": payment.amount_paid,
+                    "balance": payment.balance,
+                }
+                for payment in sale.payment  # Using the defined relationship in the Sales model
+            ]
+            total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+
+            # Format the sale data
+            sale_data = {
+                "sale_id": sale.sales_id,
+                "user_id": sale.user_id,
+                "username": username,
+                "shop_id": sale.shop_id,
+                "shop_name": shopname,
+                "customer_name": sale.customer_name,
+                "status": sale.status,
+                "customer_number": sale.customer_number,
+                "item_name": sale.item_name,
+                "quantity": sale.quantity,
+                "batch_number": sale.BatchNumber,
+                "metric": sale.metric,
+                "unit_price": sale.unit_price,
+                "total_price": sale.total_price,
+                "total_amount_paid": total_amount_paid,
+                "payment_methods": payment_data,
+                "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+            }
+
+            return {"sale": sale_data}, 200
+
+        except Exception as e:
+            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
+
+
