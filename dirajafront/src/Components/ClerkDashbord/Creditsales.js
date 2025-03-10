@@ -1,64 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
-const ShopSales = () => {
-  const [sales, setSales] = useState([]);
+const GetUnpaidSalesByClerk = () => {
+  const [unpaidSales, setUnpaidSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const itemsPerPage = 50;
-  const pageGroupSize = 4; // Display only 4 page numbers at a time
+  const pageGroupSize = 4;
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchSales = async () => {
+    const fetchUnpaidSales = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId) {
+        if (!accessToken) {
           setError('No access token found, please log in.');
           return;
         }
 
-        const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
+        const response = await axios.get('/api/diraja/unpaidsales/clerk', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        console.log('Sales data fetched:', response.data);
-
-        if (response.data && Array.isArray(response.data.sales)) {
-          setSales(response.data.sales);
+        if (response.data && Array.isArray(response.data.unpaid_sales)) {
+          setUnpaidSales(response.data.unpaid_sales);
         } else {
           setError('Unexpected data format received.');
         }
       } catch (err) {
-        console.error('Error fetching sales:', err);
-        setError('Error fetching sales. Please try again.');
+        console.error('Error fetching unpaid sales:', err);
+        setError('Error fetching unpaid sales. Please try again.');
       }
     };
 
-    fetchSales();
+    fetchUnpaidSales();
   }, []);
 
   // Search and filter logic
-  const filteredSales = sales.filter((sale) => {
-    const itemName = sale.itemname?.toLowerCase() || '';
-    const matchesSearch = itemName.includes(searchQuery.toLowerCase());
+  const filteredSales = unpaidSales.filter((sale) => {
+    const customerName = sale.customer_name?.toLowerCase() || '';
+    const matchesSearch = customerName.includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
       ? new Date(sale.created_at).toLocaleDateString('en-CA') === selectedDate
       : true;
 
-
     return matchesSearch && matchesDate;
   });
 
-  // **Sort sales by `created_at` in descending order**
+  // Sort unpaid sales by `created_at` in descending order
   const sortedSales = [...filteredSales].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
-  // **Pagination logic (ensuring latest entries are on page 1)**
+  // Pagination logic
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
   const indexOfLastItem = indexOfFirstItem + itemsPerPage;
@@ -66,7 +63,12 @@ const ShopSales = () => {
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
-  // **Pagination Display (4 page numbers at a time)**
+  // Handle viewing single credit sale
+  const handleViewSale = (salesId) => {
+    navigate(`/singlecredit/${salesId}`);
+  };
+
+  // Pagination Display
   const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1;
   const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
   const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
@@ -77,13 +79,13 @@ const ShopSales = () => {
 
   return (
     <div className="sales-container">
-      <h1>Sales</h1>
+      <h1>Credit Sales</h1>
 
       {/* Search and Date Filter */}
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item"
+          placeholder="Search by customer name"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -107,19 +109,26 @@ const ShopSales = () => {
           <table className="sales-table">
             <thead>
               <tr>
-                <th>Item name</th>
-                <th>Quantity</th>
-                <th>Amount</th>
+                <th>Customer name</th>
+                <th>Balance</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {currentSales.map((sale) => (
-                <tr key={sale.sale_id}>
-                  <td>{sale.item_name}</td>
-                  <td>{sale.quantity} {sale.metric}</td>
-                  <td>{sale.total_amount_paid} </td>
+                <tr key={sale.sales_id}>
+                  <td>{sale.customer_name}</td>
+                  <td>{sale.balance}</td>
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
+                  <td>
+                    <button
+                      className="view-button"
+                      onClick={() => handleViewSale(sale.sales_id)}
+                    >
+                      View Details
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -153,4 +162,4 @@ const ShopSales = () => {
   );
 };
 
-export default ShopSales;
+export default GetUnpaidSalesByClerk;

@@ -37,7 +37,7 @@ const AddSale = () => {
                 quantity_sold: '', 
                 amount_paid: '', 
                 sale_date: '', 
-                mode_of_payment: 'Cash' // Reset to default
+                mode_of_payment: '' // Reset to default
             });
         } catch (error) {
             setMessageType('error');
