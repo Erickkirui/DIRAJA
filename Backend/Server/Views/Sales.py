@@ -965,7 +965,6 @@ class CreditHistoryResource(Resource):
             return {"error": str(e)}, 500
 
 
-
 class GetSingleSaleByShop(Resource):
     @jwt_required()
     def get(self, shop_id, sales_id):
@@ -981,16 +980,33 @@ class GetSingleSaleByShop(Resource):
             username = sale.users.username if sale.users else "Unknown User"
             shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
 
+            # Debug: Print data types of created_at fields
+            print(f"Sale created_at type: {type(sale.created_at)}, value: {sale.created_at}")
+            
+            # Ensure sale.created_at is a datetime object before calling strftime
+            sale_created_at = sale.created_at
+            if isinstance(sale_created_at, str):
+                sale_created_at = datetime.strptime(sale_created_at, '%Y-%m-%d %H:%M:%S')
+
             # Process multiple payment methods and calculate total amount paid
-            payment_data = [
-                {
+            payment_data = []
+            total_amount_paid = 0
+
+            for payment in sale.payment:
+                print(f"Payment created_at type: {type(payment.created_at)}, value: {payment.created_at}")
+                
+                # Ensure payment.created_at is a datetime object before calling strftime
+                payment_created_at = payment.created_at
+                if isinstance(payment_created_at, str):
+                    payment_created_at = datetime.strptime(payment_created_at, '%Y-%m-%d %H:%M:%S')
+
+                payment_data.append({
                     "payment_method": payment.payment_method,
                     "amount_paid": payment.amount_paid,
                     "balance": payment.balance,
-                }
-                for payment in sale.payment  # Using the defined relationship in the Sales model
-            ]
-            total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+                    "created_at": payment_created_at.strftime('%Y-%m-%d %H:%M:%S') 
+                })
+                total_amount_paid += payment.amount_paid
 
             # Format the sale data
             sale_data = {
@@ -1010,7 +1026,7 @@ class GetSingleSaleByShop(Resource):
                 "total_price": sale.total_price,
                 "total_amount_paid": total_amount_paid,
                 "payment_methods": payment_data,
-                "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+                "created_at": sale_created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
             }
 
             return {"sale": sale_data}, 200

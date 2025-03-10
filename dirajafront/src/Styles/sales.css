@@ -19,6 +19,7 @@
   .sales-table td {
     border-bottom: 1px solid #ccc;
     padding-bottom: 10px;
+    padding-top: 10px;
     text-align: left;
 
     
@@ -158,6 +159,9 @@
 }
 .payment-method input{
   width: 25%;
+  border: 1px solid #ccc;
+  padding: 15px;
+  border-radius: 6px;
 }
 
 .payment-method{
@@ -207,11 +211,24 @@
 .payment-methods{
   width: 70%;
 }
+
 .bottom-class{
   display: flex ;
   gap: 10px;
 }
 
+
+/* cleark singlesale */
+
+.sale-details-container{
+  border-bottom: 1px solid var(--primary);
+}
+
+.sale-section{
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
 /* media query */
 @media (max-width: 768px) {
   .success{
@@ -230,3 +247,5 @@
     width: 100%;
   }
 }
+
+

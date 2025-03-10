@@ -12,6 +12,8 @@ const GetUnpaidSalesByClerk = () => {
   const pageGroupSize = 4;
   const navigate = useNavigate();
 
+  const shopId = localStorage.getItem("shop_id");
+
   useEffect(() => {
     const fetchUnpaidSales = async () => {
       try {
@@ -65,10 +67,16 @@ const GetUnpaidSalesByClerk = () => {
 
   // Handle viewing single credit sale
   const handleViewSale = (salesId) => {
-    navigate(`/singlecredit/${salesId}`);
+    const storedShopId = localStorage.getItem("shop_id");
+    if (storedShopId) {
+      navigate(`/sale/${storedShopId}/${salesId}`);
+    } else {
+      setError("Shop ID not found. Unable to view sale.");
+    }
   };
 
   // Pagination Display
+
   const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1;
   const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
   const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
@@ -123,10 +131,10 @@ const GetUnpaidSalesByClerk = () => {
                   <td>{new Date(sale.created_at).toLocaleDateString()}</td>
                   <td>
                     <button
-                      className="view-button"
+                      className='editeInventory'
                       onClick={() => handleViewSale(sale.sales_id)}
                     >
-                      View Details
+                       Pay sale
                     </button>
                   </td>
                 </tr>
@@ -136,21 +144,13 @@ const GetUnpaidSalesByClerk = () => {
 
           {/* Pagination Controls */}
           <div className="pagination">
-            {startPage > 1 && (
-              <button onClick={() => handlePageChange(startPage - 1)}>«</button>
-            )}
+            {startPage > 1 && <button onClick={() => handlePageChange(startPage - 1)}>«</button>}
             {pageNumbers.map((num) => (
-              <button
-                key={num}
-                className={`page-button ${currentPage === num ? 'active' : ''}`}
-                onClick={() => handlePageChange(num)}
-              >
+              <button key={num} className={`page-button ${currentPage === num ? 'active' : ''}`} onClick={() => handlePageChange(num)}>
                 {num}
               </button>
             ))}
-            {endPage < totalPages && (
-              <button onClick={() => handlePageChange(endPage + 1)}>»</button>
-            )}
+            {endPage < totalPages && <button onClick={() => handlePageChange(endPage + 1)}>»</button>}
           </div>
         </>
       ) : (
