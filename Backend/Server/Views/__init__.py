@@ -30,7 +30,7 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales
 
 
@@ -134,6 +134,11 @@ api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
 api.add_resource(TotalBalanceSummary, '/accountspayable')
 api.add_resource(GetUnpaidSales, '/unpaidsales')
 api.add_resource(UpdateSalePayment, '/sale/<int:sale_id>/payment')
+api.add_resource(PaymentMethodsResource, "/sales/<int:sale_id>/payment_methods")
+api.add_resource(CapturePaymentResource, "/sales/<int:sale_id>/capture-payment")
+api.add_resource(CreditHistoryResource, "/credit-history")
+
+
 
 
 #Distribution
