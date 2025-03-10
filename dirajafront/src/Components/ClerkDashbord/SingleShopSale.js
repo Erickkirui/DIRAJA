@@ -14,7 +14,7 @@ const SingleShopSale = () => {
         quantity: '',
         metric: '',
         unit_price: '',
-        amount_paid: '',
+        total_price: '',
         BatchNumber: '',
         stock_id: '',
         status: '',
@@ -66,7 +66,7 @@ const SingleShopSale = () => {
                     unit_price: unit_price || '',
                     stock_id: stock_id || '',
                     BatchNumber: BatchNumber || '',
-                    amount_paid: prevData.quantity * (unit_price || 0),
+                    total_price: prevData.quantity * (unit_price || 0),
                 }));
 
                 setRemainingStock(quantity);
@@ -84,7 +84,7 @@ const SingleShopSale = () => {
         let newFormData = { ...formData, [name]: value };
 
         if (name === 'quantity' || name === 'unit_price') {
-            newFormData.amount_paid = newFormData.quantity * newFormData.unit_price;
+            newFormData.total_price = parseInt(newFormData.quantity * newFormData.unit_price, 10) || 0;
         }
 
         setFormData(newFormData);
@@ -162,7 +162,7 @@ const SingleShopSale = () => {
                     quantity: '',
                     metric: '',
                     unit_price: '',
-                    amount_paid: '',
+                    total_price: '',
                     BatchNumber: '',
                     stock_id: '',
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
@@ -170,10 +170,12 @@ const SingleShopSale = () => {
 
                 setRemainingStock(0);
 
-                // Wait for 2 seconds and reload the page
+                // Refresh the page after 2 seconds
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
+
+               
             } else {
                 setMessageType('error');
                 setMessage('Failed to add sale');
@@ -224,7 +226,7 @@ const SingleShopSale = () => {
                     <label>Remaining Stock:</label>
                     <span>{remainingStock}</span>
                 </div>
-                <input name="amount_paid" type="number" value={formData.amount_paid} onChange={handleChange} placeholder="Amount" />
+                <input name="total_price" type="number" value={formData.total_price} onChange={handleChange} placeholder="Amount" />
                 <select name="status" value={formData.status} onChange={handleChange}>
                     <option value="Select">Select Payment Status</option>
                     <option value="unpaid">Unpaid</option>

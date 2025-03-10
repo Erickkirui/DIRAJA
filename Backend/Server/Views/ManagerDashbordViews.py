@@ -100,7 +100,6 @@ class TotalAmountPaidAllSales(Resource):
                 "details": str(e)
             }, 500
 
-
 class TotalAmountPaidSalesPerShop(Resource):
     @jwt_required()
     def get(self):
@@ -139,19 +138,31 @@ class TotalAmountPaidSalesPerShop(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Adjust query to handle both cases: period (today, week, month) and specific date
-            query = (
+            # Base query for paid sales (using SalesPaymentMethods)
+            query_paid = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(Sales.shop_id == shop_id, Sales.status == 'paid')
+            )
+
+            # Base query for unpaid/partially paid sales (using total_price)
+            query_unpaid = (
+                db.session.query(db.func.sum(Sales.total_price))
                 .filter(Sales.shop_id == shop_id)
+                .filter(Sales.status.in_(['unpaid', 'partially_paid']))
             )
 
             if period == 'date':
-                query = query.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
+                query_paid = query_paid.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
+                query_unpaid = query_unpaid.filter(Sales.created_at >= start_date, Sales.created_at <= end_date)
             else:
-                query = query.filter(Sales.created_at >= start_date)
+                query_paid = query_paid.filter(Sales.created_at >= start_date)
+                query_unpaid = query_unpaid.filter(Sales.created_at >= start_date)
 
-            total_sales = query.scalar() or 0
+            total_paid = query_paid.scalar() or 0
+            total_unpaid = query_unpaid.scalar() or 0
+
+            total_sales = total_paid + total_unpaid
 
             # Format the total sales to 2 decimal places with commas
             formatted_sales = "{:,.2f}".format(total_sales)
@@ -632,7 +643,7 @@ class TotalUnpaidAmountPerClerk(Resource):
                 .scalar() or 0
             )
 
-            formatted_unpaid = "Ksh {:,.2f}".format(total_unpaid)
+            formatted_unpaid = "{:,.2f}".format(total_unpaid)
 
             return {"total_unpaid_amount": formatted_unpaid}, 200
 
