@@ -15,7 +15,7 @@ const PaymentMethods = ({
                     <select
                         value={method.method}
                         onChange={(e) => handlePaymentChange(index, 'method', e.target.value)}
-                        className="input"
+                        
                     >
                         <option value="">Payment Method</option>
                         {validPaymentMethods.map((validMethod) => (
@@ -29,7 +29,7 @@ const PaymentMethods = ({
                         value={method.amount}
                         onChange={(e) => handlePaymentChange(index, 'amount', e.target.value)}
                         placeholder="Amount"
-                        className="input"
+                        
                     />
                     {method.method && method.method.toLowerCase() !== 'cash' && (
                         <input
@@ -37,7 +37,7 @@ const PaymentMethods = ({
                             value={method.transaction_code || ''}  // Allow the field to remain empty
                             onChange={(e) => handlePaymentChange(index, 'transaction_code', e.target.value)} // Handle transaction_code change
                             placeholder="Transaction Code (optional)"
-                            className="input"
+                            
                         />
                     )}
                     {index > 0 && (

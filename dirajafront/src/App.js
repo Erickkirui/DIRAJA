@@ -51,6 +51,7 @@ import Purchases from './Components/ClerkDashbord/MabandaShop/GetMabandaPurchase
 import Stock from './Components/ClerkDashbord/MabandaShop/GetMabandaStock';
 import Expenses from './Components/ClerkDashbord/MabandaShop/GetMabandaExpenses';
 import GetUnpaidSalesByClerk from './Components/ClerkDashbord/Creditsales';
+import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 
 
 
@@ -163,10 +164,7 @@ function App() {
             <Route path='/mabandaexpenses' element={<ClerkLayout><Expenses /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
-
-
-
-
+            <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
 
 
 
