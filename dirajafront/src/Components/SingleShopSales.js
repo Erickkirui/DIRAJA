@@ -107,7 +107,6 @@ const ShopSalesDetails = () => {
               <tr>
                 <th>Item</th>
                 <th>Quantity</th>
-                <th>Total price</th>
                 <th>Amount paid</th>
                 <th>Sale date</th>
               </tr>
@@ -119,7 +118,6 @@ const ShopSalesDetails = () => {
                   <td>
                     {sale.quantity} {sale.metric}
                   </td>
-                  <td>Ksh {sale.total_price}</td>
                   <td>
                     {sale.payment_methods.map((payment, index) => (
                       <div key={index}>

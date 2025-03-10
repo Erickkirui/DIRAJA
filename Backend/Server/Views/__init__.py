@@ -30,8 +30,8 @@ from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustome
 from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -133,6 +133,8 @@ api.add_resource(GetPaymentTotals, '/get_payment_totals')
 api.add_resource(SalesBalanceResource, '/sales/totalsalesbalance')
 api.add_resource(TotalBalanceSummary, '/accountspayable')
 api.add_resource(GetUnpaidSales, '/unpaidsales')
+api.add_resource(GetUnpaidSalesByClerk, "/unpaidsales/clerk")  
+
 
 
 
@@ -171,17 +173,15 @@ api.add_resource(TotalUnpaidAmountAllSales,"/allunpaidtotal")
 
 
 
-## clerak Dashbord
-# 1.sales for shop for the day
-# 2.Total slaes
-#4.Customesrs for customners
-# 5.stock 
+## clerkS Dashbord
+#Unpaid sales card for clerks
+api.add_resource(TotalUnpaidAmountPerClerk, "/unpaidsales/totalperclerk")
+
 
 api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
 
 # Sales dashboard
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
-
 api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
 
 # Mabanda shop 

@@ -2,50 +2,49 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
+import { faMoneyBillWave } from '@fortawesome/free-solid-svg-icons';
 
-const TotalShopSales = () => {
+const TotalUnpaidAmountPerClerk = () => {
   const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState('');
-  const [totalAmountPaid, setTotalAmountPaid] = useState(null);
+  const [totalUnpaidAmount, setTotalUnpaidAmount] = useState(null);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchTotalAmountPaid = async () => {
+    const fetchTotalUnpaidAmount = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId) {
-          setError('Missing authentication or shop information.');
+        if (!accessToken) {
+          setError('Missing authentication token.');
           return;
         }
 
-        const params = { period, shop_id: shopId };
+        const params = { period };
         if (period === 'date' && selectedDate) {
-          params.date = selectedDate; // Include date if "date" is selected
+          params.date = selectedDate;
         }
 
-        const response = await axios.get('/api/diraja/totalsales', {
+        const response = await axios.get('/api/diraja/unpaidsales/totalperclerk', {
           params,
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setTotalAmountPaid(response.data.total_sales_amount_paid);
+        setTotalUnpaidAmount(response.data.total_unpaid_amount);
       } catch (error) {
-        // console.error('Error fetching total amount paid:', error);
-        // setError('Could not fetch total amount paid');
+        // console.error('Error fetching total unpaid amount:', error);
+        // setError('Could not fetch total unpaid amount.');
       }
     };
 
-    fetchTotalAmountPaid();
+    fetchTotalUnpaidAmount();
   }, [period, selectedDate]);
 
   return (
     <div className='metrix-container'>
       <div className='metric-top'>
-        <FontAwesomeIcon className="metric-icon" icon={faChartSimple} size="1x" />
-      
+        <FontAwesomeIcon className="metric-icon" icon={faMoneyBillWave} size="1x" />
+
         <select value={period} onChange={(e) => setPeriod(e.target.value)}>
           <option value="today">Today</option>
           <option value="week">This Week</option>
@@ -61,18 +60,19 @@ const TotalShopSales = () => {
           />
         )}
       </div>
-      
-      <h5>Total Sales</h5>
-  
+
+      <h5>Total Credit Sales</h5>
+
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {totalAmountPaid !== null ? (
-        <h1> Ksh {totalAmountPaid}</h1>
+      {totalUnpaidAmount !== null ? (
+        <h1>Ksh {totalUnpaidAmount}</h1>
       ) : (
         <p>Loading...</p>
       )}
-      <Link to='/allsales'>View Sales</Link>
+      
+      <Link to='/shopcredit'>View Credit Sales</Link>
     </div>
   );
 };
 
-export default TotalShopSales;
+export default TotalUnpaidAmountPerClerk;
