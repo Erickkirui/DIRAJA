@@ -910,13 +910,12 @@ class CapturePaymentResource(Resource):
             return {"error": str(e)}, 500
 
 
-
 class CreditHistoryResource(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Query sales with payments where the timestamps do not match
-            sales_with_payments = db.session.query(Sales).join(SalesPaymentMethods).all()
+            # Query sales with payments where the timestamps do not match and status is "paid"
+            sales_with_payments = db.session.query(Sales).join(SalesPaymentMethods).filter(Sales.status == "paid").all()
 
             credit_sales = []
             for sale in sales_with_payments:
@@ -970,6 +969,7 @@ class CreditHistoryResource(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 class GetSingleSaleByShop(Resource):

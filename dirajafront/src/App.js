@@ -52,6 +52,7 @@ import Stock from './Components/ClerkDashbord/MabandaShop/GetMabandaStock';
 import Expenses from './Components/ClerkDashbord/MabandaShop/GetMabandaExpenses';
 import GetUnpaidSalesByClerk from './Components/ClerkDashbord/Creditsales';
 import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
+import CreditsalePage from './Pages/CreditsalePage';
 
 
 
@@ -149,7 +150,7 @@ function App() {
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
 
-            <Route path='/credit-sale' element ={<Layout><UnpaidSales /></Layout>} ></Route>
+            <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
 
             <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>

@@ -5,9 +5,8 @@ import DownloadPDF from '../Download/DownloadPDF';
 import { isSameDay } from 'date-fns';
 import LoadingAnimation from '../LoadingAnimation';
 
-
-const UnpaidSales = () => {
-  const [sales, setSales] = useState([]);
+const CreditHistory = () => {
+  const [creditSales, setCreditSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -16,44 +15,34 @@ const UnpaidSales = () => {
   const itemsPerPage = 50;
 
   useEffect(() => {
-    const fetchSales = async () => {
+    const fetchCreditHistory = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
           setError('No access token found. Please log in.');
           return;
         }
 
-        const response = await axios.get('/api/diraja/unpaidsales', {
+        const response = await axios.get('/api/diraja/credit-history', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        // Sort sales by sale_id in descending order
-        const sortedSales = response.data.unpaid_sales || [];
-        sortedSales.sort((a, b) => b.sales_id - a.sales_id);
-
-        setSales(sortedSales);
+        setCreditSales(response.data || []);
         setError('');
       } catch (err) {
         if (err.response?.status === 404) {
-          setSales([]);
-          setError('No unpaid sales found.');
+          setCreditSales([]);
+          setError('No credit sales found.');
         } else {
-          setError('Error fetching sales. Please try again.');
+          setError('Error fetching credit history. Please try again.');
         }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSales();
+    fetchCreditHistory();
   }, []);
-
-
-
-  const getFirstName = (username) => username?.split(' ')[0] || '';
-  const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -74,16 +63,14 @@ const UnpaidSales = () => {
     ));
   };
 
-  // Filter sales based on search query and selected date
-  const filteredSales = sales.filter((sale) => {
+  // Filter credit sales based on search query and selected date
+  const filteredSales = creditSales.filter((sale) => {
     const matchesSearch =
-      sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+      sale.status.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
-      ? isSameDay(new Date(sale.created_at), new Date(selectedDate))
+      ? isSameDay(new Date(sale.sale_created_at), new Date(selectedDate))
       : true;
 
     return matchesSearch && matchesDate;
@@ -100,12 +87,11 @@ const UnpaidSales = () => {
 
   return (
     <div className="sales-container">
-   
-      {/* Search and Date Filter for unpaid sales */}
+    
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item, shop, customer's name, or employee"
+          placeholder="Search by customer name or status"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -125,59 +111,54 @@ const UnpaidSales = () => {
       </div>
 
       <div className="actions-container">
-        <ExportExcel data={filteredSales} fileName="UnpaidSalesData" />
-        <DownloadPDF tableId="unpaid-sales-table" fileName="UnpaidSalesData" />
+        <ExportExcel data={filteredSales} fileName="CreditHistoryData" />
+        <DownloadPDF tableId="credit-history-table" fileName="CreditHistoryData" />
       </div>
 
-      <table id="unpaid-sales-table" className="sales-table" aria-label="Unpaid Sales data">
+      <table id="credit-history-table" className="sales-table" aria-label="Credit History data">
         <thead>
           <tr>
-            <th>Employee</th>
             <th>Customer</th>
-            <th>Shop</th>
-            <th>Item</th>
-            <th>Quantity</th>
+            <th>Total Price (ksh)</th>
             <th>Balance (ksh)</th>
             <th>Status</th>
-            <th>Action</th>
+            <th>Sale Created At</th>
+            <th>Payments</th>
           </tr>
         </thead>
         <tbody>
           {currentSales.length > 0 ? (
             currentSales.map((sale) => (
-              <tr key={sale.sales_id}>
-                <td>
-                  <div className="employee-info">
-                    <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                    <span className="employee-name">{getFirstName(sale.username)}</span>
-                  </div>
-                </td>
+              <tr key={sale.sale_id}>
                 <td>{sale.customer_name}</td>
-                <td>{sale.shopname}</td>
-                <td>{sale.item_name}</td>
-                <td>{sale.quantity} {sale.metric}</td>
+                <td>{sale.total_price}</td>
                 <td>{sale.balance}</td>
                 <td>{sale.status}</td>
+                <td>{sale.sale_created_at}</td>
                 <td>
-                  <a href={`/sale/${sale.sales_id}`}>View more</a>
+                  <ul>
+                    {sale.mismatched_payments.map((payment, index) => (
+                      <li key={index}>
+                        {payment.payment_method}: {payment.amount_paid} ksh on {payment.payment_created_at}
+                      </li>
+                    ))}
+                  </ul>
                 </td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="8">No unpaid sales found matching your criteria.</td>
+              <td colSpan="6">No credit history found matching your criteria.</td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Pagination */}
       <div className="pagination">{renderPaginationButtons()}</div>
 
-      {/* Error Message */}
       {error && <div className="error-message">{error}</div>}
     </div>
   );
 };
 
-export default UnpaidSales;
+export default CreditHistory;
