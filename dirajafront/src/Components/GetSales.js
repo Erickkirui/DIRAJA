@@ -7,47 +7,75 @@ import { isSameDay } from 'date-fns';
 import LoadingAnimation from './LoadingAnimation';
 import { Link } from 'react-router-dom';
 
-
 const Sales = () => {
-  const [sales, setSales] = useState([]);
+  const [sales, setSales] = useState([]); // Original sales from API
+  const [filteredSales, setFilteredSales] = useState([]); // Filtered results
   const [selectedSales, setSelectedSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const itemsPerPage = 50;
+  const backendItemsPerPage = 100; // Backend loads 100 per request
+  const frontendItemsPerPage = 50; // Frontend shows 50 per page
 
+  // Fetch sales data from API when the page changes
   useEffect(() => {
     const fetchSales = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
           setError('No access token found. Please log in.');
           return;
         }
 
-        const response = await axios.get('/api/diraja/allsales', {
+        const response = await axios.get(`/api/diraja/allsales?page=${currentPage}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setSales(response.data);
+        console.log("API Sales Response:", response.data); // Debugging output
+        setSales(response.data.sales || []);
+        setFilteredSales(response.data.sales || []); // Default to all sales on load
+        setTotalPages(response.data.total_pages);
         setError('');
       } catch (err) {
-        if (err.response?.status === 404) {
-          setSales([]);
-          setError('No sales found.');
-        } else {
-          setError('Error fetching sales. Please try again.');
-        }
+        console.error("Error fetching sales:", err);
+        setSales([]);
+        setFilteredSales([]);
+        setError('Error fetching sales. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchSales();
-  }, []);
+  }, [currentPage]);
+
+  // Filter sales when search query or date changes
+  useEffect(() => {
+    if (!searchQuery && !selectedDate) {
+      setFilteredSales(sales); // Reset to full sales list if no filters
+      return;
+    }
+
+    const searchTerm = searchQuery.toLowerCase().trim();
+    const filtered = sales.filter((sale) => {
+      const itemMatch = sale.item_name?.toLowerCase().includes(searchTerm) || false;
+      const shopMatch = sale.shop_name?.toLowerCase().includes(searchTerm) || false;
+      const customerMatch = sale.customer_name?.toLowerCase().includes(searchTerm) || false;
+      const employeeMatch = sale.username?.toLowerCase().includes(searchTerm) || false;
+
+      // Date filtering (ensure date format matches)
+      const matchesDate = selectedDate
+        ? isSameDay(new Date(sale.created_at), new Date(selectedDate))
+        : true;
+
+      return (itemMatch || shopMatch || customerMatch || employeeMatch) && matchesDate;
+    });
+
+    setFilteredSales(filtered);
+  }, [searchQuery, selectedDate]); // Trigger filtering only when these values change
 
   const handleCheckboxChange = (saleId) => {
     setSelectedSales((prevSelected) =>
@@ -78,7 +106,6 @@ const Sales = () => {
         })
       );
 
-      // Remove deleted sales from the state
       setSales((prevSales) => prevSales.filter((sale) => !selectedSales.includes(sale.sale_id)));
       setSelectedSales([]);
       alert('Selected sales deleted successfully.');
@@ -90,44 +117,30 @@ const Sales = () => {
   const getFirstName = (username) => username?.split(' ')[0] || '';
   const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
-  const renderPaginationButtons = () => {
-    const range = 3;
-    const pages = [];
-    for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
-      pages.push(i);
-    }
-    return pages.map((page) => (
-      <button
-        key={page}
-        className={`page-button ${currentPage === page ? 'active' : ''}`}
-        onClick={() => handlePageChange(page)}
-      >
-        {page}
-      </button>
-    ));
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
   };
 
-  // Filter sales based on search query and selected date
-  const filteredSales = sales.filter((sale) => {
-    const matchesSearch =
-      sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.username.toLowerCase().includes(searchQuery.toLowerCase());
+  const renderPaginationButtons = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push(
+        <button
+          key={i}
+          className={`page-button ${currentPage === i ? 'active' : ''}`}
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </button>
+      );
+    }
+    return pages;
+  };
 
-    const matchesDate = selectedDate
-      ? isSameDay(new Date(sale.created_at), new Date(selectedDate))
-      : true;
-
-    return matchesSearch && matchesDate;
-  });
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  // Apply frontend pagination (50 items per page)
+  const indexOfLastItem = currentPage * frontendItemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - frontendItemsPerPage;
   const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
 
   if (loading) {
     return <LoadingAnimation />;
@@ -135,28 +148,19 @@ const Sales = () => {
 
   return (
     <div className="sales-container">
-      {/* Search and Date Filter  for sales
-      */}
       <div className="filter-container">
         <input
           type="text"
           placeholder="Search by item, shop, customer's name, or employee"
           className="search-bar"
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-        
         <input
           type="date"
           className="date-picker"
           value={selectedDate}
-          onChange={(e) => {
-            setSelectedDate(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={(e) => setSelectedDate(e.target.value)}
         />
       </div>
 
@@ -166,12 +170,9 @@ const Sales = () => {
         <button className="delete-button" onClick={deleteSelectedSales} disabled={selectedSales.length === 0}>
           Delete Selected
         </button>
-        <Link to="/mabandasalesmanager"  className='add-button' >View Mabanda Sales </Link>
-
       </div>
-      
 
-      <table id="sales-table" className="sales-table" aria-label="Sales data">
+      <table className="sales-table">
         <thead>
           <tr>
             <th>Select</th>
@@ -180,9 +181,8 @@ const Sales = () => {
             <th>Shop</th>
             <th>Item</th>
             <th>Quantity</th>
-            <th>Amount Paid (ksh)</th>
+            <th>Amount Paid</th>
             <th>Date</th>
-            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -190,42 +190,29 @@ const Sales = () => {
             currentSales.map((sale) => (
               <tr key={sale.sale_id}>
                 <td>
-                  <input
-                    type="checkbox"
-                    checked={selectedSales.includes(sale.sale_id)}
-                    onChange={() => handleCheckboxChange(sale.sale_id)}
-                  />
+                  <input type="checkbox" onChange={() => handleCheckboxChange(sale.sale_id)} />
                 </td>
-                <td>
-                  <div className="employee-info">
-                    <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                    <span className="employee-name">{getFirstName(sale.username)}</span>
-                  </div>
-                </td>
+                <td>{sale.username}</td>
                 <td>{sale.customer_name}</td>
-                <td>{sale.shopname}</td>
+                <td>{sale.shop_name || sale.shopname}</td>
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.total_amount_paid}</td>
-
-                <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(',', '')}</td>
-                <td>
-                  <a href={`/sale/${sale.sale_id}`}>View more</a>
-                </td>
+                <td>{new Date(sale.created_at).toLocaleDateString()}</td>
               </tr>
             ))
           ) : (
             <tr>
-              <td colSpan="11">No sales found matching your criteria.</td>
+              <td colSpan="8">
+                {searchQuery || selectedDate ? "No sales found for the search criteria." : "No sales available."}
+              </td>
             </tr>
           )}
         </tbody>
       </table>
 
-      {/* Pagination */}
       <div className="pagination">{renderPaginationButtons()}</div>
 
-      {/* Error Message */}
       {error && <div className="error-message">{error}</div>}
     </div>
   );

@@ -81,6 +81,7 @@ class AddSale(Resource):
             payment_methods = data.get('payment_methods')
             status = data.get('status', 'unpaid')
             created_at = data.get('sale_date')
+            total_price = float(data.get('total_price'))
 
             if not created_at or created_at.strip() == "":
                 return {'message': 'Sale date is required'}, 400
@@ -98,7 +99,7 @@ class AddSale(Resource):
         )):
             return {'message': 'Invalid payment methods format'}, 400
 
-        total_price = unit_price * quantity
+       
         total_amount_paid = 0
 
         if status.lower() != "unpaid":
@@ -302,37 +303,40 @@ class GetSales(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+
 class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
         try:
-            # Query the Sales table for sales related to the given shop_id
-            sales = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.asc()).all()
+            # Get pagination parameters from query
+            page = request.args.get('page', 1, type=int)  # Default page is 1
+            per_page = request.args.get('per_page', 100, type=int)  # Default to 100 sales per request
+
+            # Query the sales for the given shop ID, order by created_at, and apply pagination
+            sales_query = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.asc())
+            total_sales = sales_query.count()
+            sales = sales_query.offset((page - 1) * per_page).limit(per_page).all()
 
             # If no sales found for the shop
             if not sales:
                 return {"message": "No sales found for this shop"}, 404
 
-            # Format sales data into a list of dictionaries
+            # Format sales data
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name using relationships
                 username = sale.users.username if sale.users else "Unknown User"
                 shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
 
-                # Process multiple payment methods and calculate total amount paid
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
-                        
                     }
-                    for payment in sale.payment  # Using the defined relationship in the Sales model
+                    for payment in sale.payment
                 ]
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
-                # Append the formatted sale data
                 sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
@@ -350,13 +354,19 @@ class GetSalesByShop(Resource):
                     "total_price": sale.total_price,
                     "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')
                 })
 
-            return {"sales": sales_data}, 200
+            return {
+                "sales": sales_data,
+                "total_sales": total_sales,
+                "page": page,
+                "per_page": per_page,
+                "total_pages": (total_sales + per_page - 1) // per_page  # Calculate total pages
+            }, 200
 
         except Exception as e:
-            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
+            return {"error": f"An error occurred: {str(e)}"}, 500
 
 
 class SalesResources(Resource):
@@ -817,6 +827,8 @@ class PaymentMethodsResource(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
         
+
+
 class CapturePaymentResource(Resource):
     @jwt_required()
     def post(self, sale_id):
@@ -835,15 +847,10 @@ class CapturePaymentResource(Resource):
             if not sale:
                 return {"message": "Sale not found"}, 404
 
-            # Find the default "not payed" record
+            # Find and remove the "not payed" record if it exists
             unpaid_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method="not payed").first()
-
-            # Reduce the "not payed" amount or remove it if fully paid
             if unpaid_payment:
-                if unpaid_payment.amount_paid > amount_paid:
-                    unpaid_payment.amount_paid -= amount_paid  # Deduct amount from unpaid balance
-                else:
-                    db.session.delete(unpaid_payment)  # Remove "not payed" if fully covered
+                db.session.delete(unpaid_payment)  # Remove "not payed" immediately after any payment is captured
 
             # Check if a payment record already exists for this sale & method
             existing_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method=payment_method).first()
