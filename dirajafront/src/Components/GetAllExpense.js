@@ -25,9 +25,7 @@ const Expenses = () => {
           return;
         }
 
-
-        const response = await axios.get(' /api/diraja/allexpenses', {
-
+        const response = await axios.get('/api/diraja/allexpenses', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -64,9 +62,7 @@ const Expenses = () => {
     if (selectedAction === 'delete') {
       await Promise.all(
         selectedExpenses.map((expenseId) =>
-
-          axios.delete(` /api/diraja/expense/${expenseId}`, {
-
+          axios.delete(`/api/diraja/expense/${expenseId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
@@ -85,12 +81,13 @@ const Expenses = () => {
     const matchesSearchTerm =
       expense.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.shop_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.item.toLowerCase().includes(searchTerm.toLowerCase())||
-      expense.paidTo.toLowerCase().includes(searchTerm.toLowerCase())||
+      expense.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expense.paidTo.toLowerCase().includes(searchTerm.toLowerCase()) ||
       expense.category.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesDate =
-      selectedDate === '' || new Date(expense.created_at).toISOString().split('T')[0] === selectedDate;
+      selectedDate === '' ||
+      new Date(expense.created_at).toLocaleDateString('en-CA') === selectedDate;
 
     return matchesSearchTerm && matchesDate;
   });
@@ -100,13 +97,8 @@ const Expenses = () => {
     currentPage * itemsPerPage
   );
 
-  const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase();
-  };
-
-  const getFirstName = (username) => {
-    return username.split(' ')[0];
-  };
+  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
+  const getFirstName = (username) => username.split(' ')[0];
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -114,7 +106,6 @@ const Expenses = () => {
 
   return (
     <div className="expenses-container">
-  
       <input
         type="text"
         placeholder="Search by employee name, shop name, or item"
@@ -139,14 +130,10 @@ const Expenses = () => {
           <button onClick={handleAction} className="action-button">Apply</button>
         </div>
 
-        
-          <ExportExcel data={expenses} fileName="ExpensesData" />
-          <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-          <Link to="/mabandaexpensesmanager"  className='add-button' >View Mabanda Expenses </Link>
-        
-
+        <ExportExcel data={expenses} fileName="ExpensesData" />
+        <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
+        <Link to="/mabandaexpensesmanager" className='add-button'>View Mabanda Expenses</Link>
       </div>
-      
 
       <table id="expenses-table" className="expenses-table">
         <thead>
@@ -158,7 +145,6 @@ const Expenses = () => {
                 checked={selectedExpenses.length === expenses.length}
               />
             </th>
-            {/* <th>ID</th> */}
             <th>Employee</th>
             <th>Shop Name</th>
             <th>Item</th>
@@ -168,7 +154,7 @@ const Expenses = () => {
             <th>Total Price (Ksh)</th>
             <th>Amount Paid (Ksh)</th>
             <th>Balance (Ksh)</th>
-            <th>Paid To </th>
+            <th>Paid To</th>
             <th>Date</th>
           </tr>
         </thead>
@@ -182,7 +168,6 @@ const Expenses = () => {
                   onChange={() => handleCheckboxChange(expense.expense_id)}
                 />
               </td>
-              {/* <td>{expense.expense_id}</td> */}
               <td>
                 <div className="employee-info">
                   <div className="employee-icon">{getFirstLetter(expense.username)}</div>
@@ -198,13 +183,11 @@ const Expenses = () => {
               <td>{expense.amountPaid}</td>
               <td>{expense.balance}</td>
               <td>{expense.paidTo}</td>
-              <td>{new Date(expense.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
+              <td>{new Date(expense.created_at).toLocaleDateString('en-CA')}</td>
             </tr>
           ))}
         </tbody>
       </table>
-          
-      
 
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredExpenses.length / itemsPerPage) }, (_, index) => (
