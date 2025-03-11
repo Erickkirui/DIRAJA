@@ -79,9 +79,9 @@ const CapturePayment = ({ saleId, onPaymentSuccess }) => {
         >
           <option value="">Select a method</option>
           <option value="cash">Cash</option>
-          <option value="bank">Bank Transfer</option>
+          <option value="bank">Sasapay</option>
           <option value="mpesa">Mpesa</option>
-          <option value="credit_card">Credit Card</option>
+          {/* <option value="credit_card">Credit Card</option> */}
         </select>
 
         <label>Amount Paid (Ksh):</label>
