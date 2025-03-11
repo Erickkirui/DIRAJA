@@ -47,11 +47,11 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {/* {shopId !== "12" && (
                   <Link className="clerk-button" to="/shopcustomers">
                     View Customers
                   </Link>
-                )}
+                )} */}
 
                 
             {/* <Link className='clerk-button' to='/shopcustomers'>View Customers</Link> */}
