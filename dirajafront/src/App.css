@@ -179,3 +179,42 @@
   padding: 10px;
   z-index: 100;
 }
+
+
+/* tabs  */
+.tabs-container {
+  display: flex;
+  justify-content: left;
+  position: relative;
+  border-bottom: 1px solid #ccc;
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.tab-button {
+  position: relative;
+  text-align: left;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+
+}
+
+.tab-button::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: transparent;
+  transition: background-color 0.3s ease-in-out;
+}
+
+.tab-button.active::after {
+  width: 50%;
+  left: 25%;
+  background-color: var(--primary); /* Change this to match your theme */
+}
