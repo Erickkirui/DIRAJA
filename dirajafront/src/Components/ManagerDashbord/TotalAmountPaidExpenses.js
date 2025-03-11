@@ -35,8 +35,8 @@ const TotalAmountPaidExpenses = () => {
         setError('');
       }, 1000);
     } catch (error) {
-      console.error('Error fetching total amount paid:', error);
-      setError('Error fetching total amount paid');
+      // console.error('Error fetching total amount paid:', error);
+      // setError('Error fetching total amount paid');
       setTotalAmountPaid(null);
       setIsLoading(false);
     }
