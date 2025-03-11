@@ -304,6 +304,7 @@ class GetSales(Resource):
             return {"error": str(e)}, 500
 
 
+
 class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):

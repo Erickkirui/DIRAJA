@@ -139,7 +139,7 @@ const UnpaidSales = () => {
             <th>Quantity</th>
             <th>Balance (ksh)</th>
             <th>Status</th>
-            <th>Action</th>
+            {/* <th>Action</th> */}
           </tr>
         </thead>
         <tbody>
@@ -158,9 +158,9 @@ const UnpaidSales = () => {
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.balance}</td>
                 <td>{sale.status}</td>
-                <td>
+                {/* <td>
                   <a href={`/sale/${sale.sales_id}`}>View more</a>
-                </td>
+                </td> */}
               </tr>
             ))
           ) : (
