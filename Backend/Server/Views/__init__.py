@@ -23,7 +23,7 @@ from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopSt
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
 from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers
 
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock
+from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock,GetInventoryByBatch
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
@@ -36,7 +36,7 @@ from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmoun
 
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk
-
+from Server.Views.Emailnotifications import Report
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -44,6 +44,9 @@ api = Api(api_endpoint)
 
 
 # add all endpoints 
+
+# Email reports
+api.add_resource(Report, '/send-report')
 
 # users endpoints 
 api.add_resource(CountUsers, '/countusers')
@@ -101,6 +104,7 @@ api.add_resource(AddInventory, '/newinventory')
 api.add_resource(GetAllInventory,'/allinventories')
 api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 api.add_resource(DeleteShopStock, '/deleteshopstock/<int:shop_stock_id>')
+api.add_resource(GetInventoryByBatch, '/inventory-by-batch')
 
 
 #distribute stock to a specific shop
