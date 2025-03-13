@@ -127,8 +127,8 @@ class Report(Resource):
                 "============================\n"
                 "📌 **Shop-wise Breakdown:**\n"
                 "============================\n"
-                f"{'\n'.join(shop_reports)}\n\n"
-                "Best Regards,\nYour Business Team"
+                "{'\n'.join(shop_reports)}\n\n"
+                "Best Regards,\n Your Business Team"
             )
 
             # Send the email to multiple recipients
