@@ -120,16 +120,17 @@ class Report(Resource):
             # Construct a single email for all shops
             email_subject = "Financial Report for All Shops"
             email_body = (
-                "Hello,\n\n"
-                "Here is the consolidated financial summary for all shops:\n\n"
+                f"Hello,\n\n"
+                f"Here is the consolidated financial summary for all shops:\n\n"
                 f"🔹 **Overall Total Sales:** {formatted_sales}\n"
                 f"🔹 **Overall Total Expenses:** {formatted_expenses}\n\n"
                 "============================\n"
                 "📌 **Shop-wise Breakdown:**\n"
                 "============================\n"
-                f"{'\n'.join(shop_reports)}\n\n"
+                "{'\n'.join(shop_reports)}\n\n"
                 "Best Regards,\nYour Business Team"
             )
+
 
             # Send the email to multiple recipients
             send_email(email_subject, email_body, recipients)
