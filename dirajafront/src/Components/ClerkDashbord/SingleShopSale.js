@@ -128,31 +128,28 @@ const SingleShopSale = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-
-        // Ensure transaction_code is set to "none" if it is empty
+        setMessage('');
+        
         const formDataToSubmit = { ...formData };
-        formDataToSubmit.payment_methods = formData.payment_methods.map(payment => {
-            if (!payment.transaction_code || payment.transaction_code.trim() === "") {
-                payment.transaction_code = "none"; // Default to "none" if empty
-            }
-            return payment;
-        });
-
+        formDataToSubmit.payment_methods = formData.payment_methods.map(payment => ({
+            ...payment,
+            transaction_code: payment.transaction_code.trim() === "" ? "none" : payment.transaction_code
+        }));
+    
         try {
-            // Log the form data before sending to backend
             console.log("Submitting Sale Data:", JSON.stringify(formDataToSubmit, null, 2));
-
+    
             const response = await axios.post('/api/diraja/newsale', formDataToSubmit, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-
+    
             if (response.status === 201) {
                 setMessageType('success');
-                setMessage(response.data.message); // Show success message
-
+                setMessage(response.data.message || 'Sale recorded successfully.');
+    
                 // Reset the form
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',
@@ -165,33 +162,45 @@ const SingleShopSale = () => {
                     total_price: '',
                     BatchNumber: '',
                     stock_id: '',
+                    status: '',
+                    sale_date: '',
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                 });
-
+    
                 setRemainingStock(0);
-
-                // Refresh the page after 2 seconds
+    
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
-
-               
             } else {
-                setMessageType('error');
-                setMessage('Failed to add sale');
+                throw new Error('Unexpected response from server');
             }
         } catch (error) {
-            console.error("Error submitting sale:", error.response ? error.response.data : error.message);
+            console.error("Error submitting sale:", error);
+    
+            // Extract error message from API response
+            const errorMessage = error.response?.data?.message || "An unexpected error occurred. Please try again.";
+            
             setMessageType('error');
-            setMessage('An unexpected error occurred. Please try again.');
+            setMessage(errorMessage);
         } finally {
             setIsLoading(false);
         }
     };
+    
+
+    
+    
 
     return (
         <div>
-            {message && <Stack><Alert  variant="outlined" severity="success" >{message}</Alert></Stack>}
+            {message && (
+                    <Stack>
+                        <Alert severity={messageType} variant="outlined">
+                            {message}
+                        </Alert>
+                    </Stack>
+                )}
             <h1>Record a Sale</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <input name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Customer Name" />

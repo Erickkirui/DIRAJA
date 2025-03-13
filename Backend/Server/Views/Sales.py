@@ -55,7 +55,6 @@ def check_role(required_role):
     return wrapper
 
 
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
@@ -94,12 +93,15 @@ class AddSale(Resource):
         except ValueError:
             return {'message': 'Invalid input for quantity or unit price'}, 400
 
+        # ✅ Check if customer_name is empty when the status is unpaid (credit sale)
+        if status.lower() == "unpaid" and (not customer_name or customer_name.strip() == ""):
+            return {'message': 'Customer name is required for credit sale'}, 400
+
         if status.lower() != "unpaid" and (not isinstance(payment_methods, list) or not all(
             isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
         )):
             return {'message': 'Invalid payment methods format'}, 400
 
-       
         total_amount_paid = 0
 
         if status.lower() != "unpaid":
@@ -120,7 +122,7 @@ class AddSale(Resource):
             live_stock = (
                 LiveStock.query
                 .filter_by(shop_id=shop_id, item_name=item_name)
-                .order_by(LiveStock.created_at.desc())  # Get latest stock entry
+                .order_by(LiveStock.created_at.desc())  
                 .first()
             )
 
@@ -133,7 +135,7 @@ class AddSale(Resource):
             else:
                 remaining_stock = None
         else:
-            remaining_stock = None  # Don't track LiveStock updates for old sales
+            remaining_stock = None  
 
         # ✅ **Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
@@ -190,17 +192,15 @@ class AddSale(Resource):
 
         try:
             db.session.add(new_sale)
-            db.session.flush()  # Flush to get sales_id for later use
+            db.session.flush()  
 
             for payment in payment_methods:
                 payment_method = payment['method']
                 transaction_code = payment.get('transaction_code')
 
-                # Ensure the transaction_code is not empty and convert it to uppercase
                 if not transaction_code or transaction_code.strip() == "":
                     transaction_code = "N/A"
                 else:
-                    # Convert the transaction code to uppercase
                     transaction_code = transaction_code.upper()
 
                 payment_record = SalesPaymentMethods(
@@ -212,8 +212,6 @@ class AddSale(Resource):
                 )
                 db.session.add(payment_record)
 
-
-            # ✅ Always add customer details
             new_customer = Customers(
                 customer_name=customer_name,
                 customer_number=customer_number,
@@ -221,13 +219,13 @@ class AddSale(Resource):
                 sales_id=new_sale.sales_id,
                 user_id=current_user_id,
                 item=item_name,
-                amount_paid=total_amount_paid if status.lower() != "unpaid" else 0,  # Set amount_paid to 0 if unpaid
+                amount_paid=total_amount_paid if status.lower() != "unpaid" else 0,  
                 payment_method=", ".join(pm['method'] for pm in payment_methods) if status.lower() != "unpaid" else "N/A",
                 created_at=created_at
             )
             db.session.add(new_customer)
 
-            if live_stock:  # ✅ Only update LiveStock if it exists and sale is from today or yesterday
+            if live_stock:  
                 db.session.add(live_stock)
 
             db.session.commit()
@@ -238,6 +236,7 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
+
 
 
 class GetSales(Resource):
