@@ -15,6 +15,7 @@ from sqlalchemy.orm import joinedload
 import logging
 from flask import jsonify
 from flask import current_app
+import re
 
 
 
@@ -29,6 +30,51 @@ def check_role(required_role):
             return fn(*args, **kwargs)
         return decorator
     return wrapper
+
+
+class GetInventoryByBatch(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Fetch all inventory items
+            inventories = Inventory.query.all()
+
+            # Custom sorting function for batch numbers
+            def batch_sort_key(inventory):
+                match = re.match(r"^.*-(?P<letter>[A-Z])(?P<number>\d+)$", inventory.BatchNumber)
+                if match:
+                    letter = match.group("letter")
+                    number = int(match.group("number"))
+                    return (letter, number)  # Sort first by letter, then by number
+                return ("Z", 9999)  # Fallback for unexpected formats
+
+            # Sort inventory items based on custom BatchNumber logic
+            sorted_inventories = sorted(inventories, key=batch_sort_key)
+
+            inventory_list = []
+            for inv in sorted_inventories:
+                inventory_list.append({
+                    'inventory_id': inv.inventory_id,
+                    'itemname': inv.itemname,
+                    'quantity': inv.quantity,
+                    'metric': inv.metric,
+                    'unitCost': inv.unitCost,
+                    'totalCost': inv.totalCost,
+                    'amountPaid': inv.amountPaid,
+                    'unitPrice': inv.unitPrice,
+                    'BatchNumber': inv.BatchNumber,
+                    'Suppliername': inv.Suppliername,
+                    'Supplier_location': inv.Supplier_location,
+                    'ballance': inv.ballance,
+                    'note': inv.note,
+                    'created_at': inv.created_at.strftime('%Y-%m-%d')
+                })
+
+            return make_response(jsonify({'inventories': inventory_list}), 200)
+
+        except Exception as e:
+            return make_response(jsonify({'message': 'Error fetching inventory', 'error': str(e)}), 500)
+
 
 class DistributeInventory(Resource):
     @jwt_required()

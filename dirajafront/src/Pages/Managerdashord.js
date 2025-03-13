@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 
+
 function Managerdashord() {
   // Check the role in local storage
   useEffect(() => {
@@ -25,6 +26,7 @@ function Managerdashord() {
         <div className="shortcuts">
           <Link to="/allusers" className="button">Manage Users</Link>
         </div>
+       
       </div>
       <p>Analytics </p>
 
