@@ -128,7 +128,11 @@ class Report(Resource):
                 "📌 **Shop-wise Breakdown:**\n"
                 "============================\n"
                 "{'\n'.join(shop_reports)}\n\n"
+<<<<<<< HEAD
                 "Best Regards,\nYour Business Team"
+=======
+                "Best Regards,\n Your Business Team"
+>>>>>>> 41fea1452c3405928c9821e4701444015281163f
             )
 
 
