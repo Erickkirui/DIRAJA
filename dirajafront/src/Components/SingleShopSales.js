@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "../Styles/singleshopsale.css";
 import ExportExcel from "../Components/Download/ExportExcel";
@@ -8,6 +8,7 @@ import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 
 const ShopSalesDetails = () => {
+  const navigate = useNavigate();
   const { shop_id } = useParams();
   const [salesData, setSalesData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -55,6 +56,11 @@ const ShopSalesDetails = () => {
 
   return (
     <div className="singleshopstock-table">
+      {/* Back Button */}
+      <button className="button" onClick={() => navigate("/analytics")}>
+        ← Back to Analytics
+      </button>
+
       {loading ? (
         <p>Loading sales data...</p>
       ) : error ? (
@@ -74,31 +80,13 @@ const ShopSalesDetails = () => {
           <div className="actions-container">
             {salesData.shop_name ? (
               <>
-
                 <ExportExcel data={salesData} fileName="ShopSalesData" />
-
-                <DownloadPDF 
-                  tableId="singleshopstock-table" 
-                  fileName={salesData?.shop_name ? salesData.shop_name.replace(/\s+/g, '_') : 'ShopSalesData'} 
-                />
-
-
-                <ExportExcel
-                  data={salesData}
-                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
-                />
                 <DownloadPDF
                   tableId="singleshopstock-table"
-                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
+                  fileName={salesData?.shop_name ? salesData.shop_name.replace(/\s+/g, '_') : 'ShopSalesData'}
                 />
-
               </>
-            ) : (
-              <>
-                {/* <ExportExcel data={salesData} fileName="ShopSalesData" /> */}
-                {/* <DownloadPDF tableId="singleshopstock-table" fileName="ShopSalesData" /> */}
-              </>
-            )}
+            ) : null}
           </div>
 
           <h3>Sales Records</h3>
@@ -113,20 +101,26 @@ const ShopSalesDetails = () => {
             </thead>
             <tbody>
               {salesData.sales_records.map((sale) => (
-                <tr key={sale.sale_id}>
-                  <td>{sale.item_name}</td>
+                <tr key={sale.sale_id || `${sale.itemname}-${sale.sale_date}`}>
+                  <td>{sale.itemname || sale.item_name}</td>
                   <td>
-                    {sale.quantity} {sale.metric}
+                    {sale.quantity_sold || sale.quantity} {sale.metric || ""}
                   </td>
                   <td>
-                    {sale.payment_methods.map((payment, index) => (
-                      <div key={index}>
-                        {payment.payment_method}: Ksh {payment.amount_paid}
+                    {sale.payment_methods ? (
+                      sale.payment_methods.map((payment, index) => (
+                        <div key={index}>
+                          {payment.payment_method}: Ksh {payment.amount_paid}
+                        </div>
+                      ))
+                    ) : (
+                      <div>
+                        {sale.mode_of_payment}: Ksh {sale.amount_paid}
                       </div>
-                    ))}
+                    )}
                   </td>
                   <td>
-                    {new Date(sale.created_at)
+                    {new Date(sale.sale_date || sale.created_at)
                       .toLocaleString(undefined, {
                         year: "numeric",
                         month: "2-digit",
