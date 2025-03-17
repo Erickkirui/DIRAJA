@@ -12,13 +12,13 @@ CORS(app)
 db = SQLAlchemy()
 jwt = JWTManager()
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_SERVER'] = 'mail.kulima.co.ke'
 app.config['MAIL_PORT'] = '465'
-app.config['MAIL_USERNAME'] = 'dirajadevelopment@gmail.com'
-app.config['MAIL_PASSWORD'] = 'sazf zull wwva ikjd'
+app.config['MAIL_USERNAME'] = 'kukuzetureports@kulima.co.ke'
+app.config['MAIL_PASSWORD'] = 'XZbZ{9ZSPZeg'
 app.config['MAIL_USE_SSL'] = True
 app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'dirajadevelopment@gmail.com'
+app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
 mail = Mail(app)
 
 

@@ -1,21 +1,20 @@
-from flask_restful import Resource
 from flask_mail import Mail, Message
 from flask import jsonify, request
+from  flask_restful import Resource
 from datetime import datetime, timedelta
 from app import db, mail
 from Server.Models.Sales import Sales
 from Server.Models.Expenses import Expenses
 from Server.Models.Shops import Shops
 from Server.Models.Paymnetmethods import SalesPaymentMethods
-from flask_jwt_extended import jwt_required
-from sqlalchemy.exc import SQLAlchemyError
 
+from sqlalchemy.exc import SQLAlchemyError
 
 # Email sending function (fixed to support multiple recipients)
 def send_email(subject, body, recipients):
     try:
         msg = Message(subject, sender=mail.default_sender, recipients=recipients)
-        msg.body = body
+        msg.html = body  # Set the body as HTML
         mail.send(msg)
         print(f"Email sent successfully to {', '.join(recipients)}")  # Debugging
     except Exception as e:
@@ -23,16 +22,14 @@ def send_email(subject, body, recipients):
 
 
 class Report(Resource):
-    @jwt_required()
     def get(self):
-
         try:
             today = datetime.utcnow()
             start_date = None
             end_date = None
 
             # List of recipients
-            recipients = ["erickkirui653@gmail.com", "Kibealex555@gmail.com"]
+            recipients = ["erickkirui653@gmail.com"]
 
             date_str = request.args.get('date')
             if date_str:
@@ -111,27 +108,57 @@ class Report(Resource):
                 formatted_shop_expenses = "Ksh {:,.2f}".format(shop_expenses)
 
                 shop_reports.append(
-                    f"\nShop: {shop.shopname}\n"
-                    f"Total Sales: {formatted_shop_sales}\n"
-                    f"Total Expenses: {formatted_shop_expenses}\n"
-                    "----------------------------"
+                    f"""
+                    <div style="border: 1px solid #ddd; padding: 10px; width: 100%; box-sizing: border-box; text-align: left; background-color: #f9f9f9; border-radius: 8px; margin-bottom: 10px;">
+                        <h3 style="margin-top: 0;">{shop.shopname}</h3>
+                        <p><strong>Sales:</strong> <br>{formatted_shop_sales}</p>
+                        <p><strong>Expense:</strong> <br> s{formatted_shop_expenses}</p>
+                    </div>
+                    """
                 )
 
-            # Construct a single email for all shops
+            # Construct the email body with inline CSS
             email_subject = "Financial Report for All Shops"
-            email_body = (
-                "Hello,\n\n"
-                "Here is the consolidated financial summary for all shops:\n\n"
-                f"🔹 **Overall Total Sales:** {formatted_sales}\n"
-                f"🔹 **Overall Total Expenses:** {formatted_expenses}\n\n"
-                "============================\n"
-                "📌 **Shop-wise Breakdown:**\n"
-                "============================\n"
-                "{'\n'.join(shop_reports)}\n\n"
-                "Best Regards,\n Your Business Team"
-            )
+            email_body = f"""
+                        <html>
+                        <body style="font-family: Arial, sans-serif; margin: 0; padding: 0; border: 1px solid #ccc; border-radius: 8px; style="max-width: 650px;">
+                            <div style="max-width: 650px; margin: 0 auto; ">
+                                <div style="padding: 20px; background-color: #f4f4f4; border-bottom: 2px solid #ddd;">
+                                    <h2 style="margin-bottom: 10px;">Financial Summary</h2>
+                                    <div style="margin-bottom: 20px;">
+                                        <strong>Total Sales:</strong> {formatted_sales} &nbsp;&nbsp; <strong>Total Expenses:</strong> {formatted_expenses}
+                                    </div>
+                                </div>
 
-            # Send the email to multiple recipients
+                                <div style="padding: 20px; background-color: #fff; max-width: 600px; margin: 0 auto; box-sizing: border-box;">
+                                                <h3 style="margin-bottom: 10px; text-align: center;">Shop-wise Breakdown:</h3>
+                                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; padding: 10px;">
+                                                    {''.join(shop_reports)}
+                                                </div>
+                        </div>
+
+
+                                <div style="padding: 20px; background-color: #fff; border-top: 2px solid #ddd;">
+                                    <h3 style="margin-bottom: 10px;">Overall Totals</h3>
+                                    <div>
+                                        <strong>Total Sales:</strong> {formatted_sales}<br>
+                                        <strong>Total Expenses:</strong> {formatted_expenses}
+                                    </div>
+                                </div>
+
+                                <div style="padding: 20px; text-align: center; background-color: #f4f4f4;">
+                                    <p>Best Regards,<br>DIRAJA SYSTEM</p>
+                                </div>
+                            </div>
+                        </body>
+                        </html>
+                        """
+
+
+
+
+
+            # Send the email with HTML body
             send_email(email_subject, email_body, recipients)
 
             return jsonify({
