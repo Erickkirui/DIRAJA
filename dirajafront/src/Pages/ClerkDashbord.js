@@ -56,11 +56,11 @@ function ClerkDashbord() {
                 
             {/* <Link className='clerk-button' to='/shopcustomers'>View Customers</Link> */}
               
-              {/* {shopId !== "12" && (
+              {shopId !== "12" && (
                   <Link className="clerk-button" to="/managestock">
                     Manage Stock
                   </Link>
-                )} */}
+                )}
               {
                 shopId === "2" &&(
                   <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
@@ -112,6 +112,7 @@ function ClerkDashbord() {
             {/* <Link className='clerk-button' to='/shopsales'>View Sales</Link> */}
           </div>
 
+          <div className="metrix-pair">
           <div className='analytics-clerk'>
             {shopId === "12" ? <TotalMabandaSales /> : <TotalShopSales />}
           </div>
@@ -119,6 +120,7 @@ function ClerkDashbord() {
           <div className='analytics-clerk'>
             <Totalcreditpershop />
            
+          </div>
           </div>
         </div>
       </div>

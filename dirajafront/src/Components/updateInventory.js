@@ -5,9 +5,8 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
   const [updatedData, setUpdatedData] = useState({
     itemname: '',
     batchnumber: '',
-    quantity: '',
+    initial_quantity: '',
     unitCost: '',
-    initinitial_quantity: '',
     unitPrice: '',
     totalCost: '',
     amountPaid: '',
@@ -47,21 +46,26 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
 
   // Handle input changes
   const handleChange = (e) => {
-    setUpdatedData({ ...updatedData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setUpdatedData(prevData => {
+      const newData = { ...prevData, [name]: value };
 
-    // Auto-calculate total cost if quantity and unit cost exist
-    if (e.target.name === "quantity" || e.target.name === "unitCost") {
-      const quantity = e.target.name === "quantity" ? e.target.value : updatedData.quantity;
-      const unitCost = e.target.name === "unitCost" ? e.target.value : updatedData.unitCost;
-      setUpdatedData(prevData => ({ ...prevData, totalCost: quantity * unitCost }));
-    }
+      // Auto-calculate total cost if initial_quantity or unitCost changes
+      if (name === "initial_quantity" || name === "unitCost") {
+        const quantity = name === "initial_quantity" ? value : prevData.initial_quantity;
+        const unitCost = name === "unitCost" ? value : prevData.unitCost;
+        newData.totalCost = (parseFloat(quantity) || 0) * (parseFloat(unitCost) || 0);
+      }
+
+      return newData;
+    });
   };
 
   // Handle update request
   const handleUpdate = async (e) => {
     e.preventDefault();
-    console.log("Data being sent to backend:", updatedData)
- 
+    console.log("Data being sent to backend:", updatedData);
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -79,7 +83,7 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
-      console.log("Update response:", response.data); // Debugging log
+      console.log("Update response:", response.data);
       setSuccess("Inventory updated successfully!");
       onUpdateSuccess(); // Refresh inventory list
 
@@ -108,8 +112,8 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
             <input type="text" name="itemname" value={updatedData.itemname} onChange={handleChange} />
           </div>
           <div>
-            <label>Quantity:</label>
-            <input type="number" name="quantity" value={updatedData.initial_quantity} onChange={handleChange} />
+            <label>Initial Quantity:</label>
+            <input type="number" name="initial_quantity" value={updatedData.initial_quantity} onChange={handleChange} />
           </div>
           <div>
             <label>Unit Cost (Ksh):</label>

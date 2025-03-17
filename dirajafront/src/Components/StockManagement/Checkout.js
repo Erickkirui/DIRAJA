@@ -5,6 +5,7 @@ const Checkout = ({ shopId, stockData }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");  // New state for success message
+  const [showConfirmation, setShowConfirmation] = useState(false);  // State to control the confirmation popup
 
   const handleCheckout = async () => {
     setLoading(true);
@@ -38,12 +39,37 @@ const Checkout = ({ shopId, stockData }) => {
     }
   };
 
+  const handleConfirmClose = () => {
+    setShowConfirmation(false);  // Hide confirmation popup
+    handleCheckout();  // Proceed with checkout if confirmed
+  };
+
+  const handleCancelClose = () => {
+    setShowConfirmation(false);  // Hide confirmation popup if canceled
+  };
+
   return (
     <div>
       {error && <p className="text-red-500">{error}</p>}
       {successMessage && <p className="text-green-500">{successMessage}</p>}  {/* Display success message */}
+
+      {/* Show confirmation popup if showConfirmation is true */}
+      {showConfirmation && (
+        <div className="confirmation-popup">
+          <div className="confirmation-card">
+            <p>Are you sure you want to close the shop?</p>
+            <div className="confirmation-buttons">
+            <button onClick={handleCancelClose} className="cancel-button">cancel</button>
+              <button onClick={handleConfirmClose} className="confirm-button">Close Shop</button>
+              
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Close Shop Button */}
       <button 
-        onClick={handleCheckout} 
+        onClick={() => setShowConfirmation(true)}  // Show confirmation popup when clicked
         className="stock-button-ckeckout"
         disabled={loading}
       >

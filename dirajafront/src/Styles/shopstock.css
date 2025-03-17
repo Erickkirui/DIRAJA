@@ -184,3 +184,57 @@ border: 1px solid #ccc;
   background-color: #d3d3d3;
   cursor: not-allowed;
 }
+
+.confirmation-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;  /* Ensure the popup appears above other content */
+}
+
+.confirmation-card {
+  background-color: white;
+  padding: 20px;
+  width: 300px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.confirmation-card p {
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.confirmation-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+
+.confirmation-buttons button {
+  padding: 10px 20px;
+  margin: 0 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.confirm-button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+}
+
+.cancel-button {
+
+  color: white;
+  border: 1px solid #ccc;
+  color: black;
+}
