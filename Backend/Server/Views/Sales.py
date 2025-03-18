@@ -1093,4 +1093,67 @@ class GetUnpaidSalesByClerk(Resource):
             return {"message": f"An error occurred: {str(e)}"}, 500
 
 
+class SalesByEmployeeResource(Resource):
+    @jwt_required()
+    def get(self, username, shop_id):
+        try:
+            # Use only the first name segment of the username
+            first_name = username.split()[0]  # Split username and use the first part
 
+            # Fetch sales for the given first_name and shop_id
+            sales = Sales.query.join(Users, Users.users_id == Sales.user_id) \
+                               .filter(Users.username.like(f"{first_name}%"), Sales.shop_id == shop_id) \
+                               .all()
+
+            if not sales:
+                return {"message": "No sales found for this employee in the specified shop."}, 404
+
+            sales_data = []
+            for sale in sales:
+                # Fetch username and shop name
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+
+                username = user.username if user else "Unknown User"
+                shopname = shop.shopname if shop else "Unknown Shop"
+
+                # Fetch related payment methods
+                payment_data = [
+                    {
+                        "payment_method": payment.payment_method,
+                        "amount_paid": payment.amount_paid,
+                        "balance": payment.balance,
+                    }
+                    for payment in sale.payment  # Assuming 'payment' is the relationship with SalesPaymentMethods
+                ]
+
+                # Calculate total amount paid from the related payments
+                total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
+
+                # Prepare sale data
+                sale_data = {
+                    "sale_id": sale.sales_id,
+                    "user_id": sale.user_id,
+                    "username": username,
+                    "shop_id": sale.shop_id,
+                    "shop_name": shopname,
+                    "customer_name": sale.customer_name,
+                    "status": sale.status,
+                    "customer_number": sale.customer_number,
+                    "item_name": sale.item_name,
+                    "quantity": sale.quantity,
+                    "batchnumber": sale.BatchNumber,
+                    "metric": sale.metric,
+                    "unit_price": sale.unit_price,
+                    "total_price": sale.total_price,
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                }
+
+                sales_data.append(sale_data)
+
+            return {"sales": sales_data}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
