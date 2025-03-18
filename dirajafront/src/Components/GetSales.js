@@ -188,6 +188,7 @@ const Sales = () => {
             <th>Item</th>
             <th>Quantity</th>
             <th>Amount Paid (ksh)</th>
+            <th>Condition</th>
             <th>Date</th>
             <th>Action</th>
           </tr>
@@ -215,6 +216,8 @@ const Sales = () => {
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity} {sale.metric}</td>
                 <td>{sale.total_amount_paid}</td>
+                <td>{sale.condition}</td>
+
 
                 <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(',', '')}</td>
                 <td>

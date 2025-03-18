@@ -17,11 +17,13 @@ class Sales(db.Model):
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
+    condition = db.Column(db.String(20), nullable=True)
     BatchNumber = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
     stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
     balance = db.Column(db.Float)
     note = db.Column(db.String(50))
+    
     
     # Relationships
     users = db.relationship('Users', backref='sales', lazy=True)
@@ -29,7 +31,18 @@ class Sales(db.Model):
     shop_stock = db.relationship('ShopStock', backref='sales', lazy=True)
     payment= db.relationship('SalesPaymentMethods', backref='related_sale', lazy=True, cascade="all, delete-orphan")
     
+    
+    
     # Validations
+    
+    @validates('condition')
+    def validate_condition(self, key, condition):
+        valid_conditions = ['spoilt', 'broken']
+        if condition is not None:
+            assert condition in valid_conditions, f"Invalid condition. Must be one of: {', '.join(valid_conditions)}"
+        return condition
+    
+   
     @validates('status')
     def validate_status(self, key, status):
         valid_status = ['paid', 'unpaid', 'partially_paid']

@@ -19,6 +19,7 @@ const SingleShopSale = () => {
         stock_id: '',
         status: '',
         sale_date: '',
+        condition: '',
         payment_methods: [{ method: '', amount: '', transaction_code: '' }] // Added transaction_code field
     });
     const [item, setItems] = useState([]);
@@ -203,6 +204,15 @@ const SingleShopSale = () => {
                         <option key={index} value={item}>{item}</option>
                     ))}
                 </select>
+                <div>
+                <label>Condition:</label>
+                <select name="condition" value={formData.condition} onChange={handleChange} required>
+                        <option value="">Select Condition</option>
+                        <option value="spoilt">Spoilt</option>
+                        <option value="broken">Broken</option>
+                </select>
+                </div>
+
                 {/* Date Selection */}
                 <div>
                     <label>Select date:</label>

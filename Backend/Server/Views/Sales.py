@@ -64,7 +64,7 @@ class AddSale(Resource):
 
         required_fields = [
             'shop_id', 'customer_name', 'customer_number', 'item_name', 
-            'quantity', 'metric', 'unit_price', 'payment_methods', 'status'
+            'quantity', 'metric', 'unit_price','payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
@@ -114,28 +114,7 @@ class AddSale(Resource):
         today = datetime.today().date()
         yesterday = today - timedelta(days=1)
 
-        # ✅ **Deduct from LiveStock only if the sale date is today or yesterday**
-        live_stock = None
-        if created_at.date() in [today, yesterday]:  
-            live_stock = (
-                LiveStock.query
-                .filter_by(shop_id=shop_id, item_name=item_name)
-                .order_by(LiveStock.created_at.desc())  # Get latest stock entry
-                .first()
-            )
-
-            if live_stock:
-                if live_stock.current_quantity < quantity:
-                    return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
-
-                live_stock.current_quantity -= quantity
-                remaining_stock = live_stock.current_quantity
-            else:
-                remaining_stock = None
-        else:
-            remaining_stock = None  # Don't track LiveStock updates for old sales
-
-        # ✅ **Deduct from ShopStock using FIFO logic**
+        # ✅ Deduct from ShopStock using FIFO logic
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
@@ -170,7 +149,18 @@ class AddSale(Resource):
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-        # ✅ **Save sale record**
+        # ✅ Add 'condition' to the list of accepted conditions
+        valid_conditions = ['spoilt', 'broken']
+
+        # Extract 'condition' from request data
+        condition = data.get('condition')
+
+        # Validate 'condition' if provided
+        if condition is not None:
+            if condition not in valid_conditions:
+                return {'message': f"Invalid condition. Must be one of: {', '.join(valid_conditions)}"}, 400
+
+        # ✅ Create new_sale outside the loop
         new_sale = Sales(
             user_id=current_user_id,
             shop_id=shop_id,
@@ -182,15 +172,23 @@ class AddSale(Resource):
             unit_price=unit_price,
             total_price=total_price,
             BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
-            stock_id=", ".join(stock_ids_used),  
+            stock_id=", ".join(stock_ids_used),
             balance=balance,
             status=status,
-            created_at=created_at
+            created_at=created_at,
+            condition=condition  # Include condition here
         )
 
+        # ✅ Add new_sale to session before committing
         try:
             db.session.add(new_sale)
             db.session.flush()  # Flush to get sales_id for later use
+
+
+
+        # try:
+        #     db.session.add(new_sale)
+        #     db.session.flush()  # Flush to get sales_id for later use
 
             for payment in payment_methods:
                 payment_method = payment['method']
@@ -227,8 +225,8 @@ class AddSale(Resource):
             )
             db.session.add(new_customer)
 
-            if live_stock:  # ✅ Only update LiveStock if it exists and sale is from today or yesterday
-                db.session.add(live_stock)
+            # if live_stock:  # ✅ Only update LiveStock if it exists and sale is from today or yesterday
+            #     db.session.add(live_stock)
 
             db.session.commit()
             return {
@@ -296,6 +294,7 @@ class GetSales(Resource):
                     "created_at": sale.created_at,  # Convert datetime to string
                     "balance": sale.balance,  # Include balance at the sale level
                     "note": sale.note,  # Include note field
+                    "condition": sale.condition
                 })
 
             return make_response(jsonify(sales_data), 200)
@@ -351,7 +350,8 @@ class GetSalesByShop(Resource):
                     "total_price": sale.total_price,
                     "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),  # Convert datetime to string
+                    "condition": sale.condition
                 })
 
             return {"sales": sales_data}, 200
@@ -409,7 +409,8 @@ class SalesResources(Resource):
                 "total_price": sale.total_price,
                 "total_amount_paid": total_amount_paid,  # Add total amount paid
                 "payment_methods": payment_data,
-                "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                "created_at": sale.created_at.strftime('%Y-%m-%d'),  # Convert datetime to string
+                "condition": sale.condition
             }
 
             return {"sale": sale_data}, 200
