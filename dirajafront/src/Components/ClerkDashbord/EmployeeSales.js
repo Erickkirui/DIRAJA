@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import LoadingAnimation from '../LoadingAnimation';
-const ShopSales = () => {
+
+const EmployeeSales = () => {
   const [sales, setSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
@@ -16,15 +17,16 @@ const ShopSales = () => {
     const fetchSales = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
+        const userName = localStorage.getItem('username'); // Assuming employee_id is stored in local storage
         const shopId = localStorage.getItem('shop_id');
 
-        if (!accessToken || !shopId) {
-          setError('No access token found, please log in.');
+        if (!accessToken || !userName || !shopId) {
+          setError('No access token or required IDs found, please log in.');
           setLoading(false); // Stop loading
           return;
         }
 
-        const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
+        const response = await axios.get(`/api/diraja/sales/${userName}/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -81,86 +83,80 @@ const ShopSales = () => {
   return (
     <div className="sales-container">
       {/* Show loading animation while data is being fetched */}
-      {loading ? (
-        <div className="full-screen-loader">
-          <LoadingAnimation />
-        </div>
-      ) : (
+      {loading ? <LoadingAnimation /> : null}
+
+      {/* Search and Date Filter */}
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <input
+          type="date"
+          className="date-picker"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
+
+      {currentSales.length > 0 ? (
         <>
-          {/* Search and Date Filter */}
-          <div className="filter-container">
-            <input
-              type="text"
-              placeholder="Search by item"
-              className="search-bar"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <input
-              type="date"
-              className="date-picker"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
+          <table className="sales-table">
+            <thead>
+              <tr>
+                <th>Item name</th>
+                <th>Quantity</th>
+                <th>Amount</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentSales.map((sale) => (
+                <tr key={sale.sale_id}>
+                  <td>{sale.item_name}</td>
+                  <td>{sale.quantity} {sale.metric}</td>
+                  <td>{sale.total_amount_paid} </td>
+                  <td>{new Date(sale.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination Controls */}
+          <div className="pagination">
+            {startPage > 1 && (
+              <button onClick={() => handlePageChange(startPage - 1)}>«</button>
+            )}
+            {pageNumbers.map((num) => (
+              <button
+                key={num}
+                className={`page-button ${currentPage === num ? 'active' : ''}`}
+                onClick={() => handlePageChange(num)}
+              >
+                {num}
+              </button>
+            ))}
+            {endPage < totalPages && (
+              <button onClick={() => handlePageChange(endPage + 1)}>»</button>
+            )}
           </div>
-
-          {currentSales.length > 0 ? (
-            <>
-              <table className="sales-table">
-                <thead>
-                  <tr>
-                    <th>Item name</th>
-                    <th>Quantity</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentSales.map((sale) => (
-                    <tr key={sale.sale_id}>
-                      <td>{sale.item_name}</td>
-                      <td>{sale.quantity} {sale.metric}</td>
-                      <td>{sale.total_amount_paid} </td>
-                      <td>{new Date(sale.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Pagination Controls */}
-              <div className="pagination">
-                {startPage > 1 && (
-                  <button onClick={() => handlePageChange(startPage - 1)}>«</button>
-                )}
-                {pageNumbers.map((num) => (
-                  <button
-                    key={num}
-                    className={`page-button ${currentPage === num ? 'active' : ''}`}
-                    onClick={() => handlePageChange(num)}
-                  >
-                    {num}
-                  </button>
-                ))}
-                {endPage < totalPages && (
-                  <button onClick={() => handlePageChange(endPage + 1)}>»</button>
-                )}
-              </div>
-            </>
-          ) : (
-            <p>No sales found.</p>
-          )}
-
-          <Link className="nav-clerk-button" to="/clerk">Home</Link>
         </>
+      ) : (
+        <p>No sales found.</p>
       )}
+
+      <Link className="nav-clerk-button" to="/clerk">Home</Link>
     </div>
   );
 };
 
-export default ShopSales;
+export default EmployeeSales;

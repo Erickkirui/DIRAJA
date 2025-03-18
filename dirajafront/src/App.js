@@ -53,6 +53,7 @@ import Expenses from './Components/ClerkDashbord/MabandaShop/GetMabandaExpenses'
 import GetUnpaidSalesByClerk from './Components/ClerkDashbord/Creditsales';
 import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
+import ClerkSales from './Pages/ClerkSales';
 
 
 
@@ -135,7 +136,7 @@ function App() {
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
-            <Route path='/shopsales' element={<ClerkLayout><ShopSales/></ClerkLayout>}></Route>
+            <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/relieversales' element={<ClerkLayout><AddSale /></ClerkLayout>}></Route>
