@@ -1,5 +1,5 @@
 import React from 'react'
-import Employees from '../Components/GetEmployees'
+import Employees from '../Components/Employees/GetEmployees'
 import { Link } from 'react-router-dom'
 
 function EmployeesPage() {

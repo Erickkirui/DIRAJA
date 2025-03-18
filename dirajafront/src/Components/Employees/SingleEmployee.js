@@ -1,7 +1,7 @@
 // SingleEmployee.js
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom'; // Assuming you're using React Router for navigation
-import '../Styles/singleemployee.css';
+import '../../Styles/singleemployee.css';
 
 const SingleEmployee = () => {
   const { employee_id } = useParams(); // Get the employee ID from the URL

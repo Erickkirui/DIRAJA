@@ -258,3 +258,28 @@ class CountEmployees(Resource):
     def get(self):
         countEmployees = Employees.query.count()
         return {"total employees": countEmployees}, 200 
+    
+
+
+
+class UpdateEmployeeShop(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def put(self, employee_id):
+        data = request.get_json()
+        new_shop_id = data.get('shop_id')
+        
+        if not new_shop_id:
+            return make_response(jsonify({'error': 'shop_id is required'}), 400)
+        
+        employee = Employees.query.get(employee_id)
+        if not employee:
+            return make_response(jsonify({'error': 'Employee not found'}), 404)
+        
+        employee.shop_id = new_shop_id
+        db.session.commit()
+        
+        return make_response(jsonify({'message': 'Shop ID updated successfully'}), 200)
+
+
+

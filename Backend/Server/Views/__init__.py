@@ -27,7 +27,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
-from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource
+from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource, UpdateEmployeeShop
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
 
@@ -94,6 +94,7 @@ api.add_resource(ItemDetailsResourceForShop, '/shop-itemdetails')
 api.add_resource(AddNewemployee, '/newemployee')
 api.add_resource(GetAllemployees,'/allemployees')
 api.add_resource(Employeeresource, '/employee/<int:employee_id>')
+api.add_resource(UpdateEmployeeShop, '/update-shop/<int:employee_id>')
 ## Add get employess by shop_id
 #Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
