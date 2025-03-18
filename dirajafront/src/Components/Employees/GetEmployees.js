@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
-import '../Styles/employees.css';
+import ExportExcel from '../Download/ExportExcel'
+import DownloadPDF from '../Download/DownloadPDF';
+import UpdateEmployeeShop from './UpdateEmployeeShop'; // Import the UpdateEmployeeShop component
+import '../../Styles/employees.css';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
@@ -12,6 +13,7 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
+  const [showUpdateShop, setShowUpdateShop] = useState(false); // Modal visibility state
   const itemsPerPage = 50;
 
   useEffect(() => {
@@ -24,8 +26,7 @@ const Employees = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allemployees', {
-
+        const response = await axios.get('/api/diraja/allemployees', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -58,16 +59,16 @@ const Employees = () => {
 
   const handleAction = async () => {
     const accessToken = localStorage.getItem('access_token');
-  
+
     if (selectedAction === 'delete') {
       const confirmDelete = window.confirm(
         "Are you sure you want to delete the selected employees? This action cannot be undone."
       );
-  
+
       if (!confirmDelete) {
         return; // Exit if the user cancels
       }
-  
+
       try {
         await Promise.all(
           selectedEmployees.map((employeeId) =>
@@ -85,11 +86,11 @@ const Employees = () => {
         setSelectedAction('');
       } catch (error) {
         console.error("Error deleting employees:", error);
-        // Handle error appropriately
       }
+    } else if (selectedAction === 'change-shop') {
+      setShowUpdateShop(true); // Show the UpdateEmployeeShop component as a popup
     }
   };
-  
 
   const filteredEmployees = employees.filter((employee) => {
     const matchesSearchTerm =
@@ -122,8 +123,6 @@ const Employees = () => {
 
   return (
     <div className="employees-container">
-      
-
       <input
         type="text"
         placeholder="Search by name, email, or role"
@@ -139,20 +138,20 @@ const Employees = () => {
         onChange={(e) => setSelectedDate(e.target.value)}
         className="date-picker"
       />
-      <div className='actions-container' >
-      <div className="actions">
-        <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
-          <option value="">With selected, choose an action</option>
-          <option value="delete">Delete</option>
-        </select>
-        <button onClick={handleAction} className="action-button">Apply</button>
-      </div>
-       {/* Export to Excel and PDF */}
-       
+
+      <div className="actions-container">
+        <div className="actions">
+          <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <option value="">With selected, choose an action</option>
+            <option value="delete">Delete</option>
+            <option value="change-shop">Change Shop</option>
+          </select>
+          <button onClick={handleAction} className="action-button">Apply</button>
+        </div>
+
+        {/* Export to Excel and PDF */}
         <ExportExcel data={employees} fileName="EmployeesData" />
         <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
-      
-
       </div>
 
       <table id="employees-table" className="employees-table">
@@ -203,7 +202,6 @@ const Employees = () => {
         </tbody>
       </table>
 
-     
       {/* Pagination */}
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredEmployees.length / itemsPerPage) }, (_, index) => (
@@ -216,6 +214,24 @@ const Employees = () => {
           </button>
         ))}
       </div>
+
+      {/* Show the UpdateEmployeeShop component as a popup */}
+      {showUpdateShop && (
+        <div className="modal-overlay" onClick={() => setShowUpdateShop(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <UpdateEmployeeShop
+              selectedEmployees={selectedEmployees}
+              onUpdate={() => {
+                setShowUpdateShop(false); // Close the modal after update
+              }}
+            />
+            {/* Cancel Button */}
+            <button className="cancel-button" onClick={() => setShowUpdateShop(false)}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
