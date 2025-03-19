@@ -112,7 +112,7 @@ class Report(Resource):
                     <div style="border: 1px solid #ddd; padding: 10px; width: 100%; box-sizing: border-box; text-align: left; background-color: #f9f9f9; border-radius: 8px; margin-bottom: 10px;">
                         <h3 style="margin-top: 0;">{shop.shopname}</h3>
                         <p><strong>Sales:</strong> <br>{formatted_shop_sales}</p>
-                        <p><strong>Expense:</strong> <br> s{formatted_shop_expenses}</p>
+                        <p><strong>Expense:</strong> <br> {formatted_shop_expenses}</p>
                     </div>
                     """
                 )
