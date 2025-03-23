@@ -7,6 +7,7 @@ from flask_jwt_extended import create_access_token, create_refresh_token
 from flask import jsonify,request,make_response
 from functools import wraps
 from flask_jwt_extended import jwt_required,get_jwt_identity
+import re
 
 
 def check_role(required_role):
@@ -121,8 +122,11 @@ class UsersResourceById(Resource):
             return {"message": f"User with id {users_id} deleted successfully"}, 200
         else:
             return {"error": "User not found"}, 404
+        
+
 
     @jwt_required()
+    @check_role('manager')
     def put(self, users_id):
         user = Users.query.get(users_id)
 
@@ -137,17 +141,27 @@ class UsersResourceById(Resource):
         password = data.get("password")
         role = data.get("role")
 
+        # Validate password (if provided)
+        if password:
+            # Check password length and if it contains at least one capital letter
+            if len(password) < 8 or not re.search(r'[A-Z]', password):
+                return {
+                    "error": "Password must be at least 8 characters long. Password must contain at least one capital letter."
+                }, 400
+            user.password = password  # Only update password if it meets the requirements
+
         if username:
             user.username = username
         if email:
             user.email = email
-        if password:
-            user.password = password
         if role:
             user.role = role
 
         # Save changes to the database
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            return {"error": f"Failed to update user: {str(e)}"}, 500
 
         return {
             "message": f"User with id {users_id} updated successfully",
@@ -158,7 +172,6 @@ class UsersResourceById(Resource):
                 "role": user.role
             }
         }, 200
-
    
 class GetAllUsers(Resource):
 
