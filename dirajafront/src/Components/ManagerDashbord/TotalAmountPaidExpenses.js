@@ -4,14 +4,14 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import LoadingAnimation from '../LoadingAnimation';
+import DateRangePicker from '../DateRangePicker'; // Import the DateRangePicker component
 
 const TotalAmountPaidExpenses = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('yesterday');
   const [isLoading, setIsLoading] = useState(true);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [customDateRange, setCustomDateRange] = useState({ startDate: '', endDate: '' }); // Custom date range state
 
   const fetchTotalAmountPaid = async () => {
     setIsLoading(true);
@@ -19,8 +19,12 @@ const TotalAmountPaidExpenses = () => {
       let url = `/api/diraja/totalexpenses?period=${period}`;
 
       // Use custom dates only if both are provided
-      if (period === 'custom' && startDate && endDate) {
-        url = `/api/diraja/totalexpenses?start_date=${startDate}&end_date=${endDate}`;
+      if (period === 'custom' && customDateRange.startDate && customDateRange.endDate) {
+        // Format the start and end dates in YYYY-MM-DD format
+        const formattedStartDate = new Date(customDateRange.startDate).toISOString().split('T')[0];
+        const formattedEndDate = new Date(customDateRange.endDate).toISOString().split('T')[0];
+
+        url = `/api/diraja/totalexpenses?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
       }
 
       const response = await axios.get(url, {
@@ -35,36 +39,48 @@ const TotalAmountPaidExpenses = () => {
         setError('');
       }, 1000);
     } catch (error) {
-      // console.error('Error fetching total amount paid:', error);
-      // setError('Error fetching total amount paid');
-      setTotalAmountPaid(null);
       setIsLoading(false);
+      setError('Error fetching total amount paid');
     }
   };
 
   useEffect(() => {
-    fetchTotalAmountPaid();
-  }, [period, startDate, endDate]);
+    // Don't fetch data if custom range is not valid
+    if (period !== 'custom' || (customDateRange.startDate && customDateRange.endDate)) {
+      fetchTotalAmountPaid();
+    }
+  }, [period, customDateRange]); // Depend on period and custom date range
+
+  const handlePeriodChange = (e) => {
+    setPeriod(e.target.value);
+    // Reset custom date range when switching to other periods
+    if (e.target.value !== 'custom') {
+      setCustomDateRange({ startDate: '', endDate: '' });
+    }
+  };
 
   return (
-    <div className='metrix-container'>
-      <div className='metric-top'>
+    <div className="metrix-container">
+      <div className="metric-top">
         <FontAwesomeIcon className="metric-icon" icon={faChartSimple} size="1x" />
-        <select id="period" value={period} onChange={(e) => setPeriod(e.target.value)}>
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="custom">Custom Range</option>
-        </select>
-      </div>
+        <div className="controls">
+          <select value={period} onChange={handlePeriodChange}>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="alltime">All Time</option>
+            <option value="custom">Custom Range</option> {/* Option for custom date range */}
+          </select>
 
-      {period === 'custom' && (
-        <div className="date-range">
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+          {period === 'custom' && (
+            <DateRangePicker
+              dateRange={customDateRange}
+              setDateRange={setCustomDateRange} // Pass down the setDateRange function
+            />
+          )}
         </div>
-      )}
+      </div>
 
       <h5>Total Expenses</h5>
 
@@ -73,9 +89,10 @@ const TotalAmountPaidExpenses = () => {
       ) : error ? (
         <p>{error}</p>
       ) : (
-        <h1>{totalAmountPaid}</h1>
+        // Show previous total if custom date is selected, and no valid date is selected yet
+        <h1>{totalAmountPaid !== null ? totalAmountPaid : 'Ksh 0.00'}</h1>
       )}
-      
+
       <Link to="/allexpenses">View Expenses</Link>
     </div>
   );
