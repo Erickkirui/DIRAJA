@@ -162,8 +162,9 @@
   .editeInventory{
     background-color: #ffffff;
     border: 1px solid #ccc;
-    border-radius: 1px;
+    border-radius: 3px;
     padding: 5px;
+    margin-right: 10px;
   }
   .editeInventory:hover{
     background-color: var(--primary);

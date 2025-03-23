@@ -4,17 +4,31 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartSimple } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import LoadingAnimation from '../LoadingAnimation';
+import DateRangePicker from '../DateRangePicker';
 
 const TotalAmountPaidPurchases = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('yesterday');
+  const [customDateRange, setCustomDateRange] = useState({ startDate: null, endDate: null }); // Custom date range state
 
-  const fetchTotalAmountPaid = async (selectedPeriod) => {
+  const fetchTotalAmountPaid = async (selectedPeriod, dateRange) => {
     setLoading(true);
     try {
-      const response = await axios.get(`/api/diraja/totalpurchases?period=${selectedPeriod}`, {
+      let url = `/api/diraja/totalpurchases`;
+      
+      // Prepare the parameters for the API request
+      const params =
+        selectedPeriod === 'custom' && dateRange.startDate && dateRange.endDate
+          ? {
+              startDate: new Date(dateRange.startDate).toISOString().split('T')[0], // Format startDate
+              endDate: new Date(dateRange.endDate).toISOString().split('T')[0], // Format endDate
+            }
+          : { period: selectedPeriod };
+
+      const response = await axios.get(url, {
+        params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
@@ -35,25 +49,37 @@ const TotalAmountPaidPurchases = () => {
   };
 
   useEffect(() => {
-    fetchTotalAmountPaid(period);
-  }, [period]);
+    fetchTotalAmountPaid(period, customDateRange);
+  }, [period, customDateRange]);
 
   const handlePeriodChange = (e) => {
     setPeriod(e.target.value);
+    // Clear custom date range when switching between periods
+    if (e.target.value !== 'custom') {
+      setCustomDateRange({ startDate: null, endDate: null });
+    }
   };
 
   return (
     <div className="metrix-container">
       <div className="metric-top">
         <FontAwesomeIcon className="metric-icon" icon={faChartSimple} size="1x" />
+        <div className="controls">
+          <select id="period" value={period} onChange={handlePeriodChange}>
+            <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="alltime">All Time</option>
+            <option value="custom">Custom Date</option> {/* New option for custom date range */}
+          </select>
 
-        <select id="period" value={period} onChange={handlePeriodChange}>
-          <option value="today">Today</option>
-          <option value="yesterday">Yesterday</option>
-          <option value="week">This Week</option>
-          <option value="month">This Month</option>
-          <option value="alltime">All Time</option> {/* New Option */}
-        </select>
+          {period === 'custom' && (
+            <DateRangePicker dateRange={customDateRange} setDateRange={setCustomDateRange} /> // Custom date range picker
+          )}
+
+        </div>
+        
       </div>
       <h5>Total Purchases</h5>
 

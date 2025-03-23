@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Stack, Alert } from '@mui/material'; // Import the necessary components
+import { faPen, faTrash, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -7,6 +10,7 @@ const UsersTable = () => {
   const [isEditing, setIsEditing] = useState(null); // Holds the ID of the user being edited
   const [newPassword, setNewPassword] = useState(''); // Holds the new password input
   const [message, setMessage] = useState(''); // State for success/error message
+  const [messageType, setMessageType] = useState('success'); // Type for the message (success or error)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -39,6 +43,14 @@ const UsersTable = () => {
   };
 
   const handleSaveClick = async (userId) => {
+    // Check if password meets the requirements
+    const passwordRegex = /[A-Z]/; // Check if password contains at least one capital letter
+    if (newPassword.length < 8 || !passwordRegex.test(newPassword)) {
+      setMessageType('error');
+      setMessage('Password must be at least 8 characters long and contain at least one capital letter.');
+      return; // Prevent saving if password doesn't meet requirements
+    }
+
     try {
       const response = await fetch(`/api/diraja/user/${userId}`, {
         method: 'PUT',
@@ -49,7 +61,10 @@ const UsersTable = () => {
         body: JSON.stringify({ password: newPassword }),
       });
 
-      if (!response.ok) throw new Error('Failed to update password');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to update password');
+      }
 
       // Update the users state
       setUsers((prevUsers) =>
@@ -60,9 +75,11 @@ const UsersTable = () => {
 
       // Exit edit mode and show success message
       setIsEditing(null);
+      setMessageType('success');
       setMessage('Password updated successfully.');
     } catch (err) {
-      setMessage('Failed to update password. Please try again.');
+      setMessageType('error');
+      setMessage(err.message);
     }
   };
 
@@ -79,15 +96,20 @@ const UsersTable = () => {
         },
       });
 
-      if (!response.ok) throw new Error('Failed to delete user');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete user');
+      }
 
       // Remove the deleted user from the state
       setUsers((prevUsers) => prevUsers.filter((user) => user.user_id !== userId));
 
       // Show success message
+      setMessageType('success');
       setMessage('User deleted successfully.');
     } catch (err) {
-      setMessage('Failed to delete user. Please try again.');
+      setMessageType('error');
+      setMessage(err.message);
     }
   };
 
@@ -96,11 +118,17 @@ const UsersTable = () => {
 
   return (
     <div className="single-sale-container">
-      {message && <div className="success">{message}</div>} {/* Display the message */}
+      {message && (
+        <Stack>
+          <Alert severity={messageType} variant="outlined">
+            {message}
+          </Alert>
+        </Stack>
+      )}
 
       <div className="sale-details">
         <h1>All Users</h1>
-        <table className="sale-details-table">
+        <table className="employees-table">
           <thead>
             <tr>
               <th>User ID</th>
@@ -132,16 +160,26 @@ const UsersTable = () => {
                 <td>
                   {isEditing === user.user_id ? (
                     <>
-                      <button onClick={() => handleSaveClick(user.user_id)}>Save</button>
-                      <button onClick={() => setIsEditing(null)}>Cancel</button>
+                      <button className="editeInventory" onClick={() => handleSaveClick(user.user_id)}>
+                        <FontAwesomeIcon icon={faSave} /> Save
+                      </button>
+                      <button  className="editeInventory" onClick={() => setIsEditing(null)}>
+                        <FontAwesomeIcon icon={faTimes} /> Cancel
+                      </button>
                     </>
                   ) : (
                     <>
-                      <button onClick={() => handleEditClick(user.user_id)}>Edit</button>
-                      <button onClick={() => handleDeleteClick(user.user_id)}>Delete</button>
+                      <button  className="editeInventory" onClick={() => handleEditClick(user.user_id)}>
+                        <FontAwesomeIcon icon={faPen} /> Edit
+                      </button>
+                      
+                      <button className="editeInventory" onClick={() => handleDeleteClick(user.user_id)}>
+                        <FontAwesomeIcon icon={faTrash} /> Delete
+                      </button>
                     </>
                   )}
                 </td>
+
               </tr>
             ))}
           </tbody>

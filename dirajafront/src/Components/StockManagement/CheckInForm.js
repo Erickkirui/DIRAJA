@@ -91,7 +91,7 @@ const CheckInForm = ({ stockData, onSubmit, onClose }) => {
           type="number"
           value={checkInQuantity}
           onChange={handleQuantityChange}
-          min="1"
+        
           placeholder="Check-in Quantity:"
         />
 

@@ -21,13 +21,13 @@ from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, Ad
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers,AutoCheckoutStock
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock,GetInventoryByBatch
 from Server.Views.Bankviews import AddBank, BankResourceById
 from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
 from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
-from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource, UpdateEmployeeShop
+from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource, UpdateEmployeeShop,GetEmployeeLeaderboard
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
 
@@ -98,6 +98,8 @@ api.add_resource(UpdateEmployeeShop, '/update-shop/<int:employee_id>')
 ## Add get employess by shop_id
 #Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
+api.add_resource(GetEmployeeLeaderboard, '/leaderboard/employee')
+
 
 
 # inventory endpoints 
@@ -176,6 +178,8 @@ api.add_resource(CheckoutStock, "/checkout")
 api.add_resource(GetAllLiveStock , "/all-shop-stocks")
 api.add_resource(TransferStock , "/transfer-shop-stock")
 api.add_resource(GetShopTransfers, '/allshoptransfers' )
+api.add_resource(AutoCheckoutStock, "/auto-checkout")
+
     
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')

@@ -7,7 +7,7 @@
 .navigation {
   width: 15%;
   padding: 20px;
-  height: 100vh;
+  min-height: 100vh;
   border-right: 1px solid #ccc;
   position: sticky;
   top: 0; /* Keeps it at the top while scrolling */
@@ -149,7 +149,7 @@
 
 .select-period-btn {
   display: flex;
-  align-items: center;
+  align-items: left;
   gap: 10px;
   color: var(--primary);
   border: 1px solid var(--primary);
@@ -178,6 +178,14 @@
   border-radius: 5px;
   padding: 10px;
   z-index: 100;
+}
+
+/* Adjust the position for mobile devices */
+@media (max-width: 768px) {
+  .date-picker-container {
+    left: auto;
+    right: 0; /* Align to the right on mobile */
+  }
 }
 
 

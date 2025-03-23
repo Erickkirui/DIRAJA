@@ -9,8 +9,8 @@ from flask import jsonify,request,make_response
 from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
-
-
+from app import db, mail
+from flask_mail import Message
 
 
 def check_role(required_role):
@@ -24,6 +24,18 @@ def check_role(required_role):
             return fn(*args, **kwargs)
         return decorator
     return wrapper
+
+
+# Email sending function
+def send_email(subject, body, recipients):
+    try:
+        msg = Message(subject, sender=mail.default_sender, recipients=recipients)
+        msg.html = body  # Set the body as HTML
+        mail.send(msg)
+        print(f"Email sent successfully to {', '.join(recipients)}")  # Debugging
+    except Exception as e:
+        print(f"Failed to send email: {e}")  # Debugging
+
 
 
 class GetAllLiveStock(Resource):
@@ -344,7 +356,60 @@ class CheckoutStock(Resource):
             db.session.rollback()
             return {"error": str(e)}, 500
 
+class AutoCheckoutStock(Resource):
+    @jwt_required()
+    def post(self):
+        today = datetime.utcnow().date()
 
+        # Fetch all active shops
+        active_shops = Shops.query.filter_by(shopstatus="active").all()
+
+        if not active_shops:
+            return {"message": "No active shops found."}, 400
+
+        updated_shops = []
+
+        try:
+            for shop in active_shops:
+                today_stocks = (
+                    LiveStock.query.filter_by(shop_id=shop.shops_id)
+                    .filter(LiveStock.created_at >= today)
+                    .filter(LiveStock.clock_out_quantity.is_(None))  # Unchecked stocks
+                    .all()
+                )
+
+                if today_stocks:
+                    for stock in today_stocks:
+                        stock.clock_out_quantity = stock.current_quantity
+
+                    # Mark shop as "inactive"
+                    shop.shopstatus = "inactive"
+                    updated_shops.append(shop.shopname)  # Store shop names
+
+            # Commit database changes
+            db.session.commit()
+
+            # Send an email notification if any shops were closed
+            if updated_shops:
+                subject = "Shop Auto-Checkout Completed"
+                body = f"""
+                <h3>The following shops have been automatically checked out and closed:</h3>
+                <ul>
+                {''.join(f"<li>{shop}</li>" for shop in updated_shops)}
+                </ul>
+                <p>Please review the stock adjustments.</p>
+                """
+                recipients = ["kibealex555@gmail.com", "erickkirui632@gmail.com"]  # Update with real recipients
+                send_email(subject, body, recipients)
+
+            return {
+                "message": "Stock checkout enforced, and shops closed where necessary.",
+                "shops_closed": updated_shops,
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
 
 class DeleteStock(Resource):
     @jwt_required()

@@ -102,7 +102,6 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
             placeholder="Transfer Qunatity"
             value={transferQuantity}
             onChange={(e) => setTransferQuantity(e.target.value)}
-            min="1"
             required
           />
        

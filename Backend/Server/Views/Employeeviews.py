@@ -1,11 +1,15 @@
 from flask_restful import Resource
 from Server.Models.Employees import Employees
 from Server.Models.Users import Users
+from Server.Models.Sales import Sales
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 from datetime import datetime
 from functools import wraps
+from datetime import datetime, timedelta
+from sqlalchemy import func
+
 
 
 
@@ -283,3 +287,38 @@ class UpdateEmployeeShop(Resource):
 
 
 
+class GetEmployeeLeaderboard(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Query the sales data and aggregate by user_id (employee)
+            sales = db.session.query(
+                Sales.user_id,
+                db.func.count(Sales.sales_id).label('total_sales'),  # Count the number of sales for each employee
+                db.func.sum(Sales.total_price).label('total_amount')  # Sum the total amount for each employee
+            ).group_by(Sales.user_id) \
+             .order_by(db.func.sum(Sales.total_price).desc())  # Order by total amount in descending order
+             
+            # If no sales found
+            if not sales:
+                return {"message": "No sales found"}, 404
+
+            leaderboard = []
+
+            # Fetch employee details for each user_id (employee)
+            for sale in sales:
+                user = Users.query.filter_by(users_id=sale.user_id).first()
+
+                # Handle case where employee may not be found
+                employee_name = user.username if user else "Unknown Employee"
+
+                leaderboard.append({
+                    "employee_name": employee_name,
+                    "total_sales": sale.total_sales,
+                    "total_amount": sale.total_amount
+                })
+
+            return make_response(jsonify(leaderboard), 200)
+
+        except Exception as e:
+            return {"error": str(e)}, 500
