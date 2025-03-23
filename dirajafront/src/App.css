@@ -7,7 +7,7 @@
 .navigation {
   width: 15%;
   padding: 20px;
-  height: 100vh;
+  min-height: 100vh;
   border-right: 1px solid #ccc;
   position: sticky;
   top: 0; /* Keeps it at the top while scrolling */

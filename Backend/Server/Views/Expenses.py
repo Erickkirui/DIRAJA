@@ -66,47 +66,51 @@ class AddExpense(Resource):
 
 
 class AllExpenses(Resource):
-    
+
     @jwt_required()
     @check_role('manager')
     def get(self):
         expenses = Expenses.query.all()
-
         all_expenses = []
-        
+
         for expense in expenses:
-            # Fetch username and shop name manually using user_id and shop_id
             user = Users.query.filter_by(users_id=expense.user_id).first()
             shop = Shops.query.filter_by(shops_id=expense.shop_id).first()
 
-            # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            # Calculate the balance dynamically
-            balance = max(expense.totalPrice - expense.amountPaid, 0)  # Ensure no negative balances
+            balance = max(expense.totalPrice - expense.amountPaid, 0)
 
-            # Append the data
+            # Ensure created_at is correctly formatted
+            created_at = None
+            if expense.created_at:
+                if isinstance(expense.created_at, str):
+                    try:
+                        created_at = datetime.strptime(expense.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        created_at = expense.created_at  # Keep it as it is if parsing fails
+                elif isinstance(expense.created_at, datetime):
+                    created_at = expense.created_at.strftime('%Y-%m-%d %H:%M:%S')
+
             all_expenses.append({
                 "expense_id": expense.expense_id,
                 "user_id": expense.user_id,
-                "username": username,  # Manually fetched username
+                "username": username,
                 "shop_id": expense.shop_id,
-                "shop_name": shopname,  # Manually fetched shop name
+                "shop_name": shopname,
                 "item": expense.item,
                 "description": expense.description,
                 "quantity": expense.quantity,
                 "category": expense.category,
                 "totalPrice": expense.totalPrice,
                 "amountPaid": expense.amountPaid,
-                "balance": balance,  # Dynamically calculated balance
+                "balance": balance,
                 "paidTo": expense.paidTo,
-                "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
+                "created_at": created_at
             })
 
         return make_response(jsonify(all_expenses), 200)
-
-    
 
 class GetShopExpenses(Resource):
     

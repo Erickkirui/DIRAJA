@@ -21,7 +21,7 @@ from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, Ad
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers
+from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers,AutoCheckoutStock
 
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock,GetInventoryByBatch
 from Server.Views.Bankviews import AddBank, BankResourceById
@@ -178,6 +178,8 @@ api.add_resource(CheckoutStock, "/checkout")
 api.add_resource(GetAllLiveStock , "/all-shop-stocks")
 api.add_resource(TransferStock , "/transfer-shop-stock")
 api.add_resource(GetShopTransfers, '/allshoptransfers' )
+api.add_resource(AutoCheckoutStock, "/auto-checkout")
+
     
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
