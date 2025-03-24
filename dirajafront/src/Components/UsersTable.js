@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Stack, Alert } from '@mui/material'; // Import the necessary components
+import { Stack, Alert } from '@mui/material';
 import { faPen, faTrash, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isEditing, setIsEditing] = useState(null); // Holds the ID of the user being edited
-  const [newPassword, setNewPassword] = useState(''); // Holds the new password input
-  const [message, setMessage] = useState(''); // State for success/error message
-  const [messageType, setMessageType] = useState('success'); // Type for the message (success or error)
+  const [isEditing, setIsEditing] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -38,17 +38,18 @@ const UsersTable = () => {
   }, []);
 
   const handleEditClick = (userId) => {
-    setIsEditing(userId); // Set the user ID being edited
-    setNewPassword(''); // Reset the password input
+    setIsEditing(userId);
+    setNewPassword('');
   };
 
   const handleSaveClick = async (userId) => {
-    // Check if password meets the requirements
-    const passwordRegex = /[A-Z]/; // Check if password contains at least one capital letter
-    if (newPassword.length < 8 || !passwordRegex.test(newPassword)) {
+    const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
       setMessageType('error');
-      setMessage('Password must be at least 8 characters long and contain at least one capital letter.');
-      return; // Prevent saving if password doesn't meet requirements
+      setMessage(
+        'Password must be at least 8 characters long, contain one uppercase letter, one digit, and one special character.'
+      );
+      return;
     }
 
     try {
@@ -66,14 +67,12 @@ const UsersTable = () => {
         throw new Error(errorData.message || 'Failed to update password');
       }
 
-      // Update the users state
       setUsers((prevUsers) =>
         prevUsers.map((user) =>
           user.user_id === userId ? { ...user, password: newPassword } : user
         )
       );
 
-      // Exit edit mode and show success message
       setIsEditing(null);
       setMessageType('success');
       setMessage('Password updated successfully.');
@@ -101,10 +100,8 @@ const UsersTable = () => {
         throw new Error(errorData.message || 'Failed to delete user');
       }
 
-      // Remove the deleted user from the state
       setUsers((prevUsers) => prevUsers.filter((user) => user.user_id !== userId));
 
-      // Show success message
       setMessageType('success');
       setMessage('User deleted successfully.');
     } catch (err) {
@@ -147,11 +144,16 @@ const UsersTable = () => {
                 <td>{user.email}</td>
                 <td>
                   {isEditing === user.user_id ? (
-                    <input
-                      value={newPassword} // Shows the typed password
-                      onChange={(e) => setNewPassword(e.target.value)} // Updates state as the user types
-                      placeholder="Enter new password"
-                    />
+                    <div>
+                      <input
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                      />
+                      <small style={{ color: 'gray' }}>
+                        Password must have at least 8 characters, one uppercase letter, one digit, and one special character.
+                      </small>
+                    </div>
                   ) : (
                     '********'
                   )}
@@ -163,23 +165,21 @@ const UsersTable = () => {
                       <button className="editeInventory" onClick={() => handleSaveClick(user.user_id)}>
                         <FontAwesomeIcon icon={faSave} /> Save
                       </button>
-                      <button  className="editeInventory" onClick={() => setIsEditing(null)}>
+                      <button className="editeInventory" onClick={() => setIsEditing(null)}>
                         <FontAwesomeIcon icon={faTimes} /> Cancel
                       </button>
                     </>
                   ) : (
                     <>
-                      <button  className="editeInventory" onClick={() => handleEditClick(user.user_id)}>
+                      <button className="editeInventory" onClick={() => handleEditClick(user.user_id)}>
                         <FontAwesomeIcon icon={faPen} /> Edit
                       </button>
-                      
                       <button className="editeInventory" onClick={() => handleDeleteClick(user.user_id)}>
                         <FontAwesomeIcon icon={faTrash} /> Delete
                       </button>
                     </>
                   )}
                 </td>
-
               </tr>
             ))}
           </tbody>
