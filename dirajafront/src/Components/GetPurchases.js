@@ -57,19 +57,22 @@ const Purchases = () => {
   const closeUpdateForm = () => {
     setSelectedTransferId(null);
   };
-
+  
   const filteredPurchases = purchases.filter((purchase) => {
     const matchesSearch =
       purchase.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      purchase.username.toLowerCase().includes(searchQuery.toLowerCase());
-
+      purchase.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()); // Fixed
+  
     const matchesDate = selectedDate
-      ? new Date(purchase.created_at).toLocaleDateString() === new Date(selectedDate).toLocaleDateString()
+      ? new Date(purchase.created_at).toLocaleDateString() ===
+        new Date(selectedDate).toLocaleDateString()
       : true;
-
+  
     return matchesSearch && matchesDate;
   });
+  
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -142,7 +145,7 @@ const Purchases = () => {
                       <span className="employee-name">{getFirstName(purchase.username)}</span>
                     </div>
                   </td>
-                  <td>{purchase.username}</td>
+                  
                   <td>{purchase.shop_name}</td>
                   <td>{purchase.itemname}</td>
                   <td>{purchase.batchnumber}</td>
