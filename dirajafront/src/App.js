@@ -10,7 +10,7 @@ import AddExpensePage from './Pages/AddExpensePage';
 import AddEmployeePage from './Pages/AddEmployeePage';
 import EmployeesPage from './Pages/EmployeesPage';
 import InventoryPage from './Pages/InventoryPage';
-import AddInventory from './Components/AddInventory';
+import AddInventory from './Components/Inventory/AddInventory';
 import AddSale from './Components/AddSale';
 import BalanceSheet from './Components/Balancesheet';
 import ProfitAndLoss from './Components/ProfitAndLoss';
@@ -150,9 +150,7 @@ function App() {
             <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>} ></Route>
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
-
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
-
             <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>
             <Route path='/mabandapurchase' element={<ClerkLayout><AddMPurchase /></ClerkLayout>} ></Route>
@@ -167,9 +165,6 @@ function App() {
             <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
-
-
-
           </Routes> 
        
       </Router>

@@ -1,5 +1,5 @@
 import React from 'react'
-import Inventory from '../Components/GetInventory'
+import Inventory from '../Components/Inventory/GetInventory'
 import { Link } from 'react-router-dom';
 
 

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel';
-import DownloadPDF from '../Components/Download/DownloadPDF';
-import DistributeInventoryModal from '../Components/DistributeInventoryModal';
-import UpdateInventory from './updateInventory';
-import '../Styles/inventory.css';
+import ExportExcel from '../Download/ExportExcel';
+import DownloadPDF from '../Download/DownloadPDF';
+import DistributeInventoryModal from './DistributeInventoryModal';
+import UpdateInventory from '../updateInventory';
+import '../../Styles/inventory.css';
 
 const Inventory = () => {
   const [inventory, setInventory] = useState([]);
