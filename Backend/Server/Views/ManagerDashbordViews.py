@@ -281,13 +281,13 @@ class TotalAmountPaidPurchases(Resource):
 
         try:
             # Build query to sum the `amountPaid`
-            query = db.session.query(db.func.sum(Transfer.amountPaid))
+            query = db.session.query(db.func.sum(Inventory.amountPaid))
 
             # Apply date filtering only if start_date and end_date are defined
             if start_date and end_date:
-                query = query.filter(Transfer.created_at.between(start_date, end_date))
+                query = query.filter(Inventory.created_at.between(start_date, end_date))
             elif start_date:
-                query = query.filter(Transfer.created_at >= start_date)
+                query = query.filter(Inventory.created_at >= start_date)
 
             total_amount = query.scalar() or 0
 
@@ -303,10 +303,6 @@ class TotalAmountPaidPurchases(Resource):
                 "details": str(e)
             }, 500
 
-
-
-
-    
 
 
 class CountShops(Resource):

@@ -108,6 +108,7 @@ class DistributeInventory(Resource):
         # Calculate total cost and get the unit price from inventory
         total_cost = unitCost * quantity
         unitPrice = inventory_item.unitPrice  # Use the inventory's unit price
+        amountPaid = total_cost
 
         # Create new transfer record
         new_transfer = Transfer(
