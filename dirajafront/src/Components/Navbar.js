@@ -27,6 +27,10 @@ function Navbar() {
             <img src='/images/Expenses.png' alt='menu-icon' />
             <li>Expenses</li>
           </NavLink>
+          <NavLink to="/mabandapage" className="menu-item" activeClassName="active">
+            <img src='/images/Expenses.png' alt='menu-icon' />
+            <li>Mabanda farm</li>
+          </NavLink>
           <NavLink to="/allshops" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />
             <li>Shops</li>
