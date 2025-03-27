@@ -51,7 +51,7 @@ const SalesLeaderboard = () => {
                   <td>{index + 1}</td> {/* Display the row number */}
                   <td>{item.employee_name}</td>
                   <td>{item.total_sales}</td>
-                  <td>{item.total_amount.toFixed(2)} ksh</td>
+                  <td>{item.total_amount} ksh</td>
                 </tr>
               ))
             ) : (
