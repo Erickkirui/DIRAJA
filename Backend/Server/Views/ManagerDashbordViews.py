@@ -689,51 +689,54 @@ class TotalUnpaidAmountPerClerk(Resource):
 class TotalAmountPaidForMabanda(Resource):
     @jwt_required()
     def get(self):
-        today = datetime.utcnow()
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
         start_date = None
         end_date = None
 
-        # Check if a custom date is provided via the "date" parameter.
-        date_str = request.args.get('date')
-        if date_str:
+        # Fetch start_date and end_date from query params
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+       
+        if start_date_str and end_date_str:
             try:
-                start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
             except ValueError:
-                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+                return {"message": "Invalid date format. Use YYYY-MM-DD for start_date and end_date."}, 400
         else:
-            # No custom date provided; use the period parameter (default to 'today').
+            # No custom start and end date provided; check period parameter
             period = request.args.get('period', 'today')
 
             if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
+                start_date = today
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
             elif period == 'yesterday':
-                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                start_date = today - timedelta(days=1)
                 end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             elif period == 'week':
-                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
+                start_date = today - timedelta(days=7)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
             elif period == 'month':
-                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
+                start_date = today - timedelta(days=30)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
             else:
-                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or a custom date."}, 400
+                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month' or specify start_date and end_date."}, 400
 
         try:
-            # Query to sum `amount_paid` for shop_id = 12 using MabandaSale model
             total_sales = (
                 db.session.query(db.func.sum(MabandaSale.amount_paid))
                 .filter(MabandaSale.shop_id == 12)
-                .filter(MabandaSale.sale_date.between(start_date, end_date))
-                .scalar() or 0  # Default to 0 if no result
+                .filter(MabandaSale.sale_date >= start_date, MabandaSale.sale_date <= end_date)
+                .scalar() or 0  # Default to 0 if no sales found
             )
 
             formatted_sales = "Ksh {:,.2f}".format(total_sales)
 
             return {
                 "shop_id": 12,
-                "total_sales_amount_paid": formatted_sales
+                "total_sales_amount_paid": formatted_sales,
+                "start_date": start_date.strftime('%Y-%m-%d'),
+                "end_date": end_date.strftime('%Y-%m-%d')
             }, 200
 
         except SQLAlchemyError as e:
