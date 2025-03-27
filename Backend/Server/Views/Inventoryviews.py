@@ -83,11 +83,11 @@ class DistributeInventory(Resource):
         current_user_id = get_jwt_identity()
 
         # Validate required fields
-        required_fields = ['shop_id', 'inventory_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber']
+        required_fields = ['shop_id', 'inventory_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber', 'created_at']
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
 
-        # Extract data
+        # Extract and parse date
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
@@ -96,8 +96,12 @@ class DistributeInventory(Resource):
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
+        try:
+            distribution_date = datetime.fromisoformat(data['created_at'])  # ✅ Convert from ISO format
+        except ValueError:
+            return jsonify({'message': 'Invalid date format'}), 400
 
-        # Fetch inventory item to check quantity and get unitPrice
+        # Fetch inventory item
         inventory_item = Inventory.query.get(inventory_id)
         if not inventory_item:
             return jsonify({'message': 'Inventory item not found'}), 404
@@ -105,50 +109,47 @@ class DistributeInventory(Resource):
         if inventory_item.quantity < quantity:
             return jsonify({'message': 'Insufficient inventory quantity'}), 400
 
-        # Calculate total cost and get the unit price from inventory
-        total_cost = unitCost * quantity
-        unitPrice = inventory_item.unitPrice  # Use the inventory's unit price
-        amountPaid = total_cost
-
-        # Create new transfer record
+        # Create transfer record
         new_transfer = Transfer(
             shop_id=shop_id,
             inventory_id=inventory_id,
             quantity=quantity,
             metric=metric,
-            total_cost=total_cost,
+            total_cost=unitCost * quantity,
             BatchNumber=BatchNumber,
             user_id=current_user_id,
             itemname=itemname,
             amountPaid=amountPaid,
-            unitCost=unitCost
+            unitCost=unitCost,
+            created_at=distribution_date  # ✅ Use the provided date
         )
 
-        # Update the inventory quantity
+        # Update inventory quantity
         inventory_item.quantity -= quantity
 
-        # Save the transfer record first
+        # Save transfer record
         try:
             db.session.add(new_transfer)
-            db.session.commit()  # Commit to get the transfer_id
+            db.session.commit()
         except Exception as e:
             db.session.rollback()
             return jsonify({'message': 'Error creating transfer', 'error': str(e)}), 500
 
-        # Create new shop stock record
+        # Create shop stock record
         new_shop_stock = ShopStock(
             shop_id=shop_id,
             transfer_id=new_transfer.transfer_id,
             inventory_id=inventory_id,
             quantity=quantity,
-            total_cost=total_cost,
+            total_cost=unitCost * quantity,
             itemname=itemname,
             metric=metric,
             BatchNumber=BatchNumber,
-            unitPrice=unitPrice  # Use the inventory's unit price
+            unitPrice=inventory_item.unitPrice,
+            
         )
 
-        # Save the shop stock record
+        # Save shop stock record
         try:
             db.session.add(new_shop_stock)
             db.session.commit()
