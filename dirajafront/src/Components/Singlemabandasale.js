@@ -20,7 +20,7 @@ const MabandaSalesDetails = () => {
       try {
         const accessToken = localStorage.getItem("access_token");
         const formattedDate = format(date, "yyyy-MM-dd");
-        const url = `/api/mabanda/totalsalesbyshop12?date=${formattedDate}`;
+        const url = `/api/diraja/totalmabandasales`;
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${accessToken}` },

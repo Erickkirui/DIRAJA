@@ -10,6 +10,7 @@ const DistributeInventoryModal = ({
 }) => {
   const [shopId, setShopId] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [distributionDate, setDistributionDate] = useState('');
   const [shops, setShops] = useState([]);
   const [shopError, setShopError] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,8 +40,8 @@ const DistributeInventoryModal = ({
   const handleDistribute = async (e) => {
     e.preventDefault();
     const accessToken = localStorage.getItem('access_token');
-    if (quantity <= 0 || !shopId) {
-      setMessage({ type: 'error', text: 'Please select a valid shop and quantity.' });
+    if (quantity <= 0 || !shopId || !distributionDate) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
       return;
     }
 
@@ -52,15 +53,16 @@ const DistributeInventoryModal = ({
         selectedInventory.map(async (inventoryId) => {
           const inventoryItem = inventory.find((item) => item.inventory_id === inventoryId);
           const requestData = {
-            shop_id: parseInt(shopId, 10), // Use parseInt for shop_id
+            shop_id: parseInt(shopId, 10),
             inventory_id: inventoryItem.inventory_id,
-            quantity: parseFloat(quantity), // Use parseFloat for quantity
+            quantity: parseFloat(quantity),
             metric: inventoryItem.metric,
             itemname: inventoryItem.itemname,
             unitPrice: inventoryItem.unitPrice,
             unitCost: inventoryItem.unitCost,
-            amountPaid: inventoryItem.unitCost * parseFloat(quantity), // Use parseFloat for amountPaid
+            amountPaid: inventoryItem.unitCost * parseFloat(quantity),
             BatchNumber: inventoryItem.batchnumber,
+            created_at: new Date(distributionDate).toISOString(), // ✅ Fix: Use 'created_at'
           };
           await axios.post('/api/diraja/transfer', requestData, {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -71,13 +73,12 @@ const DistributeInventoryModal = ({
       onDistributeSuccess();
       setShopId('');
       setQuantity('');
-      setTimeout(onClose, 1500); // Close modal after a short delay
+      setDistributionDate('');
+      setTimeout(onClose, 1500);
     } catch (error) {
       if (error.response && error.response.data) {
-        // If the error has a response, show the exact error message from the backend
         setMessage({ type: 'error', text: error.response.data.message || 'Error distributing inventory. Please try again.' });
       } else {
-        // If no response, generic error
         setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
       }
       console.error('Error distributing inventory:', error);
@@ -89,7 +90,6 @@ const DistributeInventoryModal = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
-        
         {message.text && (
           <Stack>
             <Alert severity={message.type === 'success' ? 'success' : 'error'} variant="outlined">
@@ -134,6 +134,17 @@ const DistributeInventoryModal = ({
             />
           </div>
 
+          <div>
+            <label>Distribution Date</label>
+            <input
+              type="date"
+              value={distributionDate}
+              onChange={(e) => setDistributionDate(e.target.value)}
+              className="border p-2 w-full"
+              required
+            />
+          </div>
+
           <button type="submit" className="bg-blue-500 text-white px-4 py-2" disabled={loading}>
             {loading ? 'Distributing...' : 'Distribute'}
           </button>
@@ -141,8 +152,6 @@ const DistributeInventoryModal = ({
             Cancel
           </button>
         </form>
-
-        
       </div>
     </div>
   );
