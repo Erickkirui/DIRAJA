@@ -54,6 +54,7 @@ import GetUnpaidSalesByClerk from './Components/ClerkDashbord/Creditsales';
 import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
+import MabandaPage from './Pages/MabandaPage';
 
 
 
@@ -152,6 +153,8 @@ function App() {
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
 
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
+
+            <Route path='/mabandapage' element ={<Layout><MabandaPage /></Layout>} ></Route>
 
             <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>

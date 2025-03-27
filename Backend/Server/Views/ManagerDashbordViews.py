@@ -10,6 +10,7 @@ from Server.Models.Sales import Sales
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
+from Server.Models.Mabandafarm import MabandaSale
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
@@ -688,3 +689,57 @@ class TotalUnpaidAmountPerClerk(Resource):
             }, 500
 
 
+
+class TotalAmountPaidForMabanda(Resource):
+    @jwt_required()
+    def get(self):
+        today = datetime.utcnow()
+        start_date = None
+        end_date = None
+
+        # Check if a custom date is provided via the "date" parameter.
+        date_str = request.args.get('date')
+        if date_str:
+            try:
+                start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            # No custom date provided; use the period parameter (default to 'today').
+            period = request.args.get('period', 'today')
+
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'yesterday':
+                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'month':
+                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            else:
+                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or a custom date."}, 400
+
+        try:
+            # Query to sum `amount_paid` for shop_id = 12 using MabandaSale model
+            total_sales = (
+                db.session.query(db.func.sum(MabandaSale.amount_paid))
+                .filter(MabandaSale.shop_id == 12)
+                .filter(MabandaSale.sale_date.between(start_date, end_date))
+                .scalar() or 0  # Default to 0 if no result
+            )
+
+            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+
+            return {
+                "shop_id": 12,
+                "total_sales_amount_paid": formatted_sales
+            }, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching total sales amount", "details": str(e)}, 500
