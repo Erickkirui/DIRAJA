@@ -7,7 +7,7 @@ import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 
 const MabandaExpenseDetails = () => {
-  const [expenseData, setExpenseData] = useState(null);
+  const [expenseData, setExpenseData] = useState({ expenses: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -23,17 +23,15 @@ const MabandaExpenseDetails = () => {
       try {
         const accessToken = localStorage.getItem("access_token");
         const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
-        const formattedEnd = dateRange.endDate
-          ? format(dateRange.endDate, "yyyy-MM-dd")
-          : formattedStart;
+        const formattedEnd = format(dateRange.endDate, "yyyy-MM-dd");
 
-        const url = `/api/diraja/totalmabandaexpenses`;
+        const url = `/api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`;
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setExpenseData(response.data || { expenses: [] }); // Ensure `expenses` is always an array
+        setExpenseData(response.data || { expenses: [] }); // Ensure default structure
       } catch (err) {
         console.error("Error fetching expense data:", err);
         setError("Failed to fetch expense data.");
@@ -64,12 +62,12 @@ const MabandaExpenseDetails = () => {
           </div>
 
           <div className="actions-container">
-            <ExportExcel data={expenseData.expenses || []} fileName="Shop12_Expenses" />
-            <DownloadPDF tableId="singleshopstock-table" fileName="Shop12_Expenses" />
+            <ExportExcel data={expenseData.expenses || []} fileName="Mabanda_Expenses" />
+            <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_Expenses" />
           </div>
 
           <h3>Expense Records</h3>
-          {expenseData.expenses && expenseData.expenses.length > 0 ? (
+          {expenseData.expenses.length > 0 ? (
             <table id="singleshopstock-table" className="singleshopstock-table">
               <thead>
                 <tr>
