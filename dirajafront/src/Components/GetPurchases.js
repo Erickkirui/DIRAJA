@@ -5,7 +5,7 @@ import DownloadPDF from '../Components/Download/DownloadPDF';
 import UpdateTransfer from './UpdtaeTransfers';
 import '../Styles/purchases.css';
 import { Link } from 'react-router-dom';
-import LoadingAnimation from './LoadingAnimation'
+
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
@@ -13,19 +13,15 @@ const Purchases = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTransferId, setSelectedTransferId] = useState(null);
-  const [loading, setLoading] = useState(true); // Loading state
+  const [selectedTransferId, setSelectedTransferId] = useState(null); // Track which transfer is being updated
   const itemsPerPage = 50;
-  const maxPagesToShow = 5;
 
   useEffect(() => {
     const fetchPurchases = async () => {
-      setLoading(true);
       try {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
           setError('No access token found, please log in.');
-          setLoading(false);
           return;
         }
 
@@ -37,48 +33,41 @@ const Purchases = () => {
         setPurchases(sortedPurchases);
       } catch (err) {
         setError('Error fetching purchases. Please try again.');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchPurchases();
   }, []);
 
-  const getFirstName = (username) => username.split(' ')[0];
-  const getFirstLetter = (username) => username.charAt(0).toUpperCase();
+
+  const getFirstName = (username) => {
+    return username.split(' ')[0];
+  };
+
+  const getFirstLetter = (username) => {
+    return username.charAt(0).toUpperCase();
+  };
+
 
   const handleEdit = (transferId) => {
     setSelectedTransferId(transferId);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-
   const closeUpdateForm = () => {
     setSelectedTransferId(null);
   };
   
-
-  const closeUpdateForm = () => setSelectedTransferId(null);
-
-
   const filteredPurchases = purchases.filter((purchase) => {
     const matchesSearch =
       purchase.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-
       purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()); // Fixed
   
     const matchesDate = selectedDate
       ? new Date(purchase.created_at).toLocaleDateString() ===
         new Date(selectedDate).toLocaleDateString()
-
-      purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesDate = selectedDate
-      ? new Date(purchase.created_at).toISOString().split('T')[0] === selectedDate
-
       : true;
   
     return matchesSearch && matchesDate;
@@ -89,10 +78,6 @@ const Purchases = () => {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentPurchases = filteredPurchases.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
-
-  // Calculate pagination range
-  const startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-  const endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
 
   return (
     <div className="purchases-container">
@@ -121,7 +106,8 @@ const Purchases = () => {
       <div className='actions-container'>
         <ExportExcel data={filteredPurchases} fileName="PurchasesData" />
         <DownloadPDF tableId="purchases-table" fileName="PurchasesData" />
-        <Link to="/mabandapurchasesmanager" className='add-button'>View Mabanda Purchases</Link>
+        <Link to="/mabandapurchasesmanager"  className='add-button' >View Mabanda Purchases </Link>
+        
       </div>
 
       {selectedTransferId && (
@@ -131,14 +117,13 @@ const Purchases = () => {
         </div>
       )}
 
-      {loading ? (
-        <LoadingAnimation />
-      ) : filteredPurchases.length > 0 ? (
+      {filteredPurchases.length > 0 ? (
         <>
           <table id="purchases-table" className="purchases-table">
             <thead>
               <tr>
-                <th>Employee</th>
+                {/* <th>ID</th> */}
+                <th>Employee</th> 
                 <th>Shop</th>
                 <th>Item</th>
                 <th>Batch</th>
@@ -153,13 +138,14 @@ const Purchases = () => {
             <tbody>
               {currentPurchases.map((purchase) => (
                 <tr key={purchase.transfer_id}>
+                  {/* <td>{purchase.transfer_id}</td> */}
                   <td>
                     <div className="employee-info">
                       <div className="employee-icon">{getFirstLetter(purchase.username)}</div>
                       <span className="employee-name">{getFirstName(purchase.username)}</span>
                     </div>
                   </td>
-
+                  
                   <td>{purchase.shop_name}</td>
                   <td>{purchase.itemname}</td>
                   <td>{purchase.batchnumber}</td>
@@ -167,9 +153,12 @@ const Purchases = () => {
                   <td>{purchase.unitCost}</td>
                   <td>{purchase.totalCost}</td>
                   <td>{purchase.amountPaid}</td>
-                  <td>{new Date(purchase.created_at).toISOString().split('T')[0]}</td>
+                  <td>{new Date(purchase.created_at).toLocaleString()}</td>
                   <td>
-                    <button className='editeInventory' onClick={() => handleEdit(purchase.transfer_id)}>
+                    <button
+                      className='editeInventory'
+                      onClick={() => handleEdit(purchase.transfer_id)}
+                    >
                       Edit
                     </button>
                   </td>
@@ -178,31 +167,16 @@ const Purchases = () => {
             </tbody>
           </table>
 
-          {/* Pagination Controls */}
           <div className="pagination">
-            {startPage > 1 && (
-              <>
-                <button className="page-button" onClick={() => setCurrentPage(1)}>« First</button>
-                <button className="page-button" onClick={() => setCurrentPage(currentPage - 1)}>‹ Prev</button>
-              </>
-            )}
-
-            {Array.from({ length: endPage - startPage + 1 }, (_, index) => (
+            {Array.from({ length: totalPages }, (_, index) => (
               <button
-                key={startPage + index}
-                className={`page-button ${currentPage === startPage + index ? 'active' : ''}`}
-                onClick={() => setCurrentPage(startPage + index)}
+                key={index}
+                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
+                onClick={() => setCurrentPage(index + 1)}
               >
-                {startPage + index}
+                {index + 1}
               </button>
             ))}
-
-            {endPage < totalPages && (
-              <>
-                <button className="page-button" onClick={() => setCurrentPage(currentPage + 1)}>Next ›</button>
-                <button className="page-button" onClick={() => setCurrentPage(totalPages)}>Last »</button>
-              </>
-            )}
           </div>
         </>
       ) : (
