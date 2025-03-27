@@ -9,6 +9,8 @@ from datetime import datetime
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+
 
 
 
@@ -314,11 +316,13 @@ class GetEmployeeLeaderboard(Resource):
 
                 leaderboard.append({
                     "employee_name": employee_name,
-                    "total_sales": sale.total_sales,
-                    "total_amount": sale.total_amount
+                    "total_sales": f"{sale.total_sales:,}",
+                    "total_amount": f"{sale.total_amount:,.2f}"
                 })
 
             return make_response(jsonify(leaderboard), 200)
 
         except Exception as e:
             return {"error": str(e)}, 500
+
+

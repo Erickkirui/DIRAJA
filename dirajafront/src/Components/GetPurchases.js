@@ -53,21 +53,37 @@ const Purchases = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+
+  const closeUpdateForm = () => {
+    setSelectedTransferId(null);
+  };
+  
+
   const closeUpdateForm = () => setSelectedTransferId(null);
+
 
   const filteredPurchases = purchases.filter((purchase) => {
     const matchesSearch =
       purchase.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+
+      purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()); // Fixed
+  
+    const matchesDate = selectedDate
+      ? new Date(purchase.created_at).toLocaleDateString() ===
+        new Date(selectedDate).toLocaleDateString()
+
       purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesDate = selectedDate
       ? new Date(purchase.created_at).toISOString().split('T')[0] === selectedDate
-      : true;
 
+      : true;
+  
     return matchesSearch && matchesDate;
   });
+  
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -143,6 +159,7 @@ const Purchases = () => {
                       <span className="employee-name">{getFirstName(purchase.username)}</span>
                     </div>
                   </td>
+
                   <td>{purchase.shop_name}</td>
                   <td>{purchase.itemname}</td>
                   <td>{purchase.batchnumber}</td>
