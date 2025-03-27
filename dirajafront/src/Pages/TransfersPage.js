@@ -3,7 +3,7 @@ import Transfers from '../Components/GetTransfers'
 function TransfersPage() {
   return (
     <div>
-        <h1>Transfers</h1>
+        <h1>Inventory Transfers</h1>
         <Transfers/>
     </div>
   )

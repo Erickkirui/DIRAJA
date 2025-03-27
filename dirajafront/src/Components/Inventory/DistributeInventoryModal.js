@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Alert, Stack } from '@mui/material';
 
 const DistributeInventoryModal = ({ 
   selectedInventory, 
@@ -17,7 +18,7 @@ const DistributeInventoryModal = ({
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get(' /api/diraja/allshops', {
+        const response = await axios.get('/api/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
@@ -61,7 +62,7 @@ const DistributeInventoryModal = ({
             amountPaid: inventoryItem.unitCost * parseFloat(quantity), // Use parseFloat for amountPaid
             BatchNumber: inventoryItem.batchnumber,
           };
-          await axios.post(' /api/diraja/transfer', requestData, {
+          await axios.post('/api/diraja/transfer', requestData, {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
         })
@@ -72,7 +73,13 @@ const DistributeInventoryModal = ({
       setQuantity('');
       setTimeout(onClose, 1500); // Close modal after a short delay
     } catch (error) {
-      setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
+      if (error.response && error.response.data) {
+        // If the error has a response, show the exact error message from the backend
+        setMessage({ type: 'error', text: error.response.data.message || 'Error distributing inventory. Please try again.' });
+      } else {
+        // If no response, generic error
+        setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
+      }
       console.error('Error distributing inventory:', error);
     } finally {
       setLoading(false);
@@ -82,6 +89,15 @@ const DistributeInventoryModal = ({
   return (
     <div className="modal-overlay">
       <div className="modal-content">
+        
+        {message.text && (
+          <Stack>
+            <Alert severity={message.type === 'success' ? 'success' : 'error'} variant="outlined">
+              {message.text}
+            </Alert>
+          </Stack>
+        )}
+
         <h3>Distribute Inventory</h3>
         <form onSubmit={handleDistribute}>
           <div>
@@ -125,12 +141,8 @@ const DistributeInventoryModal = ({
             Cancel
           </button>
         </form>
+
         
-        {message.text && (
-          <p className={`mt-4 ${message.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
-            {message.text}
-          </p>
-        )}
       </div>
     </div>
   );
