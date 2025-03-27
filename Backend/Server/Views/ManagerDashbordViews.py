@@ -223,37 +223,51 @@ class TotalAmountPaidPurchases(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        period = request.args.get('period', 'today')
         today = datetime.utcnow()
+        start_date = None
+        end_date = None
 
-        # Define the start and end dates based on the period
-        if period == 'today':
-            start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = today
-        elif period == 'yesterday':
-            start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-            end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-        elif period == 'week':
-            start_date = today - timedelta(days=7)
-            end_date = today
-        elif period == 'month':
-            start_date = today - timedelta(days=30)
-            end_date = today
-        elif period == 'alltime':  # New condition for "all time"
-            start_date = None  # No start date filter
-            end_date = None  # No end date filter
+        # Check for custom date range
+        start_date_str = request.args.get('startDate')
+        end_date_str = request.args.get('endDate')
+
+        if start_date_str and end_date_str:
+            try:
+                # Parse custom start and end dates
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            return {"message": "Invalid period specified"}, 400
+            # Handle predefined periods if no custom date is provided
+            period = request.args.get('period', 'today')
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'yesterday':
+                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+                end_date = today
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+                end_date = today
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
+            # else:
+            #     return {"message": "Invalid period specified"}, 400
 
         try:
             # Build query to sum the `amountPaid`
-            query = db.session.query(db.func.sum(Transfer.amountPaid))
+            query = db.session.query(db.func.sum(Inventory.amountPaid))
 
-            # Apply date filtering only if a specific period is selected
+            # Apply date filtering only if start_date and end_date are defined
             if start_date and end_date:
-                query = query.filter(Transfer.created_at.between(start_date, end_date))
+                query = query.filter(Inventory.created_at.between(start_date, end_date))
             elif start_date:
-                query = query.filter(Transfer.created_at >= start_date)
+                query = query.filter(Inventory.created_at >= start_date)
 
             total_amount = query.scalar() or 0
 
@@ -264,8 +278,11 @@ class TotalAmountPaidPurchases(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching the total purchases amount"}, 500
-    
+            return {
+                "error": "An error occurred while fetching the total purchases amount",
+                "details": str(e)
+            }, 500
+
 
 
 class CountShops(Resource):
