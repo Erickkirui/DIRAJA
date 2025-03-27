@@ -22,19 +22,30 @@ const MabandaExpenseDetails = () => {
 
       try {
         const accessToken = localStorage.getItem("access_token");
+        if (!accessToken) {
+          throw new Error("No access token found. Please log in.");
+        }
+
         const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
         const formattedEnd = format(dateRange.endDate, "yyyy-MM-dd");
 
-        const url = `/api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`;
+        console.log("Fetching data from:", `/api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`);
 
-        const response = await axios.get(url, {
+        const response = await axios.get(`/api/diraja/totalmabandaexpenses`, {
+          params: { start_date: formattedStart, end_date: formattedEnd },
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setExpenseData(response.data || { expenses: [] }); // Ensure default structure
+        console.log("API Response:", response.data);
+
+        if (!response.data || !response.data.expenses) {
+          setExpenseData({ expenses: [] });
+        } else {
+          setExpenseData(response.data);
+        }
       } catch (err) {
         console.error("Error fetching expense data:", err);
-        setError("Failed to fetch expense data.");
+        setError("Failed to fetch expense data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -49,7 +60,7 @@ const MabandaExpenseDetails = () => {
         <p>Loading expense data...</p>
       ) : error ? (
         <p className="error">{error}</p>
-      ) : expenseData ? (
+      ) : (
         <div>
           <h2>Expenses for Mabanda</h2>
           <p>
@@ -58,7 +69,13 @@ const MabandaExpenseDetails = () => {
 
           <div className="input-container">
             <label>Filter by Date Range:</label>
-            <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+            <DateRangePicker 
+              dateRange={dateRange} 
+              setDateRange={(range) => {
+                console.log("New Date Range:", range);
+                setDateRange({ ...range });
+              }} 
+            />
           </div>
 
           <div className="actions-container">
@@ -90,8 +107,6 @@ const MabandaExpenseDetails = () => {
             <p>No expenses found for the selected period.</p>
           )}
         </div>
-      ) : (
-        <p>No expense data available.</p>
       )}
     </div>
   );
