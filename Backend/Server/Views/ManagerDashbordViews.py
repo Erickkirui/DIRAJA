@@ -10,7 +10,7 @@ from Server.Models.Sales import Sales
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
-from Server.Models.Mabandafarm import MabandaSale
+from Server.Models.Mabandafarm import MabandaSale, MabandaExpense
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
@@ -742,3 +742,82 @@ class TotalAmountPaidForMabanda(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching total sales amount", "details": str(e)}, 500
+        
+        
+
+class TotalExpensesForMabanda(Resource):
+    @jwt_required()
+    def get(self):
+        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+
+        # Get query parameters
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        period = request.args.get('period', 'today')
+
+        # If both start_date and end_date are provided, use them
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+        # If only one date is provided, return an error
+        elif start_date_str or end_date_str:
+            return {"message": "Both start_date and end_date must be provided."}, 400
+
+        # If no date range is provided, fallback to period-based filtering
+        else:
+            if period == 'today':
+                start_date = today
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'yesterday':
+                start_date = today - timedelta(days=1)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            else:
+                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or provide start_date and end_date."}, 400
+
+        try:
+            # Query total expenses
+            total_expenses = (
+                db.session.query(db.func.sum(MabandaExpense.amount))
+                .filter(MabandaExpense.shop_id == 12)
+                .filter(MabandaExpense.expense_date >= start_date, MabandaExpense.expense_date <= end_date)
+                .scalar() or 0  # Default to 0 if no expenses found
+            )
+
+            # Query individual expense records
+            expense_records = (
+                db.session.query(MabandaExpense)
+                .filter(MabandaExpense.shop_id == 12)
+                .filter(MabandaExpense.expense_date >= start_date, MabandaExpense.expense_date <= end_date)
+                .all()
+            )
+
+            formatted_expenses = "Ksh {:,.2f}".format(total_expenses)
+
+            return {
+                "shop_id": 12,
+                "total_expenses_amount": formatted_expenses,
+                "start_date": start_date.strftime('%Y-%m-%d'),
+                "end_date": end_date.strftime('%Y-%m-%d'),
+                "expenses_records": [
+                    {
+                        "description": expense.description,
+                        "amount": "Ksh {:,.2f}".format(expense.amount),
+                        "expense_date": expense.expense_date.strftime('%Y-%m-%d')
+                    }
+                    for expense in expense_records
+                ]
+            }, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "An error occurred while fetching expenses", "details": str(e)}, 500

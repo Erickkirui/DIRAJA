@@ -46,7 +46,7 @@ const MabandaSalesDetails = () => {
         <p className="error">{error}</p>
       ) : salesData ? (
         <div>
-          <h2>Sales for Shop 12</h2>
+          <h2>Sales for Mabanda</h2>
           <p>
             <strong>Sales total:</strong> {salesData.total_sales_amount_paid}
           </p>
