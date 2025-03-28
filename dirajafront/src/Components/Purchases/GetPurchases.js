@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel';
-import DownloadPDF from '../Components/Download/DownloadPDF';
+import ExportExcel from '../../Components/Download/ExportExcel';
+import DownloadPDF from '../../Components/Download/DownloadPDF';
 import UpdateTransfer from './UpdtaeTransfers';
-import '../Styles/purchases.css';
+import '../../Styles/purchases.css';
 import { Link } from 'react-router-dom';
 
 
@@ -113,7 +113,7 @@ const Purchases = () => {
       {selectedTransferId && (
         <div className="update-form-container">
           <UpdateTransfer transferId={selectedTransferId} />
-          <button className="button" onClick={closeUpdateForm}>Close</button>
+          <button className="close-button" onClick={closeUpdateForm}>Close</button>
         </div>
       )}
 
@@ -153,7 +153,7 @@ const Purchases = () => {
                   <td>{purchase.unitCost}</td>
                   <td>{purchase.totalCost}</td>
                   <td>{purchase.amountPaid}</td>
-                  <td>{new Date(purchase.created_at).toLocaleString()}</td>
+                  <td>{new Date(purchase.created_at).toLocaleDateString()}</td>
                   <td>
                     <button
                       className='editeInventory'

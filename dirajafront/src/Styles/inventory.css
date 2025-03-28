@@ -160,13 +160,36 @@
   .updateform{
     display: flex;
     flex-direction: column;
+    max-width: 400px;
     gap: 10px;
   }
   .updateform input{
     padding: 5px;
+    margin-top: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;
   }
+  .updateform button{
+    background-color: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    padding: 10px;
+    width: 95%;
+   
+   
+  }
+  .close-button{
+    background-color: white;
+    color: #000;
+    border: 1px solid #ccc;
+    border-radius: 2px;
+    cursor: pointer;
+    padding: 10px;
+    width:380px ;
+    margin-top: 10px;
+  }
+
+
   .editeInventory{
     background-color: #ffffff;
     border: 1px solid #ccc;
@@ -178,3 +201,5 @@
     background-color: var(--primary);
     color: #fff;
   }
+
+  

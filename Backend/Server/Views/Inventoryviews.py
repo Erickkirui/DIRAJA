@@ -284,16 +284,18 @@ class GetTransferById(Resource):
 
         return make_response(jsonify(transfer_data), 200)
 
+
+
 class UpdateTransfer(Resource):
     @jwt_required()
     @check_role('manager')
     def put(self, transfer_id):
         data = request.get_json()
         transfer = Transfer.query.filter_by(transfer_id=transfer_id).first()
-        
+
         if not transfer:
             return make_response(jsonify({"message": "Transfer not found"}), 404)
-        
+
         # Update transfer fields if they exist in the request data
         transfer.shop_id = data.get("shop_id", transfer.shop_id)
         transfer.inventory_id = data.get("inventory_id", transfer.inventory_id)
@@ -305,10 +307,19 @@ class UpdateTransfer(Resource):
         transfer.itemname = data.get("itemname", transfer.itemname)
         transfer.amountPaid = data.get("amountPaid", transfer.amountPaid)
         transfer.unitCost = data.get("unitCost", transfer.unitCost)
-        
+
+        # Handle the date field update (if provided)
+        if 'date' in data:
+            try:
+                transfer.created_at = datetime.strptime(data['date'], '%Y-%m-%d')  # Update the date field
+            except ValueError:
+                return make_response(jsonify({"message": "Invalid date format. Use YYYY-MM-DD."}), 400)
+
         db.session.commit()
-        
+
         return make_response(jsonify({"message": "Transfer updated successfully"}), 200)
+
+
 
 
 class AddInventory(Resource):

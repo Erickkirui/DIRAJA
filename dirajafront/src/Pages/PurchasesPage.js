@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
-import Purchases from '../Components/GetPurchases'
+import Purchases  from '../Components/Purchases/GetPurchases'
+
 function PurchasesPage() {
   return (
     <div>
