@@ -129,7 +129,6 @@ const DistributeInventoryModal = ({
               type="number"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
-              className="border p-2 w-full"
               required
             />
           </div>
@@ -140,17 +139,17 @@ const DistributeInventoryModal = ({
               type="date"
               value={distributionDate}
               onChange={(e) => setDistributionDate(e.target.value)}
-              className="border p-2 w-full"
               required
             />
           </div>
 
-          <button type="submit" className="bg-blue-500 text-white px-4 py-2" disabled={loading}>
+          <button type="submit"  className= "yes-button"disabled={loading}>
             {loading ? 'Distributing...' : 'Distribute'}
           </button>
-          <button type="button" onClick={onClose} className="bg-gray-500 text-white px-4 py-2 ml-2">
+          <button type="button" className='cancel-button' onClick={onClose} >
             Cancel
           </button>
+        
         </form>
       </div>
     </div>

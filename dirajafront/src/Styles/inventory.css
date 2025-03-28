@@ -130,18 +130,26 @@
     width: 300px;
    
   }
-  .modal-select{
+  .modal-content select{
     padding: 5px;
-    width: 50%;
-  }
+    margin-bottom: 15px;
+    border-radius: 4px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: 90%;
 
+  }
   .modal-content label {
     display: block;
     margin: 10px 0 5px;
   }
-  .modal-content input {
+  .modal-content input{
     padding: 5px;
     margin-bottom: 15px;
+    border-radius: 4px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    width: 80%;
   }
   .modal-content button {
     margin: 0 5px;

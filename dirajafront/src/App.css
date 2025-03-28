@@ -111,26 +111,26 @@
   justify-content: center;
   align-items: center;
   z-index: 999;
+  
 }
 
 .modal-content {
+  width: 20%;
   background: #fff;
-  padding: 20px;
   border-radius: 8px;
-  text-align: center;
+  text-align: left;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content button {
-  margin: 10px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
+.modal-content input select{
+  width: 100%;
 }
 
 .yes-button {
-  background-color: #f44336;
+  border: 1px solid #cccc;
+  padding: 10px;
+  border-radius: 4px;
+  background-color:var(--primary);
   color: white;
 }
 
