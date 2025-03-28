@@ -238,45 +238,59 @@ class AddSale(Resource):
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
 
 
-
 class GetSales(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Query all sales from the Sales table in descending order by created_at
-            sales = Sales.query.order_by(Sales.created_at.desc()).all()
+            # Get page and limit from query parameters, defaulting to 1 and 50
+            page = int(request.args.get('page', 1))  # Default to page 1 if not provided
+            limit = int(request.args.get('limit', 50))  # Default to 50 items per request
 
-            # If no sales found
-            if not sales:
-                return {"message": "No sales found"}, 404
+            search_query = request.args.get('searchQuery', '')
+            selected_date = request.args.get('selectedDate', None)
 
-            # Format sales data into a list of dictionaries
+            # If search query or selected date exists, remove pagination and fetch all results
+            if search_query or selected_date:
+                sales_query = Sales.query.order_by(Sales.created_at.desc())
+                if search_query:
+                    sales_query = sales_query.filter(
+                        Sales.item_name.ilike(f"%{search_query}%") |
+                        Sales.shopname.ilike(f"%{search_query}%") |
+                        Sales.customer_name.ilike(f"%{search_query}%") |
+                        Sales.username.ilike(f"%{search_query}%")
+                    )
+                if selected_date:
+                    sales_query = sales_query.filter(Sales.created_at == selected_date)
+                sales = sales_query.all()  # Return all matching sales
+                total_sales = len(sales)  # Total sales count
+                total_pages = 1  # Only 1 page when no pagination is used
+            else:
+                # Pagination logic
+                offset = (page - 1) * limit
+                sales_query = Sales.query.order_by(Sales.created_at.desc()).offset(offset).limit(limit)
+                sales = sales_query.all()
+                total_sales = Sales.query.count()  # Total sales count for pagination
+                total_pages = (total_sales + limit - 1) // limit  # Calculate total pages
+
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name manually using user_id and shop_id
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-
-                # Handle cases where user or shop may not be found
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
-
-                # Process multiple payment methods using the `payment` relationship
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
-                        "created_at": payment.created_at,
-                        "balance": payment.balance,  # Include balance field
+                        "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "balance": payment.balance,
                     }
-                    for payment in sale.payment  # Updated to use the correct relationship
+                    for payment in sale.payment
                 ]
-
-                # Calculate total amount paid
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -286,21 +300,21 @@ class GetSales(Resource):
                     "customer_number": sale.customer_number,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Include total amount paid
-                    "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at,  # Convert datetime to string
-                    "balance": sale.balance,  # Include balance at the sale level
-                    "note": sale.note,  # Include note field
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 })
 
-            return make_response(jsonify(sales_data), 200)
+            return {
+                "sales_data": sales_data,
+                "total_sales": total_sales,
+                "total_pages": total_pages,
+                "current_page": page,
+            }, 200
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 class GetSalesByShop(Resource):

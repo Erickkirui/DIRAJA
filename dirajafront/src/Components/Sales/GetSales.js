@@ -1,58 +1,94 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel';
-import DownloadPDF from '../Components/Download/DownloadPDF';
-import '../Styles/sales.css';
+import ExportExcel from '../Download/ExportExcel';
+import DownloadPDF from '../Download/DownloadPDF';
+import '../../Styles/sales.css';
 import { isSameDay } from 'date-fns';
-import LoadingAnimation from './LoadingAnimation';
+import LoadingAnimation from '../LoadingAnimation';
 import { Link } from 'react-router-dom';
-
+import Pagination from '../Pagination';
 
 const Sales = () => {
   const [sales, setSales] = useState([]);
   const [selectedSales, setSelectedSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25); // Default items per page
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Set loading to false by default
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const itemsPerPage = 50;
+  const [totalSales, setTotalSales] = useState(0); // State to hold the total number of sales
+  const [totalPages, setTotalPages] = useState(0); // State to hold the total number of pages
+  const [debounceTimeout, setDebounceTimeout] = useState(null); // Timeout for debouncing
 
-
-
+  // Fetch sales data with pagination and filters (search query and selected date)
   useEffect(() => {
     const fetchSales = async () => {
+      setLoading(true);
       try {
         const accessToken = localStorage.getItem('access_token');
-
         if (!accessToken) {
           setError('No access token found. Please log in.');
           return;
         }
 
+        // Prepare the parameters for the API call
+        const params = {
+          searchQuery: searchQuery,
+          selectedDate: selectedDate,
+          limit: itemsPerPage,
+          page: currentPage, // Send the current page number to the backend
+        };
+
+        // If either searchQuery or selectedDate is set, we do not need pagination
+        if (searchQuery || selectedDate) {
+          // Remove pagination parameters (page and limit) if search or date filter is applied
+          delete params.page;
+          delete params.limit;
+        }
+
         const response = await axios.get('/api/diraja/allsales', {
           headers: { Authorization: `Bearer ${accessToken}` },
+          params: params, // Send parameters without pagination if needed
         });
 
-        setSales(response.data);
-
-
-
+        setSales(response.data.sales_data);
+        setTotalSales(response.data.total_sales);
+        setTotalPages(response.data.total_pages); // Update total pages based on backend response
         setError('');
       } catch (err) {
-        if (err.response?.status === 404) {
-          setSales([]);
-          setError('No sales found.');
-        } else {
-          setError('Error fetching sales. Please try again.');
-        }
+        setError('Error fetching sales. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchSales();
-  }, [])
+  }, [searchQuery, selectedDate, itemsPerPage, currentPage]); // Re-run when searchQuery, selectedDate, currentPage, or itemsPerPage changes
+
+  // Handle search input change with debouncing
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Clear the previous timeout (if any)
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+
+    // Set a new timeout to delay the API call by 3 seconds (3000ms)
+    const timeout = setTimeout(() => {
+      setSearchQuery(value);  // Update search query after 3 seconds
+    }, 3000); // 3-second delay
+
+    setDebounceTimeout(timeout);
+  };
+
+  // Handle date change
+  const handleDateChange = (e) => {
+    const date = e.target.value;
+    setSelectedDate(date); // Set selected date
+  };
 
   const handleCheckboxChange = (saleId) => {
     setSelectedSales((prevSelected) =>
@@ -92,30 +128,6 @@ const Sales = () => {
     }
   };
 
-  const getFirstName = (username) => username?.split(' ')[0] || '';
-  const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
-
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
-
-
-  const renderPaginationButtons = () => {
-    const range = 3;
-    const pages = [];
-    for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
-      pages.push(i);
-    }
-    return pages.map((page) => (
-      <button
-        key={page}
-        className={`page-button ${currentPage === page ? 'active' : ''}`}
-        onClick={() => handlePageChange(page)}
-      >
-        {page}
-      </button>
-    ));
-  };
-
   // Filter sales based on search query and selected date
   const filteredSales = sales.filter((sale) => {
     const matchesSearch =
@@ -131,39 +143,27 @@ const Sales = () => {
     return matchesSearch && matchesDate;
   });
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
-
   if (loading) {
     return <LoadingAnimation />;
   }
 
   return (
     <div className="sales-container">
-      {/* Search and Date Filter  for sales
-      */}
+      {/* Search and Date Filter for sales */}
       <div className="filter-container">
         <input
           type="text"
           placeholder="Search by item, shop, customer's name, or employee"
           className="search-bar"
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={handleSearchChange} // Use the debounced search handler
         />
-        
+
         <input
           type="date"
           className="date-picker"
           value={selectedDate}
-          onChange={(e) => {
-            setSelectedDate(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={handleDateChange} // Set the selected date for filtering
         />
       </div>
 
@@ -173,10 +173,7 @@ const Sales = () => {
         <button className="delete-button" onClick={deleteSelectedSales} disabled={selectedSales.length === 0}>
           Delete Selected
         </button>
-        <Link to="/mabandasalesmanager"  className='add-button' >View Mabanda Sales </Link>
-
       </div>
-      
 
       <table id="sales-table" className="sales-table" aria-label="Sales data">
         <thead>
@@ -193,8 +190,8 @@ const Sales = () => {
           </tr>
         </thead>
         <tbody>
-          {currentSales.length > 0 ? (
-            currentSales.map((sale) => (
+          {filteredSales.length > 0 ? (
+            filteredSales.map((sale) => (
               <tr key={sale.sale_id}>
                 <td>
                   <input
@@ -203,20 +200,14 @@ const Sales = () => {
                     onChange={() => handleCheckboxChange(sale.sale_id)}
                   />
                 </td>
-                <td>
-                  <div className="employee-info">
-                    <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                    <span className="employee-name">{getFirstName(sale.username)}</span>
-                  </div>
-                </td>
-
+                <td>{sale.username}</td>
                 <td>{sale.customer_name}</td>
                 <td>{sale.shopname}</td>
                 <td>{sale.item_name}</td>
-                <td>{sale.quantity} {sale.metric}</td>
+                <td>{sale.quantity}</td>
                 <td>{sale.total_amount_paid}</td>
+                <td>{new Date(sale.created_at).toLocaleDateString()}</td>
 
-                <td>{new Date(sale.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(',', '')}</td>
                 <td>
                   <a href={`/sale/${sale.sale_id}`}>View more</a>
                 </td>
@@ -224,16 +215,20 @@ const Sales = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="11">No sales found matching your criteria.</td>
-
-
+              <td colSpan="9">No sales found matching your criteria.</td>
             </tr>
           )}
         </tbody>
       </table>
 
       {/* Pagination */}
-      <div className="pagination">{renderPaginationButtons()}</div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setCurrentPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
 
       {/* Error Message */}
       {error && <div className="error-message">{error}</div>}

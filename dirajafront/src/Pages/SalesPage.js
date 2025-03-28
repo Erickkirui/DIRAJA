@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Sales from '../Components/GetSales';
+import Sales from '../Components/Sales/GetSales';
 
 
 function SalesPage() {
