@@ -4,7 +4,6 @@ import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
 import '../../Styles/sales.css';
 import { isSameDay } from 'date-fns';
-import LoadingAnimation from '../LoadingAnimation';
 import { Link } from 'react-router-dom';
 import Pagination from '../Pagination';
 
@@ -14,7 +13,6 @@ const Sales = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25); // Default items per page
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false); // Set loading to false by default
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [totalSales, setTotalSales] = useState(0); // State to hold the total number of sales
@@ -24,7 +22,6 @@ const Sales = () => {
   // Fetch sales data with pagination and filters (search query and selected date)
   useEffect(() => {
     const fetchSales = async () => {
-      setLoading(true);
       try {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -58,8 +55,6 @@ const Sales = () => {
         setError('');
       } catch (err) {
         setError('Error fetching sales. Please try again.');
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -142,10 +137,6 @@ const Sales = () => {
 
     return matchesSearch && matchesDate;
   });
-
-  if (loading) {
-    return <LoadingAnimation />;
-  }
 
   return (
     <div className="sales-container">
