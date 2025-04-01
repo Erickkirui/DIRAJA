@@ -27,9 +27,13 @@ const MabandaSalesDetails = () => {
 
         const url = `/api/diraja/totalmabandasales?start_date=${formattedStart}&end_date=${formattedEnd}`;
 
+        console.log("Fetching sales from URL:", url);
+
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+
+        console.log("API Response:", response.data);
 
         setSalesData(response.data);
       } catch (err) {
@@ -61,6 +65,41 @@ const MabandaSalesDetails = () => {
             <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
           </div>
 
+          {/* Sales Table */}
+          <div className="table-container">
+            <table className="sales-table">
+              <thead>
+                <tr>
+                  {/* <th>ID</th> */}
+                  <th>Sale Date</th>
+                  <th>Customer</th>
+                  <th>Item</th>
+                  <th>Quantity</th>
+                  <th>Amount Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salesData.sales && salesData.sales.length > 0 ? (
+                  salesData.sales.map((sale) => (
+                    <tr key={sale.id}>
+                      {/* <td>{sale.id}</td> */}
+                      <td>{sale.sale_date}</td>
+                      <td>{sale.customer || "N/A"}</td>
+                      <td>{sale.item || "N/A"}</td>
+                      <td>{sale.quantity || 0}</td>
+                      <td>{sale.amount_paid}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6">No sales records found for this period.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Export Options */}
           <div className="actions-container">
             <ExportExcel data={salesData.sales || []} fileName="Mabanda_SalesData" />
             <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_SalesData" />
