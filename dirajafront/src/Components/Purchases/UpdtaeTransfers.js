@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { Stack, Alert } from "@mui/material";  // Import Material UI components
 
 const UpdateTransfer = ({ transferId }) => {
   const [formData, setFormData] = useState({});
@@ -38,13 +39,14 @@ const UpdateTransfer = ({ transferId }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let updatedFormData = { ...formData, [name]: value };
-    
+
+    // Recalculate total cost if unitCost or quantity is changed
     if (name === "unitCost" || name === "quantity") {
       const unitCost = parseFloat(updatedFormData.unitCost) || 0;
       const quantity = parseFloat(updatedFormData.quantity) || 0;
       updatedFormData.totalCost = (unitCost * quantity).toFixed(2);
     }
-    
+
     setFormData(updatedFormData);
   };
 
@@ -56,51 +58,86 @@ const UpdateTransfer = ({ transferId }) => {
         setError("Unauthorized: No access token found.");
         return;
       }
-
+  
+      // Create a new payload by excluding the 'created_at' field
+      const { created_at, ...updatedFormData } = formData; // Exclude created_at field
+  
       const response = await axios.put(
         `/api/diraja/updatetransfer/${transferId}`,
-        formData,
+        updatedFormData, // Send the updated data excluding created_at
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
       setMessage(response.data.message);
       setError("");
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000); // Reload page after success message
+  
+      // Remove the page reload on success
+      setFormData({}); // Clear the form fields (optional)
     } catch (error) {
       console.error("Error updating transfer:", error);
       setError("Error updating transfer.");
     }
   };
+  
 
   return (
     <div className="update-transfer-container">
       <h2 className="title">Update Transfer</h2>
-      {message && <p className="success-message">{message}</p>}
-      {error && <p className="error-message">{error}</p>}
+
+      
 
       <form onSubmit={handleSubmit} className="updateform">
-        {["itemname", "unitCost", "quantity", "amountPaid", "totalCost"].map((key) => (
+          {/* Success Message */}
+        {message && (
+          <Stack sx={{ width: '100%' }} spacing={2}>
+            <Alert severity="success" variant="outlined">
+              {message}
+            </Alert>
+          </Stack>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <Stack sx={{ width: '100%' }} spacing={2}>
+            <Alert severity="error" variant="outlined">
+              {error}
+            </Alert>
+          </Stack>
+        )}
+        {["itemname", "unitCost", "quantity", "amountPaid", "totalCost", "date"].map((key) => (
           <div className="input-group" key={key}>
             <label htmlFor={key} className="input-label">
               {key.replace(/_/g, " : ")}
             </label>
-            <input
-              type="text"
-              id={key}
-              name={key}
-              value={formData[key] || ""}
-              onChange={handleChange}
-              className="input-field"
-              readOnly={key === "totalCost"}
-            />
+            {key === "date" ? (
+              <input
+                type="date"
+                id={key}
+                name={key}
+                value={formData[key] || ""} // Pre-fill the date from formData
+                onChange={handleChange}
+                className="input-field"
+              />
+            ) : (
+              <input
+                type="text"
+                id={key}
+                name={key}
+                value={formData[key] || ""} // Pre-fill the rest of the fields
+                onChange={handleChange}
+                className="input-field"
+                readOnly={key === "totalCost"} // Make totalCost read-only
+              />
+            )}
           </div>
         ))}
+        
         <button type="submit" className="button">
           Update Transfer
         </button>
+
+        
         
       </form>
     </div>

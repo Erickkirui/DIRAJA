@@ -238,6 +238,8 @@ class AddSale(Resource):
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
 
 
+
+
 class GetSales(Resource):
     @jwt_required()
     def get(self):
@@ -251,27 +253,38 @@ class GetSales(Resource):
 
             # If search query or selected date exists, remove pagination and fetch all results
             if search_query or selected_date:
-                sales_query = Sales.query.order_by(Sales.created_at.desc())
+                # Join Shops and Users models to filter by shopname and username
+                sales_query = Sales.query.order_by(Sales.created_at.desc()).join(Shops).join(Users)
+
                 if search_query:
                     sales_query = sales_query.filter(
                         Sales.item_name.ilike(f"%{search_query}%") |
-                        Sales.shopname.ilike(f"%{search_query}%") |
                         Sales.customer_name.ilike(f"%{search_query}%") |
-                        Sales.username.ilike(f"%{search_query}%")
+                        Users.username.ilike(f"%{search_query}%") |  # Filter on username from Users model
+                        Shops.shopname.ilike(f"%{search_query}%")  # Filter on shopname from Shops model
                     )
+                
                 if selected_date:
-                    sales_query = sales_query.filter(Sales.created_at == selected_date)
-                sales = sales_query.all()  # Return all matching sales
+                    # Ensure the selected_date is formatted correctly (matching the database format)
+                    try:
+                        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+                        sales_query = sales_query.filter(Sales.created_at == selected_date)
+                    except ValueError:
+                        return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+                # Fetch all matching sales without pagination
+                sales = sales_query.all()
                 total_sales = len(sales)  # Total sales count
                 total_pages = 1  # Only 1 page when no pagination is used
             else:
-                # Pagination logic
+                # Pagination logic if no filters are applied
                 offset = (page - 1) * limit
                 sales_query = Sales.query.order_by(Sales.created_at.desc()).offset(offset).limit(limit)
                 sales = sales_query.all()
                 total_sales = Sales.query.count()  # Total sales count for pagination
                 total_pages = (total_sales + limit - 1) // limit  # Calculate total pages
 
+            # Prepare the sales data to return
             sales_data = []
             for sale in sales:
                 user = Users.query.filter_by(users_id=sale.user_id).first()
@@ -314,6 +327,7 @@ class GetSales(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 
