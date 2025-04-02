@@ -7,7 +7,7 @@ import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 
 const MabandaExpenseDetails = () => {
-  const [expenseData, setExpenseData] = useState({ expenses: [] });
+  const [expenseData, setExpenseData] = useState({ total_expense_amount: "Ksh 0.00", expenses: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -39,9 +39,12 @@ const MabandaExpenseDetails = () => {
         console.log("API Response:", response.data);
 
         if (!response.data || !response.data.expenses) {
-          setExpenseData({ expenses: [] });
+          setExpenseData({ total_expense_amount: "Ksh 0.00", expenses: [] });
         } else {
-          setExpenseData(response.data);
+          setExpenseData({
+            total_expense_amount: response.data.total_expenses_amount || "Ksh 0.00",
+            expenses: response.data.expenses_records || [],
+          });
         }
       } catch (err) {
         console.error("Error fetching expense data:", err);
@@ -64,7 +67,7 @@ const MabandaExpenseDetails = () => {
         <div>
           <h2>Expenses for Mabanda</h2>
           <p>
-            <strong>Total Expenses:</strong> {expenseData.total_expense_amount || "Ksh 0.00"}
+            <strong>Total Expenses:</strong> {expenseData.total_expense_amount}
           </p>
 
           <div className="input-container">
@@ -97,8 +100,8 @@ const MabandaExpenseDetails = () => {
                 {expenseData.expenses.map((expense, index) => (
                   <tr key={index}>
                     <td>{expense.description}</td>
-                    <td>Ksh {expense.amount.toLocaleString()}</td>
-                    <td>{expense.expense_date}</td>
+                    <td>{expense.amount ? `Ksh ${expense.amount.toLocaleString()}` : "Ksh 0.00"}</td>
+                    <td>{expense.expense_date || "N/A"}</td>
                   </tr>
                 ))}
               </tbody>

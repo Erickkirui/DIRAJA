@@ -70,29 +70,25 @@ const MabandaSalesDetails = () => {
             <table className="sales-table">
               <thead>
                 <tr>
-                  {/* <th>ID</th> */}
                   <th>Sale Date</th>
-                  <th>Customer</th>
                   <th>Item</th>
                   <th>Quantity</th>
                   <th>Amount Paid</th>
                 </tr>
               </thead>
               <tbody>
-                {salesData.sales && salesData.sales.length > 0 ? (
+                {Array.isArray(salesData?.sales) && salesData.sales.length > 0 ? (
                   salesData.sales.map((sale) => (
                     <tr key={sale.id}>
-                      {/* <td>{sale.id}</td> */}
                       <td>{sale.sale_date}</td>
-                      <td>{sale.customer || "N/A"}</td>
-                      <td>{sale.item || "N/A"}</td>
+                      <td>{sale.item_name || "N/A"}</td>
                       <td>{sale.quantity || 0}</td>
                       <td>{sale.amount_paid}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6">No sales records found for this period.</td>
+                    <td colSpan="4">No sales records found for this period.</td>
                   </tr>
                 )}
               </tbody>
@@ -101,7 +97,7 @@ const MabandaSalesDetails = () => {
 
           {/* Export Options */}
           <div className="actions-container">
-            <ExportExcel data={salesData.sales || []} fileName="Mabanda_SalesData" />
+            <ExportExcel data={salesData?.sales || []} fileName="Mabanda_SalesData" />
             <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_SalesData" />
           </div>
         </div>
