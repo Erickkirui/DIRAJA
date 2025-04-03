@@ -4,6 +4,7 @@ import CountEmployees from '../Components/ManagerDashbord/CountEmployees';
 import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses';
 import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales';
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases';
+import TotalAmountPurchasesInventory from '../Components/ManagerDashbord/TotalAmountPurchasesInventory';
 import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
@@ -38,6 +39,9 @@ function Managerdashord() {
             </div>
             <div>
               <TotalAmountPaidPurchases />
+            </div>
+            <div>
+              <TotalAmountPurchasesInventory/>            
             </div>
           </div>
 

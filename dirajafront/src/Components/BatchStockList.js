@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "./LoadingAnimation";
-
 import { Link } from 'react-router-dom';
-
 
 const BatchStockList = () => {
   const [batchStock, setBatchStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10; // Show 10 items per page
+  const [activeTab, setActiveTab] = useState("inStock"); // Default to 'In Stock'
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchBatchStock = async () => {
@@ -20,7 +19,6 @@ const BatchStockList = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-
         setBatchStock(response.data.batch_stocks || []);
       } catch (err) {
         setError("An error occurred while fetching batch stock data.");
@@ -28,16 +26,20 @@ const BatchStockList = () => {
         setLoading(false);
       }
     };
-
     fetchBatchStock();
   }, []);
 
+  // Filter stock based on active tab
+  const filteredStock = batchStock.filter(stock => 
+    activeTab === "inStock" ? stock.total_quantity > 0 : stock.total_quantity === 0
+  );
+
   // Calculate total pages
-  const totalPages = Math.ceil(batchStock.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredStock.length / itemsPerPage);
 
   // Get the current items to display based on pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = batchStock.slice(startIndex, startIndex + itemsPerPage);
+  const currentItems = filteredStock.slice(startIndex, startIndex + itemsPerPage);
 
   // Handle Page Change
   const handlePageChange = (newPage) => {
@@ -46,9 +48,31 @@ const BatchStockList = () => {
     }
   };
 
+  // Handle Tab Change
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1); // Reset to first page on tab switch
+  };
+
   return (
     <div className="stock-level-container">
       <h3>Batch Stock List</h3>
+
+      {/* Tab Toggle */}
+      <div className="tabs-container">
+        <button 
+          className={activeTab === "inStock" ? "active" : "tab-button"} 
+          onClick={() => handleTabChange("inStock")}
+        >
+          In Stock
+        </button>
+        <button 
+          className={activeTab === "outOfStock" ? "active" : "tab-button"} 
+          onClick={() => handleTabChange("outOfStock")}
+        >
+          Out of Stock
+        </button>
+      </div>
 
       {loading && <LoadingAnimation />}
       {error && <p className="error">{error}</p>}
@@ -59,8 +83,7 @@ const BatchStockList = () => {
             <thead>
               <tr>
                 <th>Batch Number</th>
-                <th>Total  Remaining</th>
-                
+                <th>Total Remaining</th>
               </tr>
             </thead>
             <tbody>
@@ -68,8 +91,7 @@ const BatchStockList = () => {
                 currentItems.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.batch_number}</td>
-                    <td>{stock.total_quantity} {stock.metric} </td>
-                    
+                    <td>{stock.total_quantity} {stock.metric}</td>
                   </tr>
                 ))
               ) : (
@@ -89,7 +111,7 @@ const BatchStockList = () => {
               Prev
             </button>
 
-            <span> Page {currentPage} of {totalPages} </span>
+            <span> Page {currentPage} of {totalPages || 1} </span>
 
             <button 
               onClick={() => handlePageChange(currentPage + 1)} 

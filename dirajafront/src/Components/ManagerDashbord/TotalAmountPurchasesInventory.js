@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import LoadingAnimation from '../LoadingAnimation';
 import DateRangePicker from '../DateRangePicker';
 
-const TotalAmountPaidPurchases = () => {
+const TotalAmountPurchasesInventory = () => {
   const [totalAmountPaid, setTotalAmountPaid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,7 +16,7 @@ const TotalAmountPaidPurchases = () => {
   const fetchTotalAmountPaid = async (selectedPeriod, dateRange) => {
     setLoading(true);
     try {
-      let url = `/api/diraja/totalpurchases`;
+      let url = `/api/diraja/Invetory-purchase`;
       
       // Prepare the parameters for the API request
       const params =
@@ -81,7 +81,7 @@ const TotalAmountPaidPurchases = () => {
         </div>
         
       </div>
-      <h5>Purchases</h5>
+      <h5>Inventory Purchases</h5>
 
       {loading ? (
         <LoadingAnimation />
@@ -90,9 +90,9 @@ const TotalAmountPaidPurchases = () => {
       ) : (
         <h1>{totalAmountPaid !== null ? ` ${totalAmountPaid}` : 'No data available'}</h1>
       )}
-      <Link to="/purchases">View Purchases</Link>
+      <Link to="/allinventory">View Inventory</Link>
     </div>
   );
 };
 
-export default TotalAmountPaidPurchases;
+export default TotalAmountPurchasesInventory;

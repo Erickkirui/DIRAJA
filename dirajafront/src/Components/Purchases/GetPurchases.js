@@ -181,7 +181,7 @@ const Purchases = () => {
         </>
       ) : (
         <p>No purchases found.</p>
-      )}
+      )} 
     </div>
   );
 };
