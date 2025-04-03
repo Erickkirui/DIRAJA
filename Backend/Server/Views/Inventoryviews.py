@@ -9,6 +9,7 @@ from app import db
 from functools import wraps
 from flask import request,make_response,jsonify
 from flask_jwt_extended import jwt_required,get_jwt_identity
+from dateutil import parser
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 from sqlalchemy.orm import joinedload
@@ -83,11 +84,11 @@ class DistributeInventory(Resource):
         current_user_id = get_jwt_identity()
 
         # Validate required fields
-        required_fields = ['shop_id', 'inventory_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber', 'created_at']
+        required_fields = ['shop_id', 'inventory_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric']
         if not all(field in data for field in required_fields):
             return jsonify({'message': 'Missing required fields'}), 400
 
-        # Extract and parse date
+        # Extract fields
         shop_id = data['shop_id']
         inventory_id = data['inventory_id']
         quantity = data['quantity']
@@ -96,8 +97,10 @@ class DistributeInventory(Resource):
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
+
+        # Parse created_at date
         try:
-            distribution_date = datetime.fromisoformat(data['created_at'])  # ✅ Convert from ISO format
+            distribution_date = parser.isoparse(data['created_at'])  # ✅ Handles 'Z' suffix
         except ValueError:
             return jsonify({'message': 'Invalid date format'}), 400
 
@@ -121,7 +124,7 @@ class DistributeInventory(Resource):
             itemname=itemname,
             amountPaid=amountPaid,
             unitCost=unitCost,
-            created_at=distribution_date  # ✅ Use the provided date
+            created_at=distribution_date  # ✅ Use parsed date
         )
 
         # Update inventory quantity
@@ -146,7 +149,6 @@ class DistributeInventory(Resource):
             metric=metric,
             BatchNumber=BatchNumber,
             unitPrice=inventory_item.unitPrice,
-            
         )
 
         # Save shop stock record
