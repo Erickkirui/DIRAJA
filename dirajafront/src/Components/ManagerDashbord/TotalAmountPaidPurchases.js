@@ -81,7 +81,7 @@ const TotalAmountPaidPurchases = () => {
         </div>
         
       </div>
-      <h5>Purchases</h5>
+      <h5>Purchases (Distribute Inventory) </h5>
 
       {loading ? (
         <LoadingAnimation />

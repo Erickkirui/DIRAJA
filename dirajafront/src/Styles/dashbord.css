@@ -24,16 +24,19 @@
 
 }
 .metrix-container h1{
-    font-size: 27px;
+    font-size: 20px;
 }
 .metrix-container{
     border:  1px solid #ccc;
     padding: 15px;
     border-radius: 8px;
-    width: 250px;
+    width: 210px;
     background-color: #ffffff;
     
 
+}
+.metrix-container  h5{
+    font-weight: 200;
 }
 
 .metrix-container a{

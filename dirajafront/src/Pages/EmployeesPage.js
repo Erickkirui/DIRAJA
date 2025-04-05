@@ -9,7 +9,13 @@ function EmployeesPage() {
 
   return (
     <>
+    <div className='header-container'>
+      <div>
       <h1>Employee</h1>
+      </div>
+    <Link className='add-button' to="/addemployee">Add Employees  </Link>
+    </div>
+      
 
 
       {/* Tabs */}
@@ -27,7 +33,7 @@ function EmployeesPage() {
           Sales Leaderboard
         </button>
 
-        <Link className='add-button' to="/addemployee">Add Employees  </Link>
+       
 
 
       </div>

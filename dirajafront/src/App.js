@@ -55,6 +55,7 @@ import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
 import MabandaPage from './Pages/MabandaPage';
+import SalesSummaryTable from './Components/ManagerDashbord/SalesSummeryTable';
 
 
 
@@ -152,6 +153,7 @@ function App() {
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
+            <Route path='/Salesumery' element={<Layout><SalesSummaryTable /></Layout>} ></Route>
 
 
             <Route path='/mabandapage' element ={<Layout><MabandaPage /></Layout>} ></Route>

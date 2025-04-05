@@ -30,45 +30,43 @@ const BatchStockList = () => {
   }, []);
 
   // Filter stock based on active tab
-  const filteredStock = batchStock.filter(stock => 
+  const filteredStock = batchStock.filter(stock =>
     activeTab === "inStock" ? stock.total_quantity > 0 : stock.total_quantity === 0
   );
 
-  // Calculate total pages
+  // Pagination logic
   const totalPages = Math.ceil(filteredStock.length / itemsPerPage);
-
-  // Get the current items to display based on pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredStock.slice(startIndex, startIndex + itemsPerPage);
 
-  // Handle Page Change
+  // Page change handler
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
 
-  // Handle Tab Change
+  // Tab change handler
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1); // Reset to first page on tab switch
+    setCurrentPage(1); // Reset pagination
   };
 
   return (
     <div className="stock-level-container">
       <h3>Batch Stock List</h3>
 
-      {/* Tab Toggle */}
+      {/* Shared tab styles */}
       <div className="tabs-container">
-        <button 
-          className={activeTab === "inStock" ? "active" : "tab-button"} 
-          onClick={() => handleTabChange("inStock")}
+        <button
+          className={`tab-button ${activeTab === 'inStock' ? 'active' : ''}`}
+          onClick={() => handleTabChange('inStock')}
         >
           In Stock
         </button>
-        <button 
-          className={activeTab === "outOfStock" ? "active" : "tab-button"} 
-          onClick={() => handleTabChange("outOfStock")}
+        <button
+          className={`tab-button ${activeTab === 'outOfStock' ? 'active' : ''}`}
+          onClick={() => handleTabChange('outOfStock')}
         >
           Out of Stock
         </button>
@@ -78,7 +76,7 @@ const BatchStockList = () => {
       {error && <p className="error">{error}</p>}
 
       {!loading && !error && (
-        <>
+        <div className="tab-content">
           <table className="inventory-table">
             <thead>
               <tr>
@@ -86,7 +84,7 @@ const BatchStockList = () => {
                 <th>Total Remaining</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="batchnumber-size">
               {currentItems.length > 0 ? (
                 currentItems.map((stock, index) => (
                   <tr key={index}>
@@ -96,32 +94,31 @@ const BatchStockList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="3">No batch stock data available.</td>
+                  <td colSpan="2">No batch stock data available.</td>
                 </tr>
               )}
             </tbody>
           </table>
 
-          {/* Pagination Controls */}
+          {/* Pagination */}
           <div className="stock-level-pagination">
-            <button 
-              onClick={() => handlePageChange(currentPage - 1)} 
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             >
               Prev
             </button>
-
             <span> Page {currentPage} of {totalPages || 1} </span>
-
-            <button 
-              onClick={() => handlePageChange(currentPage + 1)} 
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
               Next
             </button>
           </div>
-          <Link to='/shopstock'>View Stock</Link>
-        </>
+
+          <Link className="view-stock-link" to="/shopstock">View Stock</Link>
+        </div>
       )}
     </div>
   );

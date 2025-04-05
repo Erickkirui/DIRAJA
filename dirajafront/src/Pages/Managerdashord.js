@@ -10,6 +10,7 @@ import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 
 
+
 function Managerdashord() {
   // Check the role in local storage
   useEffect(() => {
@@ -38,25 +39,31 @@ function Managerdashord() {
               <TotalAmountPaidSales />
             </div>
             <div>
-              <TotalAmountPaidPurchases />
+              
+              <TotalCreditSales />
             </div>
-            <div>
-              <TotalAmountPurchasesInventory/>            
-            </div>
+            
           </div>
-
-         
 
           <div className="metrix-pair"> 
               
                 <div>
-                <TotalAmountPaidExpenses />
+                <TotalAmountPurchasesInventory />
                 </div>
                 <div>
-                <TotalCreditSales />
+                <TotalAmountPaidPurchases />
                 </div>
               
           </div>
+          <div className="metrix-pair">
+           
+           <div>
+             <TotalAmountPaidExpenses />
+           </div>
+       
+           
+       </div>
+          
 
           <div className="metrix-pair">
            
@@ -68,12 +75,16 @@ function Managerdashord() {
              <CountEmployees />
            </div>
        </div>
+       
 
         </div>
         <div>
           <BatchStockList />
         </div>
+        
+
       </div>
+
       
       
     </>
