@@ -138,7 +138,8 @@ const Expenses = () => {
 
         <ExportExcel data={expenses} fileName="ExpensesData" />
         <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-        <Link to="/mabandaexpensesmanager" className='add-button'>View Mabanda Expenses</Link>
+        <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link>
+
       </div>
 
       <table id="expenses-table" className="expenses-table">
