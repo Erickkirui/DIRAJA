@@ -7,6 +7,7 @@ from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
+from Server.Models.Stock import Stock
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
@@ -976,3 +977,91 @@ class SalesSummary(Resource):
 
 
 
+class TotalFinancialSummary(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        today = datetime.utcnow()
+        start_date = None
+        end_date = None
+
+        # Handle custom date range
+        start_date_str = request.args.get('startDate')
+        end_date_str = request.args.get('endDate')
+        period = request.args.get('period', 'today')
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            # Predefined period filters
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'yesterday':
+                yesterday = today - timedelta(days=1)
+                start_date = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'month':
+                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
+            else:
+                return {"message": "Invalid period specified"}, 400
+
+        try:
+            # ========== 1. Total Sales ========== 
+            sales_query = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+            )
+            if start_date and end_date:
+                sales_query = sales_query.filter(Sales.created_at.between(start_date, end_date))
+            total_sales = sales_query.scalar() or 0
+
+            # ========== 2. Total Expenses ========== 
+            expenses_query = db.session.query(db.func.sum(Expenses.amountPaid))
+            if start_date and end_date:
+                expenses_query = expenses_query.filter(Expenses.created_at.between(start_date, end_date))
+            total_expenses = expenses_query.scalar() or 0
+
+            # ========== 3. Total Inventory Purchases ========== 
+            inventory_query = db.session.query(db.func.sum(Transfer.amountPaid))
+            if start_date and end_date:
+                inventory_query = inventory_query.filter(Transfer.created_at.between(start_date, end_date))
+            total_inventory = inventory_query.scalar() or 0
+
+            # ========== 4. Total Unsold Goods Value (Stock Table Only) ========== 
+            remaining_stock_value = db.session.query(
+                db.func.sum(ShopStock.quantity * Transfer.unitCost)
+            ).join(Transfer, Transfer.transfer_id == ShopStock.transfer_id).scalar() or 0
+
+
+            # ========== 5. Value of Sold Goods ========== 
+            value_of_sold_goods = total_inventory - remaining_stock_value
+
+            # ========== Format Response ========== 
+            response = {
+                "total_sales_amount_paid": "Ksh {:,.2f}".format(total_sales),
+                "total_expenses_amount_paid": "Ksh {:,.2f}".format(total_expenses),
+                "total_inventory_purchases_amount_paid": "Ksh {:,.2f}".format(total_inventory),
+                "remaining_stock_value": "Ksh {:,.2f}".format(remaining_stock_value),
+                "value_of_sold_goods": "Ksh {:,.2f}".format(value_of_sold_goods),
+            }
+
+            return response, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching the financial summary.",
+                "details": str(e)
+            }, 500

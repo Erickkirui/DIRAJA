@@ -35,7 +35,7 @@ from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, G
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales
 
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
 from Server.Views.Emailnotifications import Report
 
 
@@ -194,6 +194,7 @@ api.add_resource(TotalUnpaidAmountAllSales,"/allunpaidtotal")
 api.add_resource(TotalAmountPaidForMabanda,'/totalmabandasales')
 api.add_resource(TotalExpensesForMabanda,'/totalmabandaexpenses')
 api.add_resource(SalesSummary,'/Sale-Summery')
+api.add_resource(TotalFinancialSummary,'/summery')
 
 ## clerkS Dashbord
 #Unpaid sales card for clerks
