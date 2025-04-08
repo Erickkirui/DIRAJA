@@ -8,6 +8,7 @@ import TotalAmountPurchasesInventory from '../Components/ManagerDashbord/TotalAm
 import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
+import FinancialSummaryCards from '../Components/ManagerDashbord/FinanceSummer';
 
 
 
@@ -78,8 +79,14 @@ function Managerdashord() {
        
 
         </div>
+
+        <div>
+        <div>
+          <FinancialSummaryCards />
+        </div>
         <div>
           <BatchStockList />
+        </div>
         </div>
         
 
