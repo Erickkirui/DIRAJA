@@ -10,7 +10,10 @@ const MabandaSalesDetails = () => {
   const [salesData, setSalesData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [date, setDate] = useState(new Date());
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(),
+    endDate: new Date(),
+  });
 
   useEffect(() => {
     const fetchSales = async () => {
@@ -19,12 +22,18 @@ const MabandaSalesDetails = () => {
 
       try {
         const accessToken = localStorage.getItem("access_token");
-        const formattedDate = format(date, "yyyy-MM-dd");
-        const url = `/api/diraja/totalmabandasales`;
+        const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
+        const formattedEnd = format(dateRange.endDate, "yyyy-MM-dd");
+
+        const url = `/api/diraja/totalmabandasales?start_date=${formattedStart}&end_date=${formattedEnd}`;
+
+        console.log("Fetching sales from URL:", url);
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+
+        console.log("API Response:", response.data);
 
         setSalesData(response.data);
       } catch (err) {
@@ -36,7 +45,7 @@ const MabandaSalesDetails = () => {
     };
 
     fetchSales();
-  }, [date]);
+  }, [dateRange]);
 
   return (
     <div className="singleshopstock-table">
@@ -48,20 +57,48 @@ const MabandaSalesDetails = () => {
         <div>
           <h2>Sales for Mabanda</h2>
           <p>
-            <strong>Sales total:</strong> {salesData.total_sales_amount_paid}
+            <strong>Sales total:</strong> {salesData.total_sales_amount_paid || "Ksh 0.00"}
           </p>
 
           <div className="input-container">
-            <label>Filter by Date:</label>
-            <DateRangePicker 
-              dateRange={{ startDate: date, endDate: date }} 
-              setDateRange={(range) => setDate(range.startDate)} 
-            />
+            <label>Filter by Date Range:</label>
+            <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
           </div>
 
+          {/* Sales Table */}
+          <div className="table-container">
+            <table className="sales-table">
+              <thead>
+                <tr>
+                  <th>Sale Date</th>
+                  <th>Item</th>
+                  <th>Quantity</th>
+                  <th>Amount Paid</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(salesData?.sales) && salesData.sales.length > 0 ? (
+                  salesData.sales.map((sale) => (
+                    <tr key={sale.id}>
+                      <td>{sale.sale_date}</td>
+                      <td>{sale.item_name || "N/A"}</td>
+                      <td>{sale.quantity || 0}</td>
+                      <td>{sale.amount_paid}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4">No sales records found for this period.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Export Options */}
           <div className="actions-container">
-            <ExportExcel data={salesData} fileName="Shop12_SalesData" />
-            <DownloadPDF tableId="singleshopstock-table" fileName="Shop12_SalesData" />
+            <ExportExcel data={salesData?.sales || []} fileName="Mabanda_SalesData" />
+            <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_SalesData" />
           </div>
         </div>
       ) : (

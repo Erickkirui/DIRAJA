@@ -7,7 +7,7 @@ import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 
 const MabandaExpenseDetails = () => {
-  const [expenseData, setExpenseData] = useState(null);
+  const [expenseData, setExpenseData] = useState({ total_expense_amount: "Ksh 0.00", expenses: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -22,21 +22,33 @@ const MabandaExpenseDetails = () => {
 
       try {
         const accessToken = localStorage.getItem("access_token");
+        if (!accessToken) {
+          throw new Error("No access token found. Please log in.");
+        }
+
         const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
-        const formattedEnd = dateRange.endDate
-          ? format(dateRange.endDate, "yyyy-MM-dd")
-          : formattedStart;
+        const formattedEnd = format(dateRange.endDate, "yyyy-MM-dd");
 
-        const url = `/api/diraja/totalmabandaexpenses`;
+        console.log("Fetching data from:", `/api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`);
 
-        const response = await axios.get(url, {
+        const response = await axios.get(`/api/diraja/totalmabandaexpenses`, {
+          params: { start_date: formattedStart, end_date: formattedEnd },
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setExpenseData(response.data || { expenses: [] }); // Ensure `expenses` is always an array
+        console.log("API Response:", response.data);
+
+        if (!response.data || !response.data.expenses) {
+          setExpenseData({ total_expense_amount: "Ksh 0.00", expenses: [] });
+        } else {
+          setExpenseData({
+            total_expense_amount: response.data.total_expenses_amount || "Ksh 0.00",
+            expenses: response.data.expenses_records || [],
+          });
+        }
       } catch (err) {
         console.error("Error fetching expense data:", err);
-        setError("Failed to fetch expense data.");
+        setError("Failed to fetch expense data. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -51,25 +63,31 @@ const MabandaExpenseDetails = () => {
         <p>Loading expense data...</p>
       ) : error ? (
         <p className="error">{error}</p>
-      ) : expenseData ? (
+      ) : (
         <div>
           <h2>Expenses for Mabanda</h2>
           <p>
-            <strong>Total Expenses:</strong> {expenseData.total_expense_amount || "Ksh 0.00"}
+            <strong>Total Expenses:</strong> {expenseData.total_expense_amount}
           </p>
 
           <div className="input-container">
             <label>Filter by Date Range:</label>
-            <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+            <DateRangePicker 
+              dateRange={dateRange} 
+              setDateRange={(range) => {
+                console.log("New Date Range:", range);
+                setDateRange({ ...range });
+              }} 
+            />
           </div>
 
           <div className="actions-container">
-            <ExportExcel data={expenseData.expenses || []} fileName="Shop12_Expenses" />
-            <DownloadPDF tableId="singleshopstock-table" fileName="Shop12_Expenses" />
+            <ExportExcel data={expenseData.expenses || []} fileName="Mabanda_Expenses" />
+            <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_Expenses" />
           </div>
 
           <h3>Expense Records</h3>
-          {expenseData.expenses && expenseData.expenses.length > 0 ? (
+          {expenseData.expenses.length > 0 ? (
             <table id="singleshopstock-table" className="singleshopstock-table">
               <thead>
                 <tr>
@@ -82,8 +100,8 @@ const MabandaExpenseDetails = () => {
                 {expenseData.expenses.map((expense, index) => (
                   <tr key={index}>
                     <td>{expense.description}</td>
-                    <td>Ksh {expense.amount.toLocaleString()}</td>
-                    <td>{expense.expense_date}</td>
+                    <td>{expense.amount ? `Ksh ${expense.amount.toLocaleString()}` : "Ksh 0.00"}</td>
+                    <td>{expense.expense_date || "N/A"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -92,8 +110,6 @@ const MabandaExpenseDetails = () => {
             <p>No expenses found for the selected period.</p>
           )}
         </div>
-      ) : (
-        <p>No expense data available.</p>
       )}
     </div>
   );

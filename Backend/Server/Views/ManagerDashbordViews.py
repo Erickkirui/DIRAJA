@@ -78,7 +78,7 @@ class TotalAmountPaidAllSales(Resource):
                     start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
                     end_date = today.replace(hour=23, minute=59, second=59, microsecond=0)
                 elif period == 'alltime':
-                    start_date = None  # No date filter for all-time
+                    start_date = None
                     end_date = None
                 else:
                     return {"message": "Invalid period specified"}, 400
@@ -154,6 +154,9 @@ class TotalAmountPaidSalesPerShop(Resource):
                 end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        elif period == 'alltime':
+            start_date = None
+            end_date = None
         else:
             return {"message": "Invalid period specified"}, 400
 
@@ -227,6 +230,9 @@ class TotalAmountPaidExpenses(Resource):
             elif period == 'month':
                 start_date = today - timedelta(days=30)
                 end_date = today
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
             else:
                 return {"message": "Invalid period specified"}, 400
 
@@ -806,25 +812,47 @@ class TotalAmountPaidForMabanda(Resource):
                 return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month' or specify start_date and end_date."}, 400
 
         try:
+            # Fetch total sales amount
             total_sales = (
                 db.session.query(db.func.sum(MabandaSale.amount_paid))
                 .filter(MabandaSale.shop_id == 12)
                 .filter(MabandaSale.sale_date >= start_date, MabandaSale.sale_date <= end_date)
-                .scalar() or 0  # Default to 0 if no sales found
+                .scalar() or 0
+            )
+            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+
+            # Fetch all sales data within the given date range
+            sales_records = (
+                db.session.query(MabandaSale)
+                .filter(MabandaSale.shop_id == 12)
+                .filter(MabandaSale.sale_date >= start_date, MabandaSale.sale_date <= end_date)
+                .all()
             )
 
-            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+            # Serialize the sales data
+            sales_data = [
+                {
+                    "id": sale.mabandasale_id,
+                    "sale_date": sale.sale_date.strftime('%Y-%m-%d'),
+                    "amount_paid": "Ksh {:,.2f}".format(sale.amount_paid),
+                    "item_name": sale.itemname,  # Assuming you have this field
+                    "quantity": sale.quantity_sold,    # Assuming you have this field
+                }
+                for sale in sales_records
+            ]
 
             return {
                 "shop_id": 12,
                 "total_sales_amount_paid": formatted_sales,
                 "start_date": start_date.strftime('%Y-%m-%d'),
-                "end_date": end_date.strftime('%Y-%m-%d')
+                "end_date": end_date.strftime('%Y-%m-%d'),
+                "sales_data": sales_data  # Returning the individual sales records
             }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching total sales amount", "details": str(e)}, 500
+
         
         
 

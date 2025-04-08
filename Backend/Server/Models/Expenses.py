@@ -19,11 +19,26 @@ class Expenses(db.Model):
     totalPrice = db.Column (db.Float, nullable=False)
     amountPaid = db.Column (db.Float, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False)
+    source = db.Column(db.String(100), nullable=False)
 
     #relationship 
 
     users = db.relationship('Users' ,backref='expenses', lazy=True)
-    shops = db.relationship('Shops' ,backref='expenses', lazy=True)   
+    shops = db.relationship('Shops' ,backref='expenses', lazy=True)
+    
+    # Validation for source column
+    VALID_SOURCES = {
+        "Shop Tills",
+        "Petty Cash - 011 64 (0) 0393 held by Momanyi",
+        "Bank (Standard Chartered Account number 0102488954500)",
+        "Leonard Sasapay (account: 254711592002)"
+    }
+
+    @validates('source')
+    def validate_source(self, key, value):
+        if value not in self.VALID_SOURCES:
+            raise ValueError(f"Invalid source: {value}. Must be one of {self.VALID_SOURCES}")
+        return value   
 
 
     
@@ -31,4 +46,5 @@ class Expenses(db.Model):
     def __repr__(self):
         return (f"Expense (expense_id={self.expense_id}, user_id='{self.user_id}', "
             f"shop_id='{self.shop_id}', category='{self.category}', item='{self.item}', description='{self.description}', "
-            f"quantity='{self.quantity}', paidTo='{self.paidTo}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')")
+            f"quantity='{self.quantity}', paidTo='{self.paidTo}', totalPrice='{self.totalPrice}', amountPaid='{self.amountPaid}')"
+            f"source='{self.source}')")

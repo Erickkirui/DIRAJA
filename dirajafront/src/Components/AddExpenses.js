@@ -12,7 +12,8 @@ const AddExpense = () => {
     totalPrice: '',
     amountPaid: '',
     paidTo: '',
-    created_at: ''
+    created_at: '',
+    source: ''  // New source field
   });
 
   const [shops, setShops] = useState([]);
@@ -78,8 +79,8 @@ const AddExpense = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!expenseData.shop_id || !expenseData.category) {
-      setMessage({ type: 'error', text: 'Please select both a shop and a category' });
+    if (!expenseData.shop_id || !expenseData.category || !expenseData.source) {
+      setMessage({ type: 'error', text: 'Please select a shop, category, and source' });
       return;
     }
 
@@ -116,7 +117,8 @@ const AddExpense = () => {
           totalPrice: '',
           amountPaid: '',
           paidTo: '',
-          created_at: ''
+          created_at: '',
+          source: ''  // Reset the source field
         });
       }
     } catch (error) {
@@ -174,6 +176,28 @@ const AddExpense = () => {
               ))}
             </ul>
           )}
+        </div>
+
+        {/* Source Dropdown */}
+        <div>
+          <select
+            name="source"
+            value={expenseData.source}
+            onChange={handleChange}
+            className={`select ${expenseData.source ? 'valid' : 'invalid'}`}
+          >
+            <option value="">Select Source</option>
+            <option value="Shop Tills">Shop Tills</option>
+            <option value="Petty Cash - 011 64 (0) 0393 held by Momanyi">
+              Petty Cash - 011 64 (0) 0393 held by Momanyi
+            </option>
+            <option value="Bank (Standard Chartered Account number 0102488954500)">
+              Bank (Standard Chartered Account number 0102488954500)
+            </option>
+            <option value="Leonard Sasapay (account: 254711592002)">
+              Leonard Sasapay (account: 254711592002)
+            </option>
+          </select>
         </div>
 
         {/* Other form fields */}

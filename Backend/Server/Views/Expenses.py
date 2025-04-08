@@ -27,18 +27,31 @@ class AddExpense(Resource):
     def post(self):
         data = request.get_json()
 
-        current_user_id = get_jwt_identity() 
+        # Extract necessary fields from the incoming request data
+        current_user_id = get_jwt_identity()
 
         shop_id = data.get('shop_id')
         item = data.get('item')
         description = data.get('description')
         quantity = data.get('quantity')
-        category = data.get('category')  # Directly accept the category from the request
+        category = data.get('category')  # Accepting the category from the request
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
         paidTo = data.get('paidTo')
+        source = data.get('source')  # Accepting the source of funds from the request
 
-        # Convert the 'created_at' String to a datetime object
+        # Validate the 'source' field
+        valid_sources = {
+            "Shop Tills",
+            "Petty Cash - 011 64 (0) 0393 held by Momanyi",
+            "Bank (Standard Chartered Account number 0102488954500)",
+            "Leonard Sasapay (account: 254711592002)"
+        }
+
+        if source not in valid_sources:
+            return {"message": f"Invalid source: {source}. Must be one of {valid_sources}"}, 400
+
+        # Convert the 'created_at' string to a datetime object
         created_at = data.get('created_at')
         if created_at:
             created_at = datetime.strptime(created_at, '%Y-%m-%d')
@@ -49,17 +62,20 @@ class AddExpense(Resource):
             item=item,
             description=description,
             quantity=quantity,
-            category=category,  # Directly use the provided category
+            category=category,
             totalPrice=totalPrice,
             amountPaid=amountPaid,
             paidTo=paidTo,
             created_at=created_at,
-            user_id=current_user_id
+            user_id=current_user_id,
+            source=source  # Add the source of funds to the expense entry
         )
 
+        # Add the new expense to the database and commit the transaction
         db.session.add(new_expense)
         db.session.commit()
 
+        # Return success message
         return {"message": "Expense added successfully"}, 201
 
 
@@ -107,7 +123,8 @@ class AllExpenses(Resource):
                 "amountPaid": expense.amountPaid,
                 "balance": balance,
                 "paidTo": expense.paidTo,
-                "created_at": created_at
+                "created_at": created_at,
+                "source": expense.source  
             })
 
         return make_response(jsonify(all_expenses), 200)
@@ -133,6 +150,7 @@ class GetShopExpenses(Resource):
             "totalPrice" : expense.totalPrice,
             "amountPaid" : expense.amountPaid,
             "paidTo": expense.paidTo,
+            "source": expense.source,
             "created_at" : expense.created_at
 
         } for expense in shopExpenses]
@@ -162,6 +180,7 @@ class ExpensesResources(Resource):
                 "totalPrice": expense.totalPrice,
                 "paidTo": expense.paidTo,
                 "amountPaid": expense.amountPaid,
+                "source": expense.source,
                 # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             }, 200
@@ -187,38 +206,53 @@ class ExpensesResources(Resource):
       
     @jwt_required()
     @check_role('manager')
-    def put(self, expense_id):
-        # Get the data from the request to update the expense
-        data = request.get_json()
+    class UpdateExpense(Resource):
+        def put(self, expense_id):
+            # Get the data from the request to update the expense
+            data = request.get_json()
 
-        # Fetch the specific expense by ID
-        expense = Expenses.query.get(expense_id)
+            # Fetch the specific expense by ID
+            expense = Expenses.query.get(expense_id)
 
-        if expense:
-            # Update the expense with the provided data
-            expense.item = data.get('item', expense.item)
-            expense.description = data.get('description', expense.description)
-            expense.category = data.get('category', expense.category)
-            expense.quantity = data.get('quantity', expense.quantity)
-            expense.totalPrice = data.get('totalPrice', expense.totalPrice)
-            expense.amountPaid = data.get('amountPaid', expense.amountPaid)
-            expense.paidTo = data.get('paidTo', expense.paidTo)
-            
-            # Convert created_at from String to datetime, handling both formats
-            if 'created_at' in data:
-                try:
-                    # Try parsing the full datetime first
-                    expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    # If only the date is provided, parse as date
-                    expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d')
+            if expense:
+                # Update the expense with the provided data
+                expense.item = data.get('item', expense.item)
+                expense.description = data.get('description', expense.description)
+                expense.category = data.get('category', expense.category)
+                expense.quantity = data.get('quantity', expense.quantity)
+                expense.totalPrice = data.get('totalPrice', expense.totalPrice)
+                expense.amountPaid = data.get('amountPaid', expense.amountPaid)
+                expense.paidTo = data.get('paidTo', expense.paidTo)
 
-            # Commit the changes to the database
-            db.session.commit()
+                # Update the 'source' field
+                source = data.get('source')
+                if source:
+                    valid_sources = {
+                        "Shop Tills",
+                        "Petty Cash - 011 64 (0) 0393 held by Momanyi",
+                        "Bank (Standard Chartered Account number 0102488954500)",
+                        "Leonard Sasapay (account: 254711592002)"
+                    }
+                    if source not in valid_sources:
+                        return {"message": f"Invalid source: {source}. Must be one of {valid_sources}"}, 400
+                    expense.source = source
 
-            return {"message": "Expense updated successfully"}, 200
-        else:
-            return {"error": "Expense not found"}, 404
+                # Convert created_at from String to datetime, handling both formats
+                if 'created_at' in data:
+                    try:
+                        # Try parsing the full datetime first
+                        expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        # If only the date is provided, parse as date
+                        expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d')
+
+                # Commit the changes to the database
+                db.session.commit()
+
+                return {"message": "Expense updated successfully"}, 200
+            else:
+                return {"error": "Expense not found"}, 404
+
 
 
 class TotalBalance(Resource):
