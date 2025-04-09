@@ -90,7 +90,7 @@ const TotalAmountPaidPurchases = () => {
       ) : (
         <h1>{totalAmountPaid !== null ? ` ${totalAmountPaid}` : 'No data available'}</h1>
       )}
-      <Link to="/purchases">View Purchases</Link>
+      {/* <Link to="/purchases">View Purchases</Link> */}
     </div>
   );
 };
