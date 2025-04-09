@@ -54,7 +54,8 @@ const FinancialSummaryCard = () => {
   };
 
   return (
-    <div className="metrix-container">
+    <div className='financial-card'>
+      
       <div className="metric-top">
         <FontAwesomeIcon className="metric-icon" icon={faChartSimple} size="1x" />
         <div className="controls">
@@ -83,13 +84,15 @@ const FinancialSummaryCard = () => {
         <p>{error}</p>
       ) : (
         <div className="financial-values">
-          <p><strong>Total Sales:</strong> {summary.total_sales_amount_paid || 'Ksh 0.00'}</p>
-          <p><strong>Total Expenses:</strong> {summary.total_expenses_amount_paid || 'Ksh 0.00'}</p>
-          <p><strong>Inventory Purchases:</strong> {summary.total_inventory_purchases_amount_paid || 'Ksh 0.00'}</p>
-          <p><strong>Remaining Stock Value:</strong> {summary.remaining_stock_value || 'Ksh 0.00'}</p>
-          <p><strong>Value of Sold Goods:</strong> {summary.value_of_sold_goods || 'Ksh 0.00'}</p>
+          <p>Total Sales: <strong>{summary.total_sales_amount_paid || 'Ksh 0.00'}</strong></p>
+          <p>Total Expenses: <strong>{summary.total_expenses_amount_paid || 'Ksh 0.00'}</strong></p>
+          <p>Inventory Purchases: <strong>{summary.total_inventory_purchases_amount_paid || 'Ksh 0.00'}</strong></p>
+          <p>Remaining Stock Value: <strong>{summary.remaining_stock_value || 'Ksh 0.00'}</strong></p>
+          <p>Value of Sold Goods: <strong>{summary.value_of_sold_goods || 'Ksh 0.00'}</strong></p>
         </div>
+
       )}
+    
     </div>
   );
 };

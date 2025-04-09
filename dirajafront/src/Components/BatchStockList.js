@@ -9,7 +9,7 @@ const BatchStockList = () => {
   const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("inStock"); // Default to 'In Stock'
-  const itemsPerPage = 10;
+  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchBatchStock = async () => {
