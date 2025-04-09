@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import '../../Styles/shopstock.css';
 import LoadingAnimation from '../LoadingAnimation';
 import ActionsDropdown from './ActionsDropdown';
-import { Link } from 'react-router-dom';
 
 
 const Shopstock = () => {
@@ -84,15 +83,17 @@ const Shopstock = () => {
             </div>
 
 
+
             {/* Actions Dropdown */}
             <ActionsDropdown
                 shopStocks={shopStocks}
                 setShopStocks={setShopStocks}
                 selectedStocks={selectedStocks}
                 setSelectedStocks={setSelectedStocks}
+                
             />
 
-            <Link to="/mabandastocksmanager"  className='add-button' >View Mabanda Stock </Link>
+            
 
 
 

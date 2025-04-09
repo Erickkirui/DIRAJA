@@ -21,40 +21,33 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
 class AddExpense(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
         data = request.get_json()
-
-        # Extract necessary fields from the incoming request data
         current_user_id = get_jwt_identity()
 
+        # Extract necessary fields from the request
         shop_id = data.get('shop_id')
         item = data.get('item')
         description = data.get('description')
         quantity = data.get('quantity')
-        category = data.get('category')  # Accepting the category from the request
+        category = data.get('category')
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
         paidTo = data.get('paidTo')
-        source = data.get('source')  # Accepting the source of funds from the request
+        source = data.get('source')
+        comments = data.get('comments')  # Accept comments from request
 
-        # Validate the 'source' field
-        valid_sources = {
-            "Shop Tills",
-            "Petty Cash - 011 64 (0) 0393 held by Momanyi",
-            "Bank (Standard Chartered Account number 0102488954500)",
-            "Leonard Sasapay (account: 254711592002)"
-        }
-
-        if source not in valid_sources:
-            return {"message": f"Invalid source: {source}. Must be one of {valid_sources}"}, 400
-
-        # Convert the 'created_at' string to a datetime object
+        # Convert 'created_at' string to a datetime object
         created_at = data.get('created_at')
         if created_at:
-            created_at = datetime.strptime(created_at, '%Y-%m-%d')
+            try:
+                created_at = datetime.strptime(created_at, '%Y-%m-%d')
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
 
         # Create a new expense entry
         new_expense = Expenses(
@@ -66,19 +59,17 @@ class AddExpense(Resource):
             totalPrice=totalPrice,
             amountPaid=amountPaid,
             paidTo=paidTo,
-            created_at=created_at,
+            created_at=created_at or datetime.utcnow(),
             user_id=current_user_id,
-            source=source  # Add the source of funds to the expense entry
+            source=source,
+            comments=comments  # Include comments in the expense entry
         )
 
         # Add the new expense to the database and commit the transaction
         db.session.add(new_expense)
         db.session.commit()
 
-        # Return success message
         return {"message": "Expense added successfully"}, 201
-
-
 
 
 class AllExpenses(Resource):
@@ -86,7 +77,8 @@ class AllExpenses(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        expenses = Expenses.query.all()
+        # Fetch all expenses ordered by 'created_at' in descending order
+        expenses = Expenses.query.order_by(Expenses.created_at.desc()).all()
         all_expenses = []
 
         for expense in expenses:
@@ -124,10 +116,12 @@ class AllExpenses(Resource):
                 "balance": balance,
                 "paidTo": expense.paidTo,
                 "created_at": created_at,
-                "source": expense.source  
+                "source": expense.source,
+                "comments": expense.comments  
             })
 
         return make_response(jsonify(all_expenses), 200)
+
 
 class GetShopExpenses(Resource):
     
@@ -151,6 +145,7 @@ class GetShopExpenses(Resource):
             "amountPaid" : expense.amountPaid,
             "paidTo": expense.paidTo,
             "source": expense.source,
+            "comments": expense.comments,
             "created_at" : expense.created_at
 
         } for expense in shopExpenses]
@@ -181,6 +176,7 @@ class ExpensesResources(Resource):
                 "paidTo": expense.paidTo,
                 "amountPaid": expense.amountPaid,
                 "source": expense.source,
+                "comments": expense.comments,
                 # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
             }, 200
@@ -223,35 +219,23 @@ class ExpensesResources(Resource):
                 expense.totalPrice = data.get('totalPrice', expense.totalPrice)
                 expense.amountPaid = data.get('amountPaid', expense.amountPaid)
                 expense.paidTo = data.get('paidTo', expense.paidTo)
+                expense.source = data.get('source', expense.source)
+                expense.comments = data.get('comments', expense.comments)  # New comments column
 
-                # Update the 'source' field
-                source = data.get('source')
-                if source:
-                    valid_sources = {
-                        "Shop Tills",
-                        "Petty Cash - 011 64 (0) 0393 held by Momanyi",
-                        "Bank (Standard Chartered Account number 0102488954500)",
-                        "Leonard Sasapay (account: 254711592002)"
-                    }
-                    if source not in valid_sources:
-                        return {"message": f"Invalid source: {source}. Must be one of {valid_sources}"}, 400
-                    expense.source = source
-
-                # Convert created_at from String to datetime, handling both formats
+                # Convert created_at from String to datetime if provided
                 if 'created_at' in data:
                     try:
-                        # Try parsing the full datetime first
                         expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
                     except ValueError:
-                        # If only the date is provided, parse as date
                         expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d')
 
                 # Commit the changes to the database
                 db.session.commit()
 
                 return {"message": "Expense updated successfully"}, 200
-            else:
-                return {"error": "Expense not found"}, 404
+
+            return {"error": "Expense not found"}, 404
+
 
 
 

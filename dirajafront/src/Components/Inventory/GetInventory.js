@@ -204,11 +204,11 @@ const Inventory = () => {
             <th>Initial Quantity</th>
             <th>Remaining Quantity</th>
             <th>Unit Cost (Ksh)</th>
-            <th>Total Cost (Ksh)</th>
+            {/* <th>Total Cost (Ksh)</th> */}
             <th>Amount Paid (Ksh)</th>
-            <th>Balance (Ksh)</th>
+            <th>Source</th>
             <th>Comments</th>
-            <th>Unit Price (Ksh)</th>
+            {/* <th>Unit Price (Ksh)</th> */}
             <th>Date</th>
             <th>Actions</th>
           </tr>
@@ -229,11 +229,11 @@ const Inventory = () => {
               <td>{inventoryItem.initial_quantity} {inventoryItem.metric}</td>
               <td>{inventoryItem.remaining_quantity} {inventoryItem.metric}</td>
               <td>{inventoryItem.unitCost}</td>
-              <td>{inventoryItem.totalCost}</td>
+              {/* <td>{inventoryItem.totalCost}</td> */}
               <td>{inventoryItem.amountPaid}</td>
-              <td>{inventoryItem.balance}</td>
+              <td>{inventoryItem.source}</td>
               <td>{inventoryItem.note}</td>
-              <td>{inventoryItem.unitPrice}</td>
+              {/* <td>{inventoryItem.unitPrice}</td> */}
               <td>{new Date(inventoryItem.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
               <td>
                 <button className='editeInventory' onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>

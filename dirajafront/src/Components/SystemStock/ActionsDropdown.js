@@ -3,6 +3,8 @@ import axios from 'axios';
 import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import { Link } from 'react-router-dom';
+
 
 const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelectedStocks }) => {
     const [selectedAction, setSelectedAction] = useState('');
@@ -180,6 +182,8 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
 
             <ExportExcel data={selectedStocks} fileName="ShopstocksData" />
             <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
+            <Link to="/mabandastocksmanager"  className='mabandabutton' >View Mabanda Stock </Link>
+            
 
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal

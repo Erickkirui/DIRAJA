@@ -43,14 +43,14 @@ function Navbar() {
             <img src='/images/Employees.png' alt='menu-icon' />
             <li>Employees</li>
           </NavLink>
-          <NavLink exact to="/purchases" className="menu-item" activeClassName="active">
+          {/* <NavLink exact to="/purchases" className="menu-item" activeClassName="active">
             <img src='/images/Expenses.png' alt='menu-icon' />
             <li>Purchases</li>
           </NavLink>
           <NavLink exact to="/alltransfers" className="menu-item" activeClassName="active">
             <img src='/images/Dashbord.png' alt='menu-icon' />
             <li>Transfer</li>
-          </NavLink>
+          </NavLink> */}
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />
             <li>System Stocks</li>

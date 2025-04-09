@@ -106,7 +106,7 @@ const Purchases = () => {
       <div className='actions-container'>
         <ExportExcel data={filteredPurchases} fileName="PurchasesData" />
         <DownloadPDF tableId="purchases-table" fileName="PurchasesData" />
-        <Link to="/mabandapurchasesmanager"  className='add-button' >View Mabanda Purchases </Link>
+        <Link to="/mabandapurchasesmanager"  className='mabandabutton' >View Mabanda Purchases </Link>
         
       </div>
 

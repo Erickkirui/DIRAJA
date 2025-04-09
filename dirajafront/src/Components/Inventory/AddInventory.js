@@ -5,14 +5,15 @@ const AddInventory = () => {
   const [formData, setFormData] = useState({
     itemname: '',
     quantity: '',
-    metric: 'kg', // Default to "litres"
+    metric: 'kg', // Default to "kg"
     unitCost: '',
     amountPaid: '',
     unitPrice: '',
     Suppliername: '',
     Supplier_location: '',
     note: '',
-    created_at: ''
+    created_at: '',
+    source: '', // Just source, no external funding comment needed
   });
   const [message, setMessage] = useState('');
 
@@ -33,7 +34,7 @@ const AddInventory = () => {
     };
 
     try {
-      const response = await axios.post(' /api/diraja/newinventory', numericFormData, {
+      const response = await axios.post('/api/diraja/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -51,7 +52,8 @@ const AddInventory = () => {
         Suppliername: '',
         Supplier_location: '',
         note: '',
-        created_at: ''
+        created_at: '',
+        source: '', // Reset source
       });
 
     } catch (error) {
@@ -96,8 +98,41 @@ const AddInventory = () => {
           >
             <option value="kg">Kilograms</option>
             <option value="litres">Litres</option>
-            <option value="item">items</option>
+            <option value="item">Items</option>
           </select>
+        </div>
+        {/* Source Dropdown */}
+        <div>
+          <select name="source" value={formData.source} onChange={handleChange} className="select">
+            <option value="">Select Source</option>
+            <option value="Mpesa - 0748277960">Mpesa - 0748277960</option>
+            <option value="Mpesa - 0116400393">Mpesa - 0116400393</option>
+            <option value="Sasapay - Mirema">Sasapay - Mirema</option>
+            <option value="Sasapay - TRM">Sasapay - TRM</option>
+            <option value="Sasapay - Lumumba Drive">Sasapay - Lumumba Drive</option>
+            <option value="Sasapay - Zimmerman shop">Sasapay - Zimmerman shop</option>
+            <option value="Sasapay - Zimmerman Store">Sasapay - Zimmerman Store</option>
+            <option value="Sasapay - Githurai 44">Sasapay - Githurai 44</option>
+            <option value="Sasapay - Kangundo Rd Market">Sasapay - Kangundo Rd Market</option>
+            <option value="Sasapay - Ngoingwa">Sasapay - Ngoingwa</option>
+            <option value="Sasapay - Thika Market">Sasapay - Thika Market</option>
+            <option value="Sasapay - Mabanda">Sasapay - Mabanda</option>
+            <option value="Sasapay - Kisumu">Sasapay - Kisumu</option>
+            <option value="Sasapay - Pipeline">Sasapay - Pipeline</option>
+            <option value="Sasapay - Turi">Sasapay - Turi</option>
+            <option value="Sta">Sta</option>
+            <option value="Standard Chartered Bank">Standard Chartered Bank</option>
+            <option value="External funding">External funding</option>
+          </select>
+        </div>
+        <div>
+          <textarea
+            name="note"
+            value={formData.note}
+            onChange={handleChange}
+            placeholder="Comments (Optional)"
+            className="input"
+          />
         </div>
         <div>
           <input
@@ -152,15 +187,6 @@ const AddInventory = () => {
             placeholder="Supplier Location"
             className="input"
             required
-          />
-        </div>
-        <div>
-          <textarea
-            name="note"
-            value={formData.note}
-            onChange={handleChange}
-            placeholder="Note"
-            className="input"
           />
         </div>
         <div>
