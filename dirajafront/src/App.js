@@ -55,6 +55,7 @@ import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
 import MabandaPage from './Pages/MabandaPage';
+import AllSales from './Components/Sales/GetSale';
 
 
 
@@ -135,6 +136,7 @@ function App() {
             <Route path='/alltransfers' element={<Layout><TransfersPage/></Layout>} ></Route>
             <Route path='/purchases' element={<Layout><PurchasesPage/></Layout>} ></Route>
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
+            <Route path='/allsales' element={<Layout><AllSales/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>

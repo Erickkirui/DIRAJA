@@ -107,6 +107,12 @@ const UserDisplay = () => {
               </>
             )}
 
+            {username === "External Auditor" && (
+              <>
+                  <Link to="/allsales" onClick={handleMenuClick}>View Sales</Link>
+              </>
+            )}
+
             <button onClick={handleLogout}>Logout</button>
           </div>
         )}
