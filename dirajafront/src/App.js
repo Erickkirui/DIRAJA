@@ -56,6 +56,8 @@ import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
 import MabandaPage from './Pages/MabandaPage';
 import SalesSummaryTable from './Components/ManagerDashbord/SalesSummeryTable';
+import Procurement from './Pages/Procurement';
+import ProcurementInventory from './Components/Procurement/ProcurementInventory';
 
 
 
@@ -138,6 +140,9 @@ function App() {
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
+
+            <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
+            <Route path='/distribute' element = {<ClerkDashbord><ProcurementInventory /> </ClerkDashbord>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>

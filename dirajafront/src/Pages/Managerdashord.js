@@ -17,7 +17,9 @@ function Managerdashord() {
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role === 'clerk') {
-      window.location.href = '/clerk'; // Redirect to the clerk route
+      window.location.href = '/clerk';
+    } else if (role === 'procurement') {
+      window.location.href = '/procurement';
     }
   }, []);
 

@@ -35,11 +35,15 @@ const Login = () => {
       setError('');
 
       // Redirect based on the user's role
+      // Redirect based on the user's role
       if (role === 'manager') {
         window.location.href = '/';
       } else if (role === 'clerk') {
         window.location.href = '/clerk';
+      } else if (role === 'procurement') {
+        window.location.href = '/procurement';
       }
+
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {
         setError(err.response.data.error);

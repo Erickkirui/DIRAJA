@@ -28,6 +28,18 @@
  
 }
 
+a{
+  text-decoration: none;
+  text-align: center;
+}
+.secondary-button{
+  background-color:  none;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  border-radius: 6px;
+  padding: 10px;
+}
+
 /* page not found */
 .not-found-container {
   display: flex;
