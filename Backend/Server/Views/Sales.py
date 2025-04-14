@@ -18,6 +18,8 @@ from flask import jsonify, request
 from functools import wraps
 from datetime import datetime, timedelta
 
+from fuzzywuzzy import process
+
 
 
 # def check_role(allowed_roles):
@@ -116,27 +118,50 @@ class AddSale(Resource):
         today = datetime.today().date()
         yesterday = today - timedelta(days=1)
 
-        # ✅ **Deduct from LiveStock only if the sale date is today or yesterday**
+        # ✅ Deduct from LiveStock only if the sale date is today or yesterday
         live_stock = None
-        if created_at.date() in [today, yesterday]:  
-            live_stock = (
-                LiveStock.query
-                .filter_by(shop_id=shop_id, item_name=item_name)
-                .order_by(LiveStock.created_at.desc())  
-                .first()
-            )
+        remaining_stock = None
 
-            if live_stock:
-                if live_stock.current_quantity < quantity:
-                    return {'message': 'Insufficient stock quantity in LiveStock table'}, 400
+        if created_at.date() in [today, yesterday]:
+            # Get all item names for the given shop
+            item_names = [stock.item_name for stock in LiveStock.query.filter_by(shop_id=shop_id).all()]
 
-                live_stock.current_quantity -= quantity
-                remaining_stock = live_stock.current_quantity
+            # Fuzzy match
+            best_match, score = process.extractOne(item_name, item_names)
+
+            if score >= 80:
+                # Strong match — proceed with stock deduction
+                matched_item_name = best_match
+
+                live_stock = (
+                    LiveStock.query
+                    .filter_by(shop_id=shop_id, item_name=matched_item_name)
+                    .order_by(LiveStock.created_at.desc())
+                    .first()
+                )
+
+                if live_stock:
+                    if live_stock.current_quantity < quantity:
+                        return {'message': f'Not enough stock in LiveStock for "{matched_item_name}". Available: {live_stock.current_quantity}, Requested: {quantity}'}, 400
+
+                    # Deduct
+                    live_stock.current_quantity -= quantity
+                    remaining_stock = live_stock.current_quantity
+
+            elif score > 45:
+                # Medium match — do not deduct, but allow sale to continue
+                matched_item_name = best_match
+                remaining_stock = None
+
             else:
+                # No reasonable match — treat as unrecognized, skip deduction
+                matched_item_name = None
                 remaining_stock = None
         else:
-            remaining_stock = None  
+            # Sale not today or yesterday — skip deduction
+            remaining_stock = None
 
+        
         # ✅ **Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
