@@ -41,6 +41,9 @@ def initialize_models():
     from Server.Models.LiveStock import LiveStock
     from Server.Models.ShopTransfers import ShopTransfer
     from Server.Models.SystemStockTransfer import  SystemStockTransfer
+    from Server.Models.AccountTypes import AccountTypes
+    from Server.Models.ChartOfAccounts import ChartOfAccounts
+
     
     # from Server.Models.Purchases import Purchases
 
