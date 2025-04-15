@@ -45,6 +45,7 @@ def initialize_models():
     from Server.Models.ChartOfAccounts import ChartOfAccounts
     from Server.Models.BankAccounts import BankAccount
     from Server.Models.BankAccounts import BankingTransaction
+    from Server.Models.ItemAccountsTable import ItemAccounts
 
     
     # from Server.Models.Purchases import Purchases

@@ -37,6 +37,7 @@ from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmoun
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
 from Server.Views.Emailnotifications import Report
+from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -217,6 +218,20 @@ api.add_resource(MabandaPurchaseResource,'/getmabandapurchase')
 api.add_resource(MabandaStockResource,'/getmabandastock')
 api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
 api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
+
+
+
+#Accounting 
+api.add_resource(CreateAccount, '/add-account')
+api.add_resource(AccountTypeListResource, '/account-types/all')
+api.add_resource(AccountTypeResource, '/account-types/<int:id>')
+#chart of accounts
+api.add_resource(CreateChartOfAccounts, '/add-chart-of-accounts')
+api.add_resource(ChartOfAccountsList, '/chart-of-accounts')
+#items 
+api.add_resource(CreateItemAccount, '/itemaccounts')
+api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
+
 
 
 
