@@ -55,6 +55,9 @@ import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
 import MabandaPage from './Pages/MabandaPage';
+import SalesSummaryTable from './Components/ManagerDashbord/SalesSummeryTable';
+import Procurement from './Pages/Procurement';
+import ProcurementInventory from './Components/Procurement/ProcurementInventory';
 import AllSales from './Components/Sales/GetSale';
 
 
