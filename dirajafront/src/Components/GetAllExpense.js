@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct import path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct import path
+import ExportExcel from '../Components/Download/ExportExcel';
+import DownloadPDF from '../Components/Download/DownloadPDF';
 import '../Styles/expenses.css';
 
 const Expenses = () => {
@@ -19,32 +19,31 @@ const Expenses = () => {
     const fetchExpenses = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-  
+
         if (!accessToken) {
           setError('No access token found, please log in.');
           return;
         }
-  
+
         const response = await axios.get('/api/diraja/allexpenses', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-  
+
         // Sort expenses by 'created_at' in descending order
         const sortedExpenses = response.data.sort((a, b) => {
           return new Date(b.created_at) - new Date(a.created_at);
         });
-  
+
         setExpenses(sortedExpenses);
       } catch (err) {
         setError('Error fetching expenses. Please try again.');
       }
     };
-  
+
     fetchExpenses();
   }, []);
-  
 
   const handleCheckboxChange = (expenseId) => {
     setSelectedExpenses((prevSelected) =>
@@ -138,7 +137,7 @@ const Expenses = () => {
 
         <ExportExcel data={expenses} fileName="ExpensesData" />
         <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-        <Link to="/mabandaexpensesmanager" className='add-button'>View Mabanda Expenses</Link>
+        <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link>
       </div>
 
       <table id="expenses-table" className="expenses-table">
@@ -156,10 +155,9 @@ const Expenses = () => {
             <th>Item</th>
             <th>Category</th>
             <th>Description</th>
-            {/* <th>Quantity</th> */}
-            {/* <th>Total Price (Ksh)</th> */}
             <th>Amount Paid (Ksh)</th>
             <th>From</th>
+            <th>Comments</th>
             <th>Paid To</th>
             <th>Date</th>
           </tr>
@@ -184,10 +182,9 @@ const Expenses = () => {
               <td>{expense.item}</td>
               <td>{expense.category}</td>
               <td>{expense.description}</td>
-              {/* <td>{expense.quantity}</td> */}
-              {/* <td>{expense.totalPrice}</td> */}
               <td>{expense.amountPaid}</td>
               <td>{expense.source}</td>
+              <td>{expense.comments}</td>
               <td>{expense.paidTo}</td>
               <td>{new Date(expense.created_at).toLocaleDateString('en-CA')}</td>
             </tr>

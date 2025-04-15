@@ -339,7 +339,7 @@ class AddInventory(Resource):
         # Validate required fields (including supplier fields)
         required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice', 'Suppliername', 'Supplier_location', 'created_at']
         if not all(field in data for field in required_fields):
-            return jsonify({'message': 'Missing required fields'}), 400
+            return {'message': 'Missing required fields'}, 400
 
         # Extract data
         itemname = data.get('itemname')
@@ -350,14 +350,14 @@ class AddInventory(Resource):
         unitPrice = data.get('unitPrice')
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
+        source = data.get('source')
         note = data.get('note', '')  # Optional field, default to empty String
         created_at_str = data.get('created_at')
 
         try:
             created_at = datetime.strptime(created_at_str, "%Y-%m-%d")  # Assuming the format YYYY-MM-DD
         except ValueError:
-            return jsonify({'message': 'Invalid date format. Please use YYYY-MM-DD for created_at.'}), 400
-
+            return {'message': 'Invalid date format. Please use YYYY-MM-DD for created_at.'}, 400
 
         # Calculate totalCost and balance
         totalCost = unitCost * quantity
@@ -369,6 +369,10 @@ class AddInventory(Resource):
 
         # Generate the batch code using the static method
         batch_code = Inventory.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
+        
+        # No longer validating source; now directly accepting it as is
+        if source and len(source) == 0:
+            source = "Unknown"  # If no source is provided, default to "Unknown"
 
         # Create new inventory record
         new_inventory = Inventory(
@@ -386,7 +390,8 @@ class AddInventory(Resource):
             Supplier_location=Supplier_location,
             ballance=balance,  # Balance calculated as totalCost - amountPaid
             note=note,
-            created_at=created_at
+            created_at=created_at,
+            source=source  # Now we save source as is
         )
 
         # Save to database
@@ -394,9 +399,11 @@ class AddInventory(Resource):
             db.session.add(new_inventory)
             db.session.commit()
             return {'message': 'Inventory added successfully', 'BatchNumber': batch_code}, 201
+
         except Exception as e:
             db.session.rollback()
-            return jsonify({'message': 'Error adding inventory', 'error': str(e)}), 500
+            return {'message': 'Error adding inventory', 'error': str(e)}, 500
+
 
    
     
@@ -420,7 +427,8 @@ class GetAllInventory(Resource):
             "balance":inventory.ballance,
             "note":inventory.note,
             "created_at": inventory.created_at,
-            "unitPrice": inventory.unitPrice
+            "unitPrice": inventory.unitPrice,
+            "source":inventory.source
         } for inventory in inventories]
 
         return make_response(jsonify(all_inventory), 200)
@@ -447,6 +455,7 @@ class InventoryResourceById(Resource):
                 "note": inventory.note,
                 "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
                 "unitPrice": inventory.unitPrice,
+                "source":inventory.source,
                 "Suppliername": inventory.Suppliername,
                 "Supplier_location": inventory.Supplier_location
             }, 200

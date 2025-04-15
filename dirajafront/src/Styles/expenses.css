@@ -150,6 +150,15 @@
   .suggestions li:hover {
     background-color: #f0f0f0;
   }
+
+  .mabandabutton {
+    background-color: none;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    border-radius: 5px;
+    padding: 10px;
+    text-decoration: none;
+  }
   
 
   @media (max-width: 768px) {

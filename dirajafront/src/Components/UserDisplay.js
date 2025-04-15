@@ -84,8 +84,8 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/allshops" onClick={handleMenuClick}>Shops</Link>}
             {role === 'manager' && <Link to="/allcustomers" onClick={handleMenuClick}>Customers</Link>}
             {role === 'manager' && <Link to="/allemployees" onClick={handleMenuClick}>Employees</Link>}
-            {role === 'manager' && <Link to="/purchases" onClick={handleMenuClick}>Purchases</Link>}
-            {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>}
+            {/* {role === 'manager' && <Link to="/purchases" onClick={handleMenuClick}>Purchases</Link>}
+            {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>} */}
             {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
             {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
 
@@ -104,6 +104,12 @@ const UserDisplay = () => {
               <>
                   <Link to="/mabandaexpense" onClick={handleMenuClick}>Add Mabanda Expense</Link>
                   <Link to="/mabandapurchase" onClick={handleMenuClick}>Add Mabanda Purchases</Link>
+              </>
+            )}
+
+            {username === "External Auditor" && (
+              <>
+                  <Link to="/allsales" onClick={handleMenuClick}>View Sales</Link>
               </>
             )}
 
