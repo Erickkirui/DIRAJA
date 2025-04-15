@@ -7,11 +7,7 @@ class ChartOfAccounts(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     Account = db.Column(db.String(50), nullable=False)
     
-    link_type_account = db.Column(
-        db.String(50), 
-        db.ForeignKey('account_type.type'), 
-        nullable=False
-    )
+    account_type_id = db.Column(db.Integer, db.ForeignKey('account_type.id'), nullable=False)
 
     # Relationship def
     account_type = db.relationship("AccountTypes", backref="charts")
