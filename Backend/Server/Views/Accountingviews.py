@@ -18,10 +18,6 @@ class CreateAccount(Resource):
         if not name or not type_:
             return make_response(jsonify({"message": "Both 'name' and 'type' are required."}), 400)
 
-        # Check if type already exists (since it's unique)
-        if AccountTypes.query.filter_by(type=type_).first():
-            return make_response(jsonify({"message": f"Account type '{type_}' already exists."}), 409)
-
         new_type = AccountTypes(name=name, type=type_)
 
         try:
@@ -38,6 +34,7 @@ class CreateAccount(Resource):
         except Exception as e:
             db.session.rollback()
             return make_response(jsonify({"message": "Error creating account type.", "error": str(e)}), 500)
+
         
 class AccountTypeListResource(Resource):
     @jwt_required()
