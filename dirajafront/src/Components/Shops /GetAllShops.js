@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Components/Download/ExportExcel'; // Correct path
-import DownloadPDF from '../Components/Download/DownloadPDF'; // Correct path
-import '../Styles/shops.css';
+import ExportExcel from '../Download/ExportExcel'; // Correct path
+import DownloadPDF from '../Download/DownloadPDF'; // Correct path
+import '../../Styles/shops.css';
 
 const Shops = () => {
   const [shops, setShops] = useState([]);

@@ -59,6 +59,7 @@ import SalesSummaryTable from './Components/ManagerDashbord/SalesSummeryTable';
 import Procurement from './Pages/Procurement';
 import ProcurementInventory from './Components/Procurement/ProcurementInventory';
 import AllSales from './Components/Sales/GetSale';
+import AccountBalances from './Pages/AccountBalances';
 
 
 
@@ -180,6 +181,8 @@ function App() {
             <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
+
+            <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
           </Routes> 
        
       </Router>

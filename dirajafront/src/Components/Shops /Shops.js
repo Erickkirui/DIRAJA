@@ -1,7 +1,7 @@
 // src/components/AddShop.js
 import React, { useState } from 'react';
 import axios from 'axios';
-import "../Styles/shops.css";
+import "../../Styles/shops.css";
 
 const AddShop = () => {
   const [shopname, setShopname] = useState('');

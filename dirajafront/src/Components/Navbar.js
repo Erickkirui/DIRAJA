@@ -59,6 +59,11 @@ function Navbar() {
             <img src='/images/Shop.png' alt='menu-icon' />
             <li> Shop Stocks</li>
           </NavLink>
+          <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active" >
+            <img src='/images/Shop.png' alt='menu-icon' />
+            <li> Account Balances</li>
+          </NavLink>
+
           
         </ul>
       </div>
