@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { Alert, Stack } from '@mui/material';
 
 function AddAccounts() {
   const [accountName, setAccountName] = useState('');
   const [accountBalance, setAccountBalance] = useState('');
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('info'); // can be: success, error, warning, info
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -11,11 +13,13 @@ function AddAccounts() {
     const accessToken = localStorage.getItem('access_token');
     if (!accessToken) {
       setMessage('You are not authenticated');
+      setMessageType('error');
       return;
     }
 
     if (!accountName || accountBalance === '') {
       setMessage('Please provide both Account Name and Account Balance');
+      setMessageType('warning');
       return;
     }
 
@@ -36,24 +40,32 @@ function AddAccounts() {
 
       if (response.ok) {
         setMessage('Bank account created successfully');
+        setMessageType('success');
         setAccountName('');
         setAccountBalance('');
       } else {
         setMessage(data.message || 'Failed to create bank account');
+        setMessageType('error');
       }
     } catch (error) {
       console.error('Error:', error);
       setMessage('Something went wrong');
+      setMessageType('error');
     }
   };
 
   return (
     <div className='add-shop-container'>
       <h2>Add Bank Account</h2>
-      {message && <div>{message}</div>}
+      {message && (
+        <Stack sx={{ mb: 2 }}>
+          <Alert severity={messageType} variant="outlined">
+            {message}
+          </Alert>
+        </Stack>
+      )}
       <form onSubmit={handleSubmit}>
         <div>
-        
           <input
             type="text"
             value={accountName}
@@ -63,7 +75,6 @@ function AddAccounts() {
           />
         </div>
         <div>
-         
           <input
             type="number"
             step="0.01"

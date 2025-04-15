@@ -3,22 +3,23 @@ import TransactionList from '../Components/AccountBalance/TransactionList'
 import AccountsBalanceList from '../Components/AccountBalance/AccountsBalanceList'
 
 function AccountBalances() {
-  const [activeTab, setActiveTab] = useState('Employees') // default tab
+  const [activeTab, setActiveTab] = useState('accounts') // default tab
 
   return (
     <>
-    <h1>Accounts </h1>
+      <h1>Accounts</h1>
+      
       {/* Tabs */}
       <div className="tabs-container mb-4">
         <button 
-          className={`tab-button ${activeTab === 'Employees' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('Employees')}
+          className={`tab-button ${activeTab === 'accounts' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('accounts')}
         >
           Accounts
         </button>
         <button 
-          className={`tab-button ${activeTab === 'employeesales' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('employeesales')}
+          className={`tab-button ${activeTab === 'transactions' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('transactions')}
         >
           Transactions
         </button>
@@ -26,8 +27,8 @@ function AccountBalances() {
 
       {/* Tab content */}
       <div className="tab-content">
-        {activeTab === 'Employees' && <AccountsBalanceList />}
-        {activeTab === 'employeesales' && <TransactionList />}
+        {activeTab === 'accounts' && <AccountsBalanceList />}
+        {activeTab === 'transactions' && <TransactionList />}
       </div>
     </>
   )

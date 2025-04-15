@@ -60,6 +60,7 @@ import Procurement from './Pages/Procurement';
 import ProcurementInventory from './Components/Procurement/ProcurementInventory';
 import AllSales from './Components/Sales/GetSale';
 import AccountBalances from './Pages/AccountBalances';
+import AccountingLedgers from './Pages/AccountingLedgers';
 
 
 
@@ -183,6 +184,7 @@ function App() {
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
 
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
+            <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
           </Routes> 
        
       </Router>
