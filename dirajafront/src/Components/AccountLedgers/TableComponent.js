@@ -2,12 +2,12 @@ import React from 'react';
 
 function TableComponent({ columns, data }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full border border-gray-300">
+    <div className="table-wrapper">
+      <table className="custom-table">
         <thead>
-          <tr className="bg-gray-200">
+          <tr className="table-header-row">
             {columns.map((col, idx) => (
-              <th key={idx} className="text-left px-4 py-2 border">
+              <th key={idx} className="table-header-cell">
                 {col}
               </th>
             ))}
@@ -15,9 +15,9 @@ function TableComponent({ columns, data }) {
         </thead>
         <tbody>
           {data.map((row, rIdx) => (
-            <tr key={rIdx} className="hover:bg-gray-100">
+            <tr key={rIdx} className="table-row">
               {columns.map((col, cIdx) => (
-                <td key={cIdx} className="px-4 py-2 border">
+                <td key={cIdx} className="table-cell">
                   {row[col.toLowerCase()]} {/* match keys like id, name, type */}
                 </td>
               ))}

@@ -239,3 +239,32 @@ a{
   left: 25%;
   background-color: var(--primary); /* Change this to match your theme */
 }
+
+
+
+/* Default Table */
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #ccc;
+}
+
+.table-header-row {
+  background-color: #f0f0f0;
+}
+
+.table-header-cell,
+.table-cell {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  text-align: left;
+}
+
+.table-row:hover {
+  background-color: #f9f9f9;
+}
