@@ -42,7 +42,7 @@ function Items() {
     fetchItemAccounts()
   }, [])
 
-  const columns = ['ID', 'Item', 'Type']
+  const columns = ['ID', 'Item', 'account']
 
   return (
     <div>

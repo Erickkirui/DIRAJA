@@ -278,7 +278,7 @@ class GetAllItemAccounts(Resource):
                 item_list.append({
                     "id": item.id,
                     "item": item.item,
-                    "type": item.type  # You can also include related chart_account info if needed
+                    "account": item.chart_account.Account  # Human-readable account name
                 })
             return {"item_accounts": item_list}, 200
 
