@@ -16,18 +16,23 @@ function Items() {
         setMessage('Access token is missing. Please login.')
         return
       }
-
+  
       try {
         const response = await fetch('/api/diraja/itemaccounts/all', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         })
-
+  
         const result = await response.json()
-
+  
         if (response.ok) {
-          setData(result.item_accounts || [])
+          const formattedData = (result.item_accounts || []).map(item => ({
+            id: item.id,
+            item: item.item,
+            accounts: item.accounts.join(', '), // 👈 join array into comma-separated string
+          }))
+          setData(formattedData)
         } else {
           setMessageType('error')
           setMessage(result.message || 'Failed to fetch item accounts')
@@ -38,11 +43,12 @@ function Items() {
         console.error(error)
       }
     }
-
+  
     fetchItemAccounts()
   }, [])
+  
 
-  const columns = ['ID', 'Item', 'account']
+  const columns = ['ID', 'Item', 'accounts']
 
   return (
     <div>

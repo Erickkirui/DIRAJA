@@ -240,34 +240,44 @@ class CreateItemAccount(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
-        
-        item = data.get('item')
-        chart_account_id = data.get('type')  # ID of chart_of_accounts
 
-        if not item or not chart_account_id:
-            return {"message": "Missing required fields."}, 400
+        item = data.get('item')
+        chart_account_ids = data.get('chart_account_ids')  # Expecting a list of chart_of_accounts IDs
+
+        if not item or not isinstance(chart_account_ids, list) or not chart_account_ids:
+            return {"message": "Missing or invalid fields. 'item' and 'chart_account_ids' are required."}, 400
 
         try:
-            new_item_account = ItemAccounts(
-                item=item,
-                type=chart_account_id
-            )
+            # Create the item
+            new_item_account = ItemAccounts(item=item)
+
+            # Query chart accounts
+            chart_accounts = ChartOfAccounts.query.filter(ChartOfAccounts.id.in_(chart_account_ids)).all()
+
+            if not chart_accounts:
+                return {"message": "No valid chart accounts found for given IDs."}, 400
+
+            # Assign the relationships
+            new_item_account.chart_accounts = chart_accounts
+
+            # Save to DB
             db.session.add(new_item_account)
             db.session.commit()
+
             return {
                 "message": "Item account created successfully.",
                 "item_account": {
                     "id": new_item_account.id,
                     "item": new_item_account.item,
-                    "type": new_item_account.type
+                    "chart_accounts": [account.id for account in new_item_account.chart_accounts]
                 }
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {"message": "An error occurred.", "error": str(e)}, 500
-        
 
+        
 class GetAllItemAccounts(Resource):
     @jwt_required()
     def get(self):
@@ -275,11 +285,15 @@ class GetAllItemAccounts(Resource):
             items = ItemAccounts.query.all()
             item_list = []
             for item in items:
+                # Collect the account names associated with this item account
+                account_names = [account.Account for account in item.chart_accounts]
+
                 item_list.append({
                     "id": item.id,
                     "item": item.item,
-                    "account": item.chart_account.Account  # Human-readable account name
+                    "accounts": account_names  # Return list of associated account names
                 })
+                
             return {"item_accounts": item_list}, 200
 
         except Exception as e:
