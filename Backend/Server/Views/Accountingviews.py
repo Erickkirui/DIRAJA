@@ -180,9 +180,8 @@ class ChartOfAccountsList(Resource):
             for account in chart_of_accounts:
                 result.append({
                     "id": account.id,
-                    "Account": account.Account,
-                    "account_type_id": account.account_type_id,
-                    "account_type": account.account_type.type
+                    "account": account.Account,
+                    "account_type": account.account_type.name
                 })
 
             return make_response(jsonify({"chart_of_accounts": result}), 200)

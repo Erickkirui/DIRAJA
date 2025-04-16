@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import TableComponent from './TableComponent'
-import { Alert, Stack } from '@mui/material'
 import AddChartOfAccount from './AddChartOfAccoun'
 
 function ChartOfAccounts() {
@@ -36,28 +35,27 @@ function ChartOfAccounts() {
         setMessageType('error')
         setMessage('An error occurred while fetching chart of accounts.')
         console.error(error)
+        console.log(data)
       }
     }
 
     fetchChartOfAccounts()
   }, [])
 
- 
-  const columns = ['id', 'Account', 'Account_name']
+  const columns = ['id', 'Account', 'Account_type']
 
   return (
-    <div className="p-4">
+    <div>
       <AddChartOfAccount />
-      
+
       {message && (
-        <Stack sx={{ my: 2 }}>
-          <Alert severity={messageType} variant="outlined">
-            {message}
-          </Alert>
-        </Stack>
+        <div>
+          {messageType === 'success' ? 'Success: ' : 'Error: '}
+          {message}
+        </div>
       )}
 
-      <h2 className="text-lg font-semibold mb-2">Chart of Accounts</h2>
+      <h2>Chart of Accounts</h2>
       <TableComponent columns={columns} data={data} />
     </div>
   )

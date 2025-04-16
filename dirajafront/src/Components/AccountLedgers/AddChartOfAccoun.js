@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react'
-import { TextField, Button, MenuItem, Stack, Alert } from '@mui/material'
 
 function AddChartOfAccount() {
   const [accountName, setAccountName] = useState('')
@@ -8,7 +7,6 @@ function AddChartOfAccount() {
   const [message, setMessage] = useState('')
   const [messageType, setMessageType] = useState('success')
 
-  // Fetch account types on mount
   useEffect(() => {
     const fetchAccountTypes = async () => {
       const token = localStorage.getItem('access_token')
@@ -80,47 +78,50 @@ function AddChartOfAccount() {
   }
 
   return (
-    <div className="mb-6">
+    <div>
       {message && (
-        <Stack sx={{ mb: 2 }}>
-          <Alert severity={messageType} variant="outlined">
-            {message}
-          </Alert>
-        </Stack>
+        <div>
+          {messageType === 'success' ? 'Success: ' : 'Error: '}
+          {message}
+        </div>
       )}
 
-      <h2 className="text-lg font-semibold mb-3">Add Chart of Account</h2>
+      <h2>Add Chart of Account</h2>
 
+      <div className='add-shop-container'>
       <form onSubmit={handleSubmit}>
-        <Stack spacing={2}>
-          <TextField
-            label="Account Name"
+        <div>
+          <input
+            type="text"
             value={accountName}
             onChange={(e) => setAccountName(e.target.value)}
-            fullWidth
             required
+            placeholder='Account Name'
           />
+        </div>
 
-          <TextField
-            select
-            label="Account Type"
+        <div>
+          
+         
+          <select
             value={accountTypeId}
             onChange={(e) => setAccountTypeId(e.target.value)}
-            fullWidth
             required
           >
+            <option value="">Select account type</option>
             {accountTypes.map((type) => (
-              <MenuItem key={type.id} value={type.id}>
+              <option key={type.id} value={type.id}>
                 {type.name} - {type.type}
-              </MenuItem>
+              </option>
             ))}
-          </TextField>
+          </select>
+        </div>
 
-          <Button type="submit" variant="contained" color="primary">
-            Add Chart of Account
-          </Button>
-        </Stack>
+        <div>
+          <button type="submit">Add Chart of Account</button>
+        </div>
       </form>
+      </div>
     </div>
   )
 }

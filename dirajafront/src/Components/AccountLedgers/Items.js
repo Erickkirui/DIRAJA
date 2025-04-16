@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import TableComponent from './TableComponent'
 import { Alert, Stack } from '@mui/material'
+import CreateItemAccount from './CreateItemAccounts'
 
 function Items() {
   const [data, setData] = useState([])
@@ -45,6 +46,7 @@ function Items() {
 
   return (
     <div>
+      <CreateItemAccount />
       {message && (
         <Stack sx={{ my: 2 }}>
           <Alert severity={messageType} variant="outlined">
