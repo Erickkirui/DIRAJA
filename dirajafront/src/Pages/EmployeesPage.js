@@ -33,9 +33,6 @@ function EmployeesPage() {
         >
           Sales Leaderboard
         </button>
-
-
-
       </div>
 
 

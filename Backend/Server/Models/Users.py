@@ -37,7 +37,7 @@ class Users(db.Model):
     
     @validates('role')
     def validate_role(self, key, role):
-        valid_roles = ['manager', 'clerk', 'super_admin']
+        valid_roles = ['manager', 'clerk', 'super_admin','procurement']
         assert role in valid_roles, f"Invalid role. Must be one of: {', '.join(valid_roles)}"
         return role
     

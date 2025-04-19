@@ -7,6 +7,7 @@ from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
+from Server.Models.Stock import Stock
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
@@ -20,6 +21,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
 from flask import current_app
 import traceback
+from sqlalchemy import func
 
 def check_role(required_role):
     def wrapper(fn):
@@ -54,13 +56,13 @@ class TotalAmountPaidAllSales(Resource):
             today = datetime.utcnow()
             start_date_str = request.args.get('startDate')
             end_date_str = request.args.get('endDate')
+            
             if start_date_str and end_date_str:
                 try:
                     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
                     end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
                 except ValueError:
                     return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
-
             else:
                 if period == 'today':
                     start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -81,19 +83,33 @@ class TotalAmountPaidAllSales(Resource):
                 else:
                     return {"message": "Invalid period specified"}, 400
 
-            # Build the query to sum up the amount_paid.
+            # Build the query to sum up the amount_paid for the specified period.
             query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
-                .filter(Sales.created_at.between(start_date, end_date))
             )
+            
+            if start_date and end_date:
+                query = query.filter(Sales.created_at.between(start_date, end_date))
 
             total_sales = query.scalar() or 0
 
-            # Format the total sales amount to 2 decimal places with a currency symbol.
-            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+            # Query for the all-time total sales (no date filters)
+            all_time_query = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+            )
             
-            return {"total_sales_amount_paid": formatted_sales}, 200
+            all_time_sales = all_time_query.scalar() or 0
+
+            # Format the total sales amounts to 2 decimal places with a currency symbol.
+            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+            formatted_all_time_sales = "Ksh {:,.2f}".format(all_time_sales)
+            
+            return {
+                "total_sales_amount_paid": formatted_sales,
+                "all_time_total_sales_amount_paid": formatted_all_time_sales
+            }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
@@ -101,6 +117,7 @@ class TotalAmountPaidAllSales(Resource):
                 "error": "An error occurred while fetching the total sales amount", 
                 "details": str(e)
             }, 500
+
 
 
 class TotalAmountPaidSalesPerShop(Resource):
@@ -246,9 +263,7 @@ class TotalAmountPaidExpenses(Resource):
 
 
 
-
-
-class TotalAmountPaidPurchases(Resource):
+class TotalAmountPaidPurchasesInventory (Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
@@ -297,6 +312,71 @@ class TotalAmountPaidPurchases(Resource):
                 query = query.filter(Inventory.created_at.between(start_date, end_date))
             elif start_date:
                 query = query.filter(Inventory.created_at >= start_date)
+
+            total_amount = query.scalar() or 0
+
+            # Format the total amount with currency symbol
+            formatted_amount = "Ksh {:,.2f}".format(total_amount)
+
+            return {"total_amount_paid": formatted_amount}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching the total purchases amount",
+                "details": str(e)
+            }, 500
+
+
+class TotalAmountPaidPurchases(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        today = datetime.utcnow()
+        start_date = None
+        end_date = None
+
+        # Check for custom date range
+        start_date_str = request.args.get('startDate')
+        end_date_str = request.args.get('endDate')
+
+        if start_date_str and end_date_str:
+            try:
+                # Parse custom start and end dates
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            # Handle predefined periods if no custom date is provided
+            period = request.args.get('period', 'today')
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today
+            elif period == 'yesterday':
+                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = today - timedelta(days=7)
+                end_date = today
+            elif period == 'month':
+                start_date = today - timedelta(days=30)
+                end_date = today
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
+            # else:
+            #     return {"message": "Invalid period specified"}, 400
+
+        try:
+            # Build query to sum the `amountPaid`
+            query = db.session.query(db.func.sum(Transfer.amountPaid))
+
+            # Apply date filtering only if start_date and end_date are defined
+            if start_date and end_date:
+                query = query.filter(Transfer.created_at.between(start_date, end_date))
+            elif start_date:
+                query = query.filter(Transfer.created_at >= start_date)
 
             total_amount = query.scalar() or 0
 
@@ -852,3 +932,164 @@ class TotalExpensesForMabanda(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching expenses", "details": str(e)}, 500
+    
+
+class SalesSummary(Resource):
+    def get(self):
+        # Assuming shop_id and batch_number are provided as query parameters
+        shop_id = request.args.get('shop_id', type=int)  # Get shop_id from request params
+        batch_number = request.args.get('batch_number', type=str)  # Get batch_number from request params
+
+        # Query to calculate the total sales, remaining quantity for each item,
+        # and total amount paid from SalesPaymentMethods for a specific shop and batch
+        summary = db.session.query(
+            ShopStock.itemname,
+            ShopStock.BatchNumber,
+            ShopStock.metric,  # Include the metric from the ShopStock table
+            Transfer.quantity.label('initial_quantity_transferred'),  # Initial quantity transferred from the Transfer table
+            (Transfer.quantity - ShopStock.quantity).label('total_quantity_sold'),  # Subtraction for total_quantity_sold
+            (Transfer.quantity * Transfer.unitCost).label('purchase_value'),  # Purchase value as Transfer.quantity * Transfer.unitCost
+            ShopStock.quantity.label('remaining_quantity'),  # Remaining quantity based on ShopStock.quantity
+            ShopStock.shop_id  # Include the shop_id for grouping
+        ).join(Sales, Sales.BatchNumber == ShopStock.BatchNumber) \
+         .join(Transfer, Transfer.inventory_id == ShopStock.inventory_id)  # Join with Transfer to get initial quantity transferred
+
+        # Apply filters for shop_id and batch_number (if provided)
+        if shop_id:
+            summary = summary.filter(ShopStock.shop_id == shop_id)  # Filter by shop_id
+        if batch_number:
+            summary = summary.filter(ShopStock.BatchNumber == batch_number)  # Filter by batch_number
+
+        # Group by shop_id and batch_number to ensure total_amount_paid is specific to each
+        summary = summary.group_by(
+            ShopStock.itemname,
+            ShopStock.BatchNumber,
+            ShopStock.metric,
+            Transfer.quantity,
+            ShopStock.shop_id
+        ).all()  # Get all the results
+
+        # Now query Sales and SalesPaymentMethods to calculate the total_amount_paid for each combination of batch_number and shop_id
+        total_payments = db.session.query(
+            Sales.BatchNumber,
+            Sales.shop_id,
+            func.sum(SalesPaymentMethods.amount_paid).label('total_amount_paid')  # Summing the amount_paid
+        ).join(SalesPaymentMethods, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join with SalesPaymentMethods to get the amount_paid
+        if shop_id:
+            total_payments = total_payments.filter(Sales.shop_id == shop_id)  # Filter by shop_id
+        if batch_number:
+            total_payments = total_payments.filter(Sales.BatchNumber == batch_number)  # Filter by batch_number
+        
+        total_payments = total_payments.group_by(Sales.BatchNumber, Sales.shop_id).all()  # Group by batch_number and shop_id
+        
+        # Now, build the response by combining the summary data with the total payments
+        response = []
+        for item in summary:
+            # Find the total_amount_paid for this batch_number and shop_id
+            total_paid_for_batch = next((payment.total_amount_paid for payment in total_payments 
+                                         if payment.BatchNumber == item.BatchNumber and payment.shop_id == item.shop_id), 0.0)
+            
+            response.append({
+                "item_name": item.itemname,
+                "batch_number": item.BatchNumber,
+                "metric": item.metric,
+                "initial_quantity_transferred": round(item.initial_quantity_transferred, 2),
+                "total_quantity_sold": round(item.total_quantity_sold, 2),
+                "purchase_value": round(item.purchase_value, 2),
+                "total_amount_paid": round(total_paid_for_batch, 2),  # Total amount paid for this specific batch and shop
+                "remaining_quantity": round(item.remaining_quantity, 2),
+                "shop_id": item.shop_id
+            })
+
+        return jsonify(response)
+
+
+
+class TotalFinancialSummary(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        today = datetime.utcnow()
+        start_date = None
+        end_date = None
+
+        # Handle custom date range
+        start_date_str = request.args.get('startDate')
+        end_date_str = request.args.get('endDate')
+        period = request.args.get('period', 'today')
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+            except ValueError:
+                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+        else:
+            # Predefined period filters
+            if period == 'today':
+                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'yesterday':
+                yesterday = today - timedelta(days=1)
+                start_date = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'week':
+                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'month':
+                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
+            else:
+                return {"message": "Invalid period specified"}, 400
+
+        try:
+            # ========== 1. Total Sales ========== 
+            sales_query = (
+                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+            )
+            if start_date and end_date:
+                sales_query = sales_query.filter(Sales.created_at.between(start_date, end_date))
+            total_sales = sales_query.scalar() or 0
+
+            # ========== 2. Total Expenses ========== 
+            expenses_query = db.session.query(db.func.sum(Expenses.amountPaid))
+            if start_date and end_date:
+                expenses_query = expenses_query.filter(Expenses.created_at.between(start_date, end_date))
+            total_expenses = expenses_query.scalar() or 0
+
+            # ========== 3. Total Inventory Purchases ========== 
+            inventory_query = db.session.query(db.func.sum(Transfer.amountPaid))
+            if start_date and end_date:
+                inventory_query = inventory_query.filter(Transfer.created_at.between(start_date, end_date))
+            total_inventory = inventory_query.scalar() or 0
+
+            # ========== 4. Total Unsold Goods Value (Stock Table Only) ========== 
+            remaining_stock_value = db.session.query(
+                db.func.sum(ShopStock.quantity * Transfer.unitCost)
+            ).join(Transfer, Transfer.transfer_id == ShopStock.transfer_id).scalar() or 0
+
+
+            # ========== 5. Value of Sold Goods ========== 
+            value_of_sold_goods = total_inventory - remaining_stock_value
+
+            # ========== Format Response ========== 
+            response = {
+                "total_sales_amount_paid": "Ksh {:,.2f}".format(total_sales),
+                "total_expenses_amount_paid": "Ksh {:,.2f}".format(total_expenses),
+                "total_inventory_purchases_amount_paid": "Ksh {:,.2f}".format(total_inventory),
+                "remaining_stock_value": "Ksh {:,.2f}".format(remaining_stock_value),
+                "value_of_sold_goods": "Ksh {:,.2f}".format(value_of_sold_goods),
+            }
+
+            return response, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching the financial summary.",
+                "details": str(e)
+            }, 500

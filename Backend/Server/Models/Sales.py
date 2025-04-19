@@ -22,6 +22,9 @@ class Sales(db.Model):
     stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
     balance = db.Column(db.Float)
     note = db.Column(db.String(50))
+
+    Cost_of_sale = db.Column(db.Float, nullable=False)
+    Purchase_account = db.Column(db.Float, nullable=False)
     
     # Relationships
     users = db.relationship('Users', backref='sales', lazy=True)

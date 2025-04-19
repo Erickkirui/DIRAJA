@@ -202,4 +202,6 @@
     color: #fff;
   }
 
-  
+  .batchnumber-size td{
+    font-size: 12px !important;
+  }

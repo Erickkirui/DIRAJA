@@ -59,6 +59,11 @@ function Navbar() {
             <img src='/images/Shop.png' alt='menu-icon' />
             <li> Shop Stocks</li>
           </NavLink>
+          <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active" >
+            <img src='/images/Shop.png' alt='menu-icon' />
+            <li> Account Balances</li>
+          </NavLink>
+
           
         </ul>
       </div>
@@ -66,7 +71,7 @@ function Navbar() {
       <div className='accounting-menu'>
         <h4>ACCOUNTING</h4>
         <ul>
-        <NavLink to="/balancesheet" className="menu-item" activeClassName="active">
+        {/* <NavLink to="/balancesheet" className="menu-item" activeClassName="active">
         <li>Balance Sheet</li>
         </NavLink>
         <NavLink to="/CashFlowStatement" className="menu-item" activeClassName="active">
@@ -74,7 +79,12 @@ function Navbar() {
         </NavLink>
         <NavLink to="/ProfitAndLoss" className="menu-item" activeClassName="active">
         <li>Profit and Loss Statement</li>
+        </NavLink> */}
+
+        <NavLink to="/ledgers" className="menu-item" activeClassName="active">
+          <li>Ledgers Accounts </li>
         </NavLink>
+        
           
   
         </ul>

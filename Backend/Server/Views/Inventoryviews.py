@@ -20,21 +20,24 @@ import re
 
 
 
-def check_role(required_role):
+def check_role(allowed_roles):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
             current_user_id = get_jwt_identity()
             user = Users.query.get(current_user_id)
-            if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            if user and user.role not in allowed_roles:
+                return make_response(jsonify({"error": "Unauthorized access"}), 403)
             return fn(*args, **kwargs)
         return decorator
     return wrapper
 
 
+
+
 class GetInventoryByBatch(Resource):
     @jwt_required()
+    @check_role(['manager', 'procurement'])
     def get(self):
         try:
             # Fetch all inventory items
@@ -79,6 +82,7 @@ class GetInventoryByBatch(Resource):
 
 class DistributeInventory(Resource):
     @jwt_required()
+    @check_role(['manager', 'procurement'])
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
@@ -163,6 +167,7 @@ class DistributeInventory(Resource):
 
 class DeleteShopStock(Resource):
     @jwt_required()
+    @check_role(['manager', 'procurement'])
     def delete(self, shop_stock_id):
         # Get the current user ID from the JWT token
         current_user_id = get_jwt_identity()
@@ -215,7 +220,7 @@ class DeleteShopStock(Resource):
 
 class GetTransfer(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def get(self):
         transfers = Transfer.query.all()
         all_transfers = []
@@ -252,7 +257,7 @@ class GetTransfer(Resource):
 
 class GetTransferById(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def get(self, transfer_id):
         transfer = Transfer.query.filter_by(transfer_id=transfer_id).first()
         
@@ -290,7 +295,7 @@ class GetTransferById(Resource):
 
 class UpdateTransfer(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def put(self, transfer_id):
         data = request.get_json()
         transfer = Transfer.query.filter_by(transfer_id=transfer_id).first()
@@ -326,7 +331,7 @@ class UpdateTransfer(Resource):
 
 class AddInventory(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
@@ -404,7 +409,7 @@ class AddInventory(Resource):
     
 class GetAllInventory(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def get(self):
     
         inventories = Inventory.query.order_by(Inventory.created_at.desc()).all()
@@ -430,7 +435,7 @@ class GetAllInventory(Resource):
     
 class InventoryResourceById(Resource):
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def get(self, inventory_id):
         # Fetch inventory by ID
         inventory = Inventory.query.get(inventory_id)
@@ -458,7 +463,7 @@ class InventoryResourceById(Resource):
             return {"error": "Inventory not found"}, 404
         
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def delete(self, inventory_id):
         # Fetch inventory by ID
         inventory = Inventory.query.get(inventory_id)
@@ -489,7 +494,7 @@ class InventoryResourceById(Resource):
             return {"message": "Error deleting inventory", "error": str(e)}, 500
 
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def put(self, inventory_id):
         data = request.get_json()
 
@@ -562,7 +567,7 @@ class InventoryResourceById(Resource):
     
 class StockDeletionResource(Resource):     
     @jwt_required()
-    @check_role('manager')
+    @check_role(['manager', 'procurement'])
     def delete(self, stock_id):
         stock = ShopStock.query.get(stock_id)
 

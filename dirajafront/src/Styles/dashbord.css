@@ -24,16 +24,19 @@
 
 }
 .metrix-container h1{
-    font-size: 27px;
+    font-size: 20px;
 }
 .metrix-container{
     border:  1px solid #ccc;
     padding: 15px;
     border-radius: 8px;
-    width: 250px;
+    width: 210px;
     background-color: #ffffff;
     
 
+}
+.metrix-container  h5{
+    font-weight: 200;
 }
 
 .metrix-container a{
@@ -85,18 +88,22 @@
     border-radius: 6px;
     padding: 15px;
 }
-
+.stock-level-container h3{
+    font-weight: 200;
+    font-size: 16px;
+}
 .stock-level-container a { 
     text-decoration: none;
     color: var(--secondary);
     font-size: 12px;
 }
 
+
 .stock-level-pagination{
     display: flex;
     gap: 5px;
     justify-content: center;
-padding: 15px;
+padding: 10px;
 }
 
 .stock-level-pagination button{
@@ -117,6 +124,28 @@ padding: 15px;
     border: 1px solid #ccc;
     border-radius: 8px;
   }
+
+  .financial-card{
+    border:  1px solid #ccc;
+    padding: 15px;
+    border-radius: 8px;
+    width: 450px;
+    background-color: #ffffff;
+    margin-bottom: 15px;
+  }
+  .financial-card h5{
+    font-weight: 300;
+  }
+  .financial-values p {
+    padding: 8px 0;
+    margin: 0;
+    border-bottom: 1px solid #ccc;
+  }
+  
+  .financial-values p:last-child {
+    border-bottom: none;
+  }
+  
   
   /* On larger screens, stack the select and date input vertically */
   @media (min-width: 768px) {
@@ -135,6 +164,16 @@ padding: 15px;
 @media (max-width: 768px) {
     .metrix-container{
         width: 320px !important;
+    }
+    .financial-card{
+        width: 320px !important;
+
+    }
+    .metrix-container h5 {
+        font-size: 18px;
+    }
+    .metrix-container h1{
+        font-size: 28px;
     }
     .metrix-pair{
         display: flex;

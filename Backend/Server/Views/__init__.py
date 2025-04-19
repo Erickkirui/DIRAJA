@@ -32,12 +32,13 @@ from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
 
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource, GetSingleSaleByShop,SalesByEmployeeResource
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales
+from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalAmountPaidForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
 
 from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
 from Server.Views.Emailnotifications import Report
-
+from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts
+from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -189,16 +190,13 @@ api.add_resource(TotalAmountPaidExpenses,'/totalexpenses')
 api.add_resource(TotalAmountPaidSalesPerShop,'/totalsales')
 api.add_resource(TotalAmountPaidAllSales,"/allshopstotal")
 api.add_resource(TotalAmountPaidPurchases,"/totalpurchases")
+api.add_resource(TotalAmountPaidPurchasesInventory,"/Invetory-purchase")
 api.add_resource(StockAlert,"/checkstock")
 api.add_resource(TotalUnpaidAmountAllSales,"/allunpaidtotal")
 api.add_resource(TotalAmountPaidForMabanda,'/totalmabandasales')
 api.add_resource(TotalExpensesForMabanda,'/totalmabandaexpenses')
-
-
-
-
-
-
+api.add_resource(SalesSummary,'/Sale-Summery')
+api.add_resource(TotalFinancialSummary,'/summery')
 
 ## clerkS Dashbord
 #Unpaid sales card for clerks
@@ -221,6 +219,31 @@ api.add_resource(MabandaPurchaseResource,'/getmabandapurchase')
 api.add_resource(MabandaStockResource,'/getmabandastock')
 api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
 api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
+
+
+
+#Accounting 
+api.add_resource(CreateAccount, '/add-account')
+api.add_resource(AccountTypeListResource, '/account-types/all')
+api.add_resource(AccountTypeResource, '/account-types/<int:id>')
+#chart of accounts
+api.add_resource(CreateChartOfAccounts, '/add-chart-of-accounts')
+api.add_resource(ChartOfAccountsList, '/chart-of-accounts')
+#items 
+api.add_resource(CreateItemAccount, '/itemaccounts')
+api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
+
+
+#Account Ballance 
+api.add_resource(PostBankAccount, '/bankaccount')
+api.add_resource(GetAllBankAccounts, '/all-acounts')
+api.add_resource(DepositToAccount, '/bankaccount/<int:account_id>/deposit')
+api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
+
+
+
+
+
 
 
 

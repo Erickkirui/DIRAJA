@@ -1,6 +1,6 @@
 import React from 'react'
-import Shops from '../Components/GetAllShops'
-import AddShop from '../Components/Shops'
+import Shops from '../Components/Shops /GetAllShops'
+import AddShop from '../Components/Shops /Shops'
 
 function ShopsPage() {
   return (

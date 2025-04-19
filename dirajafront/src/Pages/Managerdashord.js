@@ -4,9 +4,12 @@ import CountEmployees from '../Components/ManagerDashbord/CountEmployees';
 import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses';
 import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidSales';
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases';
+import TotalAmountPurchasesInventory from '../Components/ManagerDashbord/TotalAmountPurchasesInventory';
 import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
+import FinancialSummaryCards from '../Components/ManagerDashbord/FinanceSummer';
+
 
 
 function Managerdashord() {
@@ -14,7 +17,9 @@ function Managerdashord() {
   useEffect(() => {
     const role = localStorage.getItem('role');
     if (role === 'clerk') {
-      window.location.href = '/clerk'; // Redirect to the clerk route
+      window.location.href = '/clerk';
+    } else if (role === 'procurement') {
+      window.location.href = '/procurement';
     }
   }, []);
 
@@ -37,22 +42,31 @@ function Managerdashord() {
               <TotalAmountPaidSales />
             </div>
             <div>
-              <TotalAmountPaidPurchases />
+              
+              <TotalCreditSales />
             </div>
+            
           </div>
-
-         
 
           <div className="metrix-pair"> 
               
                 <div>
-                <TotalAmountPaidExpenses />
+                <TotalAmountPurchasesInventory />
                 </div>
                 <div>
-                <TotalCreditSales />
+                <TotalAmountPaidPurchases />
                 </div>
               
           </div>
+          <div className="metrix-pair">
+           
+           <div>
+             <TotalAmountPaidExpenses />
+           </div>
+       
+           
+       </div>
+          
 
           <div className="metrix-pair">
            
@@ -64,12 +78,22 @@ function Managerdashord() {
              <CountEmployees />
            </div>
        </div>
+       
 
+        </div>
+
+        <div>
+        <div>
+          <FinancialSummaryCards />
         </div>
         <div>
           <BatchStockList />
         </div>
+        </div>
+        
+
       </div>
+
       
       
     </>

@@ -43,8 +43,11 @@ class AddNewemployee(Resource):
         data = request.get_json()
 
         # Check if the current user has the right to add a manager
-        if data.get('role') == 'manager' and current_user_role != 'super_admin':
-            return {"error": "Only users with the role 'super_admin' can add an employee with the role 'manager'."}, 403
+        if data.get('role') in ['manager', 'procurement'] and current_user_role != 'super_admin':
+            return {
+                "error": "Only users with the role 'super_admin' can add an employee with the role 'manager' or 'procurement'."
+            }, 403
+
 
         # List of fields that are nullable
         nullable_fields = ['national_id_number', 'kra_pin', 'payment_method', 'bank_account_number',

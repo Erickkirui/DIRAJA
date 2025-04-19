@@ -21,6 +21,12 @@ class Inventory(db.Model):
     unitPrice = db.Column(db.Float, nullable=False)
     BatchNumber = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))
+
+    Trasnaction_type_credit = db.Column(db.Float, nullable=False)
+    Transcation_type_debit = db.Column(db.Float, nullable=False)
+
+
+    
     
     # Correct these lines
     Suppliername = db.Column(db.String(50), nullable=False)  # Corrected

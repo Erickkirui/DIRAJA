@@ -55,7 +55,12 @@ import SingleSaleShop from './Components/ClerkDashbord/SingleSaleShops';
 import CreditsalePage from './Pages/CreditsalePage';
 import ClerkSales from './Pages/ClerkSales';
 import MabandaPage from './Pages/MabandaPage';
+import SalesSummaryTable from './Components/ManagerDashbord/SalesSummeryTable';
+import Procurement from './Pages/Procurement';
+import ProcurementInventory from './Components/Procurement/ProcurementInventory';
 import AllSales from './Components/Sales/GetSale';
+import AccountBalances from './Pages/AccountBalances';
+import AccountingLedgers from './Pages/AccountingLedgers';
 
 
 
@@ -139,6 +144,9 @@ function App() {
             <Route path='/allsales' element={<Layout><AllSales/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
+
+            <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
+            <Route path='/distribute' element = {<ClerkDashbord><ProcurementInventory /> </ClerkDashbord>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
@@ -154,6 +162,7 @@ function App() {
             <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
+            <Route path='/Salesumery' element={<Layout><SalesSummaryTable /></Layout>} ></Route>
 
 
             <Route path='/mabandapage' element ={<Layout><MabandaPage /></Layout>} ></Route>
@@ -173,6 +182,9 @@ function App() {
             <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
+
+            <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
+            <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
           </Routes> 
        
       </Router>
