@@ -95,7 +95,6 @@ class AddSale(Resource):
         except ValueError:
             return {'message': 'Invalid input for quantity or unit price'}, 400
 
-        # ✅ Check if customer_name is empty when the status is unpaid (credit sale)
         if status.lower() == "unpaid" and (not customer_name or customer_name.strip() == ""):
             return {'message': 'Customer name is required for credit sale'}, 400
 
@@ -114,55 +113,46 @@ class AddSale(Resource):
 
         balance = total_price - total_amount_paid
 
-        # ✅ **Check if Sale Date is Today or Yesterday**
         today = datetime.today().date()
         yesterday = today - timedelta(days=1)
 
-        # ✅ Deduct from LiveStock only if the sale date is today or yesterday
         live_stock = None
         remaining_stock = None
 
         if created_at.date() in [today, yesterday]:
-            # Get all item names for the given shop
             item_names = [stock.item_name for stock in LiveStock.query.filter_by(shop_id=shop_id).all()]
 
-            # Fuzzy match
-            best_match, score = process.extractOne(item_name, item_names)
+            matched_item_name = None
 
-            if score >= 80:
-                # Strong match — proceed with stock deduction
-                matched_item_name = best_match
+            if item_names:
+                result = process.extractOne(item_name, item_names)
+                if result:
+                    best_match, score = result
+                    if score >= 80:
+                        matched_item_name = best_match
+                        live_stock = (
+                            LiveStock.query
+                            .filter_by(shop_id=shop_id, item_name=matched_item_name)
+                            .order_by(LiveStock.created_at.desc())
+                            .first()
+                        )
 
-                live_stock = (
-                    LiveStock.query
-                    .filter_by(shop_id=shop_id, item_name=matched_item_name)
-                    .order_by(LiveStock.created_at.desc())
-                    .first()
-                )
+                        if live_stock:
+                            if live_stock.current_quantity < quantity:
+                                return {'message': f'Not enough stock in LiveStock for "{matched_item_name}". Available: {live_stock.current_quantity}, Requested: {quantity}'}, 400
 
-                if live_stock:
-                    if live_stock.current_quantity < quantity:
-                        return {'message': f'Not enough stock in LiveStock for "{matched_item_name}". Available: {live_stock.current_quantity}, Requested: {quantity}'}, 400
+                            live_stock.current_quantity -= quantity
+                            remaining_stock = live_stock.current_quantity
 
-                    # Deduct
-                    live_stock.current_quantity -= quantity
-                    remaining_stock = live_stock.current_quantity
-
-            elif score > 45:
-                # Medium match — do not deduct, but allow sale to continue
-                matched_item_name = best_match
-                remaining_stock = None
-
+                    elif score > 45:
+                        matched_item_name = best_match
+                        remaining_stock = None
             else:
-                # No reasonable match — treat as unrecognized, skip deduction
                 matched_item_name = None
                 remaining_stock = None
         else:
-            # Sale not today or yesterday — skip deduction
             remaining_stock = None
 
-        
-        # ✅ **Deduct from ShopStock using FIFO logic**
         total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
             ShopStock.itemname == item_name,
             ShopStock.shop_id == shop_id,
@@ -197,7 +187,6 @@ class AddSale(Resource):
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
 
-        # ✅ **Save sale record**
         new_sale = Sales(
             user_id=current_user_id,
             shop_id=shop_id,
@@ -261,6 +250,7 @@ class AddSale(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
+
 
 class GetSale(Resource):
     @jwt_required()
