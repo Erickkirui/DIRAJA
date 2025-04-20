@@ -61,6 +61,7 @@ import ProcurementInventory from './Components/Procurement/ProcurementInventory'
 import AllSales from './Components/Sales/GetSale';
 import AccountBalances from './Pages/AccountBalances';
 import AccountingLedgers from './Pages/AccountingLedgers';
+import AllLedgers from './Pages/AllLedgers';
 
 
 
@@ -185,6 +186,7 @@ function App() {
 
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
             <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
+            <Route path='/all-ledgers' element={<Layout><AllLedgers/></Layout>} ></Route>
           </Routes> 
        
       </Router>

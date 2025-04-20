@@ -35,10 +35,11 @@
     
 
 }
-.metrix-container  h5{
-    font-weight: 200;
+.metrix-container p{
+    font-size: 14px;
+    padding: 10px 0 10px 0;
+    
 }
-
 .metrix-container a{
     text-decoration: none;
     color: var(--secondary);
@@ -95,7 +96,7 @@
 .stock-level-container a { 
     text-decoration: none;
     color: var(--secondary);
-    font-size: 12px;
+    font-size: 14px;
 }
 
 
@@ -125,27 +126,6 @@ padding: 10px;
     border-radius: 8px;
   }
 
-  .financial-card{
-    border:  1px solid #ccc;
-    padding: 15px;
-    border-radius: 8px;
-    width: 450px;
-    background-color: #ffffff;
-    margin-bottom: 15px;
-  }
-  .financial-card h5{
-    font-weight: 300;
-  }
-  .financial-values p {
-    padding: 8px 0;
-    margin: 0;
-    border-bottom: 1px solid #ccc;
-  }
-  
-  .financial-values p:last-child {
-    border-bottom: none;
-  }
-  
   
   /* On larger screens, stack the select and date input vertically */
   @media (min-width: 768px) {
@@ -169,7 +149,7 @@ padding: 10px;
         width: 320px !important;
 
     }
-    .metrix-container h5 {
+    .metrix-container p {
         font-size: 18px;
     }
     .metrix-container h1{

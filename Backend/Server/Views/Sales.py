@@ -74,6 +74,10 @@ class AddSale(Resource):
         customer_name = data.get('customer_name')
         customer_number = data.get('customer_number')
         item_name = data.get('item_name')
+        Cost_of_sale = data.get('Cost_of_sale')
+        Purchase_account = data.get('Purchase_account')
+
+
 
         try:
             quantity = float(data.get('quantity', 0))
@@ -196,6 +200,9 @@ class AddSale(Resource):
                 stock_ids_used.append(str(batch.stock_id))  
                 remaining_quantity -= batch.quantity
                 batch.quantity = 0
+        
+        total_amount_paid = sum(float(payment['amount']) for payment in payment_methods)
+
 
         # ✅ **Save sale record**
         new_sale = Sales(
@@ -212,7 +219,10 @@ class AddSale(Resource):
             stock_id=", ".join(stock_ids_used),  
             balance=balance,
             status=status,
+            Cost_of_sale=  total_amount_paid,
+            Purchase_account = total_amount_paid,
             created_at=created_at
+
         )
 
         try:

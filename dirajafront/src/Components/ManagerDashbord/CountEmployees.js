@@ -40,7 +40,7 @@ const CountEmployees = () => {
   return (
     <div className='metrix-container'>
       <FontAwesomeIcon className="metric-icon" icon={faPeopleGroup} size="1x" />
-      <h5>Number of Employees</h5>
+      <p>Number of Employees</p>
       {isLoading ? (
         <LoadingAnimation />
       ) : error ? (

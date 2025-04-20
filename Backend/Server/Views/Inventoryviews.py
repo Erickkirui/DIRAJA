@@ -354,6 +354,10 @@ class AddInventory(Resource):
         note = data.get('note', '')  # Optional field, default to empty String
         created_at_str = data.get('created_at')
 
+        Trasnaction_type_credit = data.get('Trasnaction_type_credit')
+        Transcation_type_debit = data.get('Transcation_type_debit')
+
+
         try:
             created_at = datetime.strptime(created_at_str, "%Y-%m-%d")  # Assuming the format YYYY-MM-DD
         except ValueError:
@@ -362,7 +366,7 @@ class AddInventory(Resource):
         # Calculate totalCost and balance
         totalCost = unitCost * quantity
         balance = totalCost - amountPaid
-
+       
         # Generate the batch number based on previous records
         last_inventory = Inventory.query.order_by(Inventory.inventory_id.desc()).first()
         next_batch_number = 1 if not last_inventory else last_inventory.inventory_id + 1
@@ -391,7 +395,9 @@ class AddInventory(Resource):
             ballance=balance,  # Balance calculated as totalCost - amountPaid
             note=note,
             created_at=created_at,
-            source=source  # Now we save source as is
+            source=source , # Now we save source as is
+            Transcation_type_debit= amountPaid, #this will chage
+            Trasnaction_type_credit = amountPaid
         )
 
         # Save to database

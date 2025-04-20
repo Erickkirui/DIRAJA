@@ -81,8 +81,13 @@ function Navbar() {
         <li>Profit and Loss Statement</li>
         </NavLink> */}
 
+
+
         <NavLink to="/ledgers" className="menu-item" activeClassName="active">
           <li>Ledgers Accounts </li>
+        </NavLink>
+        <NavLink to="/all-ledgers" className="menu-item" activeClassName="active">
+          <li>Ledgers </li>
         </NavLink>
         
           

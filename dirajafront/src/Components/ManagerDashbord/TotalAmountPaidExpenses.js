@@ -82,7 +82,7 @@ const TotalAmountPaidExpenses = () => {
         </div>
       </div>
 
-      <h5>Total Expenses</h5>
+      <p>Total Expenses</p>
 
       {isLoading ? (
         <LoadingAnimation />

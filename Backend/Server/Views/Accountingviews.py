@@ -5,6 +5,7 @@ from Server.Models.ItemAccountsTable import ItemAccounts
 from app import db 
 from flask import request,make_response,jsonify
 from flask_jwt_extended import jwt_required
+from Server.Models.Inventory import Inventory
 
 
 class CreateAccount(Resource):
@@ -298,3 +299,26 @@ class GetAllItemAccounts(Resource):
 
         except Exception as e:
             return {"message": "Failed to fetch item accounts", "error": str(e)}, 500
+
+
+class PurchasesLedger(Resource):
+    @jwt_required()
+    def get(self):
+    
+        inventories = Inventory.query.order_by(Inventory.created_at.desc()).all()
+
+        all_inventory = [{
+            "Suppliername": inventory.Suppliername,
+            "itemname": inventory.itemname,
+            "initial_quantity": inventory.initial_quantity,      # Initial Quantity
+            "remaining_quantity": inventory.quantity,             # Remaining Quantity
+            "amountPaid": inventory.amountPaid,
+            "balance":inventory.ballance,
+            "created_at": inventory.created_at,
+            "unitPrice": inventory.unitPrice,
+            "source":inventory.source,
+            "Transcation_type_debit": inventory.Transcation_type_debit,
+            "Trasnaction_type_credit":inventory.Trasnaction_type_credit
+        } for inventory in inventories]
+
+        return make_response(jsonify(all_inventory), 200)
