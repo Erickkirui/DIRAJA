@@ -203,6 +203,18 @@ class AddSale(Resource):
         
         total_amount_paid = sum(float(payment['amount']) for payment in payment_methods)
 
+        # Calculate Purchase_account based on Inventory unitCost and sold quantities
+        purchase_account = 0
+
+        for batch_number, qty in batch_deductions:
+            inventory = Inventory.query.filter_by(BatchNumber=batch_number).first()
+            if inventory:
+                purchase_account += inventory.unitCost * qty
+            else:
+                # Handle missing batch gracefully if needed
+                purchase_account += 0
+
+
 
         # ✅ **Save sale record**
         new_sale = Sales(
@@ -220,7 +232,7 @@ class AddSale(Resource):
             balance=balance,
             status=status,
             Cost_of_sale=  total_amount_paid,
-            Purchase_account = total_amount_paid,
+            Purchase_account = purchase_account,
             created_at=created_at
 
         )

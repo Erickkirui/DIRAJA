@@ -6,7 +6,7 @@ import TotalAmountPaidSales from '../Components/ManagerDashbord/TotalAmountPaidS
 import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountPaidPurchases';
 import TotalAmountPurchasesInventory from '../Components/ManagerDashbord/TotalAmountPurchasesInventory';
 import { Link } from 'react-router-dom';
-import BatchStockList from '../Components/BatchStockList';
+import BatchStockList from '../Components/ManagerDashbord/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 
 

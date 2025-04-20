@@ -37,7 +37,7 @@ from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmoun
 from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
 from Server.Views.Emailnotifications import Report
-from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts
+from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger
 from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -232,6 +232,7 @@ api.add_resource(ChartOfAccountsList, '/chart-of-accounts')
 #items 
 api.add_resource(CreateItemAccount, '/itemaccounts')
 api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
+api.add_resource(SalesLedger, '/sale-ledger')
 
 
 #Account Ballance 

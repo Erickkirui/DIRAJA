@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import LoadingAnimation from "./LoadingAnimation";
+import LoadingAnimation from "../LoadingAnimation";
 import { Link } from 'react-router-dom';
 
 const BatchStockList = () => {
@@ -54,7 +54,7 @@ const BatchStockList = () => {
 
   return (
     <div className="stock-level-container">
-      <h3>Batch Stock List</h3>
+      <p>Batch Stock List</p>
 
       {/* Shared tab styles */}
       <div className="tabs-container">
