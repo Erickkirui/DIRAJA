@@ -10,8 +10,6 @@ import BatchStockList from '../Components/ManagerDashbord/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 
 
-
-
 function Managerdashord() {
   // Check the role in local storage
   useEffect(() => {
@@ -29,7 +27,7 @@ function Managerdashord() {
         <h2>Dashboard</h2>
         
         <div className="shortcuts">
-          <Link to="/allusers" className="button">Manage Users</Link>
+          <Link to="/allusers"  >Manage Users</Link>
         </div>
        
       </div>

@@ -327,11 +327,12 @@ class PurchasesLedger(Resource):
 
 
 class SalesLedger(Resource):
+
     @jwt_required()
     def get(self):
         try:
-            # Query all sales from the Sales table in descending order by created_at
-            sales = Sales.query.order_by(Sales.created_at.desc()).all()
+            # Query sales where Purchase_account is greater than zero
+            sales = Sales.query.filter(Sales.Purchase_account > 0).order_by(Sales.created_at.desc()).all()
 
             # If no sales found
             if not sales:
@@ -356,14 +357,14 @@ class SalesLedger(Resource):
                         "created_at": payment.created_at,
                         "balance": payment.balance,  # Include balance field
                     }
-                    for payment in sale.payment  # Updated to use the correct relationship
+                    for payment in sale.payment  # Using correct relationship
                 ]
 
                 # Calculate total amount paid
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -377,14 +378,13 @@ class SalesLedger(Resource):
                     "metric": sale.metric,
                     "unit_price": sale.unit_price,
                     "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Include total amount paid
-                    "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at,  # Convert datetime to string
-                    "balance": sale.balance,  # Include balance at the sale level
-                    "note": sale.note , # Include note field
-                    "Purchase_account ": sale.Purchase_account ,
-                    "Cost_of_sale" : sale.Cost_of_sale
-                    
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at,
+                    "balance": sale.balance,
+                    "note": sale.note,
+                    "Purchase_account": sale.Purchase_account,
+                    "Cost_of_sale": sale.Cost_of_sale
                 })
 
             return make_response(jsonify(sales_data), 200)

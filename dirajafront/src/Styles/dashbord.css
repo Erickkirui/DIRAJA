@@ -43,7 +43,7 @@
 .metrix-container a{
     text-decoration: none;
     color: var(--secondary);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .metric-icon {
@@ -79,9 +79,17 @@
     margin-top: 10px;
     margin-bottom: 20px;
 }
+
 .shortcuts a{
     text-decoration: none;
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    padding: 10px;
     
+}
+.shortcuts a:hover{
+    background-color: var(--primary);
+    color: #ffffff;
 }
 
 .stock-level-container{
@@ -148,6 +156,11 @@ padding: 10px;
     .financial-card{
         width: 320px !important;
 
+    }
+    .metrix-container a{
+        text-decoration: none;
+        color: var(--secondary);
+        font-size: 16px;
     }
     .metrix-container p {
         font-size: 18px;
