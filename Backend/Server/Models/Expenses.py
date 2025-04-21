@@ -19,6 +19,7 @@ class Expenses(db.Model):
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     source = db.Column(db.String(100), nullable=False)
     comments = db.Column(db.Text, nullable=True)  # Added comments column
+    paymentRef = db.Column(db.String(100), nullable=False)
 
     # Relationships
     users = db.relationship('Users', backref='expenses', lazy=True)

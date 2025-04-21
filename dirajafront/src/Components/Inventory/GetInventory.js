@@ -199,6 +199,7 @@ const Inventory = () => {
               />
             </th>
             {/* <th>ID</th> */}
+            <th>Date</th>
             <th>Item</th>
             <th>Batch No</th>
             <th>Initial Quantity</th>
@@ -206,10 +207,10 @@ const Inventory = () => {
             <th>Unit Cost (Ksh)</th>
             {/* <th>Total Cost (Ksh)</th> */}
             <th>Amount Paid (Ksh)</th>
+            <th>Payment Ref</th>
             <th>Source</th>
             <th>Comments</th>
             {/* <th>Unit Price (Ksh)</th> */}
-            <th>Date</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -224,6 +225,8 @@ const Inventory = () => {
                 />
               </td>
               {/* <td>{inventoryItem.inventory_id}</td> */}
+              <td>{new Date(inventoryItem.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
+
               <td>{inventoryItem.itemname}</td>
               <td>{inventoryItem.batchnumber}</td>
               <td>{inventoryItem.initial_quantity} {inventoryItem.metric}</td>
@@ -231,10 +234,10 @@ const Inventory = () => {
               <td>{inventoryItem.unitCost}</td>
               {/* <td>{inventoryItem.totalCost}</td> */}
               <td>{inventoryItem.amountPaid}</td>
+              <td>{inventoryItem.paymentRef}</td>
               <td>{inventoryItem.source}</td>
               <td>{inventoryItem.note}</td>
               {/* <td>{inventoryItem.unitPrice}</td> */}
-              <td>{new Date(inventoryItem.created_at).toLocaleString(undefined, { year: 'numeric', month: '2-digit', day: '2-digit', hour12: true }).replace(',', '')}</td>
               <td>
                 <button className='editeInventory' onClick={() => handleEditClick(inventoryItem.inventory_id)}>Edit</button>
               </td>
