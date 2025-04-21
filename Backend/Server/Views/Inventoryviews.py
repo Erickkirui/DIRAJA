@@ -4,6 +4,7 @@ from Server.Models.Inventory import Inventory, db
 from Server.Models.Transfer import Transfer
 from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
+from Server.Models.BankAccounts import BankAccount, BankingTransaction
 from Server.Models.Users import Users
 from app import db
 from functools import wraps
@@ -336,12 +337,12 @@ class AddInventory(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Validate required fields (including supplier fields)
-        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice', 'Suppliername', 'Supplier_location', 'created_at']
+        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice',
+                           'Suppliername', 'Supplier_location', 'created_at']
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
-        # Extract data
+        # Extract and process fields
         itemname = data.get('itemname')
         quantity = data.get('quantity')
         metric = data.get('metric')
@@ -351,50 +352,68 @@ class AddInventory(Resource):
         Suppliername = data.get('Suppliername')
         Supplier_location = data.get('Supplier_location')
         source = data.get('source')
-        note = data.get('note', '')  # Optional field, default to empty String
+        paymentRef = data.get('paymentRef')
+        note = data.get('note', '')
         created_at_str = data.get('created_at')
 
         try:
-            created_at = datetime.strptime(created_at_str, "%Y-%m-%d")  # Assuming the format YYYY-MM-DD
+            created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
         except ValueError:
             return {'message': 'Invalid date format. Please use YYYY-MM-DD for created_at.'}, 400
 
-        # Calculate totalCost and balance
         totalCost = unitCost * quantity
         balance = totalCost - amountPaid
 
-        # Generate the batch number based on previous records
+        # Generate batch number
         last_inventory = Inventory.query.order_by(Inventory.inventory_id.desc()).first()
         next_batch_number = 1 if not last_inventory else last_inventory.inventory_id + 1
-
-        # Generate the batch code using the static method
         batch_code = Inventory.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
-        
-        # No longer validating source; now directly accepting it as is
-        if source and len(source) == 0:
-            source = "Unknown"  # If no source is provided, default to "Unknown"
 
-        # Create new inventory record
+        if not source:
+            source = "Unknown"
+
+        # === Deduct amount from bank account and log the transaction ===
+        if source != "Unknown":
+            account = BankAccount.query.filter_by(Account_name=source).first()
+            if not account:
+                return {'message': f'Bank account with name "{source}" not found'}, 404
+
+            # if account.Account_Balance < amountPaid:
+            #     return {'message': f'Insufficient balance in account "{source}"'}, 400
+
+            # Deduct the amount from the account balance
+            account.Account_Balance -= amountPaid
+            db.session.add(account)
+
+            # Log the banking transaction
+            transaction = BankingTransaction(
+                account_id=account.id,
+                Transaction_type_debit=amountPaid,
+                Transaction_type_credit=None
+            )
+            db.session.add(transaction)
+
+        # === Create Inventory Record ===
         new_inventory = Inventory(
             itemname=itemname,
             initial_quantity=quantity,
             quantity=quantity,
             metric=metric,
             unitCost=unitCost,
-            totalCost=totalCost,  # Auto-calculated
+            totalCost=totalCost,
             amountPaid=amountPaid,
             unitPrice=unitPrice,
             BatchNumber=batch_code,
             user_id=current_user_id,
             Suppliername=Suppliername,
             Supplier_location=Supplier_location,
-            ballance=balance,  # Balance calculated as totalCost - amountPaid
+            ballance=balance,
             note=note,
             created_at=created_at,
-            source=source  # Now we save source as is
+            source=source,
+            paymentRef=paymentRef
         )
 
-        # Save to database
         try:
             db.session.add(new_inventory)
             db.session.commit()
@@ -403,6 +422,8 @@ class AddInventory(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
+
+
 
 
    
@@ -428,7 +449,8 @@ class GetAllInventory(Resource):
             "note":inventory.note,
             "created_at": inventory.created_at,
             "unitPrice": inventory.unitPrice,
-            "source":inventory.source
+            "source":inventory.source,
+            "paymentRef":inventory.paymentRef
         } for inventory in inventories]
 
         return make_response(jsonify(all_inventory), 200)
@@ -456,6 +478,7 @@ class InventoryResourceById(Resource):
                 "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
                 "unitPrice": inventory.unitPrice,
                 "source":inventory.source,
+                "paymentRef":inventory.paymentRef,
                 "Suppliername": inventory.Suppliername,
                 "Supplier_location": inventory.Supplier_location
             }, 200

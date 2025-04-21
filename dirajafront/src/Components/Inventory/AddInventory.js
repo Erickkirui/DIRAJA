@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const AddInventory = () => {
@@ -13,9 +13,38 @@ const AddInventory = () => {
     Supplier_location: '',
     note: '',
     created_at: '',
+    paymentRef:'',
     source: '', // Just source, no external funding comment needed
   });
+
   const [message, setMessage] = useState('');
+  const [accounts, setAccounts] = useState([]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        const response = await axios.get('/api/diraja/all-acounts', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        console.log('Accounts Response:', response.data); // Optional log for debugging
+
+        if (Array.isArray(response.data.accounts)) {
+          setAccounts(response.data.accounts);
+        } else {
+          console.error('Accounts response is not an array');
+          setAccounts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching accounts:', error);
+        setAccounts([]);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,20 +53,25 @@ const AddInventory = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (!formData.paymentRef.trim()) {
+      setMessage('Error: Payment reference must be provided.');
+      return;
+    }
+
     // Convert String inputs to numbers where necessary
     const numericFormData = {
       ...formData,
       quantity: Number(formData.quantity),
       unitCost: Number(formData.unitCost),
       amountPaid: Number(formData.amountPaid),
-      unitPrice: Number(formData.unitPrice)
+      unitPrice: Number(formData.unitPrice),
     };
 
     try {
       const response = await axios.post('/api/diraja/newinventory', numericFormData, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        },
       });
       setMessage(response.data.message);
 
@@ -53,9 +87,9 @@ const AddInventory = () => {
         Supplier_location: '',
         note: '',
         created_at: '',
+        paymentRef:'',
         source: '', // Reset source
       });
-
     } catch (error) {
       setMessage('Error adding inventory: ' + (error.response?.data?.message || error.message));
     }
@@ -105,24 +139,13 @@ const AddInventory = () => {
         <div>
           <select name="source" value={formData.source} onChange={handleChange} className="select">
             <option value="">Select Source</option>
-            <option value="Mpesa - 0748277960">Mpesa - 0748277960</option>
-            <option value="Mpesa - 0116400393">Mpesa - 0116400393</option>
-            <option value="Sasapay - Mirema">Sasapay - Mirema</option>
-            <option value="Sasapay - TRM">Sasapay - TRM</option>
-            <option value="Sasapay - Lumumba Drive">Sasapay - Lumumba Drive</option>
-            <option value="Sasapay - Zimmerman shop">Sasapay - Zimmerman shop</option>
-            <option value="Sasapay - Zimmerman Store">Sasapay - Zimmerman Store</option>
-            <option value="Sasapay - Githurai 44">Sasapay - Githurai 44</option>
-            <option value="Sasapay - Kangundo Rd Market">Sasapay - Kangundo Rd Market</option>
-            <option value="Sasapay - Ngoingwa">Sasapay - Ngoingwa</option>
-            <option value="Sasapay - Thika Market">Sasapay - Thika Market</option>
-            <option value="Sasapay - Mabanda">Sasapay - Mabanda</option>
-            <option value="Sasapay - Kisumu">Sasapay - Kisumu</option>
-            <option value="Sasapay - Pipeline">Sasapay - Pipeline</option>
-            <option value="Sasapay - Turi">Sasapay - Turi</option>
-            <option value="Sta">Sta</option>
-            <option value="Standard Chartered Bank">Standard Chartered Bank</option>
-            <option value="External funding">External funding</option>
+            {Array.isArray(accounts) && accounts.length > 0 ? (
+              accounts.map((acc, index) => (
+                <option key={index} value={acc.Account_name}>{acc.Account_name}</option>
+              ))
+            ) : (
+              <option value="">No accounts available</option>
+            )}
           </select>
         </div>
         <div>
@@ -152,6 +175,17 @@ const AddInventory = () => {
             value={formData.amountPaid}
             onChange={handleChange}
             placeholder="Amount Paid"
+            className="input"
+            required
+          />
+        </div>
+        <div>
+          <input
+            type="text"
+            name="paymentRef"
+            value={formData.paymentRef}
+            onChange={handleChange}
+            placeholder="Payment Ref"
             className="input"
             required
           />

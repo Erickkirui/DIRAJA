@@ -24,6 +24,7 @@ class Inventory(db.Model):
 
     Trasnaction_type_credit = db.Column(db.Float, nullable=False)
     Transcation_type_debit = db.Column(db.Float, nullable=False)
+    paymentRef = db.Column(db.String(100), nullable=False)
 
 
     

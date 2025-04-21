@@ -156,6 +156,7 @@ const Expenses = () => {
             <th>Category</th>
             <th>Description</th>
             <th>Amount Paid (Ksh)</th>
+            <th>Payment Ref</th>
             <th>From</th>
             <th>Comments</th>
             <th>Paid To</th>
@@ -183,6 +184,7 @@ const Expenses = () => {
               <td>{expense.category}</td>
               <td>{expense.description}</td>
               <td>{expense.amountPaid}</td>
+              <td>{expense.paymentRef}</td>
               <td>{expense.source}</td>
               <td>{expense.comments}</td>
               <td>{expense.paidTo}</td>

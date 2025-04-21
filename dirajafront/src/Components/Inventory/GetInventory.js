@@ -207,6 +207,7 @@ const Inventory = () => {
             <th>Unit Cost (Ksh)</th>
             {/* <th>Total Cost (Ksh)</th> */}
             <th>Amount Paid (Ksh)</th>
+            <th>Payment Ref</th>
             <th>Source</th>
             <th>Comments</th>
             {/* <th>Unit Price (Ksh)</th> */}
@@ -233,6 +234,7 @@ const Inventory = () => {
               <td>{inventoryItem.unitCost}</td>
               {/* <td>{inventoryItem.totalCost}</td> */}
               <td>{inventoryItem.amountPaid}</td>
+              <td>{inventoryItem.paymentRef}</td>
               <td>{inventoryItem.source}</td>
               <td>{inventoryItem.note}</td>
               {/* <td>{inventoryItem.unitPrice}</td> */}
