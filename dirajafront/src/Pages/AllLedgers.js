@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react'
 import SalesLedger from '../Components/Ledgers/SalesLedger'
+import PurchasesLedger from '../Components/Ledgers/PurchasesLedger'
 
 function AllLedgers() {
  const [activeTab, setActiveTab] = useState('sales') 
@@ -28,7 +29,7 @@ function AllLedgers() {
 
       <div className='tab-content'>
         {activeTab === 'sales' && <SalesLedger />}
-        {activeTab === 'purchases' && <SalesLedger />}
+        {activeTab === 'purchases' && <PurchasesLedger />}
 
       </div>
     </div>

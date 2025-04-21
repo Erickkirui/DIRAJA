@@ -306,24 +306,29 @@ class GetAllItemAccounts(Resource):
 class PurchasesLedger(Resource):
     @jwt_required()
     def get(self):
-    
-        inventories = Inventory.query.order_by(Inventory.created_at.desc()).all()
+        try:
+            # 🔍 Only get inventories where Transcation_type_debit > 0
+            inventories = Inventory.query.filter(Inventory.Transcation_type_debit > 0).order_by(Inventory.created_at.desc()).all()
 
-        all_inventory = [{
-            "Suppliername": inventory.Suppliername,
-            "itemname": inventory.itemname,
-            "initial_quantity": inventory.initial_quantity,      # Initial Quantity
-            "remaining_quantity": inventory.quantity,             # Remaining Quantity
-            "amountPaid": inventory.amountPaid,
-            "balance":inventory.ballance,
-            "created_at": inventory.created_at,
-            "unitPrice": inventory.unitPrice,
-            "source":inventory.source,
-            "Transcation_type_debit": inventory.Transcation_type_debit,
-            "Trasnaction_type_credit":inventory.Trasnaction_type_credit
-        } for inventory in inventories]
+            all_inventory = [{
+                "suppliername": inventory.Suppliername,
+                "itemname": inventory.itemname,
+                "initial_quantity": inventory.initial_quantity,
+                "remaining_quantity": inventory.quantity,
+                "amountPaid": inventory.amountPaid,
+                "balance": inventory.ballance,
+                "created_at": inventory.created_at,
+                "unitPrice": inventory.unitPrice,
+                "source": inventory.source,
+                "transcation_type_debit": inventory.Transcation_type_debit,
+                "trasnaction_type_credit": inventory.Trasnaction_type_credit
+            } for inventory in inventories]
 
-        return make_response(jsonify(all_inventory), 200)
+            return make_response(jsonify(all_inventory), 200)
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
 
 
 class SalesLedger(Resource):

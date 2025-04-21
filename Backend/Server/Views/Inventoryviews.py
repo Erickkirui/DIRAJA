@@ -373,6 +373,7 @@ class AddInventory(Resource):
 
         # Generate the batch code using the static method
         batch_code = Inventory.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
+        debit_account_value =  unitPrice * quantity
         
         # No longer validating source; now directly accepting it as is
         if source and len(source) == 0:
@@ -396,8 +397,8 @@ class AddInventory(Resource):
             note=note,
             created_at=created_at,
             source=source , # Now we save source as is
-            Transcation_type_debit= amountPaid, #this will chage
-            Trasnaction_type_credit = amountPaid
+            Trasnaction_type_credit = amountPaid,
+            Transcation_type_debit =  debit_account_value
         )
 
         # Save to database
