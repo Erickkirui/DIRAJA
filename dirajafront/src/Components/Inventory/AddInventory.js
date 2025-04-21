@@ -185,7 +185,7 @@ const AddInventory = () => {
             name="paymentRef"
             value={formData.paymentRef}
             onChange={handleChange}
-            placeholder="Payment Ref"
+            placeholder="Payment Ref (Transaction code)"
             className="input"
             required
           />

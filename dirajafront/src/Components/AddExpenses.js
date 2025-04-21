@@ -203,7 +203,7 @@ const AddExpense = () => {
         <div><input type="number" name="quantity" value={expenseData.quantity} onChange={handleChange} placeholder="Quantity" className="input" /></div>
         <div><input type="number" name="totalPrice" value={expenseData.totalPrice} onChange={handleChange} placeholder="Total Price" className="input" /></div>
         <div><input type="number" name="amountPaid" value={expenseData.amountPaid} onChange={handleChange} placeholder="Amount Paid" className="input" /></div>
-        <div><input type="text" name="paymentRef" value={expenseData.paymentRef} onChange={handleChange} placeholder="Payment Ref" className="input" /></div>
+        <div><input type="text" name="paymentRef" value={expenseData.paymentRef} onChange={handleChange} placeholder="Payment Ref(Transaction code)" className="input" /></div>
         <div><input type="text" name="paidTo" value={expenseData.paidTo} onChange={handleChange} placeholder="Paid To" className="input" /></div>
         <div><input type="date" name="created_at" value={expenseData.created_at} onChange={handleChange} className="input" /></div>
 
