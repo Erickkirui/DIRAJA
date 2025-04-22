@@ -13,6 +13,16 @@ function Managerdashord() {
   // Check the role in local storage
   useEffect(() => {
     const role = localStorage.getItem('role');
+    const user = localStorage.getItem('username')
+
+
+    // Auto logout user 
+    if (user === 'Dancan') {
+      localStorage.clear();
+      window.location.href = '/login';
+      return;
+    }
+
     if (role === 'clerk') {
       window.location.href = '/clerk'; // Redirect to the clerk route
     }
