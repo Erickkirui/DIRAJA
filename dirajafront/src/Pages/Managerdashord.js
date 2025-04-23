@@ -17,11 +17,11 @@ function Managerdashord() {
 
 
     // Auto logout user 
-    if (user === 'Dancan') {
-      localStorage.clear();
-      window.location.href = '/login';
-      return;
-    }
+    // if (user === 'Dancan') {
+    //   localStorage.clear();
+    //   window.location.href = '/login';
+    //   return;
+    // }
 
     if (role === 'clerk') {
       window.location.href = '/clerk'; // Redirect to the clerk route
