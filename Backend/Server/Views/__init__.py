@@ -17,7 +17,7 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock
 
-from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda
+from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
@@ -39,6 +39,9 @@ from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmoun
 from Server.Views.Emailnotifications import Report
 from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger,PurchasesLedger
 from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts
+from Server.Views.Emailnotifications import Report
+from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
+
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -219,6 +222,7 @@ api.add_resource(MabandaPurchaseResource,'/getmabandapurchase')
 api.add_resource(MabandaStockResource,'/getmabandastock')
 api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
 api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
+api.add_resource(MabandaProfitLossAPI, '/mabandap&l')
 
 
 
@@ -244,7 +248,9 @@ api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
 
 
 
-
+#Spoiltstock
+api.add_resource(AddSpoiltStock, '/newspoilt')
+api.add_resource(SpoiltStockResource, '/allspoilt')
 
 
 

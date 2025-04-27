@@ -7,7 +7,7 @@ import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 
 const MabandaSalesDetails = () => {
-  const [salesData, setSalesData] = useState(null);
+  const [sales, setsales] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dateRange, setDateRange] = useState({
@@ -35,7 +35,7 @@ const MabandaSalesDetails = () => {
 
         console.log("API Response:", response.data);
 
-        setSalesData(response.data);
+        setsales(response.data);
       } catch (err) {
         console.error("Error fetching sales data:", err);
         setError("Failed to fetch sales data.");
@@ -53,11 +53,11 @@ const MabandaSalesDetails = () => {
         <p>Loading sales data...</p>
       ) : error ? (
         <p className="error">{error}</p>
-      ) : salesData ? (
+      ) : sales ? (
         <div>
           <h2>Sales for Mabanda</h2>
           <p>
-            <strong>Sales total:</strong> {salesData.total_sales_amount_paid || "Ksh 0.00"}
+            <strong>Sales total:</strong> {sales.total_sales_amount_paid || "Ksh 0.00"}
           </p>
 
           <div className="input-container">
@@ -77,11 +77,11 @@ const MabandaSalesDetails = () => {
                 </tr>
               </thead>
               <tbody>
-                {Array.isArray(salesData?.sales) && salesData.sales.length > 0 ? (
-                  salesData.sales.map((sale) => (
-                    <tr key={sale.id}>
+                {Array.isArray(sales?.sales) && sales.sales.length > 0 ? (
+                  sales.sales.map((sale) => (
+                    <tr key={`${sale.itemname}-${sale.sale_date}`}>
                       <td>{sale.sale_date}</td>
-                      <td>{sale.item_name || "N/A"}</td>
+                      <td>{sale.itemname || "N/A"}</td>
                       <td>{sale.quantity || 0}</td>
                       <td>{sale.amount_paid}</td>
                     </tr>
@@ -97,8 +97,8 @@ const MabandaSalesDetails = () => {
 
           {/* Export Options */}
           <div className="actions-container">
-            <ExportExcel data={salesData?.sales || []} fileName="Mabanda_SalesData" />
-            <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_SalesData" />
+            <ExportExcel data={sales?.sales || []} fileName="Mabanda_sales" />
+            <DownloadPDF tableId="singleshopstock-table" fileName="Mabanda_sales" />
           </div>
         </div>
       ) : (
