@@ -16,12 +16,30 @@ const MabandaProfitLoss = () => {
     const fetchProfitLoss = async () => {
       setLoading(true);
       try {
-        const params = period === 'custom' && customDateRange.startDate && customDateRange.endDate
-          ? {
-              start_date: formatDate(customDateRange.startDate),
-              end_date: formatDate(customDateRange.endDate),
-            }
-          : {};
+        let params = {};
+
+        if (period === 'custom' && customDateRange.startDate && customDateRange.endDate) {
+          params = {
+            start_date: formatDateToISOString(customDateRange.startDate),
+            end_date: formatDateToISOString(customDateRange.endDate),
+          };
+        } else if (period === 'today') {
+          params = { start_date: formatDateToISOString(new Date()), end_date: formatDateToISOString(new Date()) };
+        } else if (period === 'yesterday') {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          params = { start_date: formatDateToISOString(yesterday), end_date: formatDateToISOString(yesterday) };
+        } else if (period === 'week') {
+          const today = new Date();
+          const weekAgo = new Date();
+          weekAgo.setDate(today.getDate() - 7);
+          params = { start_date: formatDateToISOString(weekAgo), end_date: formatDateToISOString(today) };
+        } else if (period === 'month') {
+          const today = new Date();
+          const monthAgo = new Date();
+          monthAgo.setMonth(today.getMonth() - 1);
+          params = { start_date: formatDateToISOString(monthAgo), end_date: formatDateToISOString(today) };
+        }
 
         const response = await axios.get('/api/diraja/mabandap&l', {
           params,
@@ -55,8 +73,22 @@ const MabandaProfitLoss = () => {
     }
   };
 
-  const formatDate = (date) => {
-    return new Date(date).toISOString().split('T')[0];
+  const formatDateToISOString = (date) => {
+    const utcDate = new Date(date);
+    utcDate.setMinutes(utcDate.getMinutes() - utcDate.getTimezoneOffset());
+    return utcDate.toISOString().split('T')[0];
+  };
+
+  const getProfitOrLossMessage = () => {
+    const { profit_or_loss } = data;
+    const formatted = Math.abs(profit_or_loss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (profit_or_loss > 0) {
+      return `Profit: ${formatted}`;
+    } else if (profit_or_loss < 0) {
+      return `Loss: ${formatted}`;
+    } else {
+      return 'No Profit or Loss';
+    }
   };
 
   return (
@@ -89,12 +121,11 @@ const MabandaProfitLoss = () => {
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
         <div>
-          <h3>Total Sales: {data.total_sales.toFixed(2)}</h3>
-          <h3>Total Purchases: {data.total_purchases.toFixed(2)}</h3>
-          <h3>Total Expenses: {data.total_expenses.toFixed(2)}</h3>
-          <h2 style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }}>
-            Profit / Loss: {data.profit_or_loss.toFixed(2)}
-          </h2>
+          <h4>Total Sales: {data.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+          <h4>Total Purchases: {data.total_purchases.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
+          <h3 style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }}>
+            {getProfitOrLossMessage()}
+          </h3>
         </div>
       )}
     </div>

@@ -823,10 +823,11 @@ class TotalAmountPaidForMabanda(Resource):
 
             # Fetch all sales data within the given date range
             sales_records = (
-                db.session.query(MabandaSale)
-                .filter(MabandaSale.shop_id == 12)
-                .filter(MabandaSale.sale_date >= start_date, MabandaSale.sale_date <= end_date)
-                .all()
+            db.session.query(MabandaSale)
+            .filter(MabandaSale.shop_id == 12)
+            .filter(MabandaSale.sale_date >= start_date, MabandaSale.sale_date <= end_date)
+            .order_by(MabandaSale.sale_date.desc())
+            .all()  
             )
 
             # Serialize the sales data
