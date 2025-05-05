@@ -190,8 +190,8 @@ const Shops = () => {
               />
             </th>
             <th>ID</th>
-            <th>Employee</th>
             <th>Shop Name</th>
+            <th>Employee</th>
             <th>Location</th>
             <th>Status</th>
             <th>Created At</th>
@@ -209,6 +209,9 @@ const Shops = () => {
                   />
                 </td>
                 <td>{shop.shop_id}</td>
+               
+                
+                <td>{shop.shopname}</td>
                 <td>
                   <div className="employee-info">
                     <div className="employee-icon">
@@ -217,7 +220,6 @@ const Shops = () => {
                     <span className="employee-name">{shop.employee}</span>
                   </div>
                 </td>
-                <td>{shop.shopname}</td>
                 <td>{shop.location}</td>
                 <td>{shop.shopstatus}</td>
                 <td>{new Date(shop.created_at).toLocaleDateString()}</td>
