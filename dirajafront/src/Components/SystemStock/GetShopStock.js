@@ -63,7 +63,9 @@ const Shopstock = () => {
     if (error) return <p>Error: {error}</p>;
 
     return (
+        
         <div className="shopStocks-container">
+            <h2>System stock</h2>
             {/* Search & Filter */}
             <div className="filter-container">
                 <input
