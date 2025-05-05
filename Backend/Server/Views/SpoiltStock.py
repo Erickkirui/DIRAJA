@@ -25,10 +25,6 @@ class AddSpoiltStock(Resource):
         if not clerk:
             return {"message": "Invalid user"}, 400
 
-        # # Get shop auto from clerk
-        # shop = Shops.query.filter_by(user_id=user_id).first()
-        # if not shop:
-        #     return {"message": "No shop found for clerk"}, 400
 
         # Required fields
         shop_id = data.get('shop_id')
@@ -67,17 +63,37 @@ class SpoiltStockResource(Resource):
         shop_id = request.args.get('shop_id')
 
         if shop_id:
-            records = SpoiltStock.query.filter_by(shop_id=shop_id).all()
+            records = SpoiltStock.query.filter_by(shop_id=shop_id).order_by(SpoiltStock.created_at.desc()).all()
         else:
-            records = SpoiltStock.query.all()
+            records = SpoiltStock.query.order_by(SpoiltStock.created_at.desc()).all()
 
         result = []
         for record in records:
+            user = Users.query.filter_by(users_id=record.clerk_id).first()
+            shop = Shops.query.filter_by(shops_id=record.shop_id).first()
+
+            username = user.username if user else "Unknown User"
+            shopname = shop.shopname if shop else "Unknown Shop"
+
+            # Format created_at
+            if record.created_at:
+                if isinstance(record.created_at, str):
+                    try:
+                        created_at = datetime.strptime(record.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        created_at = record.created_at
+                else:
+                    created_at = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                created_at = None
+
             result.append({
                 "id": record.id,
-                "created_at": record.created_at.isoformat(),
+                "created_at": created_at,
                 "clerk_id": record.clerk_id,
+                "username": username,
                 "shop_id": record.shop_id,
+                "shop_name": shopname,
                 "item": record.item,
                 "quantity": record.quantity,
                 "unit": record.unit,
@@ -86,7 +102,7 @@ class SpoiltStockResource(Resource):
                 "comment": record.comment
             })
 
-        return result, 200
+        return make_response(jsonify(result), 200)
 
 
     @jwt_required()
