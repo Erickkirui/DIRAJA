@@ -6,8 +6,9 @@ function Deposits() {
   const [accounts, setAccounts] = useState([]);
   const [selectedAccount, setSelectedAccount] = useState('');
   const [amount, setAmount] = useState('');
+  const [fromAccount, setFromAccount] = useState('');
   const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('success'); // success | error | warning | info
+  const [messageType, setMessageType] = useState('success');
 
   const accessToken = localStorage.getItem('access_token');
 
@@ -33,8 +34,8 @@ function Deposits() {
   const handleDeposit = async (e) => {
     e.preventDefault();
 
-    if (!selectedAccount || !amount) {
-      setMessage('Please select an account and enter a valid amount.');
+    if (!selectedAccount || !amount || !fromAccount) {
+      setMessage('Please fill in all fields.');
       setMessageType('error');
       return;
     }
@@ -42,7 +43,10 @@ function Deposits() {
     try {
       const res = await axios.put(
         `/api/diraja/bankaccount/${selectedAccount}/deposit`,
-        { amount: parseFloat(amount) },
+        {
+          amount: parseFloat(amount),
+          from_account: fromAccount,
+        },
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -52,6 +56,7 @@ function Deposits() {
       setMessage(res.data.message);
       setMessageType('success');
       setAmount('');
+      setFromAccount('');
       setSelectedAccount('');
     } catch (err) {
       console.error('Deposit failed:', err);
@@ -74,7 +79,7 @@ function Deposits() {
 
       <form onSubmit={handleDeposit}>
         <div>
-        
+          <label>Select Account:</label>
           <select
             value={selectedAccount}
             onChange={(e) => setSelectedAccount(e.target.value)}
@@ -89,19 +94,27 @@ function Deposits() {
         </div>
 
         <div>
-         
+          <label>Deposit Amount:</label>
           <input
             type="number"
-            placeholder='Enter deposit amount'
+            placeholder="Enter deposit amount"
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
         </div>
 
-        <button  type="submit">
-          Deposit
-        </button>
+        <div>
+          <label>From </label>
+          <input
+            type="text"
+            placeholder="e.g. Safaricom Till"
+            value={fromAccount}
+            onChange={(e) => setFromAccount(e.target.value)}
+          />
+        </div>
+
+        <button type="submit">Deposit</button>
       </form>
     </div>
   );
