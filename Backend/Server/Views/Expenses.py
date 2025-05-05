@@ -2,6 +2,7 @@ from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.BankAccounts import BankAccount, BankingTransaction
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
@@ -29,7 +30,6 @@ class AddExpense(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Extract necessary fields from the request
         shop_id = data.get('shop_id')
         item = data.get('item')
         description = data.get('description')
@@ -38,10 +38,27 @@ class AddExpense(Resource):
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
         paidTo = data.get('paidTo')
-        source = data.get('source')
-        comments = data.get('comments')  # Accept comments from request
+        source = data.get('source')  # e.g. "Cash" or "Sasapay"
+        paymentRef = data.get('paymentRef')
+        comments = data.get('comments')
 
-        # Convert 'created_at' string to a datetime object
+        # ✅ Validate required fields individually with custom messages
+        if not shop_id:
+            return {"message": "Shop ID is required."}, 400
+        if not category:
+            return {"message": "Category is required."}, 400
+        if not source:
+            return {"message": "Payment source (e.g. 'Cash' or 'Sasapay') is required."}, 400
+        if not paymentRef:
+            return {"message": "Payment reference (paymentRef) is required."}, 400
+
+        if quantity is None or quantity <= 0:
+            return {"message": "Quantity must be a valid number greater than 0."}, 400
+        if totalPrice is None or totalPrice <= 0:
+            return {"message": "Total Price must be a valid number greater than 0."}, 400
+        if amountPaid is None or amountPaid <= 0:
+            return {"message": "Amount Paid must be a valid number greater than 0."}, 400
+
         created_at = data.get('created_at')
         if created_at:
             try:
@@ -49,7 +66,26 @@ class AddExpense(Resource):
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
 
-        # Create a new expense entry
+        # Step 1: Fetch account
+        account = BankAccount.query.filter_by(Account_name=source).first()
+        if not account:
+            return {"message": f"Account '{source}' not found."}, 404
+
+        # Step 2: Check balance (optional)
+        # if account.Account_Balance < amountPaid:
+        #     return {"message": f"Insufficient funds in '{source}' account."}, 400
+
+        # Step 3: Deduct amount
+        account.Account_Balance -= amountPaid
+
+        # Step 4: Log transaction
+        transaction = BankingTransaction(
+            account_id=account.id,
+            Transaction_type_debit=amountPaid,
+            Transaction_type_credit=None
+        )
+
+        # Step 5: Create expense
         new_expense = Expenses(
             shop_id=shop_id,
             item=item,
@@ -62,14 +98,19 @@ class AddExpense(Resource):
             created_at=created_at or datetime.utcnow(),
             user_id=current_user_id,
             source=source,
-            comments=comments  # Include comments in the expense entry
+            paymentRef=paymentRef,
+            comments=comments
         )
 
-        # Add the new expense to the database and commit the transaction
-        db.session.add(new_expense)
-        db.session.commit()
+        try:
+            db.session.add(new_expense)
+            db.session.add(transaction)
+            db.session.commit()
+            return {"message": "Expense added and account updated successfully"}, 201
+        except Exception as e:
+            db.session.rollback()
+            return {"message": "Failed to add expense", "error": str(e)}, 500
 
-        return {"message": "Expense added successfully"}, 201
 
 
 class AllExpenses(Resource):
@@ -117,6 +158,7 @@ class AllExpenses(Resource):
                 "paidTo": expense.paidTo,
                 "created_at": created_at,
                 "source": expense.source,
+                "paymentRef": expense.paymentRef,
                 "comments": expense.comments  
             })
 
@@ -145,6 +187,7 @@ class GetShopExpenses(Resource):
             "amountPaid" : expense.amountPaid,
             "paidTo": expense.paidTo,
             "source": expense.source,
+            "paymentRef": expense.paymentRef,
             "comments": expense.comments,
             "created_at" : expense.created_at
 
@@ -176,6 +219,7 @@ class ExpensesResources(Resource):
                 "paidTo": expense.paidTo,
                 "amountPaid": expense.amountPaid,
                 "source": expense.source,
+                "paymentRef": expense.paymentRef,
                 "comments": expense.comments,
                 # Convert datetime object to String
                 "created_at": expense.created_at.strftime('%Y-%m-%d %H:%M:%S') if expense.created_at else None
@@ -220,6 +264,7 @@ class ExpensesResources(Resource):
                 expense.amountPaid = data.get('amountPaid', expense.amountPaid)
                 expense.paidTo = data.get('paidTo', expense.paidTo)
                 expense.source = data.get('source', expense.source)
+                expense.paymentRef = data.get('paymentRef', expense.paymentRef)
                 expense.comments = data.get('comments', expense.comments)  # New comments column
 
                 # Convert created_at from String to datetime if provided

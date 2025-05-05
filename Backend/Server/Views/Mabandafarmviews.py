@@ -6,6 +6,8 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from functools import wraps
 from datetime import datetime, timedelta
+from sqlalchemy import func
+
 
 
 
@@ -307,3 +309,53 @@ class TotalAmountPaidSalesMabanda(Resource):
         except SQLAlchemyError:
             db.session.rollback()
             return {"error": "An error occurred while fetching the total sales amount"}, 500
+
+
+class MabandaProfitLossAPI(Resource):
+    def get(self):
+        # Get optional date filters from query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        # Parse dates if provided
+        try:
+            if start_date:
+                start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            if end_date:
+                end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+        # Define shop_id for Mabanda Farm
+        shop_id = 12
+
+        # Base queries
+        sales_query = db.session.query(func.coalesce(func.sum(MabandaSale.amount_paid), 0.0)).filter(MabandaSale.shop_id == shop_id)
+        purchases_query = db.session.query(func.coalesce(func.sum(MabandaPurchase.price), 0.0)).filter(MabandaPurchase.shop_id == shop_id)
+        expenses_query = db.session.query(func.coalesce(func.sum(MabandaExpense.amount), 0.0)).filter(MabandaExpense.shop_id == shop_id)
+
+        # Apply date filters if present
+        if start_date:
+            sales_query = sales_query.filter(MabandaSale.sale_date >= start_date)
+            purchases_query = purchases_query.filter(MabandaPurchase.purchase_date >= start_date)
+            expenses_query = expenses_query.filter(MabandaExpense.expense_date >= start_date)
+
+        if end_date:
+            sales_query = sales_query.filter(MabandaSale.sale_date <= end_date)
+            purchases_query = purchases_query.filter(MabandaPurchase.purchase_date <= end_date)
+            expenses_query = expenses_query.filter(MabandaExpense.expense_date <= end_date)
+
+        # Execute queries
+        total_sales = sales_query.scalar()
+        total_purchases = purchases_query.scalar()
+        total_expenses = expenses_query.scalar()
+
+        # Calculate profit/loss
+        profit_loss = total_sales - total_purchases - total_expenses
+
+        return {
+            "total_sales": total_sales,
+            "total_purchases": total_purchases,
+            "total_expenses": total_expenses,
+            "profit_or_loss": profit_loss
+        }

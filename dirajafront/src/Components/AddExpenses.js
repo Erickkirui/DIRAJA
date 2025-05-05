@@ -14,34 +14,53 @@ const AddExpense = () => {
     paidTo: '',
     created_at: '',
     source: '',
-    comments: '' // Updated field for comments
+    paymentRef:'',
+    comments: ''
   });
 
   const [shops, setShops] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [message, setMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
-    const fetchShopsAndCategories = async () => {
+    const fetchData = async () => {
       try {
-        const shopResponse = await axios.get('/api/diraja/allshops', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-        });
-        setShops(shopResponse.data);
+        const [shopResponse, expenseResponse, accountResponse] = await Promise.all([
+          axios.get('/api/diraja/allshops', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          }),
+          axios.get('/api/diraja/allexpenses', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          }),
+          axios.get('/api/diraja/all-acounts', {
+            headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          })
+        ]);
 
-        const expenseResponse = await axios.get('/api/diraja/allexpenses', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-        });
+        setShops(shopResponse.data);
         const categories = [...new Set(expenseResponse.data.map(expense => expense.category))];
         setCategorySuggestions(categories);
+        
+        // Log the account response to check its format
+        console.log('Bank Accounts Response:', accountResponse.data);
+
+        // Check if the accounts response is an array before setting the state
+        if (Array.isArray(accountResponse.data.accounts)) {
+          setAccounts(accountResponse.data.accounts);
+        } else {
+          console.error('Bank accounts data is not an array');
+          setAccounts([]);
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
         setCategorySuggestions([]);
+        setAccounts([]);
       }
     };
 
-    fetchShopsAndCategories();
+    fetchData();
   }, []);
 
   const handleChange = (e) => {
@@ -63,33 +82,46 @@ const AddExpense = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (!expenseData.shop_id || !expenseData.category || !expenseData.source) {
       setMessage({ type: 'error', text: 'Please select a shop, category, and source' });
       return;
     }
-
-    // Validate numeric fields
+  
     if (isNaN(expenseData.quantity) || expenseData.quantity <= 0) {
       setMessage({ type: 'error', text: 'Quantity must be a valid number greater than 0' });
       return;
     }
-
+  
     if (isNaN(expenseData.totalPrice) || expenseData.totalPrice <= 0) {
       setMessage({ type: 'error', text: 'Total Price must be a valid number greater than 0' });
       return;
     }
-
+  
     if (isNaN(expenseData.amountPaid) || expenseData.amountPaid <= 0) {
       setMessage({ type: 'error', text: 'Amount Paid must be a valid number greater than 0' });
       return;
     }
 
+    if (!expenseData.paymentRef) {
+      setMessage({ type: 'error', text: 'Please add a payment reference code' });
+      return;
+    }
+
+  
+    // Convert amountPaid and totalPrice to float, quantity to int
+    const formattedData = {
+      ...expenseData,
+      quantity: parseInt(expenseData.quantity, 10),
+      totalPrice: parseFloat(expenseData.totalPrice),
+      amountPaid: parseFloat(expenseData.amountPaid),
+    };
+  
     try {
-      const response = await axios.post('/api/diraja/newexpense', expenseData, {
+      const response = await axios.post('/api/diraja/newexpense', formattedData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
-
+  
       if (response.status === 201) {
         setMessage({ type: 'success', text: 'Expense added successfully' });
         setExpenseData({
@@ -103,7 +135,8 @@ const AddExpense = () => {
           paidTo: '',
           created_at: '',
           source: '',
-          comments: '' // Reset the comments field
+          paymentRef:'',
+          comments: ''
         });
       }
     } catch (error) {
@@ -111,6 +144,7 @@ const AddExpense = () => {
       console.error('Error adding expense:', error);
     }
   };
+  
 
   return (
     <div>
@@ -144,28 +178,17 @@ const AddExpense = () => {
           )}
         </div>
 
-        {/* Source Dropdown */}
+        {/* Dynamic Source Dropdown */}
         <div>
           <select name="source" value={expenseData.source} onChange={handleChange} className="select">
             <option value="">Select Source</option>
-            <option value="Mpesa - 0748277960">Mpesa - 0748277960</option>
-            <option value="Mpesa - 0116400393">Mpesa - 0116400393</option>
-            <option value="Sasapay - Mirema">Sasapay - Mirema</option>
-            <option value="Sasapay - TRM">Sasapay - TRM</option>
-            <option value="Sasapay - Lumumba Drive">Sasapay - Lumumba Drive</option>
-            <option value="Sasapay - Zimmerman shop">Sasapay - Zimmerman shop</option>
-            <option value="Sasapay - Zimmerman Store">Sasapay - Zimmerman Store</option>
-            <option value="Sasapay - Githurai 44">Sasapay - Githurai 44</option>
-            <option value="Sasapay - Kangundo Rd Market">Sasapay - Kangundo Rd Market</option>
-            <option value="Sasapay - Ngoingwa">Sasapay - Ngoingwa</option>
-            <option value="Sasapay - Thika Market">Sasapay - Thika Market</option>
-            <option value="Sasapay - Mabanda">Sasapay - Mabanda</option>
-            <option value="Sasapay - Kisumu">Sasapay - Kisumu</option>
-            <option value="Sasapay - Pipeline">Sasapay - Pipeline</option>
-            <option value="Sasapay - Turi">Sasapay - Turi</option>
-            <option value="Sta">Sta</option>
-            <option value="Standard Chartered Bank">Standard Chartered Bank</option>
-            <option value="External funding">External funding</option>
+            {Array.isArray(accounts) && accounts.length > 0 ? (
+              accounts.map((accounts, index) => (
+                <option key={index} value={accounts.Account_name}>{accounts.Account_name}</option>
+              ))
+            ) : (
+              <option value="">No accounts available</option>
+            )}
           </select>
         </div>
 
@@ -180,6 +203,7 @@ const AddExpense = () => {
         <div><input type="number" name="quantity" value={expenseData.quantity} onChange={handleChange} placeholder="Quantity" className="input" /></div>
         <div><input type="number" name="totalPrice" value={expenseData.totalPrice} onChange={handleChange} placeholder="Total Price" className="input" /></div>
         <div><input type="number" name="amountPaid" value={expenseData.amountPaid} onChange={handleChange} placeholder="Amount Paid" className="input" /></div>
+        <div><input type="text" name="paymentRef" value={expenseData.paymentRef} onChange={handleChange} placeholder="Payment Ref(Transaction code)" className="input" /></div>
         <div><input type="text" name="paidTo" value={expenseData.paidTo} onChange={handleChange} placeholder="Paid To" className="input" /></div>
         <div><input type="date" name="created_at" value={expenseData.created_at} onChange={handleChange} className="input" /></div>
 
