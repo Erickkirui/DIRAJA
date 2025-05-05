@@ -62,6 +62,8 @@ import AllSales from './Components/Sales/GetSale';
 import AccountBalances from './Pages/AccountBalances';
 import AccountingLedgers from './Pages/AccountingLedgers';
 import AllLedgers from './Pages/AllLedgers';
+import AddSpoiltStock from './Components/StockManagement/AddSpoiltStock';
+import SpoiltStockTable from './Components/StockManagement/GetSpoiltStock';
 
 
 
@@ -187,6 +189,8 @@ function App() {
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
             <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
             <Route path='/all-ledgers' element={<Layout><AllLedgers/></Layout>} ></Route>
+            <Route path='/addspoiltstock' element={<ClerkLayout><AddSpoiltStock/></ClerkLayout>} ></Route>
+            <Route path='/spoilt-stock' element={<Layout><SpoiltStockTable/></Layout>} ></Route>
           </Routes> 
        
       </Router>
