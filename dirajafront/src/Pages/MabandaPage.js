@@ -16,17 +16,17 @@ function MabandaPage() {
         >
           Sales
         </button>
-        <button 
+        {/* <button 
           className={`tab-button ${activeTab === 'totalmabandaexpenses' ? 'active' : ''}`} 
           onClick={() => setActiveTab('totalmabandaexpenses')}
         >
           Expenses
-        </button>
+        </button> */}
       </div>
 
       <div className="tab-content">
         {activeTab === 'totalmabandasales' && <MabandaSalesDetails />}
-        {activeTab === 'totalmabandaexpenses' && <MabandaExpenseDetails />}
+        {/* {activeTab === 'totalmabandaexpenses' && <MabandaExpenseDetails />} */}
       </div>
     </div>
   );

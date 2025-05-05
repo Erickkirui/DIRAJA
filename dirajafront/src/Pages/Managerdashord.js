@@ -7,6 +7,7 @@ import TotalAmountPaidPurchases from '../Components/ManagerDashbord/TotalAmountP
 import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
+import MabandaProfitLoss from'../Components/ManagerDashbord/MabandaFarmP&L';
 
 
 function Managerdashord() {
@@ -76,6 +77,11 @@ function Managerdashord() {
        </div>
 
         </div>
+
+        <div>
+             <MabandaProfitLoss />
+        </div>
+
         <div>
           <BatchStockList />
         </div>
