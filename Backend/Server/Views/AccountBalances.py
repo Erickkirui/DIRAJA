@@ -2,6 +2,7 @@ from flask_restful import Resource
 from flask import request, jsonify,make_response
 from app import db
 from Server.Models.Users import Users
+from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount  # adjust import if needed
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
@@ -86,7 +87,17 @@ class DepositToAccount(Resource):
         if not account:
             return {"message": "Bank account not found."}, 404
 
+        # Update account balance
         account.Account_Balance += deposit_amount
+
+        # Create transaction record
+        transaction = TranscationType(
+            Transaction_type="Deposit",
+            Transaction_amount=deposit_amount,
+            From_account=account.Account_name
+        )
+        db.session.add(transaction)
+
         db.session.commit()
 
         return {
@@ -97,6 +108,7 @@ class DepositToAccount(Resource):
                 "Account_Balance": account.Account_Balance
             }
         }, 200
+
     
 
 class BankAccountResource(Resource):
