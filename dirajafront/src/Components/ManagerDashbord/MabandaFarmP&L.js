@@ -121,11 +121,11 @@ const MabandaProfitLoss = () => {
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
         <div>
-          <h4>Total Sales: {data.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
-          <h4>Total Purchases: {data.total_purchases.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h4>
-          <h3 style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }}>
+          <p>Total Sales: {data.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p>Total Purchases: {data.total_purchases.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }}>
             {getProfitOrLossMessage()}
-          </h3>
+          </p>
         </div>
       )}
     </div>
