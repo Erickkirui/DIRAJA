@@ -6,6 +6,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.SpoiltStock import SpoiltStock
+from Server.Models.Shopstock import ShopStock
 
 from app import db
 from flask_restful import Resource
@@ -25,7 +26,6 @@ class AddSpoiltStock(Resource):
         if not clerk:
             return {"message": "Invalid user"}, 400
 
-
         # Required fields
         shop_id = data.get('shop_id')
         quantity = data.get('quantity')
@@ -35,11 +35,34 @@ class AddSpoiltStock(Resource):
         collector_name = data.get('collector_name')
         comment = data.get('comment', '')
 
-        # Validate fields
         if not all([item, quantity, unit, disposal_method]):
             return {"message": "Missing required fields"}, 400
 
-        # Create record
+        # Find matching shop stock item(s), sorted by oldest batch (optional)
+        shop_stock_entries = ShopStock.query.filter_by(shop_id=shop_id, itemname=item).order_by(ShopStock.stock_id).all()
+
+        if not shop_stock_entries:
+            return {"message": "Item not found in shop stock"}, 400
+
+        remaining_to_deduct = float(quantity)
+
+        for stock in shop_stock_entries:
+            if remaining_to_deduct <= 0:
+                break
+            if stock.quantity <= 0:
+                continue
+
+            if stock.quantity >= remaining_to_deduct:
+                stock.quantity -= remaining_to_deduct
+                remaining_to_deduct = 0
+            else:
+                remaining_to_deduct -= stock.quantity
+                stock.quantity = 0
+
+        if remaining_to_deduct > 0:
+            return {"message": "Not enough stock to deduct spoilt quantity"}, 400
+
+        # Record spoilt stock
         record = SpoiltStock(
             created_at=datetime.utcnow(),
             clerk_id=user_id,
@@ -55,7 +78,7 @@ class AddSpoiltStock(Resource):
         db.session.add(record)
         db.session.commit()
 
-        return {"message": "Spoilt stock recorded successfully"}, 201
+        return {"message": "Spoilt stock recorded and deducted from shop stock"}, 201
     
 class SpoiltStockResource(Resource):
     @jwt_required()
