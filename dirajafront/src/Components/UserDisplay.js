@@ -88,7 +88,7 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>} */}
             {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
             {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
-            {role === 'manager' && <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>}
+            {/* {role === 'manager' && <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>} */}
 
             {/* Items visible only to clerks of a specific shop */}
             {role === 'clerk' && shopId === "12" && (
@@ -105,6 +105,12 @@ const UserDisplay = () => {
               <>
                   <Link to="/mabandaexpense" onClick={handleMenuClick}>Add Mabanda Expense</Link>
                   <Link to="/mabandapurchase" onClick={handleMenuClick}>Add Mabanda Purchases</Link>
+              </>
+            )}
+
+            {(username === 'Leo' || username === 'Namai') &&  (
+              <>
+                  <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>
               </>
             )}
 
