@@ -3,6 +3,9 @@ import '../Styles/navigation.css';
 import { NavLink } from 'react-router-dom';
 
 function Navbar() {
+  // Get the username from localStorage
+  const username = localStorage.getItem('username');
+
   return (
     <div className='navigation-container'>
       <h1>DIRAJA SHOP</h1>
@@ -43,55 +46,34 @@ function Navbar() {
             <img src='/images/Employees.png' alt='menu-icon' />
             <li>Employees</li>
           </NavLink>
-          {/* <NavLink exact to="/purchases" className="menu-item" activeClassName="active">
-            <img src='/images/Expenses.png' alt='menu-icon' />
-            <li>Purchases</li>
-          </NavLink>
-          <NavLink exact to="/alltransfers" className="menu-item" activeClassName="active">
-            <img src='/images/Dashbord.png' alt='menu-icon' />
-            <li>Transfer</li>
-          </NavLink> */}
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />
             <li>System Stocks</li>
           </NavLink>
           <NavLink exact to="/stockstatus" className="menu-item" activeClassName="active">
             <img src='/images/Shop.png' alt='menu-icon' />
-            <li> Shop Stocks</li>
-          </NavLink>
-          <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active" >
-            <img src='/images/Shop.png' alt='menu-icon' />
-            <li> Account Balances</li>
+            <li>Shop Stocks</li>
           </NavLink>
 
-          
+          {/* ✅ Conditional rendering based on localStorage username */}
+          {(username === 'Leo' || username === 'Namai') && (
+            <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
+              <img src='/images/Shop.png' alt='menu-icon' />
+              <li>Account Balances</li>
+            </NavLink>
+          )}
         </ul>
       </div>
 
       <div className='accounting-menu'>
         <h4>ACCOUNTING</h4>
         <ul>
-        {/* <NavLink to="/balancesheet" className="menu-item" activeClassName="active">
-        <li>Balance Sheet</li>
-        </NavLink>
-        <NavLink to="/CashFlowStatement" className="menu-item" activeClassName="active">
-        <li>Cash Flow Statement</li>
-        </NavLink>
-        <NavLink to="/ProfitAndLoss" className="menu-item" activeClassName="active">
-        <li>Profit and Loss Statement</li>
-        </NavLink> */}
-
-
-
-        <NavLink to="/ledgers" className="menu-item" activeClassName="active">
-          <li>Ledgers Accounts </li>
-        </NavLink>
-        <NavLink to="/all-ledgers" className="menu-item" activeClassName="active">
-          <li>Ledgers </li>
-        </NavLink>
-        
-          
-  
+          <NavLink to="/ledgers" className="menu-item" activeClassName="active">
+            <li>Ledgers Accounts </li>
+          </NavLink>
+          <NavLink to="/all-ledgers" className="menu-item" activeClassName="active">
+            <li>Ledgers </li>
+          </NavLink>
         </ul>
       </div>
     </div>
