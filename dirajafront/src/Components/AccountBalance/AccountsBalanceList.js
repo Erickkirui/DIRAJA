@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import AddAccounts from './AddAccounts';
+
 import AccountCard from './AccountCard';
-import Deposits from './Deposits';
+
+import TotalAccountBalance from './TotalAccountBalance';
 
 function AccountsBalanceList() {
   const [accounts, setAccounts] = useState([]);
@@ -35,8 +36,9 @@ function AccountsBalanceList() {
 
   return (
     <div>
-      <AddAccounts />
-      <Deposits />
+    
+
+      <TotalAccountBalance />
       {error && <p>{error}</p>}
       <div className="accounts-container">
         {accounts.length > 0 ? (
