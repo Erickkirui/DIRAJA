@@ -38,7 +38,7 @@ from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesReso
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
 from Server.Views.Emailnotifications import Report
 from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger,PurchasesLedger
-from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts
+from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts,DailySalesDeposit,TotalBankBalance
 from Server.Views.Emailnotifications import Report
 from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
 
@@ -242,8 +242,10 @@ api.add_resource(PurchasesLedger , '/purchases-ledger')
 
 
 #Account Ballance 
+api.add_resource(TotalBankBalance, '/total-balance')
 api.add_resource(PostBankAccount, '/bankaccount')
 api.add_resource(GetAllBankAccounts, '/all-acounts')
+api.add_resource(DailySalesDeposit, '/sales/daily-deposit', '/sales/daily-deposit/<string:date_str>')
 api.add_resource(DepositToAccount, '/bankaccount/<int:account_id>/deposit')
 api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
 

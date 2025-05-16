@@ -1,11 +1,17 @@
 from flask_restful import Resource
 from flask import request, jsonify,make_response
 from app import db
+from datetime import datetime, timedelta, time
+from sqlalchemy import func
 from Server.Models.Users import Users
+from Server.Models.Sales import Sales
+from Server.Models.Shops import Shops
+from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount  # adjust import if needed
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
+
 
 
 def check_role(required_role):
@@ -21,6 +27,23 @@ def check_role(required_role):
     return wrapper
 
 
+class TotalBankBalance(Resource):
+    def get(self):
+        try:
+            # Calculate the total balance across all bank accounts
+            total_balance = db.session.query(func.sum(BankAccount.Account_Balance)).scalar() or 0.0
+
+            # Round the total balance to two decimal places
+            rounded_balance = round(total_balance, 2)
+
+            return jsonify({
+                "total_balance": rounded_balance
+            })
+        except Exception as e:
+            # Handle exceptions and rollback if necessary
+            db.session.rollback()
+            return {"error": str(e)}, 500
+        
 class PostBankAccount(Resource):
     
     @jwt_required()
@@ -155,3 +178,104 @@ class BankAccountResource(Resource):
         db.session.commit()
 
         return {"message": "Account deleted successfully."}, 200
+
+
+
+class DailySalesDeposit(Resource):
+    @jwt_required()
+    def post(self, date_str=None):
+        try:
+            # Parse the date from URL or use today's date
+            if date_str:
+                try:
+                    selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            else:
+                selected_date = datetime.now().date()
+
+            # Define the full calendar day range: 00:00 to 23:59:59
+            start_datetime = datetime.combine(selected_date, datetime.min.time())
+            end_datetime = start_datetime + timedelta(days=1)
+
+            # Query total payments grouped by shop
+            payments = db.session.query(
+                Sales.shop_id,
+                func.sum(SalesPaymentMethods.amount_paid).label('total_paid')
+            ).join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id) \
+             .filter(SalesPaymentMethods.created_at >= start_datetime,
+                     SalesPaymentMethods.created_at < end_datetime) \
+             .group_by(Sales.shop_id).all()
+
+            if not payments:
+                return {
+                    "message": f"No sales found on {selected_date.strftime('%Y-%m-%d')}"
+                }, 404
+
+            # Shop-to-bank mapping (customize as needed)
+            shop_to_bank_mapping = {
+                1: 12,
+                2: 3,
+                3: 6,
+                4: 2,
+                5: 5,
+                6: 17,
+                7: 15,
+                8: 9,
+                10: 18,
+                11: 8,
+                12: 7,
+                14: 14,
+                16: 13
+            }
+
+            deposit_results = []
+
+            for shop_id, total_paid in payments:
+                if total_paid <= 0:
+                    continue
+
+                bank_id = shop_to_bank_mapping.get(shop_id)
+                if not bank_id:
+                    continue
+
+                bank_account = BankAccount.query.get(bank_id)
+                shop = Shops.query.get(shop_id)
+
+                if not bank_account or not shop:
+                    continue
+
+                # Update bank balance
+                bank_account.Account_Balance += total_paid
+
+                # Create a transaction record
+                debit_tx = TranscationType(
+                    Transaction_type="Debit",
+                    Transaction_amount=total_paid,
+                    From_account=shop.shopname,
+                    To_account=bank_account.Account_name  # ✅ Added
+                )
+                db.session.add(debit_tx)
+
+                deposit_results.append({
+                    "shop_id": shop_id,
+                    "shop_name": shop.shopname,
+                    "bank_account_id": bank_id,
+                    "bank_account_name": bank_account.Account_name,
+                    "amount_deposited": round(total_paid, 2)
+                })
+
+            db.session.commit()
+
+            return {
+                "message": "Daily sales deposited successfully (BankingTransaction skipped).",
+                "deposits": deposit_results,
+                "range": {
+                    "from": start_datetime.strftime("%Y-%m-%d %H:%M"),
+                    "to": end_datetime.strftime("%Y-%m-%d %H:%M")
+                }
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500

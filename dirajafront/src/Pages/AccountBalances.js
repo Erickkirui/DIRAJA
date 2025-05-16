@@ -2,12 +2,14 @@ import React, { useState } from 'react'
 import TransactionList from '../Components/AccountBalance/TransactionList'
 import AccountsBalanceList from '../Components/AccountBalance/AccountsBalanceList'
 
+
 function AccountBalances() {
   const [activeTab, setActiveTab] = useState('accounts') // default tab
 
   return (
     <>
       <h1>Accounts</h1>
+      
       
       {/* Tabs */}
       <div className="tabs-container mb-4">
