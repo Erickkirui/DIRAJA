@@ -9,7 +9,7 @@ function AccountBalances() {
 
   useEffect(() => {
     const username = localStorage.getItem('username');
-    if (username !== 'Leo' && username !== 'Namai') {
+    if (username !== 'Leo' && username !== 'Namai' && username !== 'External Auditor') {
       navigate('/'); // redirect to dashboard if unauthorized
     }
   }, [navigate]);
