@@ -27,6 +27,23 @@ def check_role(required_role):
     return wrapper
 
 
+class TotalBankBalance(Resource):
+    def get(self):
+        try:
+            # Calculate the total balance across all bank accounts
+            total_balance = db.session.query(func.sum(BankAccount.Account_Balance)).scalar() or 0.0
+
+            # Round the total balance to two decimal places
+            rounded_balance = round(total_balance, 2)
+
+            return jsonify({
+                "total_balance": rounded_balance
+            })
+        except Exception as e:
+            # Handle exceptions and rollback if necessary
+            db.session.rollback()
+            return {"error": str(e)}, 500
+        
 class PostBankAccount(Resource):
     
     @jwt_required()
@@ -162,30 +179,40 @@ class BankAccountResource(Resource):
 
         return {"message": "Account deleted successfully."}, 200
 
+
+
 class DailySalesDeposit(Resource):
     @jwt_required()
-    def post(self):
+    def post(self, date_str=None):
         try:
-            from datetime import datetime, timedelta, time
-            from sqlalchemy import func
+            # Parse the date from URL or use today's date
+            if date_str:
+                try:
+                    selected_date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            else:
+                selected_date = datetime.now().date()
 
-            now = datetime.now()
-            today_6am = datetime.combine(now.date(), time(6, 0))
-            if now < today_6am:
-                today_6am -= timedelta(days=1)
-            tomorrow_6am = today_6am + timedelta(days=1)
+            # Define the full calendar day range: 00:00 to 23:59:59
+            start_datetime = datetime.combine(selected_date, datetime.min.time())
+            end_datetime = start_datetime + timedelta(days=1)
 
+            # Query total payments grouped by shop
             payments = db.session.query(
                 Sales.shop_id,
                 func.sum(SalesPaymentMethods.amount_paid).label('total_paid')
             ).join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id) \
-             .filter(SalesPaymentMethods.created_at >= today_6am,
-                     SalesPaymentMethods.created_at < tomorrow_6am) \
+             .filter(SalesPaymentMethods.created_at >= start_datetime,
+                     SalesPaymentMethods.created_at < end_datetime) \
              .group_by(Sales.shop_id).all()
 
             if not payments:
-                return {"message": "No sales found in the 6AM–6AM window"}, 404
+                return {
+                    "message": f"No sales found on {selected_date.strftime('%Y-%m-%d')}"
+                }, 404
 
+            # Shop-to-bank mapping (customize as needed)
             shop_to_bank_mapping = {
                 1: 12,
                 2: 3,
@@ -221,30 +248,31 @@ class DailySalesDeposit(Resource):
                 # Update bank balance
                 bank_account.Account_Balance += total_paid
 
-                # Record only in TranscationType (not in BankingTransaction)
+                # Create a transaction record
                 debit_tx = TranscationType(
                     Transaction_type="Debit",
                     Transaction_amount=total_paid,
-                    From_account=shop.shopname
+                    From_account=shop.shopname,
+                    To_account=bank_account.Account_name  # ✅ Added
                 )
-                
                 db.session.add(debit_tx)
 
                 deposit_results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,
                     "bank_account_id": bank_id,
+                    "bank_account_name": bank_account.Account_name,
                     "amount_deposited": round(total_paid, 2)
                 })
 
             db.session.commit()
 
             return {
-                "message": "Daily sales deposited (BankingTransaction skipped).",
+                "message": "Daily sales deposited successfully (BankingTransaction skipped).",
                 "deposits": deposit_results,
                 "range": {
-                    "from": today_6am.strftime("%Y-%m-%d %H:%M"),
-                    "to": tomorrow_6am.strftime("%Y-%m-%d %H:%M")
+                    "from": start_datetime.strftime("%Y-%m-%d %H:%M"),
+                    "to": end_datetime.strftime("%Y-%m-%d %H:%M")
                 }
             }, 200
 

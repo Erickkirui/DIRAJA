@@ -9,5 +9,6 @@ class TranscationType(db.Model):
     Transaction_type = db.Column(db.String(50), nullable= False)
     Transaction_amount = db.Column(db.Float, nullable= False)
     From_account = db.Column(db.String(50), nullable= False)
+    To_account = db.Column(db.String(50), nullable= True)
     created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
