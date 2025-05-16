@@ -15,9 +15,9 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock,GetItemStock
 
-from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda
+from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
 
 from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
@@ -38,7 +38,10 @@ from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesReso
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
 from Server.Views.Emailnotifications import Report
 from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger,PurchasesLedger
-from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts
+from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts,DailySalesDeposit
+from Server.Views.Emailnotifications import Report
+from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
+
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -79,6 +82,7 @@ api.add_resource(TotalStockValue, '/shopstock/value')
 api.add_resource(UpdateShopStockUnitPrice, '/shopstock/<int:stock_id>/update-unitprice')
 api.add_resource(TransferSystemStock, "/transfer-system-stock")
 api.add_resource(GetBatchStock, '/batch-stock-level' )
+api.add_resource(GetItemStock, '/item-stock-level')
 
 #Shopstock date range
 api.add_resource(ShopStockByDate, '/shopstock/bydate')
@@ -219,6 +223,7 @@ api.add_resource(MabandaPurchaseResource,'/getmabandapurchase')
 api.add_resource(MabandaStockResource,'/getmabandastock')
 api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
 api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
+api.add_resource(MabandaProfitLossAPI, '/mabandap&l')
 
 
 
@@ -241,10 +246,12 @@ api.add_resource(PostBankAccount, '/bankaccount')
 api.add_resource(GetAllBankAccounts, '/all-acounts')
 api.add_resource(DepositToAccount, '/bankaccount/<int:account_id>/deposit')
 api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
+api.add_resource(DailySalesDeposit, '/sales/daily-deposit')
 
 
-
-
+#Spoiltstock
+api.add_resource(AddSpoiltStock, '/newspoilt')
+api.add_resource(SpoiltStockResource, '/allspoilt')
 
 
 

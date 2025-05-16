@@ -108,6 +108,12 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
+                {shopId !== "12" && (
+                  <Link className="clerk-button" to="/addspoiltstock">
+                    Spoilt Stock
+                  </Link>
+                )}
+
 
             {/* <Link className='clerk-button' to='/shopsales'>View Sales</Link> */}
           </div>

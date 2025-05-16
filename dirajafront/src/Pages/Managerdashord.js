@@ -8,6 +8,8 @@ import TotalAmountPurchasesInventory from '../Components/ManagerDashbord/TotalAm
 import { Link } from 'react-router-dom';
 import BatchStockList from '../Components/ManagerDashbord/BatchStockList';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
+import MabandaProfitLoss from'../Components/ManagerDashbord/MabandaFarmP&L';
+import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
 
 
 function Managerdashord() {
@@ -78,11 +80,18 @@ function Managerdashord() {
            <div>
              <CountEmployees />
            </div>
+
+           <div>
+             <MabandaProfitLoss />
+           </div>
+
+
        </div>
       
        </div>
-       <div>
+       <div className='long-data-section'>
         <BatchStockList />
+        <ItemStockList />
        </div>
           
 

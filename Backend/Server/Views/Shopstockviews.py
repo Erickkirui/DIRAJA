@@ -817,3 +817,42 @@ class GetBatchStock(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": "An error occurred while fetching batch stock data", "details": str(e)}, 500
+        
+
+class GetItemStock(Resource):
+    @jwt_required()
+    @check_role('manager')  # Ensure only managers can access this endpoint
+    def get(self):
+        try:
+            # Aggregate stock by itemname and metric across all shops
+            item_stock = db.session.query(
+                Inventory.itemname,
+                Inventory.metric,
+                func.sum(ShopStock.quantity).label("total_quantity")
+            ).join(Inventory, ShopStock.inventory_id == Inventory.inventory_id) \
+             .group_by(Inventory.itemname, Inventory.metric).all()
+
+            # Serialize the data
+            item_stock_list = [
+                {
+                    "itemname": itemname,
+                    "metric": metric,
+                    "total_remaining": round(total_quantity, 2)
+                }
+                for itemname, metric, total_quantity in item_stock
+            ]
+
+            # Prepare response
+            response = {
+                "total_items": len(item_stock_list),
+                "item_stocks": item_stock_list
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching item stock data",
+                "details": str(e)
+            }, 500
