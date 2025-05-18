@@ -19,12 +19,12 @@ function Managerdashord() {
     const user = localStorage.getItem('username')
 
 
-    // Auto logout if user ID is 2
-    if (user === 'Dancan') {
-      localStorage.clear();
-      window.location.href = '/login';
-      return;
-    }
+    // // Auto logout if user ID is 2
+    // if (user === 'Dancan') {
+    //   localStorage.clear();
+    //   window.location.href = '/login';
+    //   return;
+    // }
 
 
     if (role === 'clerk') {
