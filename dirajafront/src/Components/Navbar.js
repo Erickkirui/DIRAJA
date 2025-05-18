@@ -56,7 +56,7 @@ function Navbar() {
           </NavLink>
 
           {/* ✅ Conditional rendering based on localStorage username */}
-          {(username === 'Leo' || username === 'Namai') && (
+          {(username === 'Leo' || username === 'Namai' || username === 'External Auditor') && (
             <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
               <img src='/images/Shop.png' alt='menu-icon' />
               <li>Account Balances</li>
