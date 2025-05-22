@@ -114,7 +114,7 @@ const UserDisplay = () => {
               </>
             )}
 
-            {username === "External Auditor" && (
+            {(username === "External Auditor" || username === 'Leo' || username === 'Dancan') && (
               <>
                   <Link to="/allsales" onClick={handleMenuClick}>View Sales</Link>
               </>

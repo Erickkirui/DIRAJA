@@ -182,6 +182,7 @@ const AddExpense = () => {
         <div>
           <select name="source" value={expenseData.source} onChange={handleChange} className="select">
             <option value="">Select Source</option>
+            <option value="External funding">External funding</option> {/* Hardcoded option */}
             {Array.isArray(accounts) && accounts.length > 0 ? (
               accounts.map((accounts, index) => (
                 <option key={index} value={accounts.Account_name}>{accounts.Account_name}</option>
