@@ -359,7 +359,6 @@ class AddInventory(Resource):
         Trasnaction_type_credit = data.get('Trasnaction_type_credit')
         Transcation_type_debit = data.get('Transcation_type_debit')
 
-
         try:
             created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
         except ValueError:
@@ -367,32 +366,22 @@ class AddInventory(Resource):
 
         totalCost = unitCost * quantity
         balance = totalCost - amountPaid
-       
-        # Generate the batch number based on previous records
 
         # Generate batch number
         last_inventory = Inventory.query.order_by(Inventory.inventory_id.desc()).first()
         next_batch_number = 1 if not last_inventory else last_inventory.inventory_id + 1
         batch_code = Inventory.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
-        debit_account_value =  unitPrice * quantity
-        
-        # No longer validating source; now directly accepting it as is
-        if source and len(source) == 0:
-            source = "Unknown"  # If no source is provided, default to "Unknown"
+        debit_account_value = unitPrice * quantity
 
-        # Create new inventory record
-
-        if not source:
+        if not source or len(source.strip()) == 0:
             source = "Unknown"
 
-        # === Deduct amount from bank account and log the transaction ===
-        if source != "Unknown":
+        transaction = None
+        if source not in ["Unknown", "External funding"]:
+            # Deduct from actual bank account
             account = BankAccount.query.filter_by(Account_name=source).first()
             if not account:
                 return {'message': f'Bank account with name "{source}" not found'}, 404
-
-            # if account.Account_Balance < amountPaid:
-            #     return {'message': f'Insufficient balance in account "{source}"'}, 400
 
             # Deduct the amount from the account balance
             account.Account_Balance -= amountPaid
@@ -423,9 +412,9 @@ class AddInventory(Resource):
             ballance=balance,
             note=note,
             created_at=created_at,
-            source=source , # Now we save source as is
-            Trasnaction_type_credit = amountPaid,
-            Transcation_type_debit =  debit_account_value,
+            source=source,
+            Trasnaction_type_credit=amountPaid,
+            Transcation_type_debit=debit_account_value,
             paymentRef=paymentRef
         )
 
@@ -433,10 +422,10 @@ class AddInventory(Resource):
             db.session.add(new_inventory)
             db.session.commit()
             return {'message': 'Inventory added successfully', 'BatchNumber': batch_code}, 201
-
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
+
 
 
 

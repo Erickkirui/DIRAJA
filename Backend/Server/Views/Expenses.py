@@ -38,11 +38,11 @@ class AddExpense(Resource):
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
         paidTo = data.get('paidTo')
-        source = data.get('source')  # e.g. "Cash" or "Sasapay"
+        source = data.get('source')  # e.g. "Cash", "Sasapay", or "External funding"
         paymentRef = data.get('paymentRef')
         comments = data.get('comments')
 
-        # ✅ Validate required fields individually with custom messages
+        # ✅ Validate required fields
         if not shop_id:
             return {"message": "Shop ID is required."}, 400
         if not category:
@@ -51,7 +51,6 @@ class AddExpense(Resource):
             return {"message": "Payment source (e.g. 'Cash' or 'Sasapay') is required."}, 400
         if not paymentRef:
             return {"message": "Payment reference (paymentRef) is required."}, 400
-
         if quantity is None or quantity <= 0:
             return {"message": "Quantity must be a valid number greater than 0."}, 400
         if totalPrice is None or totalPrice <= 0:
@@ -66,26 +65,24 @@ class AddExpense(Resource):
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
 
-        # Step 1: Fetch account
-        account = BankAccount.query.filter_by(Account_name=source).first()
-        if not account:
-            return {"message": f"Account '{source}' not found."}, 404
+        transaction = None
+        if source != "External funding":
+            # Step 1: Fetch account
+            account = BankAccount.query.filter_by(Account_name=source).first()
+            if not account:
+                return {"message": f"Account '{source}' not found."}, 404
 
-        # Step 2: Check balance (optional)
-        # if account.Account_Balance < amountPaid:
-        #     return {"message": f"Insufficient funds in '{source}' account."}, 400
+            # Step 2: Deduct amount
+            account.Account_Balance -= amountPaid
 
-        # Step 3: Deduct amount
-        account.Account_Balance -= amountPaid
+            # Step 3: Log transaction
+            transaction = BankingTransaction(
+                account_id=account.id,
+                Transaction_type_debit=amountPaid,
+                Transaction_type_credit=None
+            )
 
-        # Step 4: Log transaction
-        transaction = BankingTransaction(
-            account_id=account.id,
-            Transaction_type_debit=amountPaid,
-            Transaction_type_credit=None
-        )
-
-        # Step 5: Create expense
+        # Step 4: Create expense
         new_expense = Expenses(
             shop_id=shop_id,
             item=item,
@@ -104,12 +101,14 @@ class AddExpense(Resource):
 
         try:
             db.session.add(new_expense)
-            db.session.add(transaction)
+            if transaction:
+                db.session.add(transaction)
             db.session.commit()
-            return {"message": "Expense added and account updated successfully"}, 201
+            return {"message": "Expense added successfully"}, 201
         except Exception as e:
             db.session.rollback()
             return {"message": "Failed to add expense", "error": str(e)}, 500
+
 
 
 
