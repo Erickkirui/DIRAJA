@@ -16,10 +16,10 @@ function Managerdashord() {
   // Check the role in local storage
   useEffect(() => {
     const role = localStorage.getItem('role');
-    const user = localStorage.getItem('username')
+    // const user = localStorage.getItem('username')
 
 
-    // // Auto logout if user ID is 2
+    //  Auto logout if user ID is 2
     // if (user === 'Dancan') {
     //   localStorage.clear();
     //   window.location.href = '/login';
