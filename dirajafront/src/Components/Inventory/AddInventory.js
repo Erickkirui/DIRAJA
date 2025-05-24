@@ -139,16 +139,15 @@ const AddInventory = () => {
         <div>
           <select name="source" value={formData.source} onChange={handleChange} className="select">
             <option value="">Select Source</option>
-            <option value="External funding">External funding</option> {/* Hardcoded option */}
-            {Array.isArray(accounts) && accounts.length > 0 ? (
-              accounts.map((acc, index) => (
-                <option key={index} value={acc.Account_name}>{acc.Account_name}</option>
-              ))
-            ) : (
-              <option value="">No accounts available</option>
-            )}
+            <option value="External funding">External funding</option>
+            {Array.isArray(accounts) && accounts.map((account, index) => (
+              <option key={account.account_id || index} value={account.Account_name}>
+                {account.Account_name}
+              </option>
+            ))}
           </select>
         </div>
+  
         <div>
           <textarea
             name="note"
