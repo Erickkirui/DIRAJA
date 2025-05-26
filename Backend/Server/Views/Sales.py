@@ -6,6 +6,8 @@ from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.Expenses import Expenses
+from Server.Models.Transactions import TranscationType
+from Server.Models.BankAccounts import BankAccount
 from Server.Models.Inventory import Inventory
 from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
@@ -56,222 +58,234 @@ def check_role(required_role):
         return decorator
     return wrapper
 
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
+        # ===== VALIDATION =====
         required_fields = [
-            'shop_id', 'customer_name', 'customer_number', 'item_name', 
+            'shop_id', 'customer_name', 'customer_number', 'item_name',
             'quantity', 'metric', 'unit_price', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
-            return {'message': 'Missing required fields'}, 400
-
-        shop_id = data.get('shop_id')
-        customer_name = data.get('customer_name')
-        customer_number = data.get('customer_number')
-        item_name = data.get('item_name')
-        Cost_of_sale = data.get('Cost_of_sale')
-        Purchase_account = data.get('Purchase_account')
-
-
+            return {'message': 'Missing required fields', 'missing': [f for f in required_fields if f not in data]}, 400
 
         try:
-            quantity = float(data.get('quantity', 0))
-            metric = data.get('metric')
-            unit_price = float(data.get('unit_price', 0.0))
-            payment_methods = data.get('payment_methods')
-            status = data.get('status', 'unpaid')
-            created_at = data.get('sale_date')
-            total_price = float(data.get('total_price'))
+            # Parse data with strict validation
+            shop_id = int(data['shop_id'])
+            quantity = float(data['quantity'])
+            unit_price = float(data['unit_price'])
+            total_price = float(data['total_price'])
+            payment_methods = data['payment_methods']
+            status = data['status'].lower()
+            created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d")
+        except (ValueError, KeyError) as e:
+            return {'message': f'Invalid data format: {str(e)}'}, 400
 
-            if not created_at or created_at.strip() == "":
-                return {'message': 'Sale date is required'}, 400
+        # ===== PAYMENT METHOD VALIDATION =====
+        if status != "unpaid":
+            if not isinstance(payment_methods, list):
+                return {'message': 'Payment methods must be a list'}, 400
+            
+            for pm in payment_methods:
+                if 'method' not in pm or 'amount' not in pm:
+                    return {'message': 'Each payment method must have "method" and "amount"'}, 400
+                try:
+                    float(pm['amount'])
+                except ValueError:
+                    return {'message': f'Invalid amount for payment method {pm["method"]}'}, 400
 
-            try:
-                created_at = datetime.strptime(created_at, "%Y-%m-%d")
-            except ValueError:
-                return {'message': 'Invalid date format. Use YYYY-MM-DD'}, 400
+        # ===== BANK MAPPING =====
+        shop_to_bank_mapping = {
+            1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
+            7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
+            14: 14, 16: 13
+        }
 
-        except ValueError:
-            return {'message': 'Invalid input for quantity or unit price'}, 400
+        # ===== STOCK PROCESSING =====
+        try:
+            # Batch processing
+            batches = ShopStock.query.filter(
+                ShopStock.itemname == data['item_name'],
+                ShopStock.shop_id == shop_id,
+                ShopStock.quantity > 0
+            ).order_by(ShopStock.BatchNumber).all()
 
-        if status.lower() == "unpaid" and (not customer_name or customer_name.strip() == ""):
-            return {'message': 'Customer name is required for credit sale'}, 400
+            if not batches:
+                return {'message': 'No stock available for this item'}, 400
 
-        if status.lower() != "unpaid" and (not isinstance(payment_methods, list) or not all(
-            isinstance(pm, dict) and 'method' in pm and 'amount' in pm for pm in payment_methods
-        )):
-            return {'message': 'Invalid payment methods format'}, 400
+            remaining_qty = quantity
+            batch_deductions = []
+            stock_ids_used = []
+            purchase_account = 0.0
 
-        total_amount_paid = 0
+            for batch in batches:
+                if remaining_qty <= 0:
+                    break
 
-        if status.lower() != "unpaid":
-            try:
-                total_amount_paid = sum(float(pm['amount']) for pm in payment_methods)
-            except ValueError as e:
-                return {'message': f'Invalid amount value in payment methods: {e}'}, 400
+                deduct_qty = min(batch.quantity, remaining_qty)
+                batch.quantity -= deduct_qty
+                remaining_qty -= deduct_qty
+                batch_deductions.append((batch.BatchNumber, deduct_qty))
+                stock_ids_used.append(str(batch.stock_id))
 
+                # Calculate cost
+                inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
+                if inventory:
+                    purchase_account += inventory.unitCost * deduct_qty
+
+                db.session.add(batch)
+
+            if remaining_qty > 0:
+                return {'message': f'Insufficient stock. Needed {quantity}, available {quantity - remaining_qty}'}, 400
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Stock processing failed', 'error': str(e)}, 500
+
+        # ===== PAYMENT PROCESSING =====
+        total_amount_paid = sum(float(pm['amount']) for pm in payment_methods) if status != "unpaid" else 0
         balance = total_price - total_amount_paid
-
-        today = datetime.today().date()
-        yesterday = today - timedelta(days=1)
-
-        live_stock = None
-        remaining_stock = None
-
-        if created_at.date() in [today, yesterday]:
-            item_names = [stock.item_name for stock in LiveStock.query.filter_by(shop_id=shop_id).all()]
-
-            matched_item_name = None
-
-            if item_names:
-                result = process.extractOne(item_name, item_names)
-                if result:
-                    best_match, score = result
-                    if score >= 80:
-                        matched_item_name = best_match
-                        live_stock = (
-                            LiveStock.query
-                            .filter_by(shop_id=shop_id, item_name=matched_item_name)
-                            .order_by(LiveStock.created_at.desc())
-                            .first()
-                        )
-
-                        if live_stock:
-                            if live_stock.current_quantity < quantity:
-                                return {'message': f'Not enough stock in LiveStock for "{matched_item_name}". Available: {live_stock.current_quantity}, Requested: {quantity}'}, 400
-
-                            live_stock.current_quantity -= quantity
-                            remaining_stock = live_stock.current_quantity
-
-                    elif score > 45:
-                        matched_item_name = best_match
-                        remaining_stock = None
-            else:
-                matched_item_name = None
-                remaining_stock = None
-        else:
-            remaining_stock = None
-
-        total_available_stock = db.session.query(db.func.sum(ShopStock.quantity)).filter(
-            ShopStock.itemname == item_name,
-            ShopStock.shop_id == shop_id,
-            ShopStock.quantity > 0
-        ).scalar() or 0
-
-        if total_available_stock < quantity:
-            return {'message': 'Insufficient inventory quantity in batches'}, 400
-
-        remaining_quantity = quantity
-        batches = ShopStock.query.filter(
-            ShopStock.itemname == item_name,
-            ShopStock.shop_id == shop_id,
-            ShopStock.quantity > 0
-        ).order_by(ShopStock.BatchNumber).all()
-
-        batch_deductions = []  
-        stock_ids_used = []  
-
-        for batch in batches:
-            if remaining_quantity <= 0:
-                break  
-
-            if batch.quantity >= remaining_quantity:
-                batch.quantity -= remaining_quantity
-                batch_deductions.append((batch.BatchNumber, remaining_quantity))
-                stock_ids_used.append(str(batch.stock_id))  
-                remaining_quantity = 0
-            else:
-                batch_deductions.append((batch.BatchNumber, batch.quantity))
-                stock_ids_used.append(str(batch.stock_id))  
-                remaining_quantity -= batch.quantity
-                batch.quantity = 0
-        
-        total_amount_paid = sum(float(payment['amount']) for payment in payment_methods)
-
-        # Calculate Purchase_account based on Inventory unitCost and sold quantities
-        purchase_account = 0
-
-        for batch_number, qty in batch_deductions:
-            inventory = Inventory.query.filter_by(BatchNumber=batch_number).first()
-            if inventory:
-                purchase_account += inventory.unitCost * qty
-            else:
-                # Handle missing batch gracefully if needed
-                purchase_account += 0
-
-
-
-        new_sale = Sales(
-            user_id=current_user_id,
-            shop_id=shop_id,
-            customer_name=customer_name,
-            customer_number=customer_number,
-            item_name=item_name,
-            quantity=quantity,
-            metric=metric,
-            unit_price=unit_price,
-            total_price=total_price,
-            BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
-            stock_id=", ".join(stock_ids_used),  
-            balance=balance,
-            status=status,
-            Cost_of_sale=  total_amount_paid,
-            Purchase_account = purchase_account,
-            created_at=created_at
-
-        )
+        sasapay_deposits = []
 
         try:
+            # Create sale record
+            new_sale = Sales(
+                user_id=current_user_id,
+                shop_id=shop_id,
+                customer_name=data['customer_name'],
+                customer_number=data['customer_number'],
+                item_name=data['item_name'],
+                quantity=quantity,
+                metric=data['metric'],
+                unit_price=unit_price,
+                total_price=total_price,
+                BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
+                stock_id=", ".join(stock_ids_used),
+                balance=balance,
+                status=status,
+                Cost_of_sale=total_amount_paid,
+                Purchase_account=purchase_account,
+                created_at=created_at
+            )
             db.session.add(new_sale)
-            db.session.flush()  
+            db.session.flush()
 
+            # Process payments
             for payment in payment_methods:
-                payment_method = payment['method']
-                transaction_code = payment.get('transaction_code')
+                method = payment['method'].strip().lower()
+                amount = float(payment['amount'])
+                transaction_code = payment.get('transaction_code', 'N/A').strip().upper()
 
-                if not transaction_code or transaction_code.strip() == "":
-                    transaction_code = "N/A"
-                else:
-                    transaction_code = transaction_code.upper()
+                # Handle SASAPAY payments
+                if method == 'sasapay':
+                    bank_id = shop_to_bank_mapping.get(shop_id)
+                    if not bank_id:
+                        continue  # Skip if no mapping exists
 
+                    bank_account = BankAccount.query.get(bank_id)
+                    if not bank_account:
+                        continue  # Skip if bank account not found
+
+                    # Record previous balance
+                    previous_balance = bank_account.Account_Balance
+                    
+                    # Update balance
+                    bank_account.Account_Balance += amount
+                    db.session.add(bank_account)
+
+                    # Create transaction record
+                    transaction = TranscationType(
+                        Transaction_type="Debit",
+                        Transaction_amount=amount,
+                        From_account=f"SASAPAY Sale #{new_sale.sales_id}",
+                        To_account=bank_account.Account_name,
+                        created_at=created_at
+                    )
+                    db.session.add(transaction)
+
+                    sasapay_deposits.append({
+                        'shop_id': shop_id,
+                        'bank_id': bank_id,
+                        'bank_account': bank_account.Account_name,
+                        'amount': amount,
+                        'previous_balance': previous_balance,
+                        'new_balance': bank_account.Account_Balance
+                    })
+
+                # Record payment method
                 payment_record = SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
-                    payment_method=payment_method,
-                    amount_paid=payment['amount'],
+                    payment_method=method,
+                    amount_paid=amount,
                     transaction_code=transaction_code,
-                    created_at=new_sale.created_at
+                    created_at=created_at
                 )
                 db.session.add(payment_record)
 
-            new_customer = Customers(
-                customer_name=customer_name,
-                customer_number=customer_number,
-                shop_id=shop_id,
-                sales_id=new_sale.sales_id,
-                user_id=current_user_id,
-                item=item_name,
-                amount_paid=total_amount_paid if status.lower() != "unpaid" else 0,  
-                payment_method=", ".join(pm['method'] for pm in payment_methods) if status.lower() != "unpaid" else "N/A",
-                created_at=created_at
-            )
-            db.session.add(new_customer)
-
-            if live_stock:  
-                db.session.add(live_stock)
+            # Create customer record if needed
+            if data['customer_name'] or data['customer_number']:
+                customer = Customers(
+                    customer_name=data['customer_name'],
+                    customer_number=data['customer_number'],
+                    shop_id=shop_id,
+                    sales_id=new_sale.sales_id,
+                    user_id=current_user_id,
+                    item=data['item_name'],
+                    amount_paid=total_amount_paid,
+                    payment_method=", ".join(pm['method'] for pm in payment_methods),
+                    created_at=created_at
+                )
+                db.session.add(customer)
 
             db.session.commit()
+
+            # Verify bank balances after commit
+            verified_deposits = []
+            for deposit in sasapay_deposits:
+                verified_balance = BankAccount.query.get(deposit['bank_id']).Account_Balance
+                verified_deposits.append({
+                    **deposit,
+                    'verified_balance': verified_balance,
+                    'success': verified_balance == deposit['new_balance']
+                })
+
             return {
-                'message': 'Sale and customer added successfully! Stock updated!',
+                'message': 'Sale processed successfully',
+                'sale_id': new_sale.sales_id,
+                'financial': {
+                    'total': total_price,
+                    'paid': total_amount_paid,
+                    'balance': balance,
+                    'cost': total_amount_paid,
+                    'purchase_cost': purchase_account
+                },
+                'stock': {
+                    'deductions': batch_deductions,
+                    'remaining': None  # Add if tracking remaining stock
+                },
+                'payments': {
+                    'methods': [pm['method'] for pm in payment_methods],
+                    'sasapay_deposits': verified_deposits if verified_deposits else "No SASAPAY deposits processed"
+                },
+                'verification': {
+                    'all_deposits_successful': all(d['success'] for d in verified_deposits) if verified_deposits else "N/A"
+                }
             }, 201
 
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error adding sale and updating stock', 'error': str(e)}, 500
+            return {
+                'message': 'Transaction failed',
+                'error': str(e),
+                'debug_info': {
+                    'sale_id': getattr(new_sale, 'sales_id', None),
+                    'processed_payments': [pm['method'] for pm in payment_methods],
+                    'sasapay_attempts': sasapay_deposits
+                }
+            }, 500
 
 
 class GetSale(Resource):

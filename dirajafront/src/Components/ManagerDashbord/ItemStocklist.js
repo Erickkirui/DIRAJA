@@ -7,9 +7,7 @@ const ItemStockList = () => {
   const [itemStock, setItemStock] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState("inStock");
-  const itemsPerPage = 6;
 
   useEffect(() => {
     const fetchItemStock = async () => {
@@ -33,24 +31,14 @@ const ItemStockList = () => {
     activeTab === "inStock" ? stock.total_remaining > 0 : stock.total_remaining === 0
   );
 
-  const totalPages = Math.ceil(filteredStock.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentItems = filteredStock.slice(startIndex, startIndex + itemsPerPage);
-
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
-    }
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    setCurrentPage(1);
   };
 
   return (
     <div className="stock-level-container">
       <p>Item Stock List</p>
+       <Link className="view-stock-link" to="/shopstock">View Stock</Link>
 
       <div className="tabs-container">
         <button
@@ -80,8 +68,8 @@ const ItemStockList = () => {
               </tr>
             </thead>
             <tbody className="batchnumber-size">
-              {currentItems.length > 0 ? (
-                currentItems.map((stock, index) => (
+              {filteredStock.length > 0 ? (
+                filteredStock.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.itemname}</td>
                     <td>{stock.total_remaining} {stock.metric}</td>
@@ -95,23 +83,7 @@ const ItemStockList = () => {
             </tbody>
           </table>
 
-          <div className="stock-level-pagination">
-            <button
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Prev
-            </button>
-            <span> Page {currentPage} of {totalPages || 1} </span>
-            <button
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
-
-          <Link className="view-stock-link" to="/shopstock">View Stock</Link>
+         
         </div>
       )}
     </div>

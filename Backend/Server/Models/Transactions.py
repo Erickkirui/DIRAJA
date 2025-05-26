@@ -12,3 +12,4 @@ class TranscationType(db.Model):
     To_account = db.Column(db.String(50), nullable= True)
     created_at = db.Column(db.DateTime, server_default=func.now(), nullable=False)
 
+
