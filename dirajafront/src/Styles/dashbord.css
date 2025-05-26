@@ -190,6 +190,9 @@ padding: 10px;
         flex-direction: column;
         width: 100%;
     }
+    .stock-level-container{
+        width: 100%;
+    }
     .low-stock-container{
         width: 320px !important;
 
