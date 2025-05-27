@@ -66,6 +66,8 @@ import AddSpoiltStock from './Components/StockManagement/AddSpoiltStock';
 import SpoiltStockTable from './Components/StockManagement/GetSpoiltStock';
 import TotalCashSalesByUser from './Components/ClerkDashbord/TotalCashSalesperuser';
 import AddCashDeposit from './Components/ClerkDashbord/CashDeposit';
+import CreateInventoryItems from './Components/Inventory/CreateInventoryItems';
+import AddStockItems from './Components/Inventory/AddStockItems';
 
 
 
@@ -195,6 +197,8 @@ function App() {
             <Route path='/addspoiltstock' element={<ClerkLayout><AddSpoiltStock/></ClerkLayout>} ></Route>
             <Route path='/depositcash' element={<ClerkLayout><AddCashDeposit/></ClerkLayout>} ></Route>
             <Route path='/spoilt-stock' element={<Layout><SpoiltStockTable/></Layout>} ></Route>
+            <Route path='/create-inventory-items' element={<Layout><CreateInventoryItems /></Layout>} ></Route>
+            <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
           </Routes> 
        
       </Router>

@@ -10,6 +10,8 @@ from datetime import datetime
 from datetime import datetime
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
+from Server.Models.Transactions import TranscationType
+from Server.Models.BankAccounts import BankAccount
 
 def check_role(required_role):
     def wrapper(fn):
@@ -29,17 +31,27 @@ class AddCashDeposit(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        shop_id = data.get('shop_id')
-        amount = data.get('amount')
-        deductions = data.get('deductions', 0)
+        try:
+            amount = float(data.get('amount'))
+        except (TypeError, ValueError):
+            return {"message": "Amount must be a valid number."}, 400
+
+        try:
+            deductions = float(data.get('deductions', 0))
+        except (TypeError, ValueError):
+            return {"message": "Deductions must be a valid number."}, 400
+
+        try:
+            shop_id = int(data.get('shop_id'))
+        except (TypeError, ValueError):
+            return {"message": "Shop ID must be a valid integer."}, 400
+
         reason = data.get('reason')
         created_at = data.get('created_at')
 
-        if not shop_id:
-            return {"message": "Shop ID is required."}, 400
-        if amount is None or amount <= 0:
+        if amount <= 0:
             return {"message": "Amount must be greater than 0."}, 400
-        if deductions and deductions < 0:
+        if deductions < 0:
             return {"message": "Deductions cannot be negative."}, 400
 
         if created_at:
@@ -62,17 +74,38 @@ class AddCashDeposit(Resource):
         try:
             db.session.add(deposit)
 
-            # 🔼 Update Shop's Account Balance
-            from models import ShopAccount  # Ensure correct import
-            net_amount = amount - deductions
-            account = ShopAccount.query.filter_by(shop_id=shop_id).first()
+            # ===== BANK MAPPING =====
+            shop_to_bank_mapping = {
+                1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
+                7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
+                14: 14, 16: 13
+            }
 
-            if account:
-                account.balance += net_amount
-            else:
-                # If the account doesn't exist, optionally create it
-                account = ShopAccount(shop_id=shop_id, balance=net_amount)
-                db.session.add(account)
+            net_amount = amount - deductions
+
+            # Get corresponding bank ID
+            bank_id = shop_to_bank_mapping.get(shop_id)
+            if not bank_id:
+                return {"message": f"No bank mapping found for shop ID {shop_id}"}, 400
+
+            # Update the bank account balance
+            bank_account = BankAccount.query.get(bank_id)
+            if not bank_account:
+                return {"message": f"No bank account found with ID {bank_id}"}, 400
+
+            previous_balance = bank_account.Account_Balance
+            bank_account.Account_Balance += net_amount
+            db.session.add(bank_account)
+
+            # Log transaction
+            transaction = TranscationType(
+                Transaction_type="Debit",
+                Transaction_amount=net_amount,
+                From_account=f"Cash Deposit #{deposit.deposit_id}",
+                To_account=bank_account.Account_name,
+                created_at=created_at
+            )
+            db.session.add(transaction)
 
             db.session.commit()
 
@@ -82,8 +115,13 @@ class AddCashDeposit(Resource):
 
         return {
             "message": "Cash deposit recorded successfully",
-            "deposit_id": deposit.deposit_id
+            "deposit_id": deposit.deposit_id,
+            "net_deposited": net_amount,
+            "bank_account": bank_account.Account_name,
+            "previous_balance": previous_balance,
+            "new_balance": bank_account.Account_Balance
         }, 201
+
 
 
 

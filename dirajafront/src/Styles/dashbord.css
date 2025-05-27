@@ -96,6 +96,10 @@
     border: 1px solid #ccc;
     border-radius: 6px;
     padding: 15px;
+     max-height: 400px;
+  overflow-y: auto;    /* Enables vertical scrollbar */
+  overflow-x: auto;    /* Enables horizontal scrollbar if content overflows */
+  width: 300px;
 }
 .stock-level-container h3{
     font-weight: 200;
@@ -186,13 +190,12 @@ padding: 10px;
         flex-direction: column;
         width: 100%;
     }
+    .stock-level-container{
+        width: 100%;
+    }
     .low-stock-container{
         width: 320px !important;
 
     }
-    .low-stock-level{
-        width: 500px !important;
-
-    }
+    
   }
-
