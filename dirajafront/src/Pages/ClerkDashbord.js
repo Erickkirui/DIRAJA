@@ -4,6 +4,9 @@ import UserDisplay from '../Components/UserDisplay';
 
 import Totalcreditpershop from '../Components/ClerkDashbord/Totalcreditpershop'
 
+import TotalCashSalesByUser from '../Components/ClerkDashbord/TotalCashSalesperuser';
+
+
 import TotalMabandaSales from '../Components/ClerkDashbord/MabandaShop/Totalsalesmabanda';
 
 import TotalShopSales from '../Components/ClerkDashbord/TotalSalesPershop';
@@ -56,11 +59,11 @@ function ClerkDashbord() {
                 
             {/* <Link className='clerk-button' to='/shopcustomers'>View Customers</Link> */}
               
-              {shopId !== "12" && (
+              {/* {shopId !== "12" && (
                   <Link className="clerk-button" to="/managestock">
                     Manage Stock
                   </Link>
-                )}
+                )} */}
               {
                 shopId === "2" &&(
                   <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
@@ -114,6 +117,12 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
+                {shopId !== "12" && (
+                  <Link className="clerk-button" to="/depositcash">
+                    Deposit cash
+                  </Link>
+                )}
+
 
             {/* <Link className='clerk-button' to='/shopsales'>View Sales</Link> */}
           </div>
@@ -125,6 +134,11 @@ function ClerkDashbord() {
 
           <div className='analytics-clerk'>
             <Totalcreditpershop />
+           
+          </div>
+          
+          <div className='analytics-clerk'>
+            <TotalCashSalesByUser />
            
           </div>
           </div>

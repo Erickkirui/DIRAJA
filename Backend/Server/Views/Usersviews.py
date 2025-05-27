@@ -77,6 +77,7 @@ class UserLogin(Resource):
             "access_token": create_access_token(identity=user.users_id, additional_claims={'roles': [user_role]}),
             "refresh_token": create_refresh_token(identity=user.users_id),
             "username": username,
+            "users_id": user.users_id,
             "role": user_role
         }
 

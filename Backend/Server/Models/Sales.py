@@ -22,6 +22,7 @@ class Sales(db.Model):
     stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
     balance = db.Column(db.Float)
     note = db.Column(db.String(50))
+    promocode = db.Column(db.String(70), nullable=True)
 
     Cost_of_sale = db.Column(db.Float, nullable=False)
     Purchase_account = db.Column(db.Float, nullable=False)
@@ -67,5 +68,5 @@ class Sales(db.Model):
             f"shop_id='{self.shop_id}', customer_name='{self.customer_name}', "
             f"item_name='{self.item_name}', quantity='{self.quantity}', metric='{self.metric}', "
             f"unit_price='{self.unit_price}', amount_paid='{self.amount_paid}', "
-            f"total_price='{self.total_price}', payment_method='{self.payment_method}')"
+            f"total_price='{self.total_price}', payment_method='{self.payment_method}', note='{self.note}', promocode='{self.promocode}')"
         )
