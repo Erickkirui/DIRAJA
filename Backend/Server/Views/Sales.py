@@ -81,6 +81,7 @@ class AddSale(Resource):
             unit_price = float(data['unit_price'])
             total_price = float(data['total_price'])
             payment_methods = data['payment_methods']
+            promocode = data['promocode']
             status = data['status'].lower()
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d")
         except (ValueError, KeyError) as e:
@@ -168,6 +169,7 @@ class AddSale(Resource):
                 stock_id=", ".join(stock_ids_used),
                 balance=balance,
                 status=status,
+                promocode=promocode,
                 Cost_of_sale=total_amount_paid,
                 Purchase_account=purchase_account,
                 created_at=created_at
@@ -1304,18 +1306,23 @@ class SalesByEmployeeResource(Resource):
 
 class CashSales(Resource):
     @jwt_required()
-    def get(self, shop_id):
-        
+    def get(self):
+        shop_id = request.args.get("shop_id")
+
+        # Set the minimum date filter to 2025-05-27
+        min_date = datetime(2025, 5, 27).date()
+
         query = (
             Sales.query
             .join(SalesPaymentMethods, Sales.sales_id == SalesPaymentMethods.sale_id)
-            .filter(
-                Sales.shop_id == shop_id,
-                SalesPaymentMethods.payment_method == 'cash'
-            )
+            .filter(SalesPaymentMethods.payment_method == 'cash')
+            .filter(db.func.date(Sales.created_at) >= min_date)  # Add minimum date filter
         )
 
-        # Date filtering
+        if shop_id:
+            query = query.filter(Sales.shop_id == shop_id)
+
+        # Date filtering (optional additional filters)
         date_str = request.args.get('date')
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
@@ -1323,10 +1330,15 @@ class CashSales(Resource):
         try:
             if date_str:
                 date = datetime.strptime(date_str, "%Y-%m-%d").date()
+                if date < min_date:
+                    date = min_date  # Ensure we don't go before our minimum date
                 query = query.filter(db.func.date(Sales.created_at) == date)
             elif start_date_str and end_date_str:
                 start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
                 end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+                # Adjust start_date if it's before our minimum
+                if start_date < min_date:
+                    start_date = min_date
                 query = query.filter(db.func.date(Sales.created_at).between(start_date, end_date))
         except ValueError:
             return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
@@ -1335,11 +1347,22 @@ class CashSales(Resource):
 
         results = []
         for sale in sales:
+            user = Users.query.filter_by(users_id=sale.user_id).first()
+            shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
+
+            username = user.username if user else "Unknown User"
+            shopname = shop.shopname if shop else "Unknown Shop"
+
             payments = [p for p in sale.payment if p.payment_method == 'cash']
             for p in payments:
+                created_at = sale.created_at.strftime('%Y-%m-%d %H:%M:%S') if sale.created_at else None
+
                 results.append({
                     "sales_id": sale.sales_id,
                     "shop_id": sale.shop_id,
+                    "shop_name": shopname,
+                    "user_id": sale.user_id,
+                    "username": username,
                     "customer_name": sale.customer_name,
                     "item_name": sale.item_name,
                     "quantity": sale.quantity,
@@ -1349,10 +1372,35 @@ class CashSales(Resource):
                     "amount_paid": p.amount_paid,
                     "balance": p.balance,
                     "transaction_code": p.transaction_code,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                    "created_at": created_at
                 })
 
         return jsonify(results)
+
+    def delete(self, sale_id):
+        """Delete a specific sale and its payment records."""
+        sale = Sales.query.get(sale_id)
+        if not sale:
+            return {"message": "Sale not found"}, 404
+
+        db.session.delete(sale)
+        db.session.commit()
+        return {"message": "Sale deleted successfully"}, 200
+
+    def put(self, sale_id):
+        """Update a specific sale (quantity, unit price, total)."""
+        sale = Sales.query.get(sale_id)
+        if not sale:
+            return {"message": "Sale not found"}, 404
+
+        data = request.get_json()
+        sale.quantity = data.get("quantity", sale.quantity)
+        sale.unit_price = data.get("unit_price", sale.unit_price)
+        sale.total_price = sale.quantity * sale.unit_price
+
+        db.session.commit()
+        return {"message": "Sale updated successfully"}, 200
+
 
     def delete(self, sale_id):
         """Delete a specific sale and its payment records."""

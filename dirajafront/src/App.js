@@ -68,6 +68,8 @@ import TotalCashSalesByUser from './Components/ClerkDashbord/TotalCashSalesperus
 import AddCashDeposit from './Components/ClerkDashbord/CashDeposit';
 import CreateInventoryItems from './Components/Inventory/CreateInventoryItems';
 import AddStockItems from './Components/Inventory/AddStockItems';
+import CashSalesByUser from './Components/ClerkDashbord/EmployeeCashSale';
+import CashSalesPage from './Pages/CashSalesPage';
 
 
 
@@ -148,10 +150,11 @@ function App() {
             <Route path='/alltransfers' element={<Layout><TransfersPage/></Layout>} ></Route>
             <Route path='/purchases' element={<Layout><PurchasesPage/></Layout>} ></Route>
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
+            <Route path='/salescash' element={<Layout><CashSalesPage/></Layout>} ></Route>
             <Route path='/allsales' element={<Layout><AllSales/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
-
+            <Route path='/cashsales' element={<ClerkLayout><CashSalesByUser/></ClerkLayout>}></Route>
             <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
             <Route path='/distribute' element = {<ClerkDashbord><ProcurementInventory /> </ClerkDashbord>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>
