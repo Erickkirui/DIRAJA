@@ -37,7 +37,7 @@ function Managerdashord() {
   return (
     <>
       <div className='dashord-top-part'>
-        <h2>Dashboard</h2>
+        <h2>Business Overview</h2>
         
         <div className="shortcuts">
           <Link to="/allusers"  >Manage Users</Link>

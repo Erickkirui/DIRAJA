@@ -64,6 +64,8 @@ import AccountingLedgers from './Pages/AccountingLedgers';
 import AllLedgers from './Pages/AllLedgers';
 import AddSpoiltStock from './Components/StockManagement/AddSpoiltStock';
 import SpoiltStockTable from './Components/StockManagement/GetSpoiltStock';
+import TotalCashSalesByUser from './Components/ClerkDashbord/TotalCashSalesperuser';
+import AddCashDeposit from './Components/ClerkDashbord/CashDeposit';
 
 
 
@@ -185,11 +187,13 @@ function App() {
             <Route path='/mabandaexpensesmanager' element={<Layout><Expenses /></Layout>} ></Route>
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
+            <Route path='/cashsales' element={<ClerkLayout>< TotalCashSalesByUser/></ClerkLayout>} ></Route>
 
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
             <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
             <Route path='/all-ledgers' element={<Layout><AllLedgers/></Layout>} ></Route>
             <Route path='/addspoiltstock' element={<ClerkLayout><AddSpoiltStock/></ClerkLayout>} ></Route>
+            <Route path='/depositcash' element={<ClerkLayout><AddCashDeposit/></ClerkLayout>} ></Route>
             <Route path='/spoilt-stock' element={<Layout><SpoiltStockTable/></Layout>} ></Route>
           </Routes> 
        

@@ -15,12 +15,13 @@ const Login = () => {
     try {
       const response = await axios.post('/api/diraja/login', { email, password });
 
-      const { access_token, refresh_token, username, role, shop_id, designation } = response.data;
+      const { access_token, refresh_token, username, users_id, role, shop_id, designation } = response.data;
 
       // Store the data in localStorage
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('username', username);
+      localStorage.setItem('users_id', users_id);
       localStorage.setItem('role', role);
       if (shop_id) {
         localStorage.setItem('shop_id', shop_id);

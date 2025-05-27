@@ -19,7 +19,8 @@ const SingleShopSale = () => {
         stock_id: '',
         status: '',
         sale_date: '',
-        payment_methods: [{ method: '', amount: '', transaction_code: '' }] // Added transaction_code field
+        payment_methods: [{ method: '', amount: '', transaction_code: '' }], // Added transaction_code field
+        promocode:''
     });
     const [item, setItems] = useState([]);
     const [message, setMessage] = useState('');
@@ -165,6 +166,7 @@ const SingleShopSale = () => {
                     status: '',
                     sale_date: '',
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
+                    promocode: '',
                 });
     
                 setRemainingStock(0);
@@ -214,7 +216,7 @@ const SingleShopSale = () => {
                 </select>
                 {/* Date Selection */}
                 <div>
-                    <label>Select date:</label>
+                    <label>Select date:   </label>
                     <input
                         type="date"
                         name="sale_date"
@@ -250,7 +252,11 @@ const SingleShopSale = () => {
                         addPaymentMethod={addPaymentMethod}
                         removePaymentMethod={removePaymentMethod}
                     />
-                
+                <div>
+                    <label>Promocode:   </label>
+
+                <input name="promocode" type="text" value={formData.promocode} onChange={handleChange} placeholder="Enter promocode" />
+                </div>
                 <button className="add-sale-button" type="submit">
                     Add Sale
                 </button>

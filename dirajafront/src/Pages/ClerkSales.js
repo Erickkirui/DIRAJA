@@ -3,6 +3,7 @@ import UnpaidSales from '../Components/CreditSales/UnpaidSales';
 import CreditHistory from '../Components/CreditSales/CreditHistory';
 import ShopSales from '../Components/ClerkDashbord/ShopSales';
 import EmployeeSales from '../Components/ClerkDashbord/EmployeeSales';
+import CashSalesByUser from '../Components/ClerkDashbord/EmployeeCashSale';
 
 function ClerkSales() {
   const [activeTab, setActiveTab] = useState('unpaidSales');
@@ -23,11 +24,18 @@ function ClerkSales() {
         >
           My sales
         </button>
+        <button 
+          className={`tab-button ${activeTab === 'cashsales' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('cashsales')}
+        >
+          My cash sales
+        </button>
       </div>
 
       <div className="tab-content">
         {activeTab === 'unpaidSales' && <ShopSales />}
         {activeTab === 'creditHistory' && <EmployeeSales />}
+        {activeTab === 'cashsales' && <CashSalesByUser />}
       </div>
     </div>
   );
