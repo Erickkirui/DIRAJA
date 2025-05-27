@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+
+
 const AddInventory = () => {
   const [formData, setFormData] = useState({
     itemname: '',
@@ -97,6 +99,8 @@ const AddInventory = () => {
 
   return (
     <div>
+      
+     
       <h2>Add New Inventory</h2>
       {message && <p>{message}</p>}
       <form onSubmit={handleSubmit} className="form">

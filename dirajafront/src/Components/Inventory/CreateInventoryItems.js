@@ -6,4 +6,4 @@ function CreateInventoryItems() {
   )
 }
 
-export default CreateInventoryItems;
+export default CreateInventoryItems

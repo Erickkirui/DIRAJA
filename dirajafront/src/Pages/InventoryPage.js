@@ -8,7 +8,12 @@ function InventoryPage() {
     <div>
         <div className='header-container'>
         <h1>Inventory</h1>
-        <Link className='add-button' to="/newinventory">Add inventory ＋ </Link>
+       <div>
+        <Link className='add-button' to="/stock-items">Add Items ＋ </Link>
+
+         <Link className='add-button' to="/newinventory">Add inventory ＋ </Link>
+
+       </div>
         </div>
         <Inventory/>
         

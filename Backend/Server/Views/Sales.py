@@ -6,6 +6,8 @@ from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.Expenses import Expenses
+from Server.Models.Transactions import TranscationType
+from Server.Models.BankAccounts import BankAccount
 from Server.Models.Inventory import Inventory
 from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
@@ -57,7 +59,6 @@ def check_role(required_role):
             return fn(*args, **kwargs)
         return decorator
     return wrapper
-
 
 class AddSale(Resource):
     @jwt_required()
