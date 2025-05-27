@@ -34,14 +34,14 @@ from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource, GetSingleSaleByShop,SalesByEmployeeResource
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalAmountPaidForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
 
-from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk
+from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk, CashSales, CashSalesByUser, TotalCashSalesByUser
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
 from Server.Views.Emailnotifications import Report
 from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger,PurchasesLedger
 from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts,DailySalesDeposit,TotalBankBalance
 from Server.Views.Emailnotifications import Report
 from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
-
+from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -254,6 +254,15 @@ api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
 #Spoiltstock
 api.add_resource(AddSpoiltStock, '/newspoilt')
 api.add_resource(SpoiltStockResource, '/allspoilt')
+
+#Cash sales
+api.add_resource(CashSales, '/sales/cash/<int:shop_id>', '/api/sales/cash/sale/<int:sale_id>')
+api.add_resource(CashSalesByUser, '/sales/cash/user/<int:user_id>')
+api.add_resource(TotalCashSalesByUser, '/cashsaleperuser/<string:username>/<int:shop_id>')
+
+#Cash deposits
+api.add_resource(AddCashDeposit, '/cashdeposits/add')
+api.add_resource(CashDepositResource, '/cashdeposits', '/cashdeposits/<int:deposit_id>')
 
 
 
