@@ -98,7 +98,7 @@ const TotalCashSalesPerUser = () => {
         <h1>{cashSales !== null ? cashSales : 'Ksh 0.00'}</h1>
       )}
 
-      <Link to="/allsales">View Sales</Link>
+      <Link to="/shopsales">View Sales</Link>
     </div>
   );
 };

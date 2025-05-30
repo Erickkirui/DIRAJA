@@ -54,7 +54,7 @@
     cursor: pointer;
   }
   
-  .dropdown-menu {
+  .dropdown-menu-table {
     display: none;
     position: absolute;
     background-color: white;
@@ -64,11 +64,11 @@
     min-width: 100px;
   }
   
-  .dropdown:hover .dropdown-menu {
+  .dropdown:hover .dropdown-menu-table {
     display: block;
   }
   
-  .dropdown-menu button {
+  .dropdown-menu-table button {
     display: block;
     background: none;
     border: none;
@@ -78,7 +78,7 @@
     cursor: pointer;
   }
   
-  .dropdown-menu button:hover {
+  .dropdown-menu-table button:hover {
     background-color: #f0f0f0;
   }
   
