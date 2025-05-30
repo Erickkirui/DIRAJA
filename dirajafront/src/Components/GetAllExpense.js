@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import ExportExcel from '../Components/Download/ExportExcel';
 import DownloadPDF from '../Components/Download/DownloadPDF';
+import UpdateExpenses from './UpdateExpense';
 import '../Styles/expenses.css';
 
 const Expenses = () => {
@@ -13,7 +14,11 @@ const Expenses = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedExpenses, setSelectedExpenses] = useState([]);
+  const [editingExpenseId, setEditingExpenseId] = useState(null); // Track editing inventory
+  
   const itemsPerPage = 50;
+
+  const editExpenseRef = useRef(null);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -44,6 +49,13 @@ const Expenses = () => {
 
     fetchExpenses();
   }, []);
+
+    useEffect(() => {
+      if (editingExpenseId !== null) {
+        // Ensure the smooth scroll to the UpdateInventory component when editingExpenseId changes
+        editExpenseRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, [editingExpenseId]);
 
   const handleCheckboxChange = (expenseId) => {
     setSelectedExpenses((prevSelected) =>
@@ -105,6 +117,16 @@ const Expenses = () => {
   const getFirstLetter = (username) => username.charAt(0).toUpperCase();
   const getFirstName = (username) => username.split(' ')[0];
 
+ 
+
+  const handleEditClick = (expenses) => {
+    setEditingExpenseId(expenses); // This will trigger the scroll effect
+  };
+
+  const handleCloseUpdate = () => {
+    setEditingExpenseId(null); // Hide UpdateInventory component
+  };
+
   if (error) {
     return <div className="error-message">{error}</div>;
   }
@@ -140,6 +162,17 @@ const Expenses = () => {
         <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link>
       </div>
 
+       {/* Update Expense Modal */}
+      {editingExpenseId && (
+        <div ref={editExpenseRef}> {/* This is the target for scrolling */}
+           <UpdateExpenses
+             inventoryId={editingExpenseId}
+             onClose={handleCloseUpdate} // Properly pass the close function
+             onUpdateSuccess={() => setExpenses([...expenses])} 
+           />
+        </div>
+      )}
+
       <table id="expenses-table" className="expenses-table">
         <thead>
           <tr>
@@ -161,6 +194,7 @@ const Expenses = () => {
             <th>Comments</th>
             <th>Paid To</th>
             <th>Date</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -189,10 +223,15 @@ const Expenses = () => {
               <td>{expense.comments}</td>
               <td>{expense.paidTo}</td>
               <td>{new Date(expense.created_at).toLocaleDateString('en-CA')}</td>
+              <td>
+                <button className='editeInventory' onClick={() => handleEditClick(expense.expense_id)}>Edit</button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      
 
       <div className="pagination">
         {Array.from({ length: Math.ceil(filteredExpenses.length / itemsPerPage) }, (_, index) => (

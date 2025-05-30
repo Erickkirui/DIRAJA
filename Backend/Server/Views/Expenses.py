@@ -245,8 +245,8 @@ class ExpensesResources(Resource):
       
     @jwt_required()
     @check_role('manager')
-    class UpdateExpense(Resource):
-        def put(self, expense_id):
+    
+    def put(self, expense_id):
             # Get the data from the request to update the expense
             data = request.get_json()
 
