@@ -35,9 +35,9 @@ class PostStockItem(Resource):
             return {"message": "item_name  is required."}, 400
 
         # Check if item already exists
-        existing = StockItems.query.filter_by(item_code=item_code).first()
+        existing = StockItems.query.filter_by(item_name=item_name).first()
         if existing:
-            return {"message": "Item with this code already exists."}, 409
+            return {"message": "This item already exists."}, 409
 
         new_item = StockItems(
             item_name=item_name,

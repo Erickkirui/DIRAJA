@@ -176,6 +176,7 @@ const Sales = () => {
             <th>Item</th>
             <th>Quantity</th>
             <th>Amount Paid (ksh)</th>
+            <th>Promocode</th>
             <th>Date</th>
             <th>Action</th>
           </tr>
@@ -197,6 +198,7 @@ const Sales = () => {
                 <td>{sale.item_name}</td>
                 <td>{sale.quantity}</td>
                 <td>{sale.total_amount_paid}</td>
+                <td>{sale.promocode}</td>
                 <td>{new Date(sale.created_at).toLocaleDateString()}</td>
 
                 <td>
