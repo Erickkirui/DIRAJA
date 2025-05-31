@@ -14,10 +14,9 @@ const Expenses = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedExpenses, setSelectedExpenses] = useState([]);
-  const [editingExpenseId, setEditingExpenseId] = useState(null); // Track editing inventory
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
   
   const itemsPerPage = 50;
-
   const editExpenseRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +35,6 @@ const Expenses = () => {
           },
         });
 
-        // Sort expenses by 'created_at' in descending order
         const sortedExpenses = response.data.sort((a, b) => {
           return new Date(b.created_at) - new Date(a.created_at);
         });
@@ -50,12 +48,11 @@ const Expenses = () => {
     fetchExpenses();
   }, []);
 
-    useEffect(() => {
-      if (editingExpenseId !== null) {
-        // Ensure the smooth scroll to the UpdateInventory component when editingExpenseId changes
-        editExpenseRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, [editingExpenseId]);
+  useEffect(() => {
+    if (editingExpenseId !== null) {
+      editExpenseRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [editingExpenseId]);
 
   const handleCheckboxChange = (expenseId) => {
     setSelectedExpenses((prevSelected) =>
@@ -66,31 +63,33 @@ const Expenses = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedExpenses.length === expenses.length) {
-      setSelectedExpenses([]);
-    } else {
-      setSelectedExpenses(expenses.map((expense) => expense.expense_id));
-    }
+    setSelectedExpenses(
+      selectedExpenses.length === expenses.length ? [] : expenses.map((exp) => exp.expense_id)
+    );
   };
 
   const handleAction = async () => {
-    const accessToken = localStorage.getItem('access_token');
-
     if (selectedAction === 'delete') {
-      await Promise.all(
-        selectedExpenses.map((expenseId) =>
-          axios.delete(`/api/diraja/expense/${expenseId}`, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          })
-        )
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete the selected expenses? This action cannot be undone."
       );
-      setExpenses((prev) =>
-        prev.filter((expense) => !selectedExpenses.includes(expense.expense_id))
-      );
-      setSelectedExpenses([]);
-      setSelectedAction('');
+      if (!confirmDelete) return;
+
+      const accessToken = localStorage.getItem('access_token');
+      try {
+        await Promise.all(
+          selectedExpenses.map((expenseId) =>
+            axios.delete(`/api/diraja/expense/${expenseId}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            })
+          )
+        );
+        setExpenses((prev) => prev.filter((exp) => !selectedExpenses.includes(exp.expense_id)));
+        setSelectedExpenses([]);
+        setSelectedAction('');
+      } catch (error) {
+        setError('Error deleting expenses. Please try again.');
+      }
     }
   };
 
@@ -114,17 +113,21 @@ const Expenses = () => {
     currentPage * itemsPerPage
   );
 
+  const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
   const getFirstLetter = (username) => username.charAt(0).toUpperCase();
   const getFirstName = (username) => username.split(' ')[0];
 
- 
-
   const handleEditClick = (expenses) => {
-    setEditingExpenseId(expenses); // This will trigger the scroll effect
+    setEditingExpenseId(expenses);
   };
 
   const handleCloseUpdate = () => {
-    setEditingExpenseId(null); // Hide UpdateInventory component
+    setEditingExpenseId(null);
   };
 
   if (error) {
@@ -162,14 +165,13 @@ const Expenses = () => {
         <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link>
       </div>
 
-       {/* Update Expense Modal */}
       {editingExpenseId && (
-        <div ref={editExpenseRef}> {/* This is the target for scrolling */}
-           <UpdateExpenses
-             inventoryId={editingExpenseId}
-             onClose={handleCloseUpdate} // Properly pass the close function
-             onUpdateSuccess={() => setExpenses([...expenses])} 
-           />
+        <div ref={editExpenseRef}>
+          <UpdateExpenses
+            expenseId={editingExpenseId}
+            onClose={handleCloseUpdate}
+            onUpdateSuccess={() => setExpenses([...expenses])} 
+          />
         </div>
       )}
 
@@ -180,7 +182,7 @@ const Expenses = () => {
               <input
                 type="checkbox"
                 onChange={handleSelectAll}
-                checked={selectedExpenses.length === expenses.length}
+                checked={selectedExpenses.length === expenses.length && expenses.length > 0}
               />
             </th>
             <th>Employee</th>
@@ -231,18 +233,23 @@ const Expenses = () => {
         </tbody>
       </table>
 
-      
-
+      {/* Updated Pagination - matches Inventory component */}
       <div className="pagination">
-        {Array.from({ length: Math.ceil(filteredExpenses.length / itemsPerPage) }, (_, index) => (
-          <button
-            key={index}
-            className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-            onClick={() => setCurrentPage(index + 1)}
-          >
-            {index + 1}
-          </button>
-        ))}
+        <button
+          className="pagination-button"
+          disabled={currentPage === 1}
+          onClick={() => handlePageChange(currentPage - 1)}
+        >
+          Previous
+        </button>
+        <span>Page {currentPage} of {totalPages}</span>
+        <button
+          className="pagination-button"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageChange(currentPage + 1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );
