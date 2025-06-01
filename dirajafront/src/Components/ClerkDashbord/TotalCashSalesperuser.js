@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCashRegister } from '@fortawesome/free-solid-svg-icons'; // example different icon
+import { faCashRegister } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import LoadingAnimation from '../LoadingAnimation';
-import DateRangePicker from '../DateRangePicker';
 
-const TotalCashSalesPerUser = () => {
-  const [cashSales, setCashSales] = useState(null);
+const CashAtHand = () => {
+  const [cashAmount, setCashAmount] = useState(null);
   const [error, setError] = useState('');
-  const [period, setPeriod] = useState('today');
   const [isLoading, setIsLoading] = useState(true);
-  const [customDateRange, setCustomDateRange] = useState({ startDate: '', endDate: '' });
+  const [lastUpdated, setLastUpdated] = useState('');
 
   useEffect(() => {
-    const fetchSales = async () => {
+    const fetchCashAtHand = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
         const userName = localStorage.getItem('username');
@@ -26,81 +24,56 @@ const TotalCashSalesPerUser = () => {
           return;
         }
 
-        let url = `/api/diraja/cashsaleperuser/${userName}/${shopId}?period=${period}`;
-
-        if (period === 'custom' && customDateRange.startDate && customDateRange.endDate) {
-          // Use raw date strings to avoid timezone shift
-          const formattedStart = customDateRange.startDate;
-          const formattedEnd = customDateRange.endDate;
-          url = `/api/diraja/cashsaleperuser/${userName}/${shopId}?startDate=${formattedStart}&endDate=${formattedEnd}`;
-        }
-
-        const res = await axios.get(url, {
+        const res = await axios.get(`/api/diraja/cashsaleperuser/${userName}/${shopId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
         });
 
-        setCashSales(res.data.total_cash_sales);
+        setCashAmount(res.data.total_cash_sales);
+        setLastUpdated(new Date().toLocaleTimeString());
         setError('');
       } catch (err) {
-        setError('Error fetching total cash sales');
-        setCashSales(null);
+        setError('Error fetching cash at hand');
+        setCashAmount(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Only fetch if not custom or custom dates are selected
-    if (period !== 'custom' || (customDateRange.startDate && customDateRange.endDate)) {
-      setIsLoading(true);
-      fetchSales();
-    }
-  }, [period, customDateRange]);
+    setIsLoading(true);
+    fetchCashAtHand();
 
-  const handlePeriodChange = (e) => {
-    setPeriod(e.target.value);
-    if (e.target.value !== 'custom') {
-      setCustomDateRange({ startDate: '', endDate: '' });
-    }
-  };
+    // Refresh every 5 minutes to keep data current
+    const interval = setInterval(fetchCashAtHand, 300000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="metrix-container">
       <div className="metric-top">
         <FontAwesomeIcon className="metric-icon" icon={faCashRegister} size="1x" />
         <div className="controls">
-          <select value={period} onChange={handlePeriodChange}>
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="week">Last 7 days</option>
-            <option value="month">Last 30 days</option>
-            <option value="alltime">All Time</option>
-            <option value="custom">Custom Range</option>
-          </select>
-
-          {period === 'custom' && (
-            <DateRangePicker
-              dateRange={customDateRange}
-              setDateRange={setCustomDateRange}
-            />
-          )}
+          <small>Updated: {lastUpdated}</small>
         </div>
       </div>
 
-      <p>My Cash Sales</p>
+      <p>Cash at Hand</p>
 
       {isLoading ? (
         <LoadingAnimation />
       ) : error ? (
         <p>{error}</p>
       ) : (
-        <h1>{cashSales !== null ? cashSales : 'Ksh 0.00'}</h1>
+        <h1>{cashAmount !== null ? cashAmount : 'Ksh 0.00'}</h1>
       )}
 
-      <Link to="/shopsales">View Sales</Link>
+      {/* <div className="metric-actions">
+        <Link to="/shopsales" className="btn-link">View Sales</Link>
+        <Link to="/cashdeposit" className="btn-link">Make Deposit</Link>
+      </div> */}
     </div>
   );
 };
 
-export default TotalCashSalesPerUser;
+export default CashAtHand;

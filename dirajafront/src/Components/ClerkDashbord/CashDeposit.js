@@ -6,6 +6,7 @@ const AddCashDeposit = () => {
     shop_id: localStorage.getItem('shop_id') || '',
     amount: '',
     deductions: '',
+    transaction_code: '',
     reason: '',
     created_at: ''
   });
@@ -59,6 +60,7 @@ const AddCashDeposit = () => {
         shop_id: localStorage.getItem('shop_id') || '',
         amount: '',
         deductions: '',
+        transaction_code:'',
         reason: '',
         created_at: ''
       });
@@ -97,6 +99,14 @@ const AddCashDeposit = () => {
           value={formData.reason}
           onChange={handleChange}
           placeholder="Reason"
+          required
+        />
+
+        <input
+          name="transaction_code"
+          value={formData.transaction_code}
+          onChange={handleChange}
+          placeholder="Transaction code"
           required
         />
 

@@ -21,6 +21,7 @@ from functools import wraps
 from datetime import datetime, timedelta
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount
+from Server.Models.CashDeposit import CashDeposits
 
 from fuzzywuzzy import process
 
@@ -1482,45 +1483,16 @@ class TotalCashSalesByUser(Resource):
     @jwt_required()
     def get(self, username, shop_id):
         today = datetime.utcnow()
-        start_date = None
-        end_date = None
-
-        # Parse custom date range
-        start_date_str = request.args.get('startDate')
-        end_date_str = request.args.get('endDate')
-
-        if start_date_str and end_date_str:
-            try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
-            except ValueError:
-                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
-        else:
-            # Handle period parameter
-            period = request.args.get('period', 'today')
-
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'yesterday':
-                yesterday_date = today - timedelta(days=1)
-                start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'week':
-                start_date = today - timedelta(days=7)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'month':
-                start_date = today - timedelta(days=30)
-                end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-            else:
-                return {"message": "Invalid period specified"}, 400
+        start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
 
         try:
-            # Assuming you have a User model to get user_id from username
+            # Get user
             user = db.session.query(Users).filter(Users.username == username).first()
             if not user:
                 return {"message": f"User '{username}' not found"}, 404
 
+            # Calculate total cash sales for today
             total_cash_query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -1530,10 +1502,31 @@ class TotalCashSalesByUser(Resource):
                 .filter(Sales.created_at.between(start_date, end_date))
             )
 
-            total_cash = total_cash_query.scalar() or 0
-            formatted_cash = "Ksh {:,.2f}".format(total_cash)
+            total_cash_sales = total_cash_query.scalar() or 0
 
-            return {"total_cash_sales": formatted_cash}, 200
+            # Calculate total deposits for today (to subtract from cash sales)
+            total_deposits_query = (
+                db.session.query(db.func.sum(CashDeposits.amount))
+                .filter(CashDeposits.user_id == user.users_id)
+                .filter(CashDeposits.shop_id == shop_id)
+                .filter(CashDeposits.created_at.between(start_date, end_date))
+            )
+
+            total_deposits = total_deposits_query.scalar() or 0
+
+            # Calculate net cash (sales minus deposits)
+            net_cash = total_cash_sales - total_deposits
+
+            # Ensure it doesn't go negative
+            net_cash = max(0, net_cash)
+            
+            formatted_cash = "Ksh {:,.2f}".format(net_cash)
+
+            return {
+                "total_cash_sales": formatted_cash,
+                "period": "today",
+                "date": today.date().isoformat()
+            }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()

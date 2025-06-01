@@ -11,6 +11,7 @@ class CashDeposits(db.Model):
     amount = db.Column(db.Float, nullable=False)
     deductions = db.Column(db.Float, nullable=True)
     reason = db.Column(db.String(255), nullable=True)
+    transaction_code = db.column(db.String(255))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
 
     # Relationships
@@ -20,4 +21,4 @@ class CashDeposits(db.Model):
     def __repr__(self):
         return (f"CashDeposit(deposit_id={self.deposit_id}, user_id={self.user_id}, "
                 f"shop_id={self.shop_id}, amount={self.amount}, deductions={self.deductions}, "
-                f"reason='{self.reason}', created_at='{self.created_at}')")
+                f"reason='{self.reason}', transaction_code='{self.transaction_code}', created_at='{self.created_at}')")
