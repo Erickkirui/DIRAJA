@@ -125,7 +125,7 @@ const UpdateExpense = ({ expenseId, onClose }) => {
     };
   
     try {
-      const response = await axios.put(`/api/diraja/updateexpense/${expenseId}`, formattedData, {
+      const response = await axios.put(`/api/diraja/expense/${expenseId}`, formattedData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
   

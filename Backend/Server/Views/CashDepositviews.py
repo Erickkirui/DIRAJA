@@ -6,9 +6,8 @@ from Server.Models.Shops import Shops
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
-from datetime import datetime
-from datetime import datetime
 from functools import wraps
+from datetime import datetime  # This is likely what you want
 from sqlalchemy.exc import SQLAlchemyError
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount
@@ -47,6 +46,7 @@ class AddCashDeposit(Resource):
             return {"message": "Shop ID must be a valid integer."}, 400
 
         reason = data.get('reason')
+        transaction_code = data.get('transaction_code')
         created_at = data.get('created_at')
 
         if amount <= 0:
@@ -68,6 +68,7 @@ class AddCashDeposit(Resource):
             amount=amount,
             deductions=deductions,
             reason=reason,
+            transaction_code=transaction_code,
             created_at=created_at
         )
 
@@ -135,6 +136,7 @@ class CashDepositResource(Resource):
         shop_id = data.get('shop_id')
         amount = data.get('amount')
         deductions = data.get('deductions', 0)
+        transaction_code = data.get('transaction_code')
         reason = data.get('reason')
 
         # Validate required fields
@@ -146,6 +148,9 @@ class CashDepositResource(Resource):
             deductions = 0
         if reason is None or reason.strip() == "":
             return {"message": "Reason is required."}, 400
+        if transaction_code is None or transaction_code.strip() == "":
+            return {"message": "Transaction code is required."}, 400
+
 
         created_at_str = data.get('created_at')
         created_at = None
@@ -161,6 +166,7 @@ class CashDepositResource(Resource):
             amount=amount,
             deductions=deductions,
             reason=reason,
+            transaction_code=transaction_code,
             created_at=created_at or datetime.datetime.utcnow()
         )
 
@@ -182,15 +188,8 @@ class CashDepositResource(Resource):
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            created_at = None
-            if deposit.created_at:
-                if isinstance(deposit.created_at, str):
-                    try:
-                        created_at = datetime.datetime.strptime(deposit.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        created_at = deposit.created_at
-                elif isinstance(deposit.created_at, datetime.datetime):
-                    created_at = deposit.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            # Simplified datetime handling
+            created_at = deposit.created_at.strftime('%Y-%m-%d %H:%M:%S') if deposit.created_at else None
 
             all_deposits.append({
                 "deposit_id": deposit.deposit_id,
@@ -198,9 +197,10 @@ class CashDepositResource(Resource):
                 "username": username,
                 "shop_id": deposit.shop_id,
                 "shop_name": shopname,
-                "amount": deposit.amount,
-                "deductions": deposit.deductions,
+                "amount": float(deposit.amount),  # Ensure numeric values are serializable
+                "deductions": float(deposit.deductions) if deposit.deductions is not None else None,
                 "reason": deposit.reason,
+                "transaction_code": deposit.transaction_code,
                 "created_at": created_at
             })
 
@@ -219,6 +219,7 @@ class CashDepositResource(Resource):
         amount = data.get('amount')
         deductions = data.get('deductions')
         reason = data.get('reason')
+        transaction_code = data.get('transaction_code')
         created_at_str = data.get('created_at')
 
         if shop_id:
@@ -231,6 +232,8 @@ class CashDepositResource(Resource):
             deposit.deductions = deductions
         if reason:
             deposit.reason = reason
+        if transaction_code:
+            deposit.transaction_code = transaction_code
         if created_at_str:
             try:
                 deposit.created_at = datetime.datetime.strptime(created_at_str, '%Y-%m-%d')
