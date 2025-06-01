@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-
+import { Alert, Stack } from '@mui/material';
 
 const AddInventory = () => {
   const [formData, setFormData] = useState({
     itemname: '',
     quantity: '',
-    metric: 'kg', // Default to "kg"
+    metric: 'kg',
     unitCost: '',
     amountPaid: '',
     unitPrice: '',
@@ -15,12 +14,14 @@ const AddInventory = () => {
     Supplier_location: '',
     note: '',
     created_at: '',
-    paymentRef:'',
-    source: '', // Just source, no external funding comment needed
+    paymentRef: '',
+    source: '',
   });
 
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
   const [accounts, setAccounts] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -30,22 +31,39 @@ const AddInventory = () => {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
         });
-
-        console.log('Accounts Response:', response.data); // Optional log for debugging
-
         if (Array.isArray(response.data.accounts)) {
           setAccounts(response.data.accounts);
         } else {
           console.error('Accounts response is not an array');
-          setAccounts([]);
         }
       } catch (error) {
         console.error('Error fetching accounts:', error);
-        setAccounts([]);
+        setMessage('Failed to fetch accounts.');
+        setMessageType('error');
+      }
+    };
+
+    const fetchStockItems = async () => {
+      try {
+        const response = await axios.get('/api/diraja/stockitems', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (Array.isArray(response.data.stock_items)) {
+          setStockItems(response.data.stock_items);
+        } else {
+          console.error('Stock items response is not an array');
+        }
+      } catch (error) {
+        console.error('Error fetching stock items:', error);
+        setMessage('Failed to fetch stock items.');
+        setMessageType('error');
       }
     };
 
     fetchAccounts();
+    fetchStockItems();
   }, []);
 
   const handleChange = (e) => {
@@ -56,11 +74,11 @@ const AddInventory = () => {
     e.preventDefault();
 
     if (!formData.paymentRef.trim()) {
-      setMessage('Error: Payment reference must be provided.');
+      setMessage('Payment reference must be provided.');
+      setMessageType('error');
       return;
     }
 
-    // Convert String inputs to numbers where necessary
     const numericFormData = {
       ...formData,
       quantity: Number(formData.quantity),
@@ -75,13 +93,14 @@ const AddInventory = () => {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
         },
       });
-      setMessage(response.data.message);
 
-      // Clear the form data after successful submission
+      setMessage(response.data.message);
+      setMessageType('success');
+
       setFormData({
         itemname: '',
         quantity: '',
-        metric: 'kg', // Reset to default value
+        metric: 'kg',
         unitCost: '',
         amountPaid: '',
         unitPrice: '',
@@ -89,157 +108,157 @@ const AddInventory = () => {
         Supplier_location: '',
         note: '',
         created_at: '',
-        paymentRef:'',
-        source: '', // Reset source
+        paymentRef: '',
+        source: '',
       });
     } catch (error) {
       setMessage('Error adding inventory: ' + (error.response?.data?.message || error.message));
+      setMessageType('error');
     }
   };
 
   return (
-    <div>
-      
-     
+    <div >
       <h2>Add New Inventory</h2>
-      {message && <p>{message}</p>}
+
+     
+
       <form onSubmit={handleSubmit} className="form">
-        <div>
-          <input
-            type="text"
-            name="itemname"
-            value={formData.itemname}
-            onChange={handleChange}
-            placeholder="Item Name"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="number"
-            name="quantity"
-            value={formData.quantity}
-            onChange={handleChange}
-            placeholder="Quantity"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <select
-            name="metric"
-            value={formData.metric}
-            onChange={handleChange}
-            className="input"
-            required
-          >
-            <option value="kg">Kilograms</option>
-            <option value="litres">Litres</option>
-            <option value="item">Items</option>
-          </select>
-        </div>
-        {/* Source Dropdown */}
-        <div>
-          <select name="source" value={formData.source} onChange={handleChange} className="select">
-            <option value="">Select Source</option>
-            <option value="External funding">External funding</option>
-            {Array.isArray(accounts) && accounts.map((account, index) => (
-              <option key={account.account_id || index} value={account.Account_name}>
-                {account.Account_name}
-              </option>
-            ))}
-          </select>
-        </div>
-  
-        <div>
-          <textarea
-            name="note"
-            value={formData.note}
-            onChange={handleChange}
-            placeholder="Comments (Optional)"
-            className="input"
-          />
-        </div>
-        <div>
-          <input
-            type="number"
-            name="unitCost"
-            value={formData.unitCost}
-            onChange={handleChange}
-            placeholder="Unit Cost"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="number"
-            name="amountPaid"
-            value={formData.amountPaid}
-            onChange={handleChange}
-            placeholder="Amount Paid"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="text"
-            name="paymentRef"
-            value={formData.paymentRef}
-            onChange={handleChange}
-            placeholder="Payment Ref (Transaction code)"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="number"
-            name="unitPrice"
-            value={formData.unitPrice}
-            onChange={handleChange}
-            placeholder="Unit Price"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="text"
-            name="Suppliername"
-            value={formData.Suppliername}
-            onChange={handleChange}
-            placeholder="Supplier Name"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="text"
-            name="Supplier_location"
-            value={formData.Supplier_location}
-            onChange={handleChange}
-            placeholder="Supplier Location"
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <input
-            type="date"
-            name="created_at"
-            value={formData.created_at}
-            onChange={handleChange}
-            className="input"
-            required
-          />
-        </div>
-        <button type="submit" className="button">Add Inventory</button>
+         {message && (
+        <Stack sx={{ mb: 2 }}>
+          <Alert severity={messageType} variant="outlined">
+            {message}
+          </Alert>
+        </Stack>
+      )}
+        <select
+          name="itemname"
+          value={formData.itemname}
+          onChange={handleChange}
+          className="input"
+          required
+        >
+          <option value="">Select Item</option>
+          {stockItems.map((item) => (
+            <option key={item.id} value={item.item_name}>
+              {item.item_name}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          name="quantity"
+          value={formData.quantity}
+          onChange={handleChange}
+          placeholder="Quantity"
+          className="input"
+          required
+        />
+
+        <select
+          name="metric"
+          value={formData.metric}
+          onChange={handleChange}
+          className="input"
+          required
+        >
+          <option value="kg">Kilograms</option>
+          <option value="litres">Litres</option>
+          <option value="item">Items</option>
+        </select>
+
+        <select name="source" value={formData.source} onChange={handleChange} className="input">
+          <option value="">Select Source</option>
+          <option value="External funding">External funding</option>
+          {accounts.map((account) => (
+            <option key={account.account_id} value={account.Account_name}>
+              {account.Account_name}
+            </option>
+          ))}
+        </select>
+
+        <textarea
+          name="note"
+          value={formData.note}
+          onChange={handleChange}
+          placeholder="Comments (Optional)"
+          className="input"
+        />
+
+        <input
+          type="number"
+          name="unitCost"
+          value={formData.unitCost}
+          onChange={handleChange}
+          placeholder="Unit Cost"
+          className="input"
+          required
+        />
+
+        <input
+          type="number"
+          name="amountPaid"
+          value={formData.amountPaid}
+          onChange={handleChange}
+          placeholder="Amount Paid"
+          className="input"
+          required
+        />
+
+        <input
+          type="text"
+          name="paymentRef"
+          value={formData.paymentRef}
+          onChange={handleChange}
+          placeholder="Payment Ref (Transaction code)"
+          className="input"
+          required
+        />
+
+        <input
+          type="number"
+          name="unitPrice"
+          value={formData.unitPrice}
+          onChange={handleChange}
+          placeholder="Unit Price"
+          className="input"
+          required
+        />
+
+        <input
+          type="text"
+          name="Suppliername"
+          value={formData.Suppliername}
+          onChange={handleChange}
+          placeholder="Supplier Name"
+          className="input"
+          required
+        />
+
+        <input
+          type="text"
+          name="Supplier_location"
+          value={formData.Supplier_location}
+          onChange={handleChange}
+          placeholder="Supplier Location"
+          className="input"
+          required
+        />
+
+        <input
+          type="date"
+          name="created_at"
+          value={formData.created_at}
+          onChange={handleChange}
+          className="input"
+          required
+        />
+
+        <button type="submit" className="button">
+          Add Inventory
+        </button>
       </form>
-      {message && <p>{message}</p>}
     </div>
   );
 };

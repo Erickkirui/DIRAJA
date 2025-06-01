@@ -78,7 +78,7 @@ const UserDisplay = () => {
           <div className="dropdown-menu">
             <Link to="/" onClick={handleMenuClick}>Home</Link>
             {role === 'manager' && <Link to="/allinventory" onClick={handleMenuClick}>Inventory</Link>}
-            {role === 'manager' && <Link to="/sales" onClick={handleMenuClick}>Sales</Link>}
+            {role === 'manager' && <Link to="/analytics" onClick={handleMenuClick}>Sales Analytics</Link>}
             {role === 'manager' && <Link to="/expenses" onClick={handleMenuClick}>Expenses</Link>}
             {role === 'manager' && <Link to="/mabandapage" onClick={handleMenuClick}>Mabanda farm</Link>}
             {role === 'manager' && <Link to="/allshops" onClick={handleMenuClick}>Shops</Link>}

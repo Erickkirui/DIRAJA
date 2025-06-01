@@ -83,30 +83,18 @@
   
 
   /* form styling ro alss */
-  .message {
-    padding: 16px;
-    margin-bottom: 16px;
-  }
-  .success {
-    background-color: #d4edda;
-    color: #155724;
-    width: 40%;
-  }
-  .error {
-    background-color: #f8d7da;
-    color: #721c24;
-    width: 40%;
-  }
+
   .form {
     display: flex;
     flex-direction: column;
     gap: 16px;
+    width: 50%;
   }
   .select, .input, .button {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    width: 40%;
+  
   }
   .select.valid {
     color: #000;
@@ -162,9 +150,9 @@
   
 
   @media (max-width: 768px) {
-    .select, .input, .button {
-      width: auto; /* Allow the elements to take up the full width */
-    }
+   .form{
+    width: 100%;
+   }
     .item-details{
       width: 100%;
     }
