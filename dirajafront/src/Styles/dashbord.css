@@ -162,7 +162,10 @@ margin: 0;
    margin-top: -12px;
     text-align: left;
 }
-
+.two-routes-dashbord{
+    display: flex;
+    justify-content: space-between;
+}
   
   /* On larger screens, stack the select and date input vertically */
   @media (min-width: 768px) {

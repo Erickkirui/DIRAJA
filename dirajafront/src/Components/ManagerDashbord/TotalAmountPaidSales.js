@@ -97,7 +97,10 @@ const TotalAmountPaidSales = () => {
         <h1>{totalAmountPaid ? totalAmountPaid : '0.00'}</h1>
       )}
 
-      <Link to="/analytics">View Sales</Link>
+     <div className='two-routes-dashbord'>
+       <Link to="/analytics">Sales Analytics</Link>
+       <Link to="/Sales">Sales table</Link>
+     </div>
     </div>
   );
 };

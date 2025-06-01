@@ -71,6 +71,9 @@ function Managerdashord() {
            <div>
              <TotalAmountPaidExpenses />
            </div>
+           <div>
+             <MabandaProfitLoss />
+           </div>
            <div className="metrix-pair">
            
            <div>
@@ -80,9 +83,7 @@ function Managerdashord() {
            <div>
              <CountEmployees />
            </div>
-           <div>
-             <MabandaProfitLoss />
-           </div>
+           
 
            
 

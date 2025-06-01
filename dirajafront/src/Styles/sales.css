@@ -208,6 +208,10 @@
 }
 /* media query */
 @media (max-width: 768px) {
+  .shop-sales-cards{
+
+  width: 350px;
+}
   .success{
     width: 90%;
   }
