@@ -66,10 +66,11 @@ const TotalPaidSales = () => {
               <div key={shop.shop_id} className="shop-sales-cards">
                 {/* <h4>{shop.shop_name || `Shop ${shop.shop_id}`}</h4> */}
                 <h4>
-                <a href={`/salesbyshop/${shop.shop_id}`}>{shop.shop_name}</a>
+                <p>{shop.shop_name}</p>
                 </h4>
 
-                <h1>{`${shop.total_sales_amount_paid}`}</h1>
+                <h2>{`${shop.total_sales_amount_paid}`}</h2>
+                <p><a href={`/salesbyshop/${shop.shop_id}`}>View Sales</a></p>
               </div>
             ))
           ) : (

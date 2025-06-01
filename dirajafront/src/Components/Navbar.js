@@ -22,9 +22,9 @@ function Navbar() {
             <img src='/images/Sales.png' alt='menu-icon' />
             <li>Inventory</li>
           </NavLink>
-          <NavLink to="/sales" className="menu-item" activeClassName="active">
+          <NavLink to="/analytics" className="menu-item" activeClassName="active">
             <img src='/images/Sales.png' alt='menu-icon' />
-            <li>Sales</li>
+            <li>Sales Analytics</li>
           </NavLink>
           <NavLink to="/expenses" className="menu-item" activeClassName="active">
             <img src='/images/Expenses.png' alt='menu-icon' />

@@ -71,6 +71,9 @@ function Managerdashord() {
            <div>
              <TotalAmountPaidExpenses />
            </div>
+           <div>
+             <MabandaProfitLoss />
+           </div>
            <div className="metrix-pair">
            
            <div>
@@ -80,6 +83,7 @@ function Managerdashord() {
            <div>
              <CountEmployees />
            </div>
+           
 
            
 
@@ -90,9 +94,7 @@ function Managerdashord() {
        <div className='long-data-section'>
         {/* <BatchStockList /> */}
         <ItemStockList />
-        <div>
-             <MabandaProfitLoss />
-           </div>
+        
        </div>
           
 
