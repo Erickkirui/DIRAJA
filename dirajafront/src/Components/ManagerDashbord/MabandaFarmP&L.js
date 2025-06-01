@@ -114,18 +114,20 @@ const MabandaProfitLoss = () => {
       </div>
 
       <p>Profit & Loss (Mabanda Farm)</p>
+  
 
       {loading ? (
         <LoadingAnimation />
       ) : error ? (
         <p style={{ color: 'red' }}>{error}</p>
       ) : (
-        <div>
-          <p>Total Sales: {data.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p>Total Purchases: {data.total_purchases.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <p style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }}>
-            {getProfitOrLossMessage()}
-          </p>
+        <div className='metric-amount'>
+          <ul>
+            <li> Sale : {data.total_sales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</li>
+            <li>Purchases  : {data.total_purchases.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</li>
+            <li style={{ color: data.profit_or_loss >= 0 ? 'green' : 'red' }} > {getProfitOrLossMessage()}</li>
+          </ul>
+
         </div>
       )}
     </div>
