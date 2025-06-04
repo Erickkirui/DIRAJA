@@ -60,7 +60,7 @@
     font-size: 16px;
   }
   
-  
+
 .search-bar{
   width: 50%;
   padding: 10px;
@@ -131,11 +131,9 @@
    gap:  10px;
 }
 
-.payment-method select{
-  width: 15%;
-}
+
 .payment-method input{
-  width: 25%;
+ 
   border: 1px solid #ccc;
   padding: 15px;
   border-radius: 6px;
@@ -144,23 +142,12 @@
 .payment-method{
   display: flex;
   width: 100%;
-  flex-wrap: wrap;
+  flex-direction: column;
+
   gap: 10px;
   margin-bottom: 10px;
 }
-.payment-button{
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #ffff;
-  cursor: pointer;
-  
-}
 
-.payment-button:hover {
-  background-color: var(--primary);
-  color: #fff;
-}
 
 /* css for updating single slae edit */
 .edit-form{
@@ -194,17 +181,36 @@
   gap: 10px;
 }
 
-
-/* cleark singlesale */
-
-.sale-details-container{
-  border-bottom: 1px solid var(--primary);
+.qunatity-level{
+  color: var(--secondary)
 }
-
-.sale-section{
+.item-section,
+.item-row{
   display: flex;
-  gap: 20px;
   flex-wrap: wrap;
+  gap: 10px;
+  
+}
+.item-row input{
+  width: 100%;
+}
+.item-row select{
+  width: 100%;
+}
+.delete-entry{
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: white;
+  color: red;
+}
+.complimentary-button{
+  background-color: var(--secondary);
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    color: #ffffff;
+    width: 100%;
 }
 /* media query */
 @media (max-width: 768px) {
@@ -221,9 +227,9 @@
   .payment-method select{
     width: 100%;
   }
-  .item-details{
+  /* .item-details{
     width: auto;
-  }
+  } */
   .payment-button{
     width: 100%;
   }

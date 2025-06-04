@@ -2,6 +2,7 @@ from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
 from Server.Models.LiveStock import LiveStock
+from Server.Models.SoldItems import SoldItem
 from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
@@ -65,11 +66,12 @@ class AddSale(Resource):
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
+        new_sale = None
 
         # ===== VALIDATION =====
         required_fields = [
-            'shop_id', 'customer_name', 'customer_number', 'item_name',
-            'quantity', 'metric', 'unit_price', 'payment_methods', 'status'
+            'shop_id', 'customer_name', 'customer_number', 
+            'items', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields', 'missing': [f for f in required_fields if f not in data]}, 400
@@ -77,14 +79,45 @@ class AddSale(Resource):
         try:
             # Parse data with strict validation
             shop_id = int(data['shop_id'])
-            quantity = float(data['quantity'])
-            unit_price = float(data['unit_price'])
-            total_price = float(data['total_price'])
             payment_methods = data['payment_methods']
-            promocode = data['promocode']
+            promocode = data.get('promocode', '')
             status = data['status'].lower()
-            created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d")
-        except (ValueError, KeyError) as e:
+            created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
+            
+            # Validate items
+            if not isinstance(data['items'], list) or len(data['items']) == 0:
+                return {'message': 'Items must be a non-empty list'}, 400
+            
+            items = []
+            total_price = 0.0
+            total_quantity = 0.0
+            purchase_account = 0.0
+            
+            # First pass validation for items
+            for item in data['items']:
+                item_fields = ['item_name', 'quantity', 'metric', 'unit_price']
+                if not all(field in item for field in item_fields):
+                    return {'message': 'Missing required item fields', 'missing': [f for f in item_fields if f not in item]}, 400
+                
+                # Validate metric format before processing
+                metric = item['metric'].strip().lower()
+                if metric not in ['item', 'kg', 'ltrs']:
+                    return {
+                        'message': f'Invalid metric "{metric}" for item "{item["item_name"]}". Must be one of: item, kg, ltrs',
+                        'invalid_item': item
+                    }, 400
+                
+                items.append({
+                    'item_name': item['item_name'],
+                    'quantity': float(item['quantity']),
+                    'metric': metric,  # Use the cleaned metric
+                    'unit_price': float(item['unit_price']),
+                    'total_price': float(item['quantity']) * float(item['unit_price'])
+                })
+                total_price += float(item['quantity']) * float(item['unit_price'])
+                total_quantity += float(item['quantity'])
+                
+        except (ValueError, KeyError, TypeError) as e:
             return {'message': f'Invalid data format: {str(e)}'}, 400
 
         # ===== PAYMENT METHOD VALIDATION =====
@@ -108,41 +141,72 @@ class AddSale(Resource):
         }
 
         # ===== STOCK PROCESSING =====
+        stock_processing_errors = []
+        batch_deductions = []
+        stock_ids_used = []
+        sold_items = []
+        
         try:
-            # Batch processing
-            batches = ShopStock.query.filter(
-                ShopStock.itemname == data['item_name'],
-                ShopStock.shop_id == shop_id,
-                ShopStock.quantity > 0
-            ).order_by(ShopStock.BatchNumber).all()
+            for item in items:
+                batches = ShopStock.query.filter(
+                    ShopStock.itemname == item['item_name'],
+                    ShopStock.shop_id == shop_id,
+                    ShopStock.quantity > 0
+                ).order_by(ShopStock.BatchNumber).all()
 
-            if not batches:
-                return {'message': 'No stock available for this item'}, 400
+                if not batches:
+                    stock_processing_errors.append(f"No stock available for item: {item['item_name']}")
+                    continue
 
-            remaining_qty = quantity
-            batch_deductions = []
-            stock_ids_used = []
-            purchase_account = 0.0
+                remaining_qty = item['quantity']
+                item_batch_deductions = []
+                item_stock_ids = []
+                item_purchase_account = 0.0
 
-            for batch in batches:
-                if remaining_qty <= 0:
-                    break
+                for batch in batches:
+                    if remaining_qty <= 0:
+                        break
 
-                deduct_qty = min(batch.quantity, remaining_qty)
-                batch.quantity -= deduct_qty
-                remaining_qty -= deduct_qty
-                batch_deductions.append((batch.BatchNumber, deduct_qty))
-                stock_ids_used.append(str(batch.stock_id))
+                    deduct_qty = min(batch.quantity, remaining_qty)
+                    batch.quantity -= deduct_qty
+                    remaining_qty -= deduct_qty
+                    item_batch_deductions.append((batch.BatchNumber, deduct_qty))
+                    item_stock_ids.append(str(batch.stock_id))
 
-                # Calculate cost
-                inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
-                if inventory:
-                    purchase_account += inventory.unitCost * deduct_qty
+                    inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
+                    if inventory:
+                        item_purchase_account += inventory.unitCost * deduct_qty
 
-                db.session.add(batch)
+                    db.session.add(batch)
 
-            if remaining_qty > 0:
-                return {'message': f'Insufficient stock. Needed {quantity}, available {quantity - remaining_qty}'}, 400
+                if remaining_qty > 0:
+                    stock_processing_errors.append(
+                        f"Insufficient stock for {item['item_name']}. Needed {item['quantity']}, available {item['quantity'] - remaining_qty}"
+                    )
+                    continue
+
+                batch_deductions.append({
+                    'item_name': item['item_name'],
+                    'deductions': item_batch_deductions
+                })
+                stock_ids_used.extend(item_stock_ids)
+                purchase_account += item_purchase_account
+                
+                sold_items.append({
+                    'item_name': item['item_name'],
+                    'quantity': item['quantity'],
+                    'metric': item['metric'],
+                    'unit_price': item['unit_price'],
+                    'total_price': item['total_price'],
+                    'BatchNumber': ", ".join(f"{bn} ({q})" for bn, q in item_batch_deductions),
+                    'stock_id': item_stock_ids[0],  # Take first stock_id as reference
+                    'Cost_of_sale': item['total_price'],
+                    'Purchase_account': item_purchase_account
+                })
+
+            if stock_processing_errors:
+                db.session.rollback()
+                return {'message': 'Stock processing failed', 'errors': stock_processing_errors}, 400
 
         except Exception as e:
             db.session.rollback()
@@ -154,28 +218,35 @@ class AddSale(Resource):
         sasapay_deposits = []
 
         try:
-            # Create sale record
+            # Create sale record (simplified to match your Sales model)
             new_sale = Sales(
                 user_id=current_user_id,
                 shop_id=shop_id,
                 customer_name=data['customer_name'],
                 customer_number=data['customer_number'],
-                item_name=data['item_name'],
-                quantity=quantity,
-                metric=data['metric'],
-                unit_price=unit_price,
-                total_price=total_price,
-                BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
-                stock_id=", ".join(stock_ids_used),
-                balance=balance,
                 status=status,
-                promocode=promocode,
-                Cost_of_sale=total_amount_paid,
-                Purchase_account=purchase_account,
-                created_at=created_at
+                created_at=created_at,
+                balance=balance,
+                promocode=promocode
             )
             db.session.add(new_sale)
-            db.session.flush()
+            db.session.flush()  # Generate sales_id without committing
+
+            # Create sold item records
+            for item in sold_items:
+                sold_item = SoldItem(
+                    sales_id=new_sale.sales_id,
+                    item_name=item['item_name'],
+                    quantity=item['quantity'],
+                    metric=item['metric'],
+                    unit_price=item['unit_price'],
+                    total_price=item['total_price'],
+                    BatchNumber=item['BatchNumber'],
+                    stock_id=item['stock_id'],
+                    Cost_of_sale=item['Cost_of_sale'],
+                    Purchase_account=item['Purchase_account']
+                )
+                db.session.add(sold_item)
 
             # Process payments
             for payment in payment_methods:
@@ -183,41 +254,32 @@ class AddSale(Resource):
                 amount = float(payment['amount'])
                 transaction_code = payment.get('transaction_code', 'N/A').strip().upper()
 
-                # Handle SASAPAY payments
                 if method == 'sasapay':
                     bank_id = shop_to_bank_mapping.get(shop_id)
-                    if not bank_id:
-                        continue  # Skip if no mapping exists
+                    if bank_id:
+                        bank_account = BankAccount.query.get(bank_id)
+                        if bank_account:
+                            previous_balance = bank_account.Account_Balance
+                            bank_account.Account_Balance += amount
+                            db.session.add(bank_account)
 
-                    bank_account = BankAccount.query.get(bank_id)
-                    if not bank_account:
-                        continue  # Skip if bank account not found
+                            transaction = TranscationType(
+                                Transaction_type="Debit",
+                                Transaction_amount=amount,
+                                From_account=f"SASAPAY Sale #{new_sale.sales_id}",
+                                To_account=bank_account.Account_name,
+                                created_at=created_at
+                            )
+                            db.session.add(transaction)
 
-                    # Record previous balance
-                    previous_balance = bank_account.Account_Balance
-                    
-                    # Update balance
-                    bank_account.Account_Balance += amount
-                    db.session.add(bank_account)
-
-                    # Create transaction record
-                    transaction = TranscationType(
-                        Transaction_type="Debit",
-                        Transaction_amount=amount,
-                        From_account=f"SASAPAY Sale #{new_sale.sales_id}",
-                        To_account=bank_account.Account_name,
-                        created_at=created_at
-                    )
-                    db.session.add(transaction)
-
-                    sasapay_deposits.append({
-                        'shop_id': shop_id,
-                        'bank_id': bank_id,
-                        'bank_account': bank_account.Account_name,
-                        'amount': amount,
-                        'previous_balance': previous_balance,
-                        'new_balance': bank_account.Account_Balance
-                    })
+                            sasapay_deposits.append({
+                                'shop_id': shop_id,
+                                'bank_id': bank_id,
+                                'bank_account': bank_account.Account_name,
+                                'amount': amount,
+                                'previous_balance': previous_balance,
+                                'new_balance': bank_account.Account_Balance
+                            })
 
                 # Record payment method
                 payment_record = SalesPaymentMethods(
@@ -237,7 +299,7 @@ class AddSale(Resource):
                     shop_id=shop_id,
                     sales_id=new_sale.sales_id,
                     user_id=current_user_id,
-                    item=data['item_name'],
+                    item=", ".join([item['item_name'] for item in items]),
                     amount_paid=total_amount_paid,
                     payment_method=", ".join(pm['method'] for pm in payment_methods),
                     created_at=created_at
@@ -246,16 +308,6 @@ class AddSale(Resource):
 
             db.session.commit()
 
-            # Verify bank balances after commit
-            verified_deposits = []
-            for deposit in sasapay_deposits:
-                verified_balance = BankAccount.query.get(deposit['bank_id']).Account_Balance
-                verified_deposits.append({
-                    **deposit,
-                    'verified_balance': verified_balance,
-                    'success': verified_balance == deposit['new_balance']
-                })
-
             return {
                 'message': 'Sale processed successfully',
                 'sale_id': new_sale.sales_id,
@@ -263,19 +315,15 @@ class AddSale(Resource):
                     'total': total_price,
                     'paid': total_amount_paid,
                     'balance': balance,
-                    'cost': total_amount_paid,
                     'purchase_cost': purchase_account
                 },
-                'stock': {
-                    'deductions': batch_deductions,
-                    'remaining': None  # Add if tracking remaining stock
+                'items': {
+                    'count': len(items),
+                    'details': sold_items
                 },
                 'payments': {
                     'methods': [pm['method'] for pm in payment_methods],
-                    'sasapay_deposits': verified_deposits if verified_deposits else "No SASAPAY deposits processed"
-                },
-                'verification': {
-                    'all_deposits_successful': all(d['success'] for d in verified_deposits) if verified_deposits else "N/A"
+                    'sasapay_deposits': sasapay_deposits if sasapay_deposits else "No SASAPAY deposits processed"
                 }
             }, 201
 
@@ -285,12 +333,11 @@ class AddSale(Resource):
                 'message': 'Transaction failed',
                 'error': str(e),
                 'debug_info': {
-                    'sale_id': getattr(new_sale, 'sales_id', None),
+                    'sale_id': new_sale.sales_id if new_sale else "Not created",
                     'processed_payments': [pm['method'] for pm in payment_methods],
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
-
 
 class GetSale(Resource):
     @jwt_required()
@@ -314,22 +361,37 @@ class GetSale(Resource):
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
 
+                # Get all sold items for this sale
+                sold_items = []
+                for item in sale.items:
+                    sold_items.append({
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    })
+
                 # Process multiple payment methods using the `payment` relationship
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
-                        "created_at": payment.created_at,
-                        "balance": payment.balance,  # Include balance field
+                        "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "balance": payment.balance,
                     }
-                    for payment in sale.payment  # Updated to use the correct relationship
+                    for payment in sale.payment
                 ]
 
                 # Calculate total amount paid
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -337,17 +399,12 @@ class GetSale(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Include total amount paid
-                    "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at,  # Convert datetime to string
-                    "balance": sale.balance,  # Include balance at the sale level
-                    "note": sale.note,  # Include note field 
+                    "sold_items": sold_items,  # Now includes all items from SoldItem table
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "balance": sale.balance,
+                    "note": sale.note,
                     "promocode": sale.promocode
                 })
 
@@ -355,7 +412,6 @@ class GetSale(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
-
 
 class GetSales(Resource):
     @jwt_required()
@@ -375,7 +431,6 @@ class GetSales(Resource):
 
                 if search_query:
                     sales_query = sales_query.filter(
-                        Sales.item_name.ilike(f"%{search_query}%") |
                         Sales.customer_name.ilike(f"%{search_query}%") |
                         Users.username.ilike(f"%{search_query}%") |  # Filter on username from Users model
                         Shops.shopname.ilike(f"%{search_query}%")  # Filter on shopname from Shops model
@@ -385,7 +440,7 @@ class GetSales(Resource):
                     # Ensure the selected_date is formatted correctly (matching the database format)
                     try:
                         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-                        sales_query = sales_query.filter(Sales.created_at == selected_date)
+                        sales_query = sales_query.filter(db.func.date(Sales.created_at) == selected_date)
                     except ValueError:
                         return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
 
@@ -408,6 +463,20 @@ class GetSales(Resource):
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
+                
+                # Get all sold items for this sale
+                sold_items = []
+                for item in sale.items:
+                    sold_items.append({
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber
+                    })
+                
+                # Get payment data
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
@@ -428,11 +497,13 @@ class GetSales(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
+                    "sold_items": sold_items,
                     "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "balance": sale.balance,
+                    "note": sale.note,
+                    "promocode": sale.promocode
                 })
 
             return {
@@ -444,7 +515,6 @@ class GetSales(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
-
 
 
 

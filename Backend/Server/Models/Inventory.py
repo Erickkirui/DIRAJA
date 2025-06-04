@@ -24,7 +24,7 @@ class Inventory(db.Model):
 
     Trasnaction_type_credit = db.Column(db.Float, nullable=False)
     Transcation_type_debit = db.Column(db.Float, nullable=False)
-    paymentRef = db.Column(db.String(100), nullable=False)
+    paymentRef = db.Column(db.String(255), nullable=False)
 
 
     
@@ -38,7 +38,7 @@ class Inventory(db.Model):
     
     users = db.relationship('Users', backref='inventory', lazy=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())
-    source = db.Column(db.String(100), nullable=False)
+    source = db.Column(db.String(255), nullable=False)
     
     
      
