@@ -264,13 +264,7 @@ const SingleShopSale = () => {
 
     return (
         <div>
-            {message && (
-                <Stack>
-                    <Alert severity={messageType} variant="outlined">
-                        {message}
-                    </Alert>
-                </Stack>
-            )}
+           
             <h1>Record  Sales</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <h5>Customer Details</h5>
@@ -397,6 +391,13 @@ const SingleShopSale = () => {
                 <button className="add-sale-button" type="submit" disabled={isLoading}>
                     {isLoading ? 'Processing...' : 'Add Sale'}
                 </button>
+                 {message && (
+                <Stack>
+                    <Alert severity={messageType} variant="outlined">
+                        {message}
+                    </Alert>
+                </Stack>
+            )}
 
                 <Link className="nav-clerk-button" to="/clerk">
                     Home

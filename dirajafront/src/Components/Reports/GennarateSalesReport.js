@@ -4,13 +4,10 @@ import { saveAs } from 'file-saver';
 import {
   Button,
   Form,
-  Row,
-  Col,
   DatePicker,
   Input,
   Select,
   Card,
-  Spin,
   Alert,
 } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
@@ -36,7 +33,6 @@ const GennarateSalesReport = () => {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('Authentication required');
 
-      // Prepare filters and set to null if blank
       const filters = {
         search_query: values.search_query || null,
         shopname: values.shopname || null,
@@ -45,11 +41,8 @@ const GennarateSalesReport = () => {
         end_date: values.date_range ? values.date_range[1]?.format('YYYY-MM-DD') : null,
       };
 
-      // Remove any filters that are null or undefined
       Object.keys(filters).forEach((key) => {
-        if (filters[key] === null || filters[key] === undefined) {
-          delete filters[key];
-        }
+        if (filters[key] == null) delete filters[key];
       });
 
       const response = await axios.post('/api/diraja/generate-sales-report', filters, {
@@ -57,7 +50,6 @@ const GennarateSalesReport = () => {
         responseType: 'blob',
       });
 
-      // Extract filename from content-disposition or create one
       const filename = response.headers['content-disposition']
         ? response.headers['content-disposition'].split('filename=')[1]
         : `sales_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -72,14 +64,14 @@ const GennarateSalesReport = () => {
   };
 
   return (
-    <Card title="Generate Sales Report" style={{ maxWidth: 800, margin: '0 auto' }}>
+    
       <Form
         form={form}
+       
         layout="vertical"
         onFinish={handleGennarateSalesReport}
-        initialValues={{
-          status: 'paid', // Default status
-        }}
+        initialValues={{ status: 'paid' }}
+        style={{ display: 'flex', flexDirection: 'column', gap: '0px',maxWidth: 400, }}
       >
         {error && (
           <Alert
@@ -88,41 +80,31 @@ const GennarateSalesReport = () => {
             type="error"
             showIcon
             closable
-            style={{ marginBottom: 24 }}
           />
         )}
+        <h1>Generate Sales report</h1>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="search_query" label="Search (Customer/User/Shop)">
-              <Input placeholder="Search by name, user or shop" />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="shopname" label="Shop Name">
-              <Input placeholder="Filter by shop name" />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item name="shopname" label="Shop Name">
+          <Input placeholder="Filter by shop name" />
+        </Form.Item>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item name="status" label="Status">
-              <Select>
-                {statusOptions.map((opt) => (
-                  <Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item name="date_range" label="Date Range">
-              <RangePicker style={{ width: '100%' }} />
-            </Form.Item>
-          </Col>
-        </Row>
+        <Form.Item name="search_query" label="Search (Customer/User)">
+          <Input placeholder="Enter Customer or Employee name" />
+        </Form.Item>
+
+        <Form.Item name="status" label="Status">
+          <Select>
+            {statusOptions.map((opt) => (
+              <Option key={opt.value} value={opt.value}>
+                {opt.label}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="date_range" label="Date Range">
+          <RangePicker style={{ width: '100%' }} />
+        </Form.Item>
 
         <Form.Item>
           <Button
@@ -132,12 +114,13 @@ const GennarateSalesReport = () => {
             loading={loading}
             disabled={loading}
             size="large"
+            style={{ width: '100%' }}
           >
             Generate Excel Report
           </Button>
         </Form.Item>
       </Form>
-    </Card>
+   
   );
 };
 
