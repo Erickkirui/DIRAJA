@@ -4,6 +4,10 @@
   overflow-y: auto; /* Allows the sticky element to work within the viewport */
 }
 
+ input[type=date],
+ input[type=time] {
+     border : 1px solid #ccc;
+ }
 .navigation {
   width: 15%;
   padding: 20px;

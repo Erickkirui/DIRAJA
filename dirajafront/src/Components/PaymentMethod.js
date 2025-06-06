@@ -8,8 +8,8 @@ const PaymentMethods = ({
     removePaymentMethod 
 }) => {
     return (
-        <div>
-            <h3>Payment Methods</h3>
+        <>
+            <h5>Payment Methods</h5>
             {paymentMethods.map((method, index) => (
                 <div key={index} className="payment-method">
                     <select
@@ -24,13 +24,16 @@ const PaymentMethods = ({
                             </option>
                         ))}
                     </select>
-                    <input
+                 
+                     <input
                         type="number"
+                        className='input'
                         value={method.amount}
                         onChange={(e) => handlePaymentChange(index, 'amount', e.target.value)}
                         placeholder="Amount"
                         
                     />
+                  
                     {method.method && method.method.toLowerCase() !== 'cash' && (
                         <input
                             type="text"
@@ -51,10 +54,10 @@ const PaymentMethods = ({
                     )}
                 </div>
             ))}
-            <button type="button" onClick={addPaymentMethod} className='payment-button'>
+            <button type="button" onClick={addPaymentMethod} className='complimentary-button'>
                 Add Another Payment Method
             </button>
-        </div>
+        </>
     );
 };
 

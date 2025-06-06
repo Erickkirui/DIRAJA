@@ -11,6 +11,9 @@
     margin-bottom: 15px;
 }
 
+.metrix-container select{
+    padding: 10px;
+}
 
 /* dashbord elements  */
 .dashord-top-part{

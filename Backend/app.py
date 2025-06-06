@@ -36,6 +36,7 @@ def initialize_models():
     from Server.Models.Inventory import Inventory
     from Server.Models.Shopstock import ShopStock
     from Server.Models.Paymnetmethods import SalesPaymentMethods
+    from Server.Models.SoldItems import SoldItem
     # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
     from Server.Models.LiveStock import LiveStock

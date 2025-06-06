@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import DownloadPDF from './Download/DownloadPDF';
-import LoadingAnimation from './LoadingAnimation';
-import '../Styles/sales.css';
+import DownloadPDF from '../Download/DownloadPDF';
+import LoadingAnimation from '../LoadingAnimation';
+import '../../Styles/sales.css';
 
 const SingleSale = () => {
   const { sale_id } = useParams();
@@ -60,7 +60,7 @@ const SingleSale = () => {
 
   const handleSave = async () => {
     try {
-      const recalculatedTotalPrice = sale.quantity * sale.unit_price;
+      const recalculatedTotalPrice = sale.sold_items.reduce((acc, item) => acc + item.total_price, 0);
       const updatedSale = { ...sale, total_price: recalculatedTotalPrice, payment_date: paymentDate || new Date().toISOString().split('T')[0] };
 
       const response = await fetch(`/api/diraja/sale/${sale_id}`, {
@@ -104,20 +104,14 @@ const SingleSale = () => {
           <p><strong>Invoice Number:</strong> {sale?.sale_id}</p>
           <p><strong>Clerk:</strong> {sale?.username}</p>
           <p><strong>Invoice Status:</strong> {sale?.status}</p>
+          <p><strong>Customer Name:</strong> {sale?.customer_name}</p>
+          <p><strong>Customer Number:</strong> {sale?.customer_number}</p>
         </div>
 
         {successMessage && <div className="success-message">{successMessage}</div>}
 
         {isEditing ? (
           <div className="edit-sale">
-            <label>Item Name</label>
-            <input type="text" value={sale?.item_name || ''} onChange={(e) => setSale({ ...sale, item_name: e.target.value })} />
-            <label>Quantity</label>
-            <input type="number" value={sale?.quantity || ''} onChange={(e) => setSale({ ...sale, quantity: e.target.value })} />
-            <label>Unit Price</label>
-            <input type="number" value={sale?.unit_price || ''} onChange={(e) => setSale({ ...sale, unit_price: e.target.value })} />
-            <label>Payment Method</label>
-            <input type="text" value={sale?.payment_method || ''} onChange={(e) => setSale({ ...sale, payment_method: e.target.value })} />
             <label>Payment Date</label>
             <input type="date" value={paymentDate || new Date().toISOString().split('T')[0]} onChange={(e) => setPaymentDate(e.target.value)} />
 
@@ -133,19 +127,33 @@ const SingleSale = () => {
                   <th>Quantity</th>
                   <th>Unit Price</th>
                   <th>Total Price</th>
-                  <th>Payment Method</th>
+                  <th>Batch Number</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>{sale?.item_name}</td>
-                  <td>{sale?.quantity} {sale?.metric}</td>
-                  <td>{sale?.unit_price} ksh</td>
-                  <td>{sale?.total_price} ksh</td>
-                  <td>{sale?.payment_method}</td>
-                </tr>
+                {sale?.sold_items?.map((item, index) => (
+                  <tr key={index}>
+                    <td>{item.item_name}</td>
+                    <td>{item.quantity} {item.metric}</td>
+                    <td>{item.unit_price} ksh</td>
+                    <td>{item.total_price} ksh</td>
+                    <td>{item.batch_number}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+
+            <div className="payment-details">
+              <h3>Payment Methods</h3>
+              {sale?.payment_methods?.map((payment, index) => (
+                <div key={index}>
+                  <p><strong>Method:</strong> {payment.payment_method}</p>
+                  <p><strong>Amount Paid:</strong> {payment.amount_paid} ksh</p>
+                  <p><strong>Payment Date:</strong> {payment.created_at}</p>
+                  <p><strong>Balance:</strong> {payment.balance ? payment.balance : 'Fully Paid'}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

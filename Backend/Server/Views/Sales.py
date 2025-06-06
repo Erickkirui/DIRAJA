@@ -2,6 +2,7 @@ from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
 from Server.Models.LiveStock import LiveStock
+from Server.Models.SoldItems import SoldItem
 from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
@@ -24,6 +25,11 @@ from Server.Models.BankAccounts import BankAccount
 from Server.Models.CashDeposit import CashDeposits
 
 from fuzzywuzzy import process
+
+from flask import send_file
+from io import BytesIO
+import pandas as pd
+
 
 
 
@@ -66,11 +72,12 @@ class AddSale(Resource):
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
+        new_sale = None
 
         # ===== VALIDATION =====
         required_fields = [
-            'shop_id', 'customer_name', 'customer_number', 'item_name',
-            'quantity', 'metric', 'unit_price', 'payment_methods', 'status'
+            'shop_id', 'customer_name', 'customer_number', 
+            'items', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields', 'missing': [f for f in required_fields if f not in data]}, 400
@@ -78,14 +85,45 @@ class AddSale(Resource):
         try:
             # Parse data with strict validation
             shop_id = int(data['shop_id'])
-            quantity = float(data['quantity'])
-            unit_price = float(data['unit_price'])
-            total_price = float(data['total_price'])
             payment_methods = data['payment_methods']
-            promocode = data['promocode']
+            promocode = data.get('promocode', '')
             status = data['status'].lower()
-            created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d")
-        except (ValueError, KeyError) as e:
+            created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
+            
+            # Validate items
+            if not isinstance(data['items'], list) or len(data['items']) == 0:
+                return {'message': 'Items must be a non-empty list'}, 400
+            
+            items = []
+            total_price = 0.0
+            total_quantity = 0.0
+            purchase_account = 0.0
+            
+            # First pass validation for items
+            for item in data['items']:
+                item_fields = ['item_name', 'quantity', 'metric', 'unit_price']
+                if not all(field in item for field in item_fields):
+                    return {'message': 'Missing required item fields', 'missing': [f for f in item_fields if f not in item]}, 400
+                
+                # Validate metric format before processing
+                metric = item['metric'].strip().lower()
+                if metric not in ['item', 'kg', 'ltrs']:
+                    return {
+                        'message': f'Invalid metric "{metric}" for item "{item["item_name"]}". Must be one of: item, kg, ltrs',
+                        'invalid_item': item
+                    }, 400
+                
+                items.append({
+                    'item_name': item['item_name'],
+                    'quantity': float(item['quantity']),
+                    'metric': metric,  # Use the cleaned metric
+                    'unit_price': float(item['unit_price']),
+                    'total_price': float(item['quantity']) * float(item['unit_price'])
+                })
+                total_price += float(item['quantity']) * float(item['unit_price'])
+                total_quantity += float(item['quantity'])
+                
+        except (ValueError, KeyError, TypeError) as e:
             return {'message': f'Invalid data format: {str(e)}'}, 400
 
         # ===== PAYMENT METHOD VALIDATION =====
@@ -109,41 +147,72 @@ class AddSale(Resource):
         }
 
         # ===== STOCK PROCESSING =====
+        stock_processing_errors = []
+        batch_deductions = []
+        stock_ids_used = []
+        sold_items = []
+        
         try:
-            # Batch processing
-            batches = ShopStock.query.filter(
-                ShopStock.itemname == data['item_name'],
-                ShopStock.shop_id == shop_id,
-                ShopStock.quantity > 0
-            ).order_by(ShopStock.BatchNumber).all()
+            for item in items:
+                batches = ShopStock.query.filter(
+                    ShopStock.itemname == item['item_name'],
+                    ShopStock.shop_id == shop_id,
+                    ShopStock.quantity > 0
+                ).order_by(ShopStock.BatchNumber).all()
 
-            if not batches:
-                return {'message': 'No stock available for this item'}, 400
+                if not batches:
+                    stock_processing_errors.append(f"No stock available for item: {item['item_name']}")
+                    continue
 
-            remaining_qty = quantity
-            batch_deductions = []
-            stock_ids_used = []
-            purchase_account = 0.0
+                remaining_qty = item['quantity']
+                item_batch_deductions = []
+                item_stock_ids = []
+                item_purchase_account = 0.0
 
-            for batch in batches:
-                if remaining_qty <= 0:
-                    break
+                for batch in batches:
+                    if remaining_qty <= 0:
+                        break
 
-                deduct_qty = min(batch.quantity, remaining_qty)
-                batch.quantity -= deduct_qty
-                remaining_qty -= deduct_qty
-                batch_deductions.append((batch.BatchNumber, deduct_qty))
-                stock_ids_used.append(str(batch.stock_id))
+                    deduct_qty = min(batch.quantity, remaining_qty)
+                    batch.quantity -= deduct_qty
+                    remaining_qty -= deduct_qty
+                    item_batch_deductions.append((batch.BatchNumber, deduct_qty))
+                    item_stock_ids.append(str(batch.stock_id))
 
-                # Calculate cost
-                inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
-                if inventory:
-                    purchase_account += inventory.unitCost * deduct_qty
+                    inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
+                    if inventory:
+                        item_purchase_account += inventory.unitCost * deduct_qty
 
-                db.session.add(batch)
+                    db.session.add(batch)
 
-            if remaining_qty > 0:
-                return {'message': f'Insufficient stock. Needed {quantity}, available {quantity - remaining_qty}'}, 400
+                if remaining_qty > 0:
+                    stock_processing_errors.append(
+                        f"Insufficient stock for {item['item_name']}. Needed {item['quantity']}, available {item['quantity'] - remaining_qty}"
+                    )
+                    continue
+
+                batch_deductions.append({
+                    'item_name': item['item_name'],
+                    'deductions': item_batch_deductions
+                })
+                stock_ids_used.extend(item_stock_ids)
+                purchase_account += item_purchase_account
+                
+                sold_items.append({
+                    'item_name': item['item_name'],
+                    'quantity': item['quantity'],
+                    'metric': item['metric'],
+                    'unit_price': item['unit_price'],
+                    'total_price': item['total_price'],
+                    'BatchNumber': ", ".join(f"{bn} ({q})" for bn, q in item_batch_deductions),
+                    'stock_id': item_stock_ids[0],  # Take first stock_id as reference
+                    'Cost_of_sale': item['total_price'],
+                    'Purchase_account': item_purchase_account
+                })
+
+            if stock_processing_errors:
+                db.session.rollback()
+                return {'message': 'Stock processing failed', 'errors': stock_processing_errors}, 400
 
         except Exception as e:
             db.session.rollback()
@@ -155,28 +224,35 @@ class AddSale(Resource):
         sasapay_deposits = []
 
         try:
-            # Create sale record
+            # Create sale record (simplified to match your Sales model)
             new_sale = Sales(
                 user_id=current_user_id,
                 shop_id=shop_id,
                 customer_name=data['customer_name'],
                 customer_number=data['customer_number'],
-                item_name=data['item_name'],
-                quantity=quantity,
-                metric=data['metric'],
-                unit_price=unit_price,
-                total_price=total_price,
-                BatchNumber=", ".join(f"{bn} ({q})" for bn, q in batch_deductions),
-                stock_id=", ".join(stock_ids_used),
-                balance=balance,
                 status=status,
-                promocode=promocode,
-                Cost_of_sale=total_amount_paid,
-                Purchase_account=purchase_account,
-                created_at=created_at
+                created_at=created_at,
+                balance=balance,
+                promocode=promocode
             )
             db.session.add(new_sale)
-            db.session.flush()
+            db.session.flush()  # Generate sales_id without committing
+
+            # Create sold item records
+            for item in sold_items:
+                sold_item = SoldItem(
+                    sales_id=new_sale.sales_id,
+                    item_name=item['item_name'],
+                    quantity=item['quantity'],
+                    metric=item['metric'],
+                    unit_price=item['unit_price'],
+                    total_price=item['total_price'],
+                    BatchNumber=item['BatchNumber'],
+                    stock_id=item['stock_id'],
+                    Cost_of_sale=item['Cost_of_sale'],
+                    Purchase_account=item['Purchase_account']
+                )
+                db.session.add(sold_item)
 
             # Process payments
             for payment in payment_methods:
@@ -184,41 +260,32 @@ class AddSale(Resource):
                 amount = float(payment['amount'])
                 transaction_code = payment.get('transaction_code', 'N/A').strip().upper()
 
-                # Handle SASAPAY payments
                 if method == 'sasapay':
                     bank_id = shop_to_bank_mapping.get(shop_id)
-                    if not bank_id:
-                        continue  # Skip if no mapping exists
+                    if bank_id:
+                        bank_account = BankAccount.query.get(bank_id)
+                        if bank_account:
+                            previous_balance = bank_account.Account_Balance
+                            bank_account.Account_Balance += amount
+                            db.session.add(bank_account)
 
-                    bank_account = BankAccount.query.get(bank_id)
-                    if not bank_account:
-                        continue  # Skip if bank account not found
+                            transaction = TranscationType(
+                                Transaction_type="Debit",
+                                Transaction_amount=amount,
+                                From_account=f"SASAPAY Sale #{new_sale.sales_id}",
+                                To_account=bank_account.Account_name,
+                                created_at=created_at
+                            )
+                            db.session.add(transaction)
 
-                    # Record previous balance
-                    previous_balance = bank_account.Account_Balance
-                    
-                    # Update balance
-                    bank_account.Account_Balance += amount
-                    db.session.add(bank_account)
-
-                    # Create transaction record
-                    transaction = TranscationType(
-                        Transaction_type="Debit",
-                        Transaction_amount=amount,
-                        From_account=f"SASAPAY Sale #{new_sale.sales_id}",
-                        To_account=bank_account.Account_name,
-                        created_at=created_at
-                    )
-                    db.session.add(transaction)
-
-                    sasapay_deposits.append({
-                        'shop_id': shop_id,
-                        'bank_id': bank_id,
-                        'bank_account': bank_account.Account_name,
-                        'amount': amount,
-                        'previous_balance': previous_balance,
-                        'new_balance': bank_account.Account_Balance
-                    })
+                            sasapay_deposits.append({
+                                'shop_id': shop_id,
+                                'bank_id': bank_id,
+                                'bank_account': bank_account.Account_name,
+                                'amount': amount,
+                                'previous_balance': previous_balance,
+                                'new_balance': bank_account.Account_Balance
+                            })
 
                 # Record payment method
                 payment_record = SalesPaymentMethods(
@@ -238,7 +305,7 @@ class AddSale(Resource):
                     shop_id=shop_id,
                     sales_id=new_sale.sales_id,
                     user_id=current_user_id,
-                    item=data['item_name'],
+                    item=", ".join([item['item_name'] for item in items]),
                     amount_paid=total_amount_paid,
                     payment_method=", ".join(pm['method'] for pm in payment_methods),
                     created_at=created_at
@@ -247,16 +314,6 @@ class AddSale(Resource):
 
             db.session.commit()
 
-            # Verify bank balances after commit
-            verified_deposits = []
-            for deposit in sasapay_deposits:
-                verified_balance = BankAccount.query.get(deposit['bank_id']).Account_Balance
-                verified_deposits.append({
-                    **deposit,
-                    'verified_balance': verified_balance,
-                    'success': verified_balance == deposit['new_balance']
-                })
-
             return {
                 'message': 'Sale processed successfully',
                 'sale_id': new_sale.sales_id,
@@ -264,19 +321,15 @@ class AddSale(Resource):
                     'total': total_price,
                     'paid': total_amount_paid,
                     'balance': balance,
-                    'cost': total_amount_paid,
                     'purchase_cost': purchase_account
                 },
-                'stock': {
-                    'deductions': batch_deductions,
-                    'remaining': None  # Add if tracking remaining stock
+                'items': {
+                    'count': len(items),
+                    'details': sold_items
                 },
                 'payments': {
                     'methods': [pm['method'] for pm in payment_methods],
-                    'sasapay_deposits': verified_deposits if verified_deposits else "No SASAPAY deposits processed"
-                },
-                'verification': {
-                    'all_deposits_successful': all(d['success'] for d in verified_deposits) if verified_deposits else "N/A"
+                    'sasapay_deposits': sasapay_deposits if sasapay_deposits else "No SASAPAY deposits processed"
                 }
             }, 201
 
@@ -286,12 +339,11 @@ class AddSale(Resource):
                 'message': 'Transaction failed',
                 'error': str(e),
                 'debug_info': {
-                    'sale_id': getattr(new_sale, 'sales_id', None),
+                    'sale_id': new_sale.sales_id if new_sale else "Not created",
                     'processed_payments': [pm['method'] for pm in payment_methods],
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
-
 
 class GetSale(Resource):
     @jwt_required()
@@ -315,22 +367,37 @@ class GetSale(Resource):
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
 
+                # Get all sold items for this sale
+                sold_items = []
+                for item in sale.items:
+                    sold_items.append({
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    })
+
                 # Process multiple payment methods using the `payment` relationship
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
-                        "created_at": payment.created_at,
-                        "balance": payment.balance,  # Include balance field
+                        "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "balance": payment.balance,
                     }
-                    for payment in sale.payment  # Updated to use the correct relationship
+                    for payment in sale.payment
                 ]
 
                 # Calculate total amount paid
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
                 sales_data.append({
-                    "sale_id": sale.sales_id,  # Assuming `sales_id` is the primary key
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
                     "shop_id": sale.shop_id,
@@ -338,17 +405,12 @@ class GetSale(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
-                    "total_amount_paid": total_amount_paid,  # Include total amount paid
-                    "payment_methods": payment_data,  # Include multiple payments
-                    "created_at": sale.created_at,  # Convert datetime to string
-                    "balance": sale.balance,  # Include balance at the sale level
-                    "note": sale.note,  # Include note field 
+                    "sold_items": sold_items,  # Now includes all items from SoldItem table
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "balance": sale.balance,
+                    "note": sale.note,
                     "promocode": sale.promocode
                 })
 
@@ -356,7 +418,6 @@ class GetSale(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
-
 
 class GetSales(Resource):
     @jwt_required()
@@ -376,7 +437,6 @@ class GetSales(Resource):
 
                 if search_query:
                     sales_query = sales_query.filter(
-                        Sales.item_name.ilike(f"%{search_query}%") |
                         Sales.customer_name.ilike(f"%{search_query}%") |
                         Users.username.ilike(f"%{search_query}%") |  # Filter on username from Users model
                         Shops.shopname.ilike(f"%{search_query}%")  # Filter on shopname from Shops model
@@ -386,7 +446,7 @@ class GetSales(Resource):
                     # Ensure the selected_date is formatted correctly (matching the database format)
                     try:
                         selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-                        sales_query = sales_query.filter(Sales.created_at == selected_date)
+                        sales_query = sales_query.filter(db.func.date(Sales.created_at) == selected_date)
                     except ValueError:
                         return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
 
@@ -409,6 +469,20 @@ class GetSales(Resource):
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
+                
+                # Get all sold items for this sale
+                sold_items = []
+                for item in sale.items:
+                    sold_items.append({
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber
+                    })
+                
+                # Get payment data
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
@@ -429,11 +503,13 @@ class GetSales(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
+                    "sold_items": sold_items,
                     "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "balance": sale.balance,
+                    "note": sale.note,
+                    "promocode": sale.promocode
                 })
 
             return {
@@ -445,7 +521,6 @@ class GetSales(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
-
 
 
 
@@ -509,52 +584,58 @@ class SalesResources(Resource):
     @jwt_required()
     def get(self, sales_id):
         try:
-            # Fetch sale by sales_id
             sale = Sales.query.get(sales_id)
-
             if not sale:
                 return {"message": "Sale not found"}, 404
-            
-            # Fetch username and shop name using user_id and shop_id
+
             user = Users.query.filter_by(users_id=sale.user_id).first()
             shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-            
-            # Handle cases where user or shop may not be found
+
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
 
-            # Fetch related payment methods
+            # Get all sold items for this sale
+            sold_items = [
+                {
+                    "item_name": item.item_name,
+                    "quantity": item.quantity,
+                    "metric": item.metric,
+                    "unit_price": item.unit_price,
+                    "total_price": item.total_price,
+                    "batch_number": item.BatchNumber,  # Ensure case matches DB model
+                    "stock_id": item.stock_id
+                }
+                for item in sale.items  # Assuming relationship: sale.items
+            ]
+
+            # Get payment data
             payment_data = [
                 {
                     "payment_method": payment.payment_method,
                     "amount_paid": payment.amount_paid,
+                    "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": payment.balance,
                 }
-                for payment in sale.payment  # 'payment' is the relationship with SalesPaymentMethods
+                for payment in sale.payment
             ]
-            
-            # Calculate total amount paid from the related payments
-            total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
+            total_amount_paid = sum(p["amount_paid"] for p in payment_data)
 
-            # Prepare sale data
             sale_data = {
                 "sale_id": sale.sales_id,
                 "user_id": sale.user_id,
                 "username": username,
                 "shop_id": sale.shop_id,
-                "shop_name": shopname,
+                "shopname": shopname,
                 "customer_name": sale.customer_name,
                 "status": sale.status,
                 "customer_number": sale.customer_number,
-                "item_name": sale.item_name,
-                "quantity": sale.quantity,
-                "batchnumber": sale.BatchNumber,
-                "metric": sale.metric,
-                "unit_price": sale.unit_price,
-                "total_price": sale.total_price,
-                "total_amount_paid": total_amount_paid,  # Add total amount paid
+                "sold_items": sold_items,
+                "total_amount_paid": total_amount_paid,
                 "payment_methods": payment_data,
-                "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
+                "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                "balance": sale.balance,
+                "note": sale.note,
+                "promocode": sale.promocode
             }
 
             return {"sale": sale_data}, 200
@@ -565,40 +646,27 @@ class SalesResources(Resource):
     @jwt_required()
     def put(self, sales_id):
         try:
-            # Fetch the sale by sales_id
             sale = Sales.query.get(sales_id)
-
             if not sale:
                 return {"message": "Sale not found"}, 404
 
-            # Get the updated data from the request
             data = request.get_json()
 
-            # Update sale details
+            # Update fields if they exist in the request data
             if 'customer_name' in data:
                 sale.customer_name = data['customer_name']
             if 'status' in data:
                 sale.status = data['status']
             if 'customer_number' in data:
                 sale.customer_number = data['customer_number']
-            if 'item_name' in data:
-                sale.item_name = data['item_name']
-            if 'quantity' in data:
-                sale.quantity = data['quantity']
-            if 'metric' in data:
-                sale.metric = data['metric']
-            if 'unit_price' in data:
-                sale.unit_price = data['unit_price']
-            if 'total_price' in data:
-                sale.total_price = data['total_price']
-            if 'BatchNumber' in data:
-                sale.BatchNumber = data['BatchNumber']
+            if 'note' in data:
+                sale.note = data['note']
+            if 'promocode' in data:
+                sale.promocode = data['promocode']
 
-            # **Payment methods are no longer handled here**
+            # If you need to update sold items, handle separately or through another route
 
-            # Commit changes to the database
             db.session.commit()
-
             return {"message": "Sale updated successfully"}, 200
 
         except Exception as e:
@@ -606,38 +674,42 @@ class SalesResources(Resource):
 
     @jwt_required()
     def delete(self, sales_id):
-        # Fetch the sale record
-        sale = Sales.query.filter_by(sales_id=sales_id).first()
-        if not sale:
-            return {'message': 'Sale not found'}, 404
-
-        # Fetch the associated shop stock
-        shop_stock_item = ShopStock.query.filter_by(stock_id=sale.stock_id).first()
-        if shop_stock_item:
-            shop_stock_item.quantity += sale.quantity  # Restore the stock
-
-        # Delete associated payment methods
-        SalesPaymentMethods.query.filter_by(sale_id=sales_id).delete()
-
-        # Delete associated customer record
-        customer = Customers.query.filter_by(sales_id=sales_id).first()
-        if customer:
-            db.session.delete(customer)
-
-        # Delete the sale record
-        db.session.delete(sale)
-
         try:
+            sale = Sales.query.filter_by(sales_id=sales_id).first()
+            if not sale:
+                return {'message': 'Sale not found'}, 404
+
+            # Restore stock quantities for each sold item
+            for item in sale.items:  # Ensure `sale.items` is the correct relationship
+                if item.stock_id:
+                    stock = ShopStock.query.filter_by(stock_id=item.stock_id).first()
+                    if stock:
+                        stock.quantity += item.quantity
+
+            # Delete payment records
+            SalesPaymentMethods.query.filter_by(sale_id=sales_id).delete()
+
+            # Delete customer
+            customer = Customers.query.filter_by(sales_id=sales_id).first()
+            if customer:
+                db.session.delete(customer)
+
+            # Delete sold items (assuming cascade is not set)
+            for item in sale.items:
+                db.session.delete(item)
+
+            # Delete the sale
+            db.session.delete(sale)
+
             db.session.commit()
             return {'message': 'Sale deleted, stock restored, and customer removed successfully'}, 200
+
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error deleting sale', 'error': str(e)}, 500
 
 
-        
 
-    
 class GetPaymentTotals(Resource):
     @jwt_required()
     def get(self):
@@ -875,62 +947,109 @@ class UpdateSalePayment(Resource):
             db.session.rollback()
             return make_response(jsonify({"message": "Error updating payment method", "error": str(e)}), 500)
         
-
 class GetUnpaidSales(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
         try:
-            # Query for all unpaid and partially paid sales
-            unpaid_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially_paid"])).all()
+            # Get page and limit from query parameters, defaulting to 1 and 50
+            page = int(request.args.get('page', 1))  # Default to page 1 if not provided
+            limit = int(request.args.get('limit', 50))  # Default to 50 items per request
+
+            search_query = request.args.get('searchQuery', '')
+            selected_date = request.args.get('selectedDate', None)
+
+            # Start building the query for unpaid and partially paid sales
+            sales_query = Sales.query.filter(Sales.status.in_(["unpaid", "partially_paid"]))
+
+            # If a search query is provided, add it to the query
+            if search_query:
+                sales_query = sales_query.join(Shops).join(Users).filter(
+                    Sales.customer_name.ilike(f"%{search_query}%") |
+                    Users.username.ilike(f"%{search_query}%") |
+                    Shops.shopname.ilike(f"%{search_query}%")
+                )
             
-            if not unpaid_sales:
-                return {'message': 'No unpaid or partially paid sales found'}, 404
-            
-            sales_list = []
-            for sale in unpaid_sales:
-                # Fetch user and shop details
+            # If a selected date is provided, add date filter
+            if selected_date:
+                try:
+                    selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(db.func.date(Sales.created_at) == selected_date)
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+            # Apply sorting by created_at and then pagination
+            sales_query = sales_query.order_by(Sales.created_at.desc())
+
+            # Handle pagination
+            offset = (page - 1) * limit
+            sales_query = sales_query.offset(offset).limit(limit)
+
+            # Fetch sales data
+            sales = sales_query.all()
+            total_sales = Sales.query.filter(Sales.status.in_(["unpaid", "partially_paid"])).count()  # Total count for pagination
+            total_pages = (total_sales + limit - 1) // limit  # Calculate total pages
+
+            # Prepare the sales data to return
+            sales_data = []
+            for sale in sales:
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-
-                # Handle cases where user or shop may not be found
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
                 
-                # Fetch payment methods related to the sale
-                payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
-                payment_details = [
-                    {
-                        "method": payment.payment_method,
-                        "amount_paid": payment.amount_paid
-                    }
-                    for payment in payments
-                ]
+                # Get all sold items for this sale
+                sold_items = []
+                for item in sale.items:
+                    sold_items.append({
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber
+                    })
                 
-                # Append sale data with user and shop info
-                sales_list.append({
-                    "sales_id": sale.sales_id,
+                # Get payment data
+                payment_data = [
+                    {
+                        "payment_method": payment.payment_method,
+                        "amount_paid": payment.amount_paid,
+                        "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "balance": payment.balance,
+                    }
+                    for payment in sale.payment
+                ]
+                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+
+                sales_data.append({
+                    "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
-                    "username": username,  # Added username
+                    "username": username,
                     "shop_id": sale.shop_id,
-                    "shopname": shopname,  # Added shopname
+                    "shopname": shopname,
                     "customer_name": sale.customer_name,
-                    "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
-                    "balance": sale.balance,
                     "status": sale.status,
-                    "created_at": sale.created_at.strftime("%Y-%m-%d"),
-                    "payment_methods": payment_details
+                    "customer_number": sale.customer_number,
+                    "sold_items": sold_items,
+                    "total_amount_paid": total_amount_paid,
+                    "payment_methods": payment_data,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "balance": sale.balance,
+                    "note": sale.note,
+                    "promocode": sale.promocode
                 })
-            
-            return {"unpaid_sales": sales_list}, 200
-        
+
+            return {
+                "sales_data": sales_data,
+                "total_sales": total_sales,
+                "total_pages": total_pages,
+                "current_page": page,
+            }, 200
+
         except Exception as e:
-            return {"message": f"An error occurred: {str(e)}"}, 500
+            return {"error": str(e)}, 500
+
 
         
 
@@ -1534,3 +1653,90 @@ class TotalCashSalesByUser(Resource):
                 "error": "An error occurred while calculating total cash sales by user",
                 "details": str(e)
             }, 500
+
+
+class GenerateSalesReport(Resource):
+    @jwt_required()
+    def post(self):
+        try:
+            # Get all filter parameters from request
+            filters = request.get_json()
+            
+            # Build the base query
+            sales_query = Sales.query.order_by(Sales.created_at.desc()).join(Shops).join(Users)
+            
+            # Apply filters
+            if filters.get('search_query'):
+                search = f"%{filters['search_query']}%"
+                sales_query = sales_query.filter(
+                    Sales.customer_name.ilike(search) |
+                    Users.username.ilike(search) |
+                    Shops.shopname.ilike(search)
+                )
+            
+            if filters.get('start_date'):
+                try:
+                    start_date = datetime.strptime(filters['start_date'], '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(db.func.date(Sales.created_at) >= start_date)
+                except ValueError:
+                    return {"error": "Invalid start date format. Use YYYY-MM-DD."}, 400
+            
+            if filters.get('end_date'):
+                try:
+                    end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(db.func.date(Sales.created_at) <= end_date)
+                except ValueError:
+                    return {"error": "Invalid end date format. Use YYYY-MM-DD."}, 400
+            
+            if filters.get('shopname'):
+                sales_query = sales_query.filter(Shops.shopname.ilike(f"%{filters['shopname']}%"))
+            
+            if filters.get('status'):
+                sales_query = sales_query.filter(Sales.status == filters['status'])
+            
+            # Execute query
+            sales = sales_query.all()
+            
+            # Prepare data for Excel
+            report_data = []
+            for sale in sales:
+                user = Users.query.get(sale.user_id)
+                shop = Shops.query.get(sale.shop_id)
+                
+                report_data.append({
+                    "Sale ID": sale.sales_id,
+                    "Date": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "User": user.username if user else "Unknown",
+                    "Shop": shop.shopname if shop else "Unknown",
+                    "Customer": sale.customer_name,
+                    "Status": sale.status,
+                    "Total Amount": sum(p.amount_paid for p in sale.payment),
+                    "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
+                    "Items Purchased": ", ".join(f"{i.item_name} ({i.quantity} {i.metric})" for i in sale.items),
+                    "Note": sale.note or ""
+                })
+            
+            # Create Excel file
+            df = pd.DataFrame(report_data)
+            output = BytesIO()
+            writer = pd.ExcelWriter(output, engine='xlsxwriter')
+            df.to_excel(writer, sheet_name='Sales Report', index=False)
+            
+            # Auto-adjust columns' width
+            for column in df:
+                column_width = max(df[column].astype(str).map(len).max(), len(column))
+                col_idx = df.columns.get_loc(column)
+                writer.sheets['Sales Report'].set_column(col_idx, col_idx, column_width)
+            
+            writer.close()
+            output.seek(0)
+            
+            return send_file(
+                output,
+                as_attachment=True,
+                download_name=f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            
+        except Exception as e:
+            return {"error": str(e)}, 500

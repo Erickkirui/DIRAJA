@@ -1,183 +1,148 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import PaginationTable from '../../PaginationTable';
 import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
-import { isSameDay } from 'date-fns';
-import LoadingAnimation from '../LoadingAnimation';
 
-
-const UnpaidSales = () => {
-  const [sales, setSales] = useState([]);
+function UnpaidSales({ searchQuery = '', selectedDate = '' }) {
+  const [data, setData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchUnpaidSales = async () => {
+    setLoading(true);
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      setError('Login required');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const params = {
+        searchQuery,
+        selectedDate,
+        limit: itemsPerPage,
+        page: currentPage,
+      };
+
+      const resp = await axios.get('/api/diraja/unpaidsales', {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
+
+      const salesArray = Array.isArray(resp.data.sales_data) ? resp.data.sales_data : [];
+
+      setData(salesArray);
+      setTotalCount(resp.data.total_sales || salesArray.length);
+      setTotalPages(resp.data.total_pages || 1);
+
+      // Reset to first page on filter
+      if ((searchQuery || selectedDate) && currentPage !== 1) {
+        setCurrentPage(1);
+      }
+
+    } catch (err) {
+      console.error('Error fetching unpaid sales:', err);
+      setError(err.response?.data?.error || 'Failed to fetch unpaid sales');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const accessToken = localStorage.getItem('access_token');
-
-        if (!accessToken) {
-          setError('No access token found. Please log in.');
-          return;
-        }
-
-        const response = await axios.get('/api/diraja/unpaidsales', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        // Sort sales by sale_id in descending order
-        const sortedSales = response.data.unpaid_sales || [];
-        sortedSales.sort((a, b) => b.sales_id - a.sales_id);
-
-        setSales(sortedSales);
-        setError('');
-      } catch (err) {
-        if (err.response?.status === 404) {
-          setSales([]);
-          setError('No unpaid sales found.');
-        } else {
-          setError('Error fetching sales. Please try again.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSales();
-  }, []);
-
-
+    fetchUnpaidSales();
+  }, [searchQuery, selectedDate, currentPage, itemsPerPage]);
 
   const getFirstName = (username) => username?.split(' ')[0] || '';
   const getFirstLetter = (username) => username?.charAt(0)?.toUpperCase() || '';
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const columns = [
+    {
+      header: 'Date',
+      key: 'created_at',
+      render: item => {
+        const date = new Date(item.created_at);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      },
+    },
+    {
+      header: 'Employee',
+      key: 'username',
+      render: (item) => (
+        <div className="employee-info flex items-center gap-2">
+          <div className="employee-icon bg-blue-100 text-blue-700 rounded-full w-6 h-6 flex items-center justify-center text-xs font-semibold">
+            {getFirstLetter(item.username)}
+          </div>
+          <span className="employee-name">{getFirstName(item.username)}</span>
+        </div>
+      ),
+    },
+    { header: 'Customer', key: 'customer_name' },
+    { header: 'Shop', key: 'shopname' },
+    {
+      header: 'Item(s)',
+      key: 'sold_items',
+      render: (item) => (
+        <div>
+          {item.sold_items.map((sold, idx) => (
+            <div key={idx}>
+              {sold.item_name} ({sold.quantity} {sold.metric})
+            </div>
+          ))}
+        </div>
+      ),
+    },
+    {
+      header: 'Balance (KES)',
+      key: 'balance',
+      render: (item) => `KES ${item.balance}`,
+    },
+    { header: 'Status', key: 'status' },
+    {
+      header: 'View',
+      key: 'sale_id',
+      render: (item) => (
+        <a href={`/sale/${item.sale_id}`} className="text-blue-600 hover:underline">
+          View
+        </a>
+      ),
+    },
+  ];
 
-  const renderPaginationButtons = () => {
-    const range = 3;
-    const pages = [];
-    for (let i = Math.max(1, currentPage - range); i <= Math.min(totalPages, currentPage + range); i++) {
-      pages.push(i);
-    }
-    return pages.map((page) => (
-      <button
-        key={page}
-        className={`page-button ${currentPage === page ? 'active' : ''}`}
-        onClick={() => handlePageChange(page)}
-      >
-        {page}
-      </button>
-    ));
-  };
-
-  // Filter sales based on search query and selected date
-  const filteredSales = sales.filter((sale) => {
-    const matchesSearch =
-      sale.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.shopname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      sale.username.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const matchesDate = selectedDate
-      ? isSameDay(new Date(sale.created_at), new Date(selectedDate))
-      : true;
-
-    return matchesSearch && matchesDate;
-  });
-
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentSales = filteredSales.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredSales.length / itemsPerPage);
-
-  if (loading) {
-    return <LoadingAnimation />;
-  }
+  if (error) return <div className="text-red-600">{error}</div>;
+  if (loading && currentPage === 1) return <div>Loading unpaid sales...</div>;
+  if (!loading && data.length === 0) return <div>No unpaid sales found.</div>;
 
   return (
-    <div className="sales-container">
-   
-      {/* Search and Date Filter for unpaid sales */}
-      <div className="filter-container">
-        <input
-          type="text"
-          placeholder="Search by item, shop, customer's name, or employee"
-          className="search-bar"
-          value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-        <input
-          type="date"
-          className="date-picker"
-          value={selectedDate}
-          onChange={(e) => {
-            setSelectedDate(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-      </div>
-
+    <div className="p-4">
       <div className="actions-container">
-        <ExportExcel data={filteredSales} fileName="UnpaidSalesData" />
-        <DownloadPDF tableId="unpaid-sales-table" fileName="UnpaidSalesData" />
+        <ExportExcel data={data} fileName="UnpaidSalesData" />
+        <DownloadPDF tableId="pagination-table" fileName="UnpaidSalesData" />
       </div>
 
-      <table id="unpaid-sales-table" className="sales-table" aria-label="Unpaid Sales data">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Customer</th>
-            <th>Shop</th>
-            <th>Item</th>
-            <th>Quantity</th>
-            <th>Balance (ksh)</th>
-            <th>Status</th>
-            {/* <th>Action</th> */}
-          </tr>
-        </thead>
-        <tbody>
-          {currentSales.length > 0 ? (
-            currentSales.map((sale) => (
-              <tr key={sale.sales_id}>
-                <td>
-                  <div className="employee-info">
-                    <div className="employee-icon">{getFirstLetter(sale.username)}</div>
-                    <span className="employee-name">{getFirstName(sale.username)}</span>
-                  </div>
-                </td>
-                <td>{sale.customer_name}</td>
-                <td>{sale.shopname}</td>
-                <td>{sale.item_name}</td>
-                <td>{sale.quantity} {sale.metric}</td>
-                <td>{sale.balance}</td>
-                <td>{sale.status}</td>
-                {/* <td>
-                  <a href={`/sale/${sale.sales_id}`}>View more</a>
-                </td> */}
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="8">No unpaid sales found matching your criteria.</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Pagination */}
-      <div className="pagination">{renderPaginationButtons()}</div>
-
-      {/* Error Message */}
-      {error && <div className="error-message">{error}</div>}
+      <PaginationTable
+        data={data}
+        columns={columns}
+        pagination={{
+          currentPage,
+          setCurrentPage,
+          itemsPerPage,
+          setItemsPerPage,
+          totalCount,
+          totalPages,
+        }}
+      />
     </div>
   );
-};
+}
 
 export default UnpaidSales;
