@@ -1,12 +1,20 @@
 .table-container {
-    
-    /* background: #f9f9f9; */
     border-radius: 3px;
-    width: 80%;
-   margin-top: 30px ;
+    width: auto;
+    margin-top: 30px;
     border: 1px solid #ccc;
-  }
-  
+    overflow-x: auto; /* Allows horizontal scrolling if needed */
+    overflow-y: hidden; /* Hides vertical overflow by default */
+}
+
+/* For mobile devices, show vertical scrollbar when needed */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-y: auto; /* Shows vertical scrollbar when content overflows */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        
+    }
+}
   .table-controls {
     display: flex;
     justify-content: flex-end;
@@ -33,10 +41,18 @@
     padding: 12px 10px;
     border-bottom: 1px solid #ddd;
     text-align: left;
+    
+  }
+  .general-table td{
+    font-size: 14px;
   }
   
   .general-table th {
     background-color: #e7edf5;
+  
+    font-weight: 400;
+    text-transform: uppercase;
+    font-size: 13px;
   }
   
   .action-cell {

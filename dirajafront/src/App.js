@@ -27,7 +27,7 @@ import TransfersPage from './Pages/TransfersPage';
 import PurchasesPage from './Pages/PurchasesPage';
 import SalesPage from './Pages/SalesPage';
 import ClerkDashbord from './Pages/ClerkDashbord';
-import SingleSalePage from './Pages/SingleSalePage';
+
 import ShopSales from './Components/ClerkDashbord/ShopSales';
 import ClerkNavbar from './Components/ClerkDashbord/ClerkNavbar';
 import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
@@ -70,6 +70,8 @@ import CreateInventoryItems from './Components/Inventory/CreateInventoryItems';
 import AddStockItems from './Components/Inventory/AddStockItems';
 import CashSalesByUser from './Components/ClerkDashbord/EmployeeCashSale';
 import CashSalesPage from './Pages/CashSalesPage';
+import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
+import SingleSale from './Components/Sales/SingleSale';
 
 
 
@@ -152,7 +154,7 @@ function App() {
             <Route path='/sales' element={<Layout><SalesPage/></Layout>} ></Route>
             <Route path='/salescash' element={<Layout><CashSalesPage/></Layout>} ></Route>
             <Route path='/allsales' element={<Layout><AllSales/></Layout>} ></Route>
-            <Route path='/sale/:sale_id' element={<Layout><SingleSalePage /></Layout>} />
+            <Route path='/sale/:sale_id' element={<Layout><SingleSale /></Layout>} />
             <Route path='/clerk' element={<ClerkDashbord/>}></Route>
             <Route path='/cashsales' element={<ClerkLayout><CashSalesByUser/></ClerkLayout>}></Route>
             <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
@@ -202,7 +204,8 @@ function App() {
             <Route path='/spoilt-stock' element={<Layout><SpoiltStockTable/></Layout>} ></Route>
             <Route path='/create-inventory-items' element={<Layout><CreateInventoryItems /></Layout>} ></Route>
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
-          </Routes> 
+            <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
+           </Routes> 
        
       </Router>
     </div>
