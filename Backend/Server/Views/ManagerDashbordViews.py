@@ -8,6 +8,7 @@ from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.Sales import Sales
 from Server.Models.Stock import Stock
+from Server.Models.SoldItems import SoldItem
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
@@ -170,7 +171,7 @@ class TotalAmountPaidSalesPerShop(Resource):
 
             # Base query for unpaid/partially paid sales (using total_price)
             query_unpaid = (
-                db.session.query(db.func.sum(Sales.total_price))
+                db.session.query(db.func.sum(SoldItem.total_price))
                 .filter(Sales.shop_id == shop_id)
                 .filter(Sales.status.in_(['unpaid', 'partially_paid']))
             )
@@ -578,6 +579,7 @@ class TotalSalesByShop(Resource):
             if not shop:
                 return {"message": "Shop not found."}, 404
 
+            # Calculate total sales amount
             query = (
                 db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -587,12 +589,18 @@ class TotalSalesByShop(Resource):
             total_sales = query.scalar() or 0
             formatted_sales = "Ksh {:,.2f}".format(total_sales)
 
-            sales_records = Sales.query.filter(Sales.shop_id == shop_id, Sales.created_at.between(start_date, end_date)).all()
+            # Get sales records
+            sales_records = Sales.query.filter(
+                Sales.shop_id == shop_id, 
+                Sales.created_at.between(start_date, end_date)
+            ).all()
+
             sales_list = []
             for sale in sales_records:
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 username = user.username if user else "Unknown User"
 
+                # Get payment data
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
@@ -603,6 +611,22 @@ class TotalSalesByShop(Resource):
                 ]
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
+                # Get all sold items for this sale
+                sold_items = [
+                    {
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    }
+                    for item in sale.items
+                ]
+
                 sales_list.append({
                     "sale_id": sale.sales_id,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
@@ -611,23 +635,21 @@ class TotalSalesByShop(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
+                    "items": sold_items,
                     "total_amount_paid": total_amount_paid,
                     "payment_methods": payment_data,
                     "balance": sale.balance,
                     "note": sale.note,
+                    "promocode": sale.promocode
                 })
 
             return {
                 "shop_id": shop_id,
                 "shop_name": shop.shopname,
                 "total_sales_amount_paid": formatted_sales,
-                "sales_records": sales_list
+                "sales_records": sales_list,
+                "start_date": start_date.strftime('%Y-%m-%d %H:%M:%S'),
+                "end_date": end_date.strftime('%Y-%m-%d %H:%M:%S')
             }, 200
 
         except SQLAlchemyError as e:

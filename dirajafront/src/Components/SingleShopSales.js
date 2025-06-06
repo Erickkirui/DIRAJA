@@ -72,31 +72,16 @@ const ShopSalesDetails = () => {
           </div>
 
           <div className="actions-container">
-            {salesData.shop_name ? (
+            {salesData.shop_name && (
               <>
-
-                <ExportExcel data={salesData} fileName="ShopSalesData" />
-
-                <DownloadPDF 
-                  tableId="singleshopstock-table" 
-                  fileName={salesData?.shop_name ? salesData.shop_name.replace(/\s+/g, '_') : 'ShopSalesData'} 
-                />
-
-
-                <ExportExcel
-                  data={salesData}
-                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
+                <ExportExcel 
+                  data={salesData} 
+                  fileName={salesData.shop_name.replace(/\s+/g, "_")} 
                 />
                 <DownloadPDF
                   tableId="singleshopstock-table"
                   fileName={salesData.shop_name.replace(/\s+/g, "_")}
                 />
-
-              </>
-            ) : (
-              <>
-                {/* <ExportExcel data={salesData} fileName="ShopSalesData" /> */}
-                {/* <DownloadPDF tableId="singleshopstock-table" fileName="ShopSalesData" /> */}
               </>
             )}
           </div>
@@ -105,37 +90,49 @@ const ShopSalesDetails = () => {
           <table id="singleshopstock-table" className="singleshopstock-table">
             <thead>
               <tr>
-                <th>Item</th>
+                {/* <th>Sale ID</th> */}
+                <th>Date</th>
+                <th>Customer</th>
+                <th>Items</th>
                 <th>Quantity</th>
-                <th>Amount paid</th>
-                <th>Sale date</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+                <th>Payment</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
               {salesData.sales_records.map((sale) => (
-                <tr key={sale.sale_id}>
-                  <td>{sale.item_name}</td>
-                  <td>
-                    {sale.quantity} {sale.metric}
-                  </td>
-                  <td>
-                    {sale.payment_methods.map((payment, index) => (
-                      <div key={index}>
-                        {payment.payment_method}: Ksh {payment.amount_paid}
-                      </div>
-                    ))}
-                  </td>
-                  <td>
-                    {new Date(sale.created_at)
-                      .toLocaleString(undefined, {
-                        year: "numeric",
-                        month: "2-digit",
-                        day: "2-digit",
-                        hour12: true,
-                      })
-                      .replace(",", "")}
-                  </td>
-                </tr>
+                <React.Fragment key={sale.sale_id}>
+                  {sale.items.map((item, itemIndex) => (
+                    <tr key={`${sale.sale_id}-${itemIndex}`}>
+                      {/* <td>{itemIndex === 0 ? sale.sale_id : ''}</td> */}
+                      <td>{itemIndex === 0 ? 
+                        new Date(sale.created_at).toLocaleString(undefined, {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour12: true,
+                        }).replace(",", "") : ''}
+                      </td>
+                      <td>{itemIndex === 0 ? sale.customer_name || 'N/A' : ''}</td>
+                      <td>{item.item_name}</td>
+                      <td>{item.quantity} {item.metric}</td>
+                      <td>Ksh {item.unit_price.toFixed(2)}</td>
+                      <td>Ksh {item.total_price.toFixed(2)}</td>
+                      <td>
+                        {itemIndex === 0 ? (
+                          sale.payment_methods.map((payment, index) => (
+                            <div key={index}>
+                              {payment.payment_method}: Ksh {payment.amount_paid.toFixed(2)}
+                            </div>
+                          ))
+                        ) : ''}
+                      </td>
+                      <td>{itemIndex === 0 ? sale.status : ''}</td>
+                    </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

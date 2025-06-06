@@ -1,78 +1,111 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import PaginationTable from '../../PaginationTable';
 import LoadingAnimation from '../LoadingAnimation';
+
 const ShopSales = () => {
   const [sales, setSales] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [loading, setLoading] = useState(true); // Track loading state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const itemsPerPage = 50;
-  const pageGroupSize = 4; // Display only 4 page numbers at a time
 
   useEffect(() => {
     const fetchSales = async () => {
       try {
-        const accessToken = localStorage.getItem('access_token');
+        const token = localStorage.getItem('access_token');
         const shopId = localStorage.getItem('shop_id');
-
-        if (!accessToken || !shopId) {
-          setError('No access token found, please log in.');
-          setLoading(false); // Stop loading
+        if (!token || !shopId) {
+          setError('Missing token or shop ID.');
           return;
         }
 
         const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        console.log('Sales data fetched:', response.data);
-
-        if (response.data && Array.isArray(response.data.sales)) {
+        if (Array.isArray(response.data.sales)) {
           setSales(response.data.sales);
         } else {
-          setError('Unexpected data format received.');
+          setError('Invalid data format from server.');
         }
       } catch (err) {
-        console.error('Error fetching sales:', err);
-        setError('Error fetching sales. Please try again.');
+        setError('Error fetching shop sales.');
       } finally {
-        setLoading(false); // Stop loading after fetching is done
+        setLoading(false);
       }
     };
 
     fetchSales();
   }, []);
 
-  // Search and filter logic
-  const filteredSales = sales.filter((sale) => {
-    const itemName = sale.itemname?.toLowerCase() || '';
+  const flattenSalesWithItems = () => {
+    return sales.flatMap(sale =>
+      sale.items.map(item => ({
+        ...item,
+        sale_id: sale.sale_id,
+        created_at: sale.created_at,
+        customer_name: sale.customer_name,
+        status: sale.status,
+        payment_methods: sale.payment_methods,
+        total_amount_paid: sale.total_amount_paid,
+      }))
+    );
+  };
+
+  const filteredSales = flattenSalesWithItems().filter(item => {
+    const itemName = item.item_name?.toLowerCase() || '';
     const matchesSearch = itemName.includes(searchQuery.toLowerCase());
-
     const matchesDate = selectedDate
-      ? new Date(sale.created_at).toLocaleDateString('en-CA') === selectedDate
+      ? new Date(item.created_at).toLocaleDateString('en-CA') === selectedDate
       : true;
-
     return matchesSearch && matchesDate;
   });
 
-  // **Sort sales by `created_at` in descending order**
-  const sortedSales = [...filteredSales].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  const sortedSales = [...filteredSales].sort(
+    (a, b) => new Date(b.created_at) - new Date(a.created_at)
+  );
 
-  // **Pagination logic (ensuring latest entries are on page 1)**
   const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
   const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-  const indexOfLastItem = indexOfFirstItem + itemsPerPage;
-  const currentSales = sortedSales.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = sortedSales.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const columns = [
+    {
+      header: 'Date',
+      key: 'created_at',
+      render: item => {
+        const date = new Date(item.created_at);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+      },
+    },
+    { header: 'Item Name', key: 'item_name' },
+    {
+      header: 'Quantity',
+      key: 'quantity',
+      render: item => `${item.quantity} ${item.metric}`,
+    },
+    {
+      header: 'Total',
+      key: 'total_price',
+      render: item => `Ksh ${item.total_price.toFixed(2)}`,
+    },
+    
+  ];
 
-  // **Pagination Display (4 page numbers at a time)**
-  const startPage = Math.floor((currentPage - 1) / pageGroupSize) * pageGroupSize + 1;
-  const endPage = Math.min(startPage + pageGroupSize - 1, totalPages);
-  const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+  if (loading) {
+    return (
+      <div className="full-screen-loader">
+        <LoadingAnimation />
+      </div>
+    );
+  }
 
   if (error) {
     return <div className="error-message">{error}</div>;
@@ -80,85 +113,41 @@ const ShopSales = () => {
 
   return (
     <div className="sales-container">
-      {/* Show loading animation while data is being fetched */}
-      {loading ? (
-        <div className="full-screen-loader">
-          <LoadingAnimation />
-        </div>
-      ) : (
-        <>
-          {/* Search and Date Filter */}
-          <div className="filter-container">
-            <input
-              type="text"
-              placeholder="Search by item"
-              className="search-bar"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <input
-              type="date"
-              className="date-picker"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
+      {/* Filters */}
+      <div className="filter-container">
+        <input
+          type="text"
+          placeholder="Search by item"
+          className="search-bar"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+        <input
+          type="date"
+          className="date-picker"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
+      </div>
 
-          {currentSales.length > 0 ? (
-            <>
-              <table className="sales-table">
-                <thead>
-                  <tr>
-                    <th>Item name</th>
-                    <th>Quantity</th>
-                    <th>Amount</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentSales.map((sale) => (
-                    <tr key={sale.sale_id}>
-                      <td>{sale.item_name}</td>
-                      <td>{sale.quantity} {sale.metric}</td>
-                      <td>{sale.total_amount_paid} </td>
-                      <td>{new Date(sale.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Pagination Controls */}
-              <div className="pagination">
-                {startPage > 1 && (
-                  <button onClick={() => handlePageChange(startPage - 1)}>«</button>
-                )}
-                {pageNumbers.map((num) => (
-                  <button
-                    key={num}
-                    className={`page-button ${currentPage === num ? 'active' : ''}`}
-                    onClick={() => handlePageChange(num)}
-                  >
-                    {num}
-                  </button>
-                ))}
-                {endPage < totalPages && (
-                  <button onClick={() => handlePageChange(endPage + 1)}>»</button>
-                )}
-              </div>
-            </>
-          ) : (
-            <p>No sales found.</p>
-          )}
-
-          <Link className="nav-clerk-button" to="/clerk">Home</Link>
-        </>
-      )}
+      <PaginationTable
+        data={currentItems}
+        columns={columns}
+        pagination={{
+          currentPage,
+          setCurrentPage,
+          itemsPerPage,
+          setItemsPerPage: () => {}, // optional
+          totalCount: sortedSales.length,
+          totalPages,
+        }}
+      />
     </div>
   );
 };
