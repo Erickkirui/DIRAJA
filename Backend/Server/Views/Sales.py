@@ -528,32 +528,52 @@ class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
         try:
-            # Query the Sales table for sales related to the given shop_id
-            sales = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.asc()).all()
+            # Get page and limit from query parameters
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 50))
+            offset = (page - 1) * limit
 
-            # If no sales found for the shop
+            # Query the Sales table for sales related to the given shop_id with pagination
+            sales_query = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.desc())
+            total_sales = sales_query.count()
+            sales = sales_query.offset(offset).limit(limit).all()
+
             if not sales:
                 return {"message": "No sales found for this shop"}, 404
 
-            # Format sales data into a list of dictionaries
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name using relationships
                 username = sale.users.username if sale.users else "Unknown User"
                 shopname = sale.shops.shopname if sale.shops else "Unknown Shop"
 
-                # Process multiple payment methods and calculate total amount paid
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
                     }
-                    for payment in sale.payment  # Using the defined relationship in the Sales model
+                    for payment in sale.payment
                 ]
                 total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
 
-                # Append the formatted sale data
+                sold_items = [
+                    {
+                        "item_id": item.id,
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    }
+                    for item in sale.items
+                ]
+
+                total_items_price = sum(item["total_price"] for item in sold_items)
+
                 sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
@@ -563,21 +583,30 @@ class GetSalesByShop(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "batch_number": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
+                    "items": sold_items,
+                    "total_items_price": total_items_price,
                     "total_amount_paid": total_amount_paid,
+                    "balance": sale.balance,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "note": sale.note,
+                    "promocode": sale.promocode
                 })
 
-            return {"sales": sales_data}, 200
+            total_pages = (total_sales + limit - 1) // limit
+
+            return {
+                "shop_id": shop_id,
+                "shop_name": shopname,
+                "total_sales": total_sales,
+                "sales": sales_data,
+                "current_page": page,
+                "total_pages": total_pages,
+            }, 200
 
         except Exception as e:
             return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
+
 
 
 class SalesResources(Resource):
@@ -1270,6 +1299,24 @@ class GetSingleSaleByShop(Resource):
                 })
                 total_amount_paid += payment.amount_paid
 
+            # Process sold items
+            sold_items = []
+            total_sale_amount = 0
+            for item in sale.items:
+                sold_items.append({
+                    "item_id": item.id,
+                    "item_name": item.item_name,
+                    "quantity": item.quantity,
+                    "metric": item.metric,
+                    "unit_price": item.unit_price,
+                    "total_price": item.total_price,
+                    "batch_number": item.BatchNumber,
+                    "stock_id": item.stock_id,
+                    "cost_of_sale": item.Cost_of_sale,
+                    "purchase_account": item.Purchase_account
+                })
+                total_sale_amount += item.total_price
+
             # Format the sale data
             sale_data = {
                 "sale_id": sale.sales_id,
@@ -1280,15 +1327,14 @@ class GetSingleSaleByShop(Resource):
                 "customer_name": sale.customer_name,
                 "status": sale.status,
                 "customer_number": sale.customer_number,
-                "item_name": sale.item_name,
-                "quantity": sale.quantity,
-                "batch_number": sale.BatchNumber,
-                "metric": sale.metric,
-                "unit_price": sale.unit_price,
-                "total_price": sale.total_price,
+                "created_at": sale_created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                "balance": sale.balance,
+                "note": sale.note,
+                "promocode": sale.promocode,
+                "total_sale_amount": total_sale_amount,
                 "total_amount_paid": total_amount_paid,
                 "payment_methods": payment_data,
-                "created_at": sale_created_at.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+                "sold_items": sold_items
             }
 
             return {"sale": sale_data}, 200
@@ -1301,7 +1347,7 @@ class GetSingleSaleByShop(Resource):
 #Get unpaid sales by shop
 class GetUnpaidSalesByClerk(Resource):
     @jwt_required()
-    @check_role('clerk')  # Ensures only clerks can access this
+    @check_role('clerk')
     def get(self):
         try:
             # Get the logged-in clerk's user ID
@@ -1309,9 +1355,9 @@ class GetUnpaidSalesByClerk(Resource):
 
             # Fetch only unpaid sales recorded by this specific clerk
             unpaid_sales = Sales.query.filter(
-                Sales.user_id == current_user_id,  # Sales recorded by this clerk
-                Sales.status.in_(["unpaid", "partially_paid"])  # Credit sales only
-            ).all()
+                Sales.user_id == current_user_id,
+                Sales.status.in_(["unpaid", "partially_paid"])
+            ).order_by(Sales.created_at.desc()).all()
 
             if not unpaid_sales:
                 return {'message': 'No unpaid or partially paid sales found for you'}, 404
@@ -1326,33 +1372,60 @@ class GetUnpaidSalesByClerk(Resource):
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Fetch payment methods
-                payments = SalesPaymentMethods.query.filter_by(sale_id=sale.sales_id).all()
-                payment_details = [
-                    {"method": payment.payment_method, "amount_paid": payment.amount_paid}
-                    for payment in payments
+                # Calculate total amount paid from payment methods
+                total_paid = sum(payment.amount_paid for payment in sale.payment)
+
+                # Get all sold items for this sale
+                sold_items = [
+                    {
+                        "item_id": item.id,
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    }
+                    for item in sale.items
                 ]
+
+                # Calculate total items price
+                total_items_price = sum(item["total_price"] for item in sold_items)
 
                 sales_list.append({
                     "sales_id": sale.sales_id,
                     "user_id": sale.user_id,
-                    "username": username,  # Now fetched correctly
+                    "username": username,
                     "shop_id": sale.shop_id,
-                    "shopname": shopname,  # Now fetched correctly
+                    "shopname": shopname,
                     "customer_name": sale.customer_name,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
+                    "items": sold_items,
+                    "total_items_price": total_items_price,
+                    "total_paid": total_paid,
                     "balance": sale.balance,
                     "status": sale.status,
-                    "created_at": sale.created_at.strftime("%Y-%m-%d"),
-                    "payment_methods": payment_details
+                    "created_at": sale.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    "payment_methods": [
+                        {
+                            "method": payment.payment_method,
+                            "amount_paid": payment.amount_paid,
+                            "balance": payment.balance
+                        }
+                        for payment in sale.payment
+                    ],
+                    "note": sale.note,
+                    "promocode": sale.promocode
                 })
             
-            return {"unpaid_sales": sales_list}, 200
+            return {
+                "count": len(sales_list),
+                "total_balance": sum(sale["balance"] for sale in sales_list),
+                "unpaid_sales": sales_list
+            }, 200
         
         except Exception as e:
             return {"message": f"An error occurred: {str(e)}"}, 500
@@ -1362,41 +1435,65 @@ class SalesByEmployeeResource(Resource):
     @jwt_required()
     def get(self, username, shop_id):
         try:
-            # Use only the first name segment of the username
-            first_name = username.split()[0]  # Split username and use the first part
+            # Get pagination parameters
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 50))
+            offset = (page - 1) * limit
 
-            # Fetch sales for the given first_name and shop_id
-            sales = Sales.query.join(Users, Users.users_id == Sales.user_id) \
-                               .filter(Users.username.like(f"{first_name}%"), Sales.shop_id == shop_id) \
-                               .all()
+            # Use only the first name segment of the username
+            first_name = username.split()[0]
+
+            # Base query for filtering sales by username and shop_id
+            base_query = Sales.query.join(Users, Users.users_id == Sales.user_id) \
+                                    .filter(Users.username.like(f"{first_name}%"), Sales.shop_id == shop_id) \
+                                    .order_by(Sales.created_at.desc())
+
+            total_sales = base_query.count()  # Total records
+            total_pages = (total_sales + limit - 1) // limit
+
+            # Apply pagination
+            sales = base_query.offset(offset).limit(limit).all()
 
             if not sales:
                 return {"message": "No sales found for this employee in the specified shop."}, 404
 
             sales_data = []
             for sale in sales:
-                # Fetch username and shop name
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
 
                 username = user.username if user else "Unknown User"
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Fetch related payment methods
                 payment_data = [
                     {
                         "payment_method": payment.payment_method,
                         "amount_paid": payment.amount_paid,
                         "balance": payment.balance,
                     }
-                    for payment in sale.payment  # Assuming 'payment' is the relationship with SalesPaymentMethods
+                    for payment in sale.payment
                 ]
-
-                # Calculate total amount paid from the related payments
                 total_amount_paid = sum(payment['amount_paid'] for payment in payment_data)
 
-                # Prepare sale data
-                sale_data = {
+                sold_items = [
+                    {
+                        "item_id": item.id,
+                        "item_name": item.item_name,
+                        "quantity": item.quantity,
+                        "metric": item.metric,
+                        "unit_price": item.unit_price,
+                        "total_price": item.total_price,
+                        "batch_number": item.BatchNumber,
+                        "stock_id": item.stock_id,
+                        "cost_of_sale": item.Cost_of_sale,
+                        "purchase_account": item.Purchase_account
+                    }
+                    for item in sale.items
+                ]
+
+                total_items_price = sum(item["total_price"] for item in sold_items)
+
+                sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
                     "username": username,
@@ -1405,23 +1502,30 @@ class SalesByEmployeeResource(Resource):
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
-                    "item_name": sale.item_name,
-                    "quantity": sale.quantity,
-                    "batchnumber": sale.BatchNumber,
-                    "metric": sale.metric,
-                    "unit_price": sale.unit_price,
-                    "total_price": sale.total_price,
+                    "items": sold_items,
+                    "total_items_price": total_items_price,
                     "total_amount_paid": total_amount_paid,
+                    "balance": sale.balance,
                     "payment_methods": payment_data,
-                    "created_at": sale.created_at.strftime('%Y-%m-%d')  # Convert datetime to string
-                }
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    "note": sale.note,
+                    "promocode": sale.promocode
+                })
 
-                sales_data.append(sale_data)
-
-            return {"sales": sales_data}, 200
+            return {
+                "employee": username,
+                "shop_id": shop_id,
+                "shop_name": shopname,
+                "total_sales": total_sales,
+                "total_amount": sum(sale['total_amount_paid'] for sale in sales_data),
+                "current_page": page,
+                "total_pages": total_pages,
+                "sales": sales_data
+            }, 200
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 class CashSales(Resource):
