@@ -528,15 +528,42 @@ class GetSalesByShop(Resource):
     @jwt_required()
     def get(self, shop_id):
         try:
-            # Get page and limit from query parameters
+            # Get query parameters
             page = int(request.args.get('page', 1))
             limit = int(request.args.get('limit', 50))
+            search_query = request.args.get('search', '').lower()
+            date_filter = request.args.get('date', '')
+
             offset = (page - 1) * limit
 
-            # Query the Sales table for sales related to the given shop_id with pagination
-            sales_query = Sales.query.filter_by(shop_id=shop_id).order_by(Sales.created_at.desc())
+            # Base query
+            sales_query = Sales.query.filter_by(shop_id=shop_id)
+
+            # Apply search filter if provided
+            if search_query:
+                sales_query = sales_query.join(SoldItem).filter(
+                    or_(
+                        Sales.customer_name.ilike(f'%{search_query}%'),
+                        SoldItem.item_name.ilike(f'%{search_query}%')
+                    )
+                )
+
+            # Apply date filter if provided
+            if date_filter:
+                try:
+                    filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(
+                        db.func.date(Sales.created_at) == filter_date
+                    )
+                except ValueError:
+                    pass
+
+            # Get total count before pagination
             total_sales = sales_query.count()
-            sales = sales_query.offset(offset).limit(limit).all()
+
+            # Apply pagination and ordering
+            sales = sales_query.order_by(Sales.created_at.desc()) \
+                              .offset(offset).limit(limit).all()
 
             if not sales:
                 return {"message": "No sales found for this shop"}, 404
@@ -605,7 +632,7 @@ class GetSalesByShop(Resource):
             }, 200
 
         except Exception as e:
-            return {"error": f"An error occurred while processing the request: {str(e)}"}, 500
+            return {"error": f"An error occurred: {str(e)}"}, 500
 
 
 
@@ -1126,23 +1153,30 @@ class CapturePaymentResource(Resource):
             if not payment_method or amount_paid is None:
                 return {"message": "Payment method and amount_paid are required"}, 400
 
-            # Check if the sale exists
+            # Check if the sale exists and get total price from sold items
             sale = Sales.query.filter_by(sales_id=sale_id).first()
             if not sale:
                 return {"message": "Sale not found"}, 404
 
+            # Calculate total price from sold items
+            sold_items = SoldItem.query.filter_by(sales_id=sale_id).all()
+            total_price = sum(item.total_price for item in sold_items)
+
             # Find and remove the "not payed" record if it exists
             unpaid_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method="not payed").first()
             if unpaid_payment:
-                db.session.delete(unpaid_payment)  # Remove "not payed" immediately after any payment is captured
+                db.session.delete(unpaid_payment)
 
             # Check if a payment record already exists for this sale & method
-            existing_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method=payment_method).first()
+            existing_payment = SalesPaymentMethods.query.filter_by(
+                sale_id=sale_id, 
+                payment_method=payment_method
+            ).first()
 
             if existing_payment:
                 # Update the existing payment method
                 existing_payment.amount_paid += amount_paid
-                existing_payment.transaction_code = transaction_code  # Update transaction code if provided
+                existing_payment.transaction_code = transaction_code
             else:
                 # Create a new payment record
                 new_payment = SalesPaymentMethods(
@@ -1156,10 +1190,14 @@ class CapturePaymentResource(Resource):
                 db.session.add(new_payment)
 
             # Recalculate total amount paid for the sale
-            total_paid = db.session.query(db.func.sum(SalesPaymentMethods.amount_paid)).filter_by(sale_id=sale_id).scalar() or 0
-            sale.balance = max(0, sale.total_price - total_paid)  # Ensure balance is non-negative
+            total_paid = db.session.query(
+                db.func.sum(SalesPaymentMethods.amount_paid)
+            ).filter_by(sale_id=sale_id).scalar() or 0
+            
+            # Update sale balance
+            sale.balance = max(0, total_price - total_paid)  # Ensure balance is non-negative
 
-            # **Automatically update sale status**
+            # Update sale status
             if sale.balance == 0:
                 sale.status = "paid"
             elif total_paid > 0 and sale.balance > 0:
@@ -1168,7 +1206,7 @@ class CapturePaymentResource(Resource):
             # Commit changes
             db.session.commit()
 
-            # Return updated payment records
+            # Get updated payment records
             updated_payments = SalesPaymentMethods.query.filter_by(sale_id=sale_id).all()
             payment_data = [
                 {
@@ -1176,17 +1214,39 @@ class CapturePaymentResource(Resource):
                     "amount_paid": pm.amount_paid,
                     "balance": pm.balance,
                     "transaction_code": pm.transaction_code,
-                    "created_at": pm.created_at.strftime('%Y-%m-%d %H:%M:%S') if isinstance(pm.created_at, datetime) else pm.created_at
+                    "created_at": pm.created_at.strftime('%Y-%m-%d %H:%M:%S') 
+                    if isinstance(pm.created_at, datetime) else pm.created_at
                 }
                 for pm in updated_payments
+            ]
+
+            # Prepare sold items data for response
+            items_data = [
+                {
+                    "item_name": item.item_name,
+                    "quantity": item.quantity,
+                    "metric": item.metric,
+                    "unit_price": item.unit_price,
+                    "total_price": item.total_price,
+                    "batch_number": item.BatchNumber
+                }
+                for item in sold_items
             ]
 
             return make_response(jsonify({
                 "message": "Payment recorded successfully",
                 "sale_id": sale_id,
-                "sale_status": sale.status,  # Include updated sale status
+                "customer_name": sale.customer_name,
+                "customer_number": sale.customer_number,
+                "sale_status": sale.status,
+                "total_price": total_price,
                 "remaining_balance": sale.balance,
-                "payment_methods": payment_data  # Return updated payments
+                "payment_methods": payment_data,
+                "items": items_data,
+                "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S') 
+                if isinstance(sale.created_at, datetime) else sale.created_at,
+                "note": sale.note,
+                "promocode": sale.promocode
             }), 200)
 
         except Exception as e:

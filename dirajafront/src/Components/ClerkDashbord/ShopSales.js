@@ -10,93 +10,131 @@ const ShopSales = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 50;
 
-  useEffect(() => {
-    const fetchSales = async () => {
-      try {
-        const token = localStorage.getItem('access_token');
-        const shopId = localStorage.getItem('shop_id');
-        if (!token || !shopId) {
-          setError('Missing token or shop ID.');
-          return;
-        }
-
-        const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (Array.isArray(response.data.sales)) {
-          setSales(response.data.sales);
-        } else {
-          setError('Invalid data format from server.');
-        }
-      } catch (err) {
-        setError('Error fetching shop sales.');
-      } finally {
-        setLoading(false);
+  const fetchSales = async (page = 1, search = '', date = '') => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('access_token');
+      const shopId = localStorage.getItem('shop_id');
+      if (!token || !shopId) {
+        setError('Missing token or shop ID.');
+        return;
       }
-    };
 
-    fetchSales();
-  }, []);
+      const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: {
+          page: page,
+          limit: itemsPerPage,
+          search: search,
+          date: date
+        }
+      });
 
-  const flattenSalesWithItems = () => {
-    return sales.flatMap(sale =>
-      sale.items.map(item => ({
-        ...item,
-        sale_id: sale.sale_id,
-        created_at: sale.created_at,
-        customer_name: sale.customer_name,
-        status: sale.status,
-        payment_methods: sale.payment_methods,
-        total_amount_paid: sale.total_amount_paid,
-      }))
-    );
+      if (response.data.sales) {
+        setSales(response.data.sales);
+        setTotalCount(response.data.total_sales);
+        setTotalPages(response.data.total_pages);
+      } else {
+        setError('Invalid data format from server.');
+      }
+    } catch (err) {
+      setError('Error fetching shop sales.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredSales = flattenSalesWithItems().filter(item => {
-    const itemName = item.item_name?.toLowerCase() || '';
-    const matchesSearch = itemName.includes(searchQuery.toLowerCase());
-    const matchesDate = selectedDate
-      ? new Date(item.created_at).toLocaleDateString('en-CA') === selectedDate
-      : true;
-    return matchesSearch && matchesDate;
-  });
+  useEffect(() => {
+    fetchSales(currentPage, searchQuery, selectedDate);
+  }, [currentPage, searchQuery, selectedDate]);
 
-  const sortedSales = [...filteredSales].sort(
-    (a, b) => new Date(b.created_at) - new Date(a.created_at)
-  );
+  const handleDeleteSale = async (saleId) => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      alert('No access token found. Please log in.');
+      return;
+    }
 
-  const totalPages = Math.ceil(sortedSales.length / itemsPerPage);
-  const indexOfFirstItem = (currentPage - 1) * itemsPerPage;
-  const currentItems = sortedSales.slice(indexOfFirstItem, indexOfFirstItem + itemsPerPage);
+    if (!window.confirm('Are you sure you want to delete this sale?')) return;
+
+    try {
+      await axios.delete(`/api/diraja/sale/${saleId}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      // Refresh the current page after deletion
+      fetchSales(currentPage, searchQuery, selectedDate);
+      alert('Sale deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting sale:', error);
+      alert('Failed to delete the sale. Please try again.');
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
 
   const columns = [
     {
       header: 'Date',
       key: 'created_at',
-      render: item => {
-        const date = new Date(item.created_at);
+      render: sale => {
+        const date = new Date(sale.created_at);
         return date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric',
+          day: 'numeric'
         });
       },
     },
-    { header: 'Item Name', key: 'item_name' },
     {
-      header: 'Quantity',
-      key: 'quantity',
-      render: item => `${item.quantity} ${item.metric}`,
+      header: 'Items',
+      key: 'items',
+      render: sale =>
+        Array.isArray(sale.items)
+          ? sale.items.map(item => (
+              <div key={`${item.item_name}-${item.BatchNumber}`} className="mb-1">
+                {item.item_name} × {item.quantity} {item.metric} — Ksh {item.total_price}
+              </div>
+            ))
+          : 'No items',
     },
+    // {
+    //   header: 'Customer',
+    //   key: 'customer_name',
+    //   render: sale => sale.customer_name || 'Walk-in',
+    // },
     {
-      header: 'Total',
-      key: 'total_price',
-      render: item => `Ksh ${item.total_price.toFixed(2)}`,
+      header: 'Total Paid',
+      key: 'total_amount_paid',
+      render: sale => `Ksh ${sale.total_amount_paid?.toFixed(2) || '0.00'}`,
     },
-    
+    // {
+    //   header: 'Status',
+    //   key: 'status',
+    //   render: sale => (
+    //     <span className={`status-badge ${sale.status}`}>
+    //       {sale.status.replace('_', ' ')}
+    //     </span>
+    //   ),
+    // },
+    // {
+    //   header: 'Actions',
+    //   key: 'actions',
+    //   render: sale => (
+    //     <button 
+    //       className="delete-btn"
+    //       onClick={() => handleDeleteSale(sale.sale_id)}
+    //     >
+    //       Delete
+    //     </button>
+    //   ),
+    // },
   ];
 
   if (loading) {
@@ -111,13 +149,17 @@ const ShopSales = () => {
     return <div className="error-message">{error}</div>;
   }
 
+  if (!loading && sales.length === 0) {
+    return <div>No sales found.</div>;
+  }
+
   return (
     <div className="sales-container">
       {/* Filters */}
       <div className="filter-container">
         <input
           type="text"
-          placeholder="Search by item"
+          placeholder="Search by item or customer"
           className="search-bar"
           value={searchQuery}
           onChange={(e) => {
@@ -137,14 +179,14 @@ const ShopSales = () => {
       </div>
 
       <PaginationTable
-        data={currentItems}
+        data={sales}
         columns={columns}
         pagination={{
           currentPage,
-          setCurrentPage,
+          setCurrentPage: handlePageChange,
           itemsPerPage,
           setItemsPerPage: () => {}, // optional
-          totalCount: sortedSales.length,
+          totalCount,
           totalPages,
         }}
       />
