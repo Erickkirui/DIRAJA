@@ -6,141 +6,185 @@ import ExportExcel from "../Components/Download/ExportExcel";
 import DownloadPDF from "../Components/Download/DownloadPDF";
 import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
+import PaginationTable from "../PaginationTable";
 
 const ShopSalesDetails = () => {
   const { shop_id } = useParams();
-  const [salesData, setSalesData] = useState(null);
+
+  const [data, setData] = useState([]);
+  const [shopName, setShopName] = useState("");
+  const [totalSalesAmount, setTotalSalesAmount] = useState("Ksh 0.00");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(),
-    endDate: new Date(),
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    return {
+      startDate: yesterday,
+      endDate: today,
+    };
   });
 
-  useEffect(() => {
+  const fetchSales = async () => {
     if (!shop_id || !dateRange.startDate) return;
+    setLoading(true);
+    setError("");
 
-    const fetchSales = async () => {
-      setLoading(true);
-      setError("");
+    try {
+      const accessToken = localStorage.getItem("access_token");
 
-      try {
-        const accessToken = localStorage.getItem("access_token");
-        let url = `/api/diraja/totalsalesbyshop/${shop_id}`;
+      const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
+      const formattedEnd = dateRange.endDate
+        ? format(dateRange.endDate, "yyyy-MM-dd")
+        : formattedStart;
 
-        const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
-        const formattedEnd = dateRange.endDate
-          ? format(dateRange.endDate, "yyyy-MM-dd")
-          : formattedStart;
+      const url = `/api/diraja/totalsalesbyshop/${shop_id}?start_date=${formattedStart}&end_date=${formattedEnd}&limit=${itemsPerPage}&page=${currentPage}`;
 
-        url += `?start_date=${formattedStart}&end_date=${formattedEnd}`;
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
+      const sales = Array.isArray(response.data.sales_records)
+        ? response.data.sales_records
+        : [];
 
-        setSalesData(response.data);
-      } catch (err) {
-        console.error("Error fetching sales data:", err);
-        setError("Failed to fetch sales data.");
-      } finally {
-        setLoading(false);
+      setData(sales);
+      setShopName(response.data.shop_name || "");
+      setTotalSalesAmount(response.data.total_sales_amount_paid || "Ksh 0.00");
+      setTotalCount(response.data.total_count || sales.length);
+      setTotalPages(response.data.total_pages || 1);
+
+      if (currentPage !== 1 && sales.length === 0) {
+        setCurrentPage(1); // Reset to page 1 if filtering results in empty page
       }
-    };
+    } catch (err) {
+      console.error("Error fetching sales data:", err);
+      setError("Failed to fetch sales data.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSales();
-  }, [shop_id, dateRange]);
+  }, [shop_id, dateRange, currentPage, itemsPerPage]);
 
-  if (!shop_id) return <p>No shop selected.</p>;
+  const columns = [
+    {
+      header: "Sale Date",
+      key: "created_at",
+      render: (item) =>
+        new Date(item.created_at).toLocaleString(undefined, {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        }),
+    },
+    {
+      header: "Username",
+      key: "username",
+      render: (item) => item.username || "N/A",
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (item) => item.status || "N/A",
+    },
+    {
+      header: "Total Amount",
+      key: "total_amount_paid",
+      render: (item) =>
+        item.total_amount_paid !== undefined
+          ? `Ksh ${Number(item.total_amount_paid).toLocaleString()}`
+          : "Ksh 0.00",
+    },
+    {
+      header: "Items",
+      key: "items",
+      render: (item) =>
+        Array.isArray(item.items)
+          ? item.items.map((si, idx) => (
+              <div key={idx}>
+                {si.item_name} × {si.quantity} {si.metric} @ Ksh {si.unit_price} = Ksh{" "}
+                {si.total_price}
+                <br />
+                <small>Batch: {si.batch_number}</small>
+              </div>
+            ))
+          : "No items",
+    },
+    {
+      header: "Payment Methods",
+      key: "payment_methods",
+      render: (item) =>
+        Array.isArray(item.payment_methods)
+          ? item.payment_methods.map((pm, idx) => (
+              <div key={idx}>
+                {pm.payment_method}: Ksh {pm.amount_paid}
+                {pm.balance !== null && pm.balance !== undefined
+                  ? ` (Balance: Ksh ${pm.balance})`
+                  : ""}
+              </div>
+            ))
+          : "N/A",
+    },
+    {
+      header: "Customer",
+      key: "customer_name",
+      render: (item) => item.customer_name || "N/A",
+    },
+  ];
 
   return (
-    <div className="singleshopstock-table">
-      {loading ? (
-        <p>Loading sales data...</p>
-      ) : error ? (
-        <p className="error">{error}</p>
-      ) : salesData ? (
-        <div>
-          <h2>Sales for {salesData.shop_name}</h2>
+    <>
+     
+
+      {error && <p className="error">{error}</p>}
+      {loading && <p>Loading sales data...</p>}
+
+      {!loading && !error && (
+        <>
+          <h2>Sales for {shopName}</h2>
           <p>
-            <strong>Sales total:</strong> {salesData.total_sales_amount_paid}
+            <strong>Sales total:</strong> {totalSalesAmount}
           </p>
-
-          <div className="input-container">
-            <label>Filter by Date Range:</label>
-            <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
-          </div>
-
+    <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
           <div className="actions-container">
-            {salesData.shop_name && (
-              <>
-                <ExportExcel 
-                  data={salesData} 
-                  fileName={salesData.shop_name.replace(/\s+/g, "_")} 
-                />
-                <DownloadPDF
-                  tableId="singleshopstock-table"
-                  fileName={salesData.shop_name.replace(/\s+/g, "_")}
-                />
-              </>
-            )}
+            
+            <ExportExcel data={data} fileName="ShopSalesData" />
+            <DownloadPDF
+              tableId="singleshopstock-table"
+              fileName={shopName.replace(/\s+/g, "_") || "ShopSalesData"}
+            />
           </div>
 
-          <h3>Sales Records</h3>
-          <table id="singleshopstock-table" className="singleshopstock-table">
-            <thead>
-              <tr>
-                {/* <th>Sale ID</th> */}
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Quantity</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-                <th>Payment</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {salesData.sales_records.map((sale) => (
-                <React.Fragment key={sale.sale_id}>
-                  {sale.items.map((item, itemIndex) => (
-                    <tr key={`${sale.sale_id}-${itemIndex}`}>
-                      {/* <td>{itemIndex === 0 ? sale.sale_id : ''}</td> */}
-                      <td>{itemIndex === 0 ? 
-                        new Date(sale.created_at).toLocaleString(undefined, {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour12: true,
-                        }).replace(",", "") : ''}
-                      </td>
-                      <td>{itemIndex === 0 ? sale.customer_name || 'N/A' : ''}</td>
-                      <td>{item.item_name}</td>
-                      <td>{item.quantity} {item.metric}</td>
-                      <td>Ksh {item.unit_price.toFixed(2)}</td>
-                      <td>Ksh {item.total_price.toFixed(2)}</td>
-                      <td>
-                        {itemIndex === 0 ? (
-                          sale.payment_methods.map((payment, index) => (
-                            <div key={index}>
-                              {payment.payment_method}: Ksh {payment.amount_paid.toFixed(2)}
-                            </div>
-                          ))
-                        ) : ''}
-                      </td>
-                      <td>{itemIndex === 0 ? sale.status : ''}</td>
-                    </tr>
-                  ))}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p>No sales data available.</p>
+          {data.length === 0 ? (
+            <p>No sales data available for this range.</p>
+          ) : (
+            <PaginationTable
+              data={data}
+              columns={columns}
+              pagination={{
+                currentPage,
+                setCurrentPage,
+                itemsPerPage,
+                setItemsPerPage,
+                totalCount,
+                totalPages,
+              }}
+            />
+          )}
+        </>
       )}
-    </div>
+    </>
   );
 };
 

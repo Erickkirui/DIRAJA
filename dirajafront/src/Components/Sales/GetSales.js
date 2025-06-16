@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PaginationTable from '../../PaginationTable';
+import SalesFilters from './SalesFilters';
 
-function Sales({ searchQuery = '', selectedDate = '' }) {
+function Sales() {
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -10,6 +11,14 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [totalPages, setTotalPages] = useState(1);
+
+  // Filter and sort states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [shopFilter, setShopFilter] = useState('');
+  const [sortField, setSortField] = useState('created_at');
+  const [sortDirection, setSortDirection] = useState('desc');
 
   const fetchSales = async () => {
     setLoading(true);
@@ -24,9 +33,19 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
       const params = {
         searchQuery,
         selectedDate,
+        status: statusFilter,
+        shop_id: shopFilter,
+        sort_by: sortField,
+        sort_order: sortDirection,
         limit: itemsPerPage,
         page: currentPage,
       };
+
+      Object.keys(params).forEach(key => {
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+          delete params[key];
+        }
+      });
 
       const resp = await axios.get('/api/diraja/allsales', {
         headers: { Authorization: `Bearer ${token}` },
@@ -40,11 +59,6 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
       setData(salesArray);
       setTotalCount(resp.data.total_sales || salesArray.length);
       setTotalPages(resp.data.total_pages || 1);
-
-      // Reset to page 1 if we're doing a search or date filter
-      if ((searchQuery || selectedDate) && currentPage !== 1) {
-        setCurrentPage(1);
-      }
     } catch (err) {
       console.error('Error fetching sales:', err);
       setError(err.response?.data?.error || 'Failed to fetch sales');
@@ -55,7 +69,7 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
 
   useEffect(() => {
     fetchSales();
-  }, [searchQuery, selectedDate, currentPage, itemsPerPage]);
+  }, [searchQuery, selectedDate, statusFilter, shopFilter, sortField, sortDirection, currentPage, itemsPerPage]);
 
   const handleDeleteSale = async (saleId) => {
     const accessToken = localStorage.getItem('access_token');
@@ -72,11 +86,22 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
       });
 
       setData((prevData) => prevData.filter((sale) => sale.sale_id !== saleId));
+      setTotalCount(prev => prev - 1);
       alert('Sale deleted successfully.');
     } catch (error) {
       console.error('Error deleting sale:', error);
       alert('Failed to delete the sale. Please try again.');
     }
+  };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedDate('');
+    setStatusFilter('');
+    setShopFilter('');
+    setSortField('created_at');
+    setSortDirection('desc');
+    setCurrentPage(1);
   };
 
   const columns = [
@@ -109,57 +134,74 @@ function Sales({ searchQuery = '', selectedDate = '' }) {
     {
       header: 'Total Paid',
       key: 'total_amount_paid',
-      render: i => `KES ${i.total_amount_paid}`,
+      render: i => `KES ${i.total_amount_paid.toLocaleString()}`,
     },
     { header: 'Status', key: 'status' },
     { header: 'Customer', key: 'customer_name' },
     {
-  header: 'Action',
-  key: 'sale_id',
-  render: item => (
-    <span
-      className="text-red-600 cursor-pointer hover:underline"
-      onClick={() => handleDeleteSale(item.sale_id)}
-    >
-      Delete
-    </span>
-  ),
-},
-{
-  header: 'View',
-  key: 'view',
-  render: item => (
-    <a
-      href={`/sale/${item.sale_id}`}
-      className="text-blue-600 hover:underline"
-    >
-      View 
-    </a>
-  ),
-},
-
-
-   
-
+      header: 'Action',
+      key: 'sale_id',
+      render: item => (
+        <span
+          className="text-red-600 cursor-pointer hover:underline"
+          onClick={() => handleDeleteSale(item.sale_id)}
+        >
+          Delete
+        </span>
+      ),
+    },
+    {
+      header: 'View',
+      key: 'view',
+      render: item => (
+        <a
+          href={`/sale/${item.sale_id}`}
+          className="text-blue-600 hover:underline"
+        >
+          View
+        </a>
+      ),
+    },
   ];
 
-  if (error) return <div className="error">{error}</div>;
-  if (loading && currentPage === 1) return <div>Loading...</div>;
-  if (!loading && data.length === 0) return <div>No sales found.</div>;
-
   return (
-    <PaginationTable
-      data={data}
-      columns={columns}
-      pagination={{
-        currentPage,
-        setCurrentPage,
-        itemsPerPage,
-        setItemsPerPage,
-        totalCount,
-        totalPages,
-      }}
-    />
+    <div>
+      <SalesFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedDate={selectedDate}
+        setSelectedDate={setSelectedDate}
+        sortField={sortField}
+        setSortField={setSortField}
+        sortDirection={sortDirection}
+        setSortDirection={setSortDirection}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        shopFilter={shopFilter}
+        setShopFilter={setShopFilter}
+        onResetFilters={resetFilters}
+      />
+
+      {error && <div className="error p-4 mb-4 bg-red-100 text-red-700 rounded">{error}</div>}
+      {loading && currentPage === 1 ? (
+        <div className="p-4 text-center">Loading...</div>
+      ) : !loading && data.length === 0 ? (
+        <div className="p-4 text-center">No sales found.</div>
+      ) : (
+        <PaginationTable
+          data={data}
+          columns={columns}
+          pagination={{
+            currentPage,
+            setCurrentPage,
+            itemsPerPage,
+            setItemsPerPage,
+            totalCount,
+            totalPages,
+          }}
+        />
+      )}
+    </div>
   );
 }
 

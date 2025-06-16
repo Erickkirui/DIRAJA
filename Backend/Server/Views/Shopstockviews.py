@@ -696,6 +696,7 @@ class ItemDetailsResourceForShop(Resource):
         return sales_details, 200
 
 
+
 class TransferSystemStock(Resource):
     @jwt_required()
     def post(self):
@@ -704,7 +705,7 @@ class TransferSystemStock(Resource):
 
             from_shop_id = data.get("from_shop_id")
             to_shop_id = data.get("to_shop_id")
-            stock_id = data.get("stock_id")  
+            stock_id = data.get("stock_id")
             transfer_quantity = data.get("quantity")
 
             # Get the current user ID from JWT
@@ -713,11 +714,11 @@ class TransferSystemStock(Resource):
             # Fetch stock from source shop
             stock = ShopStock.query.filter_by(stock_id=stock_id, shop_id=from_shop_id).first()
             if not stock:
-                return jsonify({"error": "Stock not found in the source shop"}), 404
+                return {"error": "Stock not found in the source shop"}, 404
 
             # Check if there is enough stock to transfer
             if stock.quantity < transfer_quantity:
-                return jsonify({"error": "Insufficient stock to transfer"}), 400
+                return {"error": "Insufficient stock to transfer"}, 400
 
             # Deduct stock from source shop
             stock.quantity -= transfer_quantity
@@ -744,7 +745,7 @@ class TransferSystemStock(Resource):
 
             # Record the transfer in SystemStockTransfer
             transfer_record = SystemStockTransfer(
-                shops_id=from_shop_id,  # Main shop reference
+                shops_id=from_shop_id,
                 from_shop_id=from_shop_id,
                 to_shop_id=to_shop_id,
                 users_id=current_user_id,
@@ -761,7 +762,7 @@ class TransferSystemStock(Resource):
             # Commit changes
             db.session.commit()
 
-            return jsonify({
+            return {
                 "message": "Stock transferred successfully",
                 "transfer_details": {
                     "shops_id": from_shop_id,
@@ -772,15 +773,16 @@ class TransferSystemStock(Resource):
                     "inventory_id": stock.inventory_id,
                     "quantity": transfer_quantity,
                     "batch_number": stock.BatchNumber,
-                    "transfer_date": transfer_record.transfer_date.isoformat(),  # Fix datetime serialization
+                    "transfer_date": transfer_record.transfer_date.isoformat(),
                     "total_cost": stock.unitPrice * transfer_quantity,
                     "unit_price": stock.unitPrice
                 }
-            })  # Ensure jsonify is correctly used
+            }, 200
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({"error": "Unexpected error", "details": str(e)})  # Fix response formatting
+            return {"error": "Unexpected error", "details": str(e)}, 500
+
         
 
 class GetBatchStock(Resource):
@@ -819,20 +821,29 @@ class GetBatchStock(Resource):
             return {"error": "An error occurred while fetching batch stock data", "details": str(e)}, 500
         
 
+from flask import request
+
 class GetItemStock(Resource):
     @jwt_required()
-    @check_role('manager')  # Ensure only managers can access this endpoint
+    @check_role('manager')  # Only managers can access
     def get(self):
         try:
-            # Aggregate stock by itemname and metric across all shops
-            item_stock = db.session.query(
+            shop_id = request.args.get('shop_id', type=int)
+
+            # Base query
+            query = db.session.query(
                 Inventory.itemname,
                 Inventory.metric,
                 func.sum(ShopStock.quantity).label("total_quantity")
-            ).join(Inventory, ShopStock.inventory_id == Inventory.inventory_id) \
-             .group_by(Inventory.itemname, Inventory.metric).all()
+            ).join(Inventory, ShopStock.inventory_id == Inventory.inventory_id)
 
-            # Serialize the data
+            # Optional filter by shop_id
+            if shop_id:
+                query = query.filter(ShopStock.shop_id == shop_id)
+
+            # Group and execute
+            item_stock = query.group_by(Inventory.itemname, Inventory.metric).all()
+
             item_stock_list = [
                 {
                     "itemname": itemname,
@@ -842,8 +853,8 @@ class GetItemStock(Resource):
                 for itemname, metric, total_quantity in item_stock
             ]
 
-            # Prepare response
             response = {
+                "shop_id": shop_id,
                 "total_items": len(item_stock_list),
                 "item_stocks": item_stock_list
             }

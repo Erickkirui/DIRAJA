@@ -165,7 +165,7 @@ a{
 
 .select-period-btn {
   display: flex;
-  align-items: left;
+
   gap: 10px;
   color: var(--primary);
   border: 1px solid var(--primary);
@@ -197,12 +197,13 @@ a{
 }
 
 /* Adjust the position for mobile devices */
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
+  
   .date-picker-container {
-    left: auto;
-    right: 0; /* Align to the right on mobile */
+   left: -195px;
+  
   }
-}
+} */
 
 
 
@@ -225,6 +226,18 @@ a{
   font-size: 18px;
   cursor: pointer;
   background-color: transparent;
+
+}
+select{
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  padding: 4px;
+  font-size: 14px;
+  
+}
+select:focus{
+  border:  1px solid var(--primary);
 
 }
 

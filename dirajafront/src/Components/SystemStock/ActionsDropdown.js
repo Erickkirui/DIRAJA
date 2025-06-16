@@ -226,7 +226,7 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
                         </select>
                         <input
                             type="number"
-                            placeholder="Enter quantity"
+                            placeholder="Ente quantity(Eggs, Smokies and Sausages as individual items)"
                             value={transferQuantity}
                             onChange={(e) => setTransferQuantity(e.target.value)}
                         />

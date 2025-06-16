@@ -14,6 +14,7 @@ from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
 from flask import jsonify,request,make_response
 from Server.Models.Shopstock import ShopStock
+from sqlalchemy import func, or_
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
@@ -419,93 +420,144 @@ class GetSale(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+
 class GetSales(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Get page and limit from query parameters, defaulting to 1 and 50
-            page = int(request.args.get('page', 1))  # Default to page 1 if not provided
-            limit = int(request.args.get('limit', 50))  # Default to 50 items per request
+            # Pagination
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 50))
 
+            # Filters
             search_query = request.args.get('searchQuery', '')
-            selected_date = request.args.get('selectedDate', None)
+            selected_date = request.args.get('selectedDate')
+            status_filter = request.args.get('status')
+            shop_filter = request.args.get('shop_id')
+            sort_by = request.args.get('sort_by', 'created_at')
+            sort_order = request.args.get('sort_order', 'desc')
 
-            # If search query or selected date exists, remove pagination and fetch all results
-            if search_query or selected_date:
-                # Join Shops and Users models to filter by shopname and username
-                sales_query = Sales.query.order_by(Sales.created_at.desc()).join(Shops).join(Users)
+            # Valid sort fields
+            valid_sort_fields = ['created_at', 'username', 'shopname', 'total_amount_paid']
+            if sort_by not in valid_sort_fields:
+                sort_by = 'created_at'
+            if sort_order not in ['asc', 'desc']:
+                sort_order = 'desc'
 
-                if search_query:
-                    sales_query = sales_query.filter(
-                        Sales.customer_name.ilike(f"%{search_query}%") |
-                        Users.username.ilike(f"%{search_query}%") |  # Filter on username from Users model
-                        Shops.shopname.ilike(f"%{search_query}%")  # Filter on shopname from Shops model
+            # Base query
+            sales_query = Sales.query.join(Users).join(Shops)
+
+            # Apply filters
+            if search_query:
+                sales_query = sales_query.filter(
+                    or_(
+                        Sales.customer_name.ilike(f"%{search_query}%"),
+                        Users.username.ilike(f"%{search_query}%"),
+                        Shops.shopname.ilike(f"%{search_query}%")
                     )
-                
-                if selected_date:
-                    # Ensure the selected_date is formatted correctly (matching the database format)
-                    try:
-                        selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-                        sales_query = sales_query.filter(db.func.date(Sales.created_at) == selected_date)
-                    except ValueError:
-                        return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+                )
 
-                # Fetch all matching sales without pagination
-                sales = sales_query.all()
-                total_sales = len(sales)  # Total sales count
-                total_pages = 1  # Only 1 page when no pagination is used
+            if selected_date:
+                try:
+                    selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(func.date(Sales.created_at) == selected_date_obj)
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+            if status_filter:
+                sales_query = sales_query.filter(Sales.status == status_filter)
+
+            if shop_filter:
+                sales_query = sales_query.filter(Sales.shop_id == int(shop_filter))
+
+            # Handle sorting
+            if sort_by == 'username':
+                order_field = Users.username
+            elif sort_by == 'shopname':
+                order_field = Shops.shopname
+            elif sort_by == 'total_amount_paid':
+                payment_subquery = (
+                    db.session.query(
+                        SalesPaymentMethods.sale_id,
+                        func.sum(SalesPaymentMethods.amount_paid).label('total_paid')
+                    )
+                    .group_by(SalesPaymentMethods.sale_id)
+                    .subquery()
+                )
+
+                sales_query = sales_query.outerjoin(
+                    payment_subquery,
+                    payment_subquery.c.sale_id == Sales.sales_id
+                )
+                order_field = payment_subquery.c.total_paid
             else:
-                # Pagination logic if no filters are applied
-                offset = (page - 1) * limit
-                sales_query = Sales.query.order_by(Sales.created_at.desc()).offset(offset).limit(limit)
-                sales = sales_query.all()
-                total_sales = Sales.query.count()  # Total sales count for pagination
-                total_pages = (total_sales + limit - 1) // limit  # Calculate total pages
+                order_field = Sales.created_at
 
-            # Prepare the sales data to return
+            # Sort direction
+            if sort_order == 'desc':
+                sales_query = sales_query.order_by(order_field.desc())
+            else:
+                sales_query = sales_query.order_by(order_field.asc())
+
+            # Decide pagination
+            use_pagination = not (
+                search_query or
+                selected_date or
+                status_filter or
+                shop_filter or
+                sort_by != 'created_at' or
+                sort_order != 'desc'
+            )
+
+            if use_pagination:
+                offset = (page - 1) * limit
+                sales_list = sales_query.offset(offset).limit(limit).all()
+                total_sales = sales_query.count()
+                total_pages = (total_sales + limit - 1) // limit
+            else:
+                sales_list = sales_query.all()
+                total_sales = len(sales_list)
+                total_pages = 1
+
+            # Construct response data
             sales_data = []
-            for sale in sales:
-                user = Users.query.filter_by(users_id=sale.user_id).first()
-                shop = Shops.query.filter_by(shops_id=sale.shop_id).first()
-                username = user.username if user else "Unknown User"
-                shopname = shop.shopname if shop else "Unknown Shop"
-                
-                # Get all sold items for this sale
-                sold_items = []
-                for item in sale.items:
-                    sold_items.append({
+            for sale in sales_list:
+                sold_items = [
+                    {
                         "item_name": item.item_name,
                         "quantity": item.quantity,
                         "metric": item.metric,
                         "unit_price": item.unit_price,
                         "total_price": item.total_price,
                         "batch_number": item.BatchNumber
-                    })
-                
-                # Get payment data
-                payment_data = [
-                    {
-                        "payment_method": payment.payment_method,
-                        "amount_paid": payment.amount_paid,
-                        "created_at": payment.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                        "balance": payment.balance,
                     }
-                    for payment in sale.payment
+                    for item in sale.items
                 ]
-                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+
+                payments = [
+                    {
+                        "payment_method": p.payment_method,
+                        "amount_paid": p.amount_paid,
+                        "created_at": p.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        "balance": p.balance
+                    }
+                    for p in sale.payment
+                ]
+
+                total_amount_paid = sum(p["amount_paid"] for p in payments)
 
                 sales_data.append({
                     "sale_id": sale.sales_id,
                     "user_id": sale.user_id,
-                    "username": username,
+                    "username": sale.users.username if sale.users else "Unknown User",
                     "shop_id": sale.shop_id,
-                    "shopname": shopname,
+                    "shopname": sale.shops.shopname if sale.shops else "Unknown Shop",
                     "customer_name": sale.customer_name,
                     "status": sale.status,
                     "customer_number": sale.customer_number,
                     "sold_items": sold_items,
                     "total_amount_paid": total_amount_paid,
-                    "payment_methods": payment_data,
+                    "payment_methods": payments,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": sale.balance,
                     "note": sale.note,
@@ -516,11 +568,19 @@ class GetSales(Resource):
                 "sales_data": sales_data,
                 "total_sales": total_sales,
                 "total_pages": total_pages,
-                "current_page": page,
+                "current_page": page
             }, 200
 
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            return {"error": "Database operation failed."}, 500
+        except ValueError as e:
+            current_app.logger.error(f"Value error: {str(e)}")
+            return {"error": str(e)}, 400
         except Exception as e:
-            return {"error": str(e)}, 500
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return {"error": "An unexpected error occurred."}, 500
+
 
 
 
