@@ -67,7 +67,25 @@ const AddInventory = () => {
   }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const updatedFormData = {
+      ...formData,
+      [name]: value
+    };
+
+    // Auto-calculate unitCost when amountPaid or quantity changes
+    if (name === 'amountPaid' || name === 'quantity') {
+      const quantity = parseFloat(updatedFormData.quantity) || 0;
+      const amountPaid = parseFloat(updatedFormData.amountPaid) || 0;
+      
+      if (quantity > 0) {
+        updatedFormData.unitCost = (amountPaid / quantity).toFixed(2);
+      } else {
+        updatedFormData.unitCost = '';
+      }
+    }
+
+    setFormData(updatedFormData);
   };
 
   const handleSubmit = async (e) => {
@@ -79,12 +97,17 @@ const AddInventory = () => {
       return;
     }
 
+    // Ensure unitCost is calculated with current values before submission
+    const quantity = parseFloat(formData.quantity) || 0;
+    const amountPaid = parseFloat(formData.amountPaid) || 0;
+    const finalUnitCost = quantity > 0 ? (amountPaid / quantity) : 0;
+
     const numericFormData = {
       ...formData,
-      quantity: Number(formData.quantity),
-      unitCost: Number(formData.unitCost),
-      amountPaid: Number(formData.amountPaid),
-      unitPrice: Number(formData.unitPrice),
+      quantity: quantity,
+      unitCost: finalUnitCost,
+      amountPaid: amountPaid,
+      unitPrice: parseFloat(formData.unitPrice) || 0,
     };
 
     try {
@@ -118,19 +141,18 @@ const AddInventory = () => {
   };
 
   return (
-    <div >
+    <div>
       <h2>Add New Inventory</h2>
 
-     
-
-      <form onSubmit={handleSubmit} className="form">
-         {message && (
+      {message && (
         <Stack sx={{ mb: 2 }}>
           <Alert severity={messageType} variant="outlined">
             {message}
           </Alert>
         </Stack>
       )}
+
+      <form onSubmit={handleSubmit} className="form">
         <select
           name="itemname"
           value={formData.itemname}
@@ -153,6 +175,8 @@ const AddInventory = () => {
           onChange={handleChange}
           placeholder="Quantity"
           className="input"
+          min="0"
+          step="0.01"
           required
         />
 
@@ -186,25 +210,32 @@ const AddInventory = () => {
           className="input"
         />
 
-        <input
-          type="number"
-          name="unitCost"
-          value={formData.unitCost}
-          onChange={handleChange}
-          placeholder="Unit Cost"
-          className="input"
-          required
-        />
 
         <input
           type="number"
           name="amountPaid"
           value={formData.amountPaid}
           onChange={handleChange}
-          placeholder="Amount Paid"
+          placeholder="Total Amount Paid"
           className="input"
+          min="0"
+          step="0.01"
           required
         />
+
+        <div className="form-group">
+          <input
+            type="number"
+            name="unitCost"
+            value={formData.unitCost || ''}
+            className="input"
+            readOnly
+            placeholder="Unit Cost (Used to determine ideal sale per item)"
+          />
+          <small className="text-muted">
+            Calculated as: Total Amount Paid / Quantity
+          </small>
+        </div>
 
         <input
           type="text"
@@ -221,8 +252,10 @@ const AddInventory = () => {
           name="unitPrice"
           value={formData.unitPrice}
           onChange={handleChange}
-          placeholder="Unit Price"
+          placeholder="Unit price (Used to determine ideal sale price per item)"
           className="input"
+          min="0"
+          step="0.01"
           required
         />
 
