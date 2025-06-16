@@ -314,7 +314,7 @@ const SingleShopSale = () => {
                             />
                             
                         
-                            <p className='qunatity-level'>Remaining In Stock : {item.remainingStock} {item.metric}</p>
+                            <p className='qunatity-level'>Remaining In Stock : {item.remainingStock.toFixed(2)} {item.metric}</p>
                                 
                             {formData.items.length > 1 && (
                                 <button 

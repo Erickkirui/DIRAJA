@@ -174,6 +174,7 @@ class TotalAmountPaidSalesPerShop(Resource):
                 Sales.status == 'paid'
             )
 
+
             # Query for unpaid sales (sum of total_price from SoldItems)
             query_unpaid = db.session.query(
                 db.func.sum(SoldItem.total_price)
@@ -182,6 +183,13 @@ class TotalAmountPaidSalesPerShop(Resource):
             ).filter(
                 Sales.shop_id == shop_id,
                 Sales.status.in_(['unpaid', 'partially_paid'])
+
+            # Base query for unpaid/partially paid sales (using total_price)
+            query_unpaid = (
+                db.session.query(db.func.sum(SoldItem.total_price))
+                .filter(Sales.shop_id == shop_id)
+                .filter(Sales.status.in_(['unpaid', 'partially_paid']))
+
             )
 
             # Apply date filters if not 'alltime'

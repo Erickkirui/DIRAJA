@@ -24,12 +24,12 @@ function ClerkSales() {
         >
           My sales
         </button>
-        <button 
+        {/* <button 
           className={`tab-button ${activeTab === 'cashsales' ? 'active' : ''}`} 
           onClick={() => setActiveTab('cashsales')}
         >
           My cash sales
-        </button>
+        </button> */}
       </div>
 
       <div className="tab-content">
