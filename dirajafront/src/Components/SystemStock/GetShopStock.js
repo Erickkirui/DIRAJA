@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import '../../Styles/shopstock.css';
 import LoadingAnimation from '../LoadingAnimation';
 import ActionsDropdown from './ActionsDropdown';
-
+import GeneralTableLayout from '../GeneralTableLayout';
 
 const Shopstock = () => {
     const [shopStocks, setShopStocks] = useState([]);
@@ -50,20 +50,83 @@ const Shopstock = () => {
         setSelectedDate(e.target.value);
     };
 
-    const filteredShopsStock = shopStocks.filter((stock) => {
-        const matchesSearch =
-            stock.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            stock.shop_id.toString().includes(searchQuery);
-        const matchesDate = !selectedDate || stock.date === selectedDate;
-        return matchesSearch && matchesDate;
-    });
+    const filteredShopsStock = shopStocks
+        .filter((stock) => {
+            const matchesSearch =
+                stock.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                stock.shop_id.toString().includes(searchQuery);
+            const matchesDate = !selectedDate || stock.date === selectedDate;
+            return matchesSearch && matchesDate;
+        })
+        .sort((a, b) => {
+            // Move zero quantity items to the bottom
+            if (a.quantity === 0 && b.quantity !== 0) return 1;
+            if (a.quantity !== 0 && b.quantity === 0) return -1;
+            // Maintain original sorting (by stock_id) for others
+            return b.stock_id - a.stock_id;
+        });
+
+    // Define columns for GeneralTableLayout
+    const columns = [
+        {
+            header: (
+                <input
+                    type="checkbox"
+                    onChange={(e) =>
+                        setSelectedStocks(
+                            e.target.checked ? filteredShopsStock.map((stock) => stock.stock_id) : []
+                        )
+                    }
+                    checked={selectedStocks.length === filteredShopsStock.length && filteredShopsStock.length > 0}
+                />
+            ),
+            key: 'select',
+            render: (stock) => (
+                <input
+                    type="checkbox"
+                    checked={selectedStocks.includes(stock.stock_id)}
+                    onChange={() =>
+                        setSelectedStocks((prev) =>
+                            prev.includes(stock.stock_id)
+                                ? prev.filter((id) => id !== stock.stock_id)
+                                : [...prev, stock.stock_id]
+                        )
+                    }
+                />
+            )
+        },
+        {
+            header: 'Shop Name',
+            key: 'shop_name',
+            render: (stock) => stock.shop_name
+        },
+        {
+            header: 'Item Name',
+            key: 'item_name',
+            render: (stock) => stock.item_name
+        },
+        {
+            header: 'Batch Number',
+            key: 'batchnumber',
+            render: (stock) => stock.batchnumber
+        },
+        {
+            header: 'Quantity',
+            key: 'quantity',
+            render: (stock) => `${stock.quantity} ${stock.metric}`
+        },
+        {
+            header: 'Unit Price (ksh)',
+            key: 'unitPrice',
+            render: (stock) => stock.unitPrice
+        }
+    ];
 
     if (loading) return <LoadingAnimation />;
     if (error) return <p>Error: {error}</p>;
 
     return (
-        
         <div className="shopStocks-container">
             <h2>System stock</h2>
             {/* Search & Filter */}
@@ -81,10 +144,7 @@ const Shopstock = () => {
                     value={selectedDate}
                     onChange={handleDateChange}
                 />
-
             </div>
-
-
 
             {/* Actions Dropdown */}
             <ActionsDropdown
@@ -92,69 +152,14 @@ const Shopstock = () => {
                 setShopStocks={setShopStocks}
                 selectedStocks={selectedStocks}
                 setSelectedStocks={setSelectedStocks}
-                
             />
 
-            
-
-
-
-
             {/* Table */}
-            <table className="shopStocks-table">
-                <thead>
-                    <tr>
-                        <th>
-                            <input
-                                type="checkbox"
-                                onChange={(e) =>
-                                    setSelectedStocks(
-                                        e.target.checked ? filteredShopsStock.map((stock) => stock.stock_id) : []
-                                    )
-                                }
-                                checked={selectedStocks.length === filteredShopsStock.length && filteredShopsStock.length > 0}
-                            />
-                        </th>
-                        <th>Shop Name</th>
-                        <th>Item Name</th>
-                        <th>Batch Number</th>
-                        <th>Quantity</th>
-                        <th>Unit Price (ksh)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredShopsStock.length > 0 ? (
-                        filteredShopsStock.map((stock) => (
-                            <tr key={stock.stock_id}>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        checked={selectedStocks.includes(stock.stock_id)}
-                                        onChange={() =>
-                                            setSelectedStocks((prev) =>
-                                                prev.includes(stock.stock_id)
-                                                    ? prev.filter((id) => id !== stock.stock_id)
-                                                    : [...prev, stock.stock_id]
-                                            )
-                                        }
-                                    />
-                                </td>
-                                <td>{stock.shop_name}</td>
-                                <td>{stock.item_name}</td>
-                                <td>{stock.batchnumber}</td>
-                                <td>{stock.quantity} {stock.metric}</td>
-                                <td>{stock.unitPrice}</td>
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="6" style={{ textAlign: 'center', padding: '10px' }}>
-                                No matching results found.
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
+            <GeneralTableLayout 
+                data={filteredShopsStock} 
+                columns={columns}
+                rowClassName={(stock) => stock.quantity === 0 ? 'zero-quantity' : ''}
+            />
         </div>
     );
 };

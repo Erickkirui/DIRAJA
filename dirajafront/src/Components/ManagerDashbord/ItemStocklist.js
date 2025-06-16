@@ -5,14 +5,39 @@ import { Link } from 'react-router-dom';
 
 const ItemStockList = () => {
   const [itemStock, setItemStock] = useState([]);
+  const [shops, setShops] = useState([]);
+  const [selectedShopId, setSelectedShopId] = useState(""); // default to all
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
 
+  // Fetch all shops for dropdown
+  useEffect(() => {
+    const fetchShops = async () => {
+      try {
+        const response = await axios.get("/api/diraja/allshops", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setShops(response.data);
+      } catch (err) {
+        console.error("Failed to fetch shops", err);
+      }
+    };
+    fetchShops();
+  }, []);
+
+  // Fetch item stock (optionally filtered by shop)
   useEffect(() => {
     const fetchItemStock = async () => {
+      setLoading(true);
       try {
-        const response = await axios.get("/api/diraja/item-stock-level", {
+        const url = selectedShopId
+          ? `/api/diraja/item-stock-level?shop_id=${selectedShopId}`
+          : `/api/diraja/item-stock-level`;
+
+        const response = await axios.get(url, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -25,7 +50,7 @@ const ItemStockList = () => {
       }
     };
     fetchItemStock();
-  }, []);
+  }, [selectedShopId]);
 
   const filteredStock = itemStock.filter(stock =>
     activeTab === "inStock" ? stock.total_remaining > 0 : stock.total_remaining === 0
@@ -37,9 +62,27 @@ const ItemStockList = () => {
 
   return (
     <div className="stock-level-container">
-      <p>Item Stock List</p>
-       <Link className="view-stock-link" to="/shopstock">View Stock</Link>
+      <div className="metric-top">
+<p>Item Stock List</p>
+<select
+          value={selectedShopId}
+          onChange={(e) => setSelectedShopId(e.target.value)}
+        >
+          <option value="">All Shops</option>
+          {shops.map((shop) => (
+            <option key={shop.shop_id} value={shop.shop_id}>
+              {shop.shopname}
+            </option>
+          ))}
+        </select>
+      </div>
 
+      
+      <Link className="view-stock-link" to="/shopstock">View Stock</Link>
+
+
+
+      {/* Tabs */}
       <div className="tabs-container">
         <button
           className={`tab-button ${activeTab === 'inStock' ? 'active' : ''}`}
@@ -82,8 +125,6 @@ const ItemStockList = () => {
               )}
             </tbody>
           </table>
-
-         
         </div>
       )}
     </div>
