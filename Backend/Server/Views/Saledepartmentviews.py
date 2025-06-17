@@ -48,3 +48,58 @@ class SalesdepartmentSale(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
+
+class GetSalesdepartmentSales(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            sales = SalesDepartment.query.all()
+            sales_list = []
+
+            for sale in sales:
+                sales_list.append({
+                    "departemntsale_id": sale.departemntsale_id,
+                    "user_id": sale.user_id,
+                    "shop_id": sale.shop_id,
+                    "item_name": sale.item_name,  
+                    "customer_name": sale.customer_name,
+                    "customer_number": sale.customer_number,
+                    "quantity": sale.quantity,
+                    "total_price": sale.total_price,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
+            return {"sales": sales_list}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
+
+
+class GetSalesDepartmentSalesByUser(Resource):
+    @jwt_required()
+    def get(self, user_id):
+        try:
+            sales = SalesDepartment.query.filter_by(user_id=user_id).all()
+            if not sales:
+                return {"message": f"No sales found for user_id {user_id}"}, 404
+
+            sales_list = []
+            for sale in sales:
+                sales_list.append({
+                    "departemntsale_id": sale.departemntsale_id,
+                    "user_id": sale.user_id,
+                    "shop_id": sale.shop_id,
+                    "item_name": sale.item_name,
+                    "customer_name": sale.customer_name,
+                    "customer_number": sale.customer_number,
+                    "quantity": sale.quantity,
+                    "total_price": sale.total_price,
+                    "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+
+            return {"sales": sales_list}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
