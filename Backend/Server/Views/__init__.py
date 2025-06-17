@@ -43,7 +43,7 @@ from Server.Views.Emailnotifications import Report
 from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
 from Server.Views.StockItems import PostStockItem,GetAllStockItems,StockItem
 from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales
 
 
 
@@ -276,4 +276,5 @@ api.add_resource(GenerateSalesReport, '/generate-sales-report')
 api.add_resource(SalesdepartmentSale, '/salesdepartmentnew')
 api.add_resource(GetSalesdepartmentSales, '/allsalesdepartmentsales')
 api.add_resource(GetSalesDepartmentSalesByUser, '/salesdepartmentsales/<int:user_id>')
+api.add_resource(TotalAmountDepartmentSales,"/salesdepartmenttotal")
 
