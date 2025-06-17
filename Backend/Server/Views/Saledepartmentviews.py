@@ -8,6 +8,8 @@ from Server.Models.SalesDepartment import SalesDepartment  # Make sure your mode
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask import jsonify,request,make_response
 from functools import wraps
+from datetime import datetime, timedelta
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -103,3 +105,66 @@ class GetSalesDepartmentSalesByUser(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+        
+class TotalAmountDepartmentSales(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            date_str = request.args.get('date')
+            period = request.args.get('period', 'today')
+            today = datetime.utcnow()
+
+            start_date_str = request.args.get('startDate')
+            end_date_str = request.args.get('endDate')
+
+            if start_date_str and end_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0)
+                    end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59)
+                except ValueError:
+                    return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+            else:
+                if period == 'today':
+                    start_date = today.replace(hour=0, minute=0, second=0)
+                    end_date = today.replace(hour=23, minute=59, second=59)
+                elif period == 'yesterday':
+                    yesterday = today - timedelta(days=1)
+                    start_date = yesterday.replace(hour=0, minute=0, second=0)
+                    end_date = yesterday.replace(hour=23, minute=59, second=59)
+                elif period == 'week':
+                    start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0)
+                    end_date = today.replace(hour=23, minute=59, second=59)
+                elif period == 'month':
+                    start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0)
+                    end_date = today.replace(hour=23, minute=59, second=59)
+                elif period == 'alltime':
+                    start_date = None
+                    end_date = None
+                else:
+                    return {"message": "Invalid period specified"}, 400
+
+            # Total for selected period
+            query = db.session.query(db.func.sum(SalesDepartment.total_price))
+
+            if start_date and end_date:
+                query = query.filter(SalesDepartment.created_at.between(start_date, end_date))
+
+            total_sales = query.scalar() or 0
+
+            # All-time total
+            all_time_total = (
+                db.session.query(db.func.sum(SalesDepartment.total_price)).scalar() or 0
+            )
+
+            return {
+                "total_department_sales": "Ksh {:,.2f}".format(total_sales),
+                "all_time_total_department_sales": "Ksh {:,.2f}".format(all_time_total)
+            }, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "Failed to retrieve totals",
+                "details": str(e)
+            }, 500
