@@ -43,6 +43,8 @@ from Server.Views.Emailnotifications import Report
 from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
 from Server.Views.StockItems import PostStockItem,GetAllStockItems,StockItem
 from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
+from Server.Views.Saledepartmentviews import SalesdepartmentSale
+
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -270,3 +272,5 @@ api.add_resource(CashDepositResource, '/cashdeposits', '/cashdeposits/<int:depos
 #reports 
 api.add_resource(GenerateSalesReport, '/generate-sales-report')
 
+#Sales Department
+api.add_resource(SalesdepartmentSale, '/salesdepartmentnew')
