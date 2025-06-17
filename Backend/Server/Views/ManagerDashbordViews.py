@@ -182,7 +182,7 @@ class TotalAmountPaidSalesPerShop(Resource):
                 Sales, Sales.sales_id == SoldItem.sales_id
             ).filter(
                 Sales.shop_id == shop_id,
-                Sales.status.in_(['unpaid', 'partially_paid'])
+                Sales.status.in_(['unpaid', 'partially_paid']))
 
             # Base query for unpaid/partially paid sales (using total_price)
             query_unpaid = (
