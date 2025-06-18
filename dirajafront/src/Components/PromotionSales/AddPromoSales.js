@@ -13,6 +13,7 @@ const AddPromoSales = () => {
     customer_name: '',
     customer_number: '',
     created_at: '',
+    total_price: '',
     item_name: [{ item: '', quantity: '', unit_price: '' }]
   });
 
@@ -22,7 +23,8 @@ const AddPromoSales = () => {
   const [messageType, setMessageType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [itemsLoading, setItemsLoading] = useState(true);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [calculatedTotal, setCalculatedTotal] = useState(0);
+  const [isTotalEdited, setIsTotalEdited] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
@@ -50,16 +52,26 @@ const AddPromoSales = () => {
       });
   }, []);
 
+  // Calculate total price from items
   useEffect(() => {
     const total = formData.item_name.reduce((sum, item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const price = parseFloat(item.unit_price) || 0;
       return sum + quantity * price;
     }, 0);
-    setTotalPrice(total.toFixed(2));
-  }, [formData.item_name]);
+    const formatted = total.toFixed(2);
+    setCalculatedTotal(formatted);
+
+    // If user hasn't manually changed the total, sync it
+    if (!isTotalEdited) {
+      setFormData((prev) => ({ ...prev, total_price: formatted }));
+    }
+  }, [formData.item_name, isTotalEdited]);
 
   const handleChange = (e) => {
+    if (e.target.name === 'total_price') {
+      setIsTotalEdited(true);
+    }
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -80,10 +92,7 @@ const AddPromoSales = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const submissionData = {
-      ...formData,
-      total_price: totalPrice
-    };
+    const submissionData = { ...formData };
 
     try {
       const response = await axios.post('/api/diraja/salesdepartmentnew', submissionData, {
@@ -94,6 +103,7 @@ const AddPromoSales = () => {
 
       setMessage(response.data.message);
       setMessageType('success');
+      setIsTotalEdited(false);
 
       setFormData({
         user_id: storedUserId,
@@ -102,6 +112,7 @@ const AddPromoSales = () => {
         customer_name: '',
         customer_number: '',
         created_at: '',
+        total_price: '',
         item_name: [{ item: '', quantity: '', unit_price: '' }]
       });
     } catch (error) {
@@ -116,15 +127,14 @@ const AddPromoSales = () => {
     <div className="sales-form-container">
       <h1>Record Department Sale</h1>
 
-      
       <form className="clerk-sale" onSubmit={handleSubmit}>
         {message && (
-        <Stack sx={{ width: '100%', mb: 2 }}>
-          <Alert severity={messageType === 'success' ? 'success' : 'error'} variant="outlined">
-            {message}
-          </Alert>
-        </Stack>
-      )}
+          <Stack sx={{ width: '100%', mb: 2 }}>
+            <Alert severity={messageType === 'success' ? 'success' : 'error'} variant="outlined">
+              {message}
+            </Alert>
+          </Stack>
+        )}
 
         <div className="form-group">
           <select
@@ -166,7 +176,6 @@ const AddPromoSales = () => {
             name="created_at"
             value={formData.created_at}
             onChange={handleChange}
-            placeholder="Date"
             required
           />
         </div>
@@ -227,9 +236,9 @@ const AddPromoSales = () => {
           <input
             type="number"
             name="total_price"
-            value={totalPrice}
-            readOnly
-            placeholder="Total Price (Auto)"
+            value={formData.total_price}
+            onChange={handleChange}
+            placeholder={`Total Price (Auto: ${calculatedTotal})`}
           />
         </div>
 

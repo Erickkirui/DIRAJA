@@ -44,8 +44,14 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {shopId !== "12" && shopId !== "18" && (
                   <Link className="clerk-button" to="/shopsale">
+                    New Sale
+                  </Link>
+                )}
+
+                {shopId === "18" && (
+                  <Link className="clerk-button" to="/promo-sale">
                     New Sale
                   </Link>
                 )}
@@ -99,25 +105,25 @@ function ClerkDashbord() {
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {shopId !== "12" && shopId !== "18" && (
                   <Link className="clerk-button" to="/shopsales">
                     View Sales
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {shopId !== "12" && shopId !== "18" && (
                   <Link className="clerk-button" to="/shopcredit">
                     View Credit Sales
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {shopId !== "12" && shopId !== "18" && (
                   <Link className="clerk-button" to="/addspoiltstock">
                     Spoilt Stock
                   </Link>
                 )}
 
-                {shopId !== "12" && (
+                {shopId !== "12" && shopId !== "18" && (
                   <Link className="clerk-button" to="/depositcash">
                     Deposit cash
                   </Link>
