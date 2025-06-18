@@ -72,6 +72,7 @@ import CashSalesByUser from './Components/ClerkDashbord/EmployeeCashSale';
 import CashSalesPage from './Pages/CashSalesPage';
 import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
 import SingleSale from './Components/Sales/SingleSale';
+import AddPromoSales from './Components/PromotionSales/AddPromoSales';
 
 
 
@@ -205,6 +206,7 @@ function App() {
             <Route path='/create-inventory-items' element={<Layout><CreateInventoryItems /></Layout>} ></Route>
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
             <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
+            <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>

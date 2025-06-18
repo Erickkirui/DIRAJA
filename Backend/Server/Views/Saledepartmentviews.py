@@ -34,10 +34,10 @@ class SalesdepartmentSale(Resource):
             new_sale = SalesDepartment(
                 user_id=data['user_id'],
                 shop_id=data['shop_id'],
+                shop_sale_name=data['shop_sale_name'],  # ✅ Required now
                 item_name=data['item_name'],  
                 customer_name=data.get('customer_name'),
                 customer_number=data.get('customer_number'),
-                quantity=data['quantity'],
                 total_price=data['total_price'],
                 created_at=datetime.strptime(data['created_at'], '%Y-%m-%d')
             )

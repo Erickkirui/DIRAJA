@@ -320,7 +320,11 @@
   display: flex;
   align-items: flex-end;
 }
-
+.item-entry{
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
 .reset-button {
   padding: 0.5rem 1rem;
   background-color: #e5e7eb;
