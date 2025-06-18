@@ -3,15 +3,15 @@ from app import db
 from sqlalchemy.orm import validates
 
 class SalesDepartment(db.Model):
-    __tablename__ = "sales-department"
+    __tablename__ = "sales_department"
 
     departemntsale_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'), nullable=False)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
-    item_name = db.Column(db.JSON, nullable=True)
+    item_name = db.Column(db.JSON, nullable=False)
+    shop_sale_name = db.Column(db.String(50), nullable=False)
     customer_name = db.Column(db.String(50), nullable=True)
     customer_number = db.Column(db.String(15), nullable=True)
-    quantity = db.Column(db.Float)
     created_at = db.Column(db.DateTime, nullable=False)
     total_price = db.Column(db.Float)
    
