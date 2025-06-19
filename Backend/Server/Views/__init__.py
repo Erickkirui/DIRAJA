@@ -43,7 +43,7 @@ from Server.Views.Emailnotifications import Report
 from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
 from Server.Views.StockItems import PostStockItem,GetAllStockItems,StockItem
 from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
 
 
 
@@ -278,4 +278,4 @@ api.add_resource(GetSalesdepartmentSales, '/allsalesdepartmentsales')
 api.add_resource(GetSalesDepartmentSalesByUser, '/salesdepartmentsales/<int:user_id>')
 api.add_resource(TotalAmountDepartmentSales,"/salesdepartmenttotal")
 api.add_resource(TotalAmountDepartmentSalesByUser,"/salesdepartmenttotal/<int:user_id>")
-
+api.add_resource(TopSalesUsers,'/promo-sales-rank')

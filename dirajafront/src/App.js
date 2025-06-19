@@ -73,6 +73,7 @@ import CashSalesPage from './Pages/CashSalesPage';
 import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
 import SingleSale from './Components/Sales/SingleSale';
 import AddPromoSales from './Components/PromotionSales/AddPromoSales';
+import PromoPage from './Pages/PromoPage';
 
 
 
@@ -207,6 +208,7 @@ function App() {
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
             <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
             <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
+            <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
            </Routes> 
        
       </Router>
