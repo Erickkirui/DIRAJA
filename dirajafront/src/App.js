@@ -73,8 +73,12 @@ import CashSalesPage from './Pages/CashSalesPage';
 import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
 import SingleSale from './Components/Sales/SingleSale';
 import AddPromoSales from './Components/PromotionSales/AddPromoSales';
+<<<<<<< HEAD
 import AddMeritPoints from './Components/Employees/Merit&Demerit';
 import MeritLedger from './Components/MeritLedger';
+=======
+import PromoPage from './Pages/PromoPage';
+>>>>>>> 9b45cd37802f05b2c5480886e1f0d9a85a47213c
 
 
 
@@ -208,8 +212,12 @@ function App() {
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
             <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
             <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
+<<<<<<< HEAD
             <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
             <Route path='/meritledgers' element={<Layout><MeritLedger/></Layout>} ></Route>
+=======
+            <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
+>>>>>>> 9b45cd37802f05b2c5480886e1f0d9a85a47213c
            </Routes> 
        
       </Router>

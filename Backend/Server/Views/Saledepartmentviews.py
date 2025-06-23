@@ -10,6 +10,7 @@ from flask import jsonify,request,make_response
 from functools import wraps
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func
 
 
 
@@ -59,7 +60,7 @@ class GetSalesdepartmentSales(Resource):
     @check_role('manager')
     def get(self):
         try:
-            sales = SalesDepartment.query.all()
+            sales = SalesDepartment.query.order_by(SalesDepartment.created_at.desc()).all()
             sales_list = []
 
             for sale in sales:
@@ -67,10 +68,10 @@ class GetSalesdepartmentSales(Resource):
                     "departemntsale_id": sale.departemntsale_id,
                     "user_id": sale.user_id,
                     "shop_id": sale.shop_id,
-                    "item_name": sale.item_name,  
+                    "shop_sale_name": sale.shop_sale_name,
+                    "item_name": sale.item_name,  # This is a JSON field
                     "customer_name": sale.customer_name,
                     "customer_number": sale.customer_number,
-                    "quantity": sale.quantity,
                     "total_price": sale.total_price,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S')
                 })
@@ -80,6 +81,37 @@ class GetSalesdepartmentSales(Resource):
         except Exception as e:
             return {"error": str(e)}, 500
 
+
+class TopSalesUsers(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Aggregate total sales per user
+            results = (
+                db.session.query(
+                    SalesDepartment.user_id,
+                    func.sum(SalesDepartment.total_price).label('total_sales'),
+                    Users.username
+                )
+                .join(Users, Users.users_id == SalesDepartment.user_id)
+                .group_by(SalesDepartment.user_id, Users.username)
+                .order_by(func.sum(SalesDepartment.total_price).desc())
+                .all()
+            )
+
+            ranked_users = []
+            for idx, row in enumerate(results, start=1):
+                ranked_users.append({
+                    "rank": idx,
+                    "user_id": row.user_id,
+                    "username": row.username,
+                    "total_sales": row.total_sales
+                })
+
+            return {"ranked_users": ranked_users}, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 class GetSalesDepartmentSalesByUser(Resource):
     @jwt_required()
