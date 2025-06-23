@@ -44,6 +44,7 @@ from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
 from Server.Views.StockItems import PostStockItem,GetAllStockItems,StockItem
 from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
 <<<<<<< HEAD
+<<<<<<< HEAD
 from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
 from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, MeritPointResource
 from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
@@ -51,6 +52,15 @@ from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
 from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
 
 >>>>>>> 9b45cd37802f05b2c5480886e1f0d9a85a47213c
+=======
+
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
+from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, MeritPointResource
+from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
+
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
+
+>>>>>>> e3ecfaa4dcc48ddcd71284f96aecfb0c78c9e540
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -285,6 +295,9 @@ api.add_resource(GetSalesDepartmentSalesByUser, '/salesdepartmentsales/<int:user
 api.add_resource(TotalAmountDepartmentSales,"/salesdepartmenttotal")
 api.add_resource(TotalAmountDepartmentSalesByUser,"/salesdepartmenttotal/<int:user_id>")
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e3ecfaa4dcc48ddcd71284f96aecfb0c78c9e540
 
 #Merit points
 api.add_resource(PostMeritPoint, '/newmeritpoint')
@@ -294,6 +307,10 @@ api.add_resource(MeritPointResource, '/merit-points/<int:id>')
 #Assign meritpoints points
 api.add_resource(AssignMeritPoints, '/employee/<int:employee_id>/assign-merit')
 api.add_resource(GetMeritLedger, '/meritledger')
+<<<<<<< HEAD
 =======
 api.add_resource(TopSalesUsers,'/promo-sales-rank')
 >>>>>>> 9b45cd37802f05b2c5480886e1f0d9a85a47213c
+=======
+api.add_resource(TopSalesUsers,'/promo-sales-rank')
+>>>>>>> e3ecfaa4dcc48ddcd71284f96aecfb0c78c9e540
