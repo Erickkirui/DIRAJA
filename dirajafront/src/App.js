@@ -76,6 +76,8 @@ import AddPromoSales from './Components/PromotionSales/AddPromoSales';
 import AddMeritPoints from './Components/Employees/Merit&Demerit';
 import MeritLedger from './Components/MeritLedger';
 
+import PromoPage from './Pages/PromoPage';
+
 
 
 
@@ -210,6 +212,7 @@ function App() {
             <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
             <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
             <Route path='/meritledgers' element={<Layout><MeritLedger/></Layout>} ></Route>
+            <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
            </Routes> 
        
       </Router>
