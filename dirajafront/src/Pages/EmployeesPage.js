@@ -13,8 +13,10 @@ function EmployeesPage() {
       <div>
       <h1>Employee</h1>
       </div>
-    <Link className='add-button' to="/addemployee">Add Employees  </Link>
-    </div>
+        <Link className='add-button' to="/addemployee">Add Employees  </Link>
+      </div>
+    
+    
 
       
 
