@@ -12,11 +12,6 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 
-
-
-
-
-
 def check_role(required_role):
     def wrapper(fn):
         @wraps(fn)
@@ -156,6 +151,7 @@ class GetAllemployees(Resource):
             'starting_date': employee.starting_date,
             'contract_termination_date': employee.contract_termination_date,
             'contract_renewal_date': employee.contract_renewal_date,
+            "merit_points": employee.merit_points,
             "created_at": employee.created_at
         } for employee in employees]
 
@@ -194,6 +190,7 @@ class Employeeresource(Resource):
             'bank_name': employee.bank_name,
             'department': employee.department,
             'starting_date': employee.starting_date,
+            "merit_points": employee.merit_points,
             'contract_termination_date': employee.contract_termination_date,
             'contract_renewal_date': employee.contract_renewal_date
         }

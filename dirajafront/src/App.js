@@ -73,6 +73,8 @@ import CashSalesPage from './Pages/CashSalesPage';
 import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
 import SingleSale from './Components/Sales/SingleSale';
 import AddPromoSales from './Components/PromotionSales/AddPromoSales';
+import AddMeritPoints from './Components/Employees/Merit&Demerit';
+import MeritLedger from './Components/MeritLedger';
 
 
 
@@ -196,7 +198,6 @@ function App() {
             <Route path='/shopcredit' element={<ClerkLayout>< GetUnpaidSalesByClerk/></ClerkLayout>} ></Route>
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
             <Route path='/cashsales' element={<ClerkLayout>< TotalCashSalesByUser/></ClerkLayout>} ></Route>
-
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
             <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
             <Route path='/all-ledgers' element={<Layout><AllLedgers/></Layout>} ></Route>
@@ -207,6 +208,8 @@ function App() {
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
             <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
             <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
+            <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
+            <Route path='/meritledgers' element={<Layout><MeritLedger/></Layout>} ></Route>
            </Routes> 
        
       </Router>
