@@ -39,7 +39,7 @@ const AddPurchase = () => {
     };
 
     return (
-      <ShopRestricted>
+      
         <div>
             {message && <div className={`message ${messageType}`}>{message}</div>}
             <h1>Record a Purchase</h1>
@@ -51,7 +51,7 @@ const AddPurchase = () => {
                 <button className="add-sale-button" type="submit" disabled={isLoading}>Add Purchase</button>
             </form>
         </div>
-      </ShopRestricted>
+      
     );
 };
 

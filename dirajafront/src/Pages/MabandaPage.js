@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import MabandaSalesDetails from '../Components/Singlemabandasale';
-import MabandaExpenseDetails from '../Components/Singlemabandaexpenses'
 import Expenses from '../Components/ClerkDashbord/MabandaShop/GetMabandaExpenses';
+import Purchases from '../Components/ClerkDashbord/MabandaShop/GetMabandaPurchase';
 
 function MabandaPage() {
   const [activeTab, setActiveTab] = useState('totalmabandasales');
@@ -16,17 +16,17 @@ function MabandaPage() {
         >
           Sales
         </button>
-        {/* <button 
-          className={`tab-button ${activeTab === 'totalmabandaexpenses' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('totalmabandaexpenses')}
+        <button 
+          className={`tab-button ${activeTab === 'mabandapurchases' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('mabandapurchases')}
         >
-          Expenses
-        </button> */}
+          Purchases
+        </button>
       </div>
 
       <div className="tab-content">
         {activeTab === 'totalmabandasales' && <MabandaSalesDetails />}
-        {/* {activeTab === 'totalmabandaexpenses' && <MabandaExpenseDetails />} */}
+        {activeTab === 'mabandapurchases' && <Purchases />}
       </div>
     </div>
   );
