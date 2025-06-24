@@ -73,10 +73,16 @@ import CashSalesPage from './Pages/CashSalesPage';
 import GennarateSalesReport from './Components/Reports/GennarateSalesReport';
 import SingleSale from './Components/Sales/SingleSale';
 import AddPromoSales from './Components/PromotionSales/AddPromoSales';
+
 import AddMeritPoints from './Components/Employees/Merit&Demerit';
 import MeritLedger from './Components/MeritLedger';
 
 import PromoPage from './Pages/PromoPage';
+import AssignMeritForm from './Components/Employees/Assignmerit';
+import MeritRecords from './Components/Employees/MeritRecords';
+
+
+
 
 
 
@@ -187,7 +193,7 @@ function App() {
 
             <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>
-            <Route path='/mabandapurchase' element={<ClerkLayout><AddMPurchase /></ClerkLayout>} ></Route>
+            <Route path='/mabandapurchase' element={<Layout><AddMPurchase /></Layout>} ></Route>
             <Route path='/mabandastock' element={<ClerkLayout><AddMStock /></ClerkLayout>} ></Route>
             <Route path='/mabandasales' element={<ClerkLayout><Sales /></ClerkLayout>} ></Route>
             <Route path='/mabandasalesmanager' element={<Layout><Sales /></Layout>} ></Route>
@@ -210,8 +216,9 @@ function App() {
             <Route path='/stock-items' element={<Layout><AddStockItems /></Layout>} ></Route>
             <Route path='/sale-reports' element={<Layout><GennarateSalesReport /></Layout>} ></Route>
             <Route path='/promo-sale' element={<ClerkLayout><AddPromoSales /></ClerkLayout>} ></Route>
+            <Route path='/assignmeritpoint' element={<Layout><AssignMeritForm/></Layout>} ></Route>
             <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
-            <Route path='/meritledgers' element={<Layout><MeritLedger/></Layout>} ></Route>
+            <Route path='/meritrecords' element={<Layout><MeritRecords/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
            </Routes> 
        

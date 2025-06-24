@@ -152,6 +152,7 @@ class GetAllemployees(Resource):
             'contract_termination_date': employee.contract_termination_date,
             'contract_renewal_date': employee.contract_renewal_date,
             "merit_points": employee.merit_points,
+            "merit_points_updated_at": employee.merit_points_updated_at,
             "created_at": employee.created_at
         } for employee in employees]
 
