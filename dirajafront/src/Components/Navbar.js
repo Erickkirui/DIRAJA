@@ -26,7 +26,7 @@ function Navbar() {
             <img src='/images/Sales.png' alt='menu-icon' />
             <li>Sales Analytics</li>
           </NavLink>
-          <NavLink to=" /promo-sales-table" className="menu-item" activeClassName="active">
+          <NavLink to="/promo-sales-table" className="menu-item" activeClassName="active">
             <img src='/images/Sales.png' alt='menu-icon' />
             <li>Promo Sales</li>
           </NavLink>
