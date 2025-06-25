@@ -80,6 +80,7 @@ import MeritLedger from './Components/MeritLedger';
 import PromoPage from './Pages/PromoPage';
 import AssignMeritForm from './Components/Employees/Assignmerit';
 import MeritRecords from './Components/Employees/MeritRecords';
+import MeritPointsTable from './Components/MeritPoints';
 
 
 
@@ -219,6 +220,7 @@ function App() {
             <Route path='/assignmeritpoint' element={<Layout><AssignMeritForm/></Layout>} ></Route>
             <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
             <Route path='/meritrecords' element={<Layout><MeritRecords/></Layout>} ></Route>
+            <Route path='/meritpoints' element={<Layout><MeritPointsTable/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
            </Routes> 
        
