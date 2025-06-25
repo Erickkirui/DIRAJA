@@ -64,7 +64,7 @@ const MeritRecords = () => {
       {/* Action Buttons */}
       <div className="actions-container" >
         
-        <Link className='add-button' to="/newmeritpoint">Manage merit points</Link>
+        <Link className='add-button' to="/meritpoints">Manage merit points</Link>
 
         <Link className='add-button' to="/assignmeritpoint">Assign merit points</Link>
       </div>

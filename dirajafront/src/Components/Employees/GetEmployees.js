@@ -153,7 +153,6 @@ const Employees = () => {
 
         <ExportExcel data={employees} fileName="EmployeesData" />
         <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
-        <Link className='add-button' to="/newmeritpoint">Add Merit points</Link>
       </div>
 
       <GeneralTableLayout
