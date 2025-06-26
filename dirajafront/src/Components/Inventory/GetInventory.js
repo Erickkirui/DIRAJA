@@ -31,7 +31,10 @@ const Inventory = () => {
         }
 
         const response = await axios.get('/api/diraja/allinventories', {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-User-Role': 'manager',
+          },
         });
         setInventory(response.data);
       } catch (err) {
@@ -85,7 +88,10 @@ const Inventory = () => {
       await Promise.all(
         selectedInventory.map((inventoryId) =>
           axios.delete(`/api/diraja/inventory/${inventoryId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-User-Role': 'manager',
+            },
           })
         )
       );

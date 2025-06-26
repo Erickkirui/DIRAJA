@@ -29,6 +29,7 @@ const AddInventory = () => {
         const response = await axios.get('/api/diraja/all-acounts', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            'X-User-Role': 'manager',
           },
         });
         if (Array.isArray(response.data.accounts)) {
@@ -48,6 +49,7 @@ const AddInventory = () => {
         const response = await axios.get('/api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            'X-User-Role': 'manager',
           },
         });
         if (Array.isArray(response.data.stock_items)) {
@@ -73,11 +75,10 @@ const AddInventory = () => {
       [name]: value
     };
 
-    // Auto-calculate unitCost when amountPaid or quantity changes
     if (name === 'amountPaid' || name === 'quantity') {
       const quantity = parseFloat(updatedFormData.quantity) || 0;
       const amountPaid = parseFloat(updatedFormData.amountPaid) || 0;
-      
+
       if (quantity > 0) {
         updatedFormData.unitCost = (amountPaid / quantity).toFixed(2);
       } else {
@@ -97,7 +98,6 @@ const AddInventory = () => {
       return;
     }
 
-    // Ensure unitCost is calculated with current values before submission
     const quantity = parseFloat(formData.quantity) || 0;
     const amountPaid = parseFloat(formData.amountPaid) || 0;
     const finalUnitCost = quantity > 0 ? (amountPaid / quantity) : 0;
@@ -114,6 +114,7 @@ const AddInventory = () => {
       const response = await axios.post('/api/diraja/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          'X-User-Role': 'manager',
         },
       });
 
@@ -209,7 +210,6 @@ const AddInventory = () => {
           placeholder="Comments (Optional)"
           className="input"
         />
-
 
         <input
           type="number"

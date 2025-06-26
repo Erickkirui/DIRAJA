@@ -78,19 +78,10 @@ import AddMeritPoints from './Components/Employees/Merit&Demerit';
 import MeritLedger from './Components/MeritLedger';
 
 import PromoPage from './Pages/PromoPage';
-<<<<<<< HEAD
-import ProcurementTable from './Components/Inventory/ProcurementTable'
-=======
 import AssignMeritForm from './Components/Employees/Assignmerit';
 import MeritRecords from './Components/Employees/MeritRecords';
 import MeritPointsTable from './Components/MeritPoints';
-
-
-
-
->>>>>>> 3511f9b53de575310a75b421de87436dd854bbfd
-
-
+import ProcurementTable from './Components/Inventory/ProcurementTable';
 
 
 const Layout = ({ children }) => {
