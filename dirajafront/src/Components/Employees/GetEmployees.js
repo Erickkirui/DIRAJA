@@ -3,25 +3,21 @@ import axios from 'axios';
 import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
 import UpdateEmployeeShop from './UpdateEmployeeShop';
+import GeneralTableLayout from '../GeneralTableLayout';
 import { Link } from 'react-router-dom';
 import '../../Styles/employees.css';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState('');
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [showUpdateShop, setShowUpdateShop] = useState(false);
-  const [showMeritForm, setShowMeritForm] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [meritPoints, setMeritPoints] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
-  const itemsPerPage = 50;
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,7 +42,6 @@ const Employees = () => {
       } catch (err) {
         setMessageType('error');
         setMessage('Error fetching data. Please try again.');
-        console.error('Error:', err);
       }
     };
 
@@ -97,69 +92,9 @@ const Employees = () => {
       } catch (err) {
         setMessageType('error');
         setMessage('Error deleting employees');
-        console.error('Error:', err);
       }
     } else if (selectedAction === 'change-shop') {
       setShowUpdateShop(true);
-    }
-  };
-
-  const handleViewMerit = (employee) => {
-    setSelectedEmployee(employee);
-    setShowMeritForm(true);
-    setMessage('');
-  };
-
-  const handleMeritSubmit = async (formData) => {
-    setIsSubmitting(true);
-    try {
-      const accessToken = localStorage.getItem('access_token');
-      const selectedMerit = meritPoints.find(
-        (merit) => merit.meritpoint_id === Number(formData.merit_id)
-      );
-
-      if (!selectedMerit) {
-        throw new Error('Selected merit point not found');
-      }
-
-      const response = await axios.post(
-        `/api/diraja/employee/${selectedEmployee.employee_id}/assign-merit`,
-        {
-          merit_id: selectedMerit.meritpoint_id,
-          comment: formData.comment || ''
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.employee_id === selectedEmployee.employee_id
-            ? {
-                ...emp,
-                merit_points:
-                  response.data.employee?.current_merit_points || emp.merit_points
-              }
-            : emp
-        )
-      );
-
-      setShowMeritForm(false);
-      setSelectedEmployee(null);
-      setMessageType('success');
-      setMessage('Points assigned successfully!');
-    } catch (error) {
-      setMessageType('error');
-      setMessage(
-        error.response?.data?.message || error.message || 'Error assigning points'
-      );
-      console.error('Error:', error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -175,11 +110,6 @@ const Employees = () => {
 
     return matchSearch && matchDate;
   });
-
-  const currentEmployees = filteredEmployees.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
 
   const getFirstLetter = (name) => name?.charAt(0)?.toUpperCase() || '';
   const getFirstName = (name) =>
@@ -223,13 +153,13 @@ const Employees = () => {
 
         <ExportExcel data={employees} fileName="EmployeesData" />
         <DownloadPDF tableId="employees-table" fileName="EmployeesData" />
-        <Link className='add-button' to="/newmeritpoint">Add Merit points  </Link>
       </div>
 
-      <table id="employees-table" className="employees-table">
-        <thead>
-          <tr>
-            <th>
+      <GeneralTableLayout
+        data={filteredEmployees}
+        columns={[
+          {
+            header: (
               <input
                 type="checkbox"
                 onChange={handleSelectAll}
@@ -238,72 +168,42 @@ const Employees = () => {
                   employees.length > 0
                 }
               />
-            </th>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Mail</th>
-            <th>Shopname</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Merit Points</th>
-            <th>Created at</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentEmployees.map((employee) => (
-            <tr key={employee.employee_id}>
-              <td>
-                <input
-                  type="checkbox"
-                  checked={selectedEmployees.includes(employee.employee_id)}
-                  onChange={() => handleCheckboxChange(employee.employee_id)}
-                />
-              </td>
-              <td>{employee.employee_id}</td>
-              <td>
-                <div className="employee-info">
-                  <div className="employee-icon">
-                    {getFirstLetter(employee.first_name)}
-                  </div>
-                  <span className="employee-name">
-                    {getFirstName(employee.first_name)}
-                  </span>
+            ),
+            render: (employee) => (
+              <input
+                type="checkbox"
+                checked={selectedEmployees.includes(employee.employee_id)}
+                onChange={() => handleCheckboxChange(employee.employee_id)}
+              />
+            ),
+          },
+          { header: 'ID', key: 'employee_id' },
+          {
+            header: 'Name',
+            render: (employee) => (
+              <div className="employee-info">
+                <div className="employee-icon">
+                  {getFirstLetter(employee.first_name)}
                 </div>
-              </td>
-              <td>{employee.work_email}</td>
-              <td>{employee.shop_name}</td>
-              <td>{employee.role}</td>
-              <td>{employee.account_status}</td>
-              <td>{employee.merit_points || 0}</td>
-              <td>{new Date(employee.created_at).toLocaleString()}</td>
-              <td>
-                <button
-                  onClick={() => handleViewMerit(employee)}
-                  className="view-merit-button"
-                >
-                  Assign Points
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="pagination">
-        {Array.from(
-          { length: Math.ceil(filteredEmployees.length / itemsPerPage) },
-          (_, i) => (
-            <button
-              key={i}
-              className={`page-button ${currentPage === i + 1 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(i + 1)}
-            >
-              {i + 1}
-            </button>
-          )
-        )}
-      </div>
+                <span className="employee-name">
+                  {getFirstName(employee.first_name)}
+                </span>
+              </div>
+            ),
+          },
+          { header: 'Mail', key: 'work_email' },
+          { header: 'Shopname', key: 'shop_name' },
+          { header: 'Role', key: 'role' },
+          { header: 'Status', key: 'account_status' },
+          { header: 'Merit Points', key: 'merit_points' },
+          { header: 'Last merit update', key: 'merit_points_updated_at' },
+          {
+            header: 'Created at',
+            render: (employee) =>
+              new Date(employee.created_at).toLocaleString(),
+          },
+        ]}
+      />
 
       {showUpdateShop && (
         <div className="modal-overlay" onClick={() => setShowUpdateShop(false)}>
@@ -316,78 +216,9 @@ const Employees = () => {
                 setMessage('Shop updated successfully');
               }}
             />
-            <button
-              className="cancel-button"
-              onClick={() => setShowUpdateShop(false)}
-            >
+            <button className="cancel-button" onClick={() => setShowUpdateShop(false)}>
               Cancel
             </button>
-          </div>
-        </div>
-      )}
-
-      {showMeritForm && selectedEmployee && (
-        <div className="modal-overlay" onClick={() => setShowMeritForm(false)}>
-          <div
-            className="modal-content merit-form"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2>Assign Points to {selectedEmployee.first_name}</h2>
-            <p>Current Merit Points: {selectedEmployee.merit_points || 0}</p>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.target);
-                handleMeritSubmit({
-                  merit_id: formData.get('merit_id'),
-                  comment: formData.get('comment')
-                });
-              }}
-            >
-              <select
-                name="merit_id"
-                required
-                className="merit-select"
-                disabled={isSubmitting}
-              >
-                <option value="">Select Merit/Demerit Reason</option>
-                {meritPoints.map((merit) => (
-                  <option
-                    key={merit.meritpoint_id}
-                    value={merit.meritpoint_id}
-                  >
-                    {merit.reason} ({merit.point > 0 ? '+' : ''}
-                    {merit.point} points)
-                  </option>
-                ))}
-              </select>
-
-              <textarea
-                name="comment"
-                placeholder="Comment (optional)"
-                className="merit-comment"
-                disabled={isSubmitting}
-              />
-
-              <div className="merit-form-buttons">
-                <button
-                  type="submit"
-                  className="submit-merit-button"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Assigning...' : 'Assign Points'}
-                </button>
-                <button
-                  type="button"
-                  className="cancel-merit-button"
-                  onClick={() => setShowMeritForm(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

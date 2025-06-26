@@ -15,7 +15,7 @@ import { DownloadOutlined } from '@ant-design/icons';
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const GennarateSalesReport = () => {
+const GenerateSalesReport = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -49,7 +49,7 @@ const GennarateSalesReport = () => {
     fetchShops();
   }, []);
 
-  const handleGennarateSalesReport = async (values) => {
+  const handleGenerateSalesReport = async (values) => {
     setLoading(true);
     setError(null);
 
@@ -59,7 +59,7 @@ const GennarateSalesReport = () => {
 
       const filters = {
         search_query: values.search_query || null,
-        shopname: values.shopname || null,
+        shopname: values.shopname === 'all_shops' ? null : values.shopname || null,
         status: values.status || null,
         items_purchased: values.items_purchased || null,
         start_date: values.date_range ? values.date_range[0]?.format('YYYY-MM-DD') : null,
@@ -92,7 +92,7 @@ const GennarateSalesReport = () => {
     <Form
       form={form}
       layout="vertical"
-      onFinish={handleGennarateSalesReport}
+      onFinish={handleGenerateSalesReport}
       initialValues={{ status: 'paid' }}
       style={{ display: 'flex', flexDirection: 'column', gap: '0px', maxWidth: 400 }}
     >
@@ -103,6 +103,8 @@ const GennarateSalesReport = () => {
           type="error"
           showIcon
           closable
+          onClose={() => setError(null)}
+          style={{ marginBottom: 16 }}
         />
       )}
 
@@ -113,6 +115,9 @@ const GennarateSalesReport = () => {
           <Spin />
         ) : (
           <Select placeholder="Select shop name" allowClear>
+            <Option key="all_shops" value="all_shops">
+              All Shops
+            </Option>
             {shops.map((shop) => (
               <Option key={shop.shop_id} value={shop.shopname}>
                 {shop.shopname}
@@ -122,22 +127,12 @@ const GennarateSalesReport = () => {
         )}
       </Form.Item>
 
-      <Form.Item name="search_query" label="Search (Customer/User)">
-        <Input placeholder="Enter Customer or Employee name" />
+      <Form.Item name="search_query" label="Search (Customer/User/Shop)">
+        <Input placeholder="Enter Customer, Employee or Shop name (Optional)" />
       </Form.Item>
 
       <Form.Item name="items_purchased" label="Items Purchased">
-        <Input placeholder="Enter item name to filter" />
-      </Form.Item>
-
-      <Form.Item name="status" label="Status">
-        <Select>
-          {statusOptions.map((opt) => (
-            <Option key={opt.value} value={opt.value}>
-              {opt.label}
-            </Option>
-          ))}
-        </Select>
+        <Input placeholder="Enter item name to filter (Optional)" />
       </Form.Item>
 
       <Form.Item name="date_range" label="Date Range">
@@ -161,4 +156,4 @@ const GennarateSalesReport = () => {
   );
 };
 
-export default GennarateSalesReport;
+export default GenerateSalesReport;

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Employees from '../Components/Employees/GetEmployees';
 import { Link } from 'react-router-dom';
 import SalesLeaderboard from '../Components/Employees/SalesLeaderboard';
+import MeritRecords from '../Components/Employees/MeritRecords';
 
 function EmployeesPage() {
   // State to manage the active tab
@@ -35,6 +36,12 @@ function EmployeesPage() {
         >
           Sales Leaderboard
         </button>
+        <button 
+          className={`tab-button ${activeTab === 'employeesales' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('employeemerit')}
+        >
+          Merit records
+        </button>
       </div>
 
 
@@ -42,6 +49,7 @@ function EmployeesPage() {
       <div className="tab-content">
         {activeTab === 'Employees' && <Employees />}
         {activeTab === 'employeesales' && <SalesLeaderboard />}
+        {activeTab === 'employeemerit' && <MeritRecords />}
       </div>
     </>
   );

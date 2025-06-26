@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ExportExcel from '../../Download/ExportExcel';
 import DownloadPDF from '../../Download/DownloadPDF';
+import { Link } from 'react-router-dom';
+
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
@@ -80,6 +82,7 @@ const Purchases = () => {
       <div className='actions-container'>
         <ExportExcel data={filteredPurchases} fileName="SalesData" />
         <DownloadPDF tableId="sales-table" fileName="SalesData" />
+        <Link className='add-button' to="/mabandapurchase">Add purchase</Link>
       </div>
 
       {filteredPurchases.length > 0 ? (

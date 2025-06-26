@@ -52,6 +52,14 @@ from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepart
 
 
 
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
+from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, MeritPointResource
+from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
+
+from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
+
+
+
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
@@ -284,6 +292,7 @@ api.add_resource(GetSalesDepartmentSalesByUser, '/salesdepartmentsales/<int:user
 api.add_resource(TotalAmountDepartmentSales,"/salesdepartmenttotal")
 api.add_resource(TotalAmountDepartmentSalesByUser,"/salesdepartmenttotal/<int:user_id>")
 
+
 #Merit points
 api.add_resource(PostMeritPoint, '/newmeritpoint')
 api.add_resource(GetAllMeripoints, '/allmeritpoints')
@@ -292,4 +301,5 @@ api.add_resource(MeritPointResource, '/merit-points/<int:id>')
 #Assign meritpoints points
 api.add_resource(AssignMeritPoints, '/employee/<int:employee_id>/assign-merit')
 api.add_resource(GetMeritLedger, '/meritledger')
+
 api.add_resource(TopSalesUsers,'/promo-sales-rank')

@@ -86,6 +86,7 @@ class GetMeritLedger(Resource):
         parser.add_argument('employee_id', type=int, required=False, help='Optional employee ID to filter')
         args = parser.parse_args()
 
+        # ✅ No request.get_json() used — that's correct for GET
         if args['employee_id']:
             ledger_entries = MeritLedger.query.filter_by(employee_id=args['employee_id']).order_by(MeritLedger.date.desc()).all()
         else:
@@ -106,7 +107,5 @@ class GetMeritLedger(Resource):
             })
 
         return {
-            "message": "Merit ledger retrieved successfully.",
-            "count": len(result),
             "entries": result
         }, 200

@@ -9,7 +9,7 @@ from Server.Models.Users import Users
 from app import db
 from functools import wraps
 from flask import request,make_response,jsonify
-from flask_jwt_extended import jwt_required,get_jwt_identity
+from flask_jwt_extended import jwt_required,get_jwt_identity,verify_jwt_in_request
 from dateutil import parser
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
@@ -20,20 +20,21 @@ from flask import current_app
 import re
 
 
-
-def check_role(allowed_roles):
+def check_role(roles):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = Users.query.get(current_user_id)
-            if user and user.role not in allowed_roles:
-                return make_response(jsonify({"error": "Unauthorized access"}), 403)
+            verify_jwt_in_request()  # Verify JWT first
+            current_user = get_jwt_identity()
+            
+            # Get role from header (fallback to user's role in DB if needed)
+            user_role = request.headers.get('X-User-Role', None)
+            
+            if user_role not in roles:
+                return jsonify({"message": "Access denied: insufficient permissions"}), 403
             return fn(*args, **kwargs)
         return decorator
     return wrapper
-
-
 
 
 class GetInventoryByBatch(Resource):
