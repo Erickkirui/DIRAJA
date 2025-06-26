@@ -37,55 +37,62 @@ const DistributeInventoryModal = ({
     fetchShops();
   }, []);
 
-  const handleDistribute = async (e) => {
-    e.preventDefault();
-    const accessToken = localStorage.getItem('access_token');
-    if (quantity <= 0 || !shopId || !distributionDate) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-      return;
-    }
+ const handleDistribute = async (e) => {
+  e.preventDefault();
+  const accessToken = localStorage.getItem('access_token');
+  if (quantity <= 0 || !shopId || !distributionDate) {
+    setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+    return;
+  }
 
-    setLoading(true);
-    setMessage({ type: '', text: '' });
+  setLoading(true);
+  setMessage({ type: '', text: '' });
 
-    try {
-      await Promise.all(
-        selectedInventory.map(async (inventoryId) => {
-          const inventoryItem = inventory.find((item) => item.inventory_id === inventoryId);
-          const requestData = {
-            shop_id: parseInt(shopId, 10),
-            inventory_id: inventoryItem.inventory_id,
-            quantity: parseFloat(quantity),
-            metric: inventoryItem.metric,
-            itemname: inventoryItem.itemname,
-            unitPrice: inventoryItem.unitPrice,
-            unitCost: inventoryItem.unitCost,
-            amountPaid: inventoryItem.unitCost * parseFloat(quantity),
-            BatchNumber: inventoryItem.batchnumber,
-            created_at: new Date(distributionDate).toISOString(), // ✅ Fix: Use 'created_at'
-          };
-          await axios.post('/api/diraja/transfer', requestData, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-        })
-      );
-      setMessage({ type: 'success', text: 'Inventory distributed successfully' });
-      onDistributeSuccess();
-      setShopId('');
-      setQuantity('');
-      setDistributionDate('');
-      setTimeout(onClose, 1500);
-    } catch (error) {
-      if (error.response && error.response.data) {
-        setMessage({ type: 'error', text: error.response.data.message || 'Error distributing inventory. Please try again.' });
-      } else {
-        setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
-      }
-      console.error('Error distributing inventory:', error);
-    } finally {
-      setLoading(false);
+  try {
+    await Promise.all(
+      selectedInventory.map(async (inventoryId) => {
+        const inventoryItem = inventory.find((item) => item.inventory_id === inventoryId);
+        const requestData = {
+          shop_id: parseInt(shopId, 10),
+          inventory_id: inventoryItem.inventory_id,
+          quantity: parseFloat(quantity),
+          metric: inventoryItem.metric,
+          itemname: inventoryItem.itemname,
+          unitPrice: inventoryItem.unitPrice,
+          unitCost: inventoryItem.unitCost,
+          amountPaid: inventoryItem.unitCost * parseFloat(quantity),
+          BatchNumber: inventoryItem.batchnumber,
+          created_at: new Date(distributionDate).toISOString(),
+        };
+        await axios.post('/api/diraja/transfer', requestData, {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-User-Role': 'manager', // 👈 Added role here
+          },
+        });
+      })
+    );
+    setMessage({ type: 'success', text: 'Inventory distributed successfully' });
+    onDistributeSuccess();
+    setShopId('');
+    setQuantity('');
+    setDistributionDate('');
+    setTimeout(onClose, 1500);
+  } catch (error) {
+    if (error.response && error.response.data) {
+      setMessage({
+        type: 'error',
+        text: error.response.data.message || 'Error distributing inventory. Please try again.',
+      });
+    } else {
+      setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
     }
-  };
+    console.error('Error distributing inventory:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="modal-overlay">

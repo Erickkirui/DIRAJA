@@ -77,7 +77,7 @@ import AddMeritPoints from './Components/Employees/Merit&Demerit';
 import MeritLedger from './Components/MeritLedger';
 
 import PromoPage from './Pages/PromoPage';
-
+import ProcurementTable from './Components/Inventory/ProcurementTable'
 
 
 
@@ -213,6 +213,8 @@ function App() {
             <Route path='/newmeritpoint' element={<Layout><AddMeritPoints/></Layout>} ></Route>
             <Route path='/meritledgers' element={<Layout><MeritLedger/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
+            <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTable /></ClerkLayout>} ></Route>
+          
            </Routes> 
        
       </Router>

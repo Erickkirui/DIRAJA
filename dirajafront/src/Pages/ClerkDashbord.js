@@ -32,6 +32,10 @@ function ClerkDashbord() {
         <div className='page-area'>
           <div className='nav-phone'>
           <ShopNameDisplay />
+           {designation === "procurement" && (
+              <Link className='clerk-button' to='/distribute-stock'>Distribute Stock</Link>
+            )}
+       
               {/* {
                 shopId === "2" &&(
                   <Link className='clerk-button' to='/mabandasale'>New MSale</Link>
@@ -97,6 +101,9 @@ function ClerkDashbord() {
             {/* Conditionally render the button for relievers */}
             {designation === "reliever" && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
+            )}
+            {designation === "procurement" && (
+              <Link className='clerk-button' to='/distribute-stock'>Distribute Stock</Link>
             )}
 
                 {shopId === "12" && (

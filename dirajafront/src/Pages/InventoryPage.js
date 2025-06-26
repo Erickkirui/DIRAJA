@@ -3,6 +3,7 @@ import Inventory from '../Components/Inventory/GetInventory'
 import { Link } from 'react-router-dom';
 
 
+
 function InventoryPage() {
   return (
     <div>
@@ -16,6 +17,7 @@ function InventoryPage() {
        </div>
         </div>
         <Inventory/>
+        
         
     </div>
   )

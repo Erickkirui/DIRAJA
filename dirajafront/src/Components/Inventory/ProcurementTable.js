@@ -1,13 +1,10 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../Download/ExportExcel';
-import DownloadPDF from '../Download/DownloadPDF';
 import DistributeInventoryModal from './DistributeInventoryModal';
-import UpdateInventory from '../updateInventory';
 import GeneralTableLayout from '../GeneralTableLayout';
 import '../../Styles/inventory.css';
 
-const Inventory = () => {
+const ProcurementTable = () => {
   const [inventory, setInventory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
@@ -16,10 +13,33 @@ const Inventory = () => {
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedInventory, setSelectedInventory] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingInventoryId, setEditingInventoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [userRole, setUserRole] = useState('');
 
-  const editInventoryRef = useRef(null);
+  useEffect(() => {
+    const fetchUserRole = () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+          const base64Url = token.split('.')[1];
+          const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+          const decodedPayload = JSON.parse(atob(base64));
+          console.log('Decoded JWT payload:', decodedPayload);
+
+          const roleFromToken =
+            decodedPayload.role || decodedPayload.user?.role || 'procurement';
+          setUserRole(roleFromToken);
+        } else {
+          setError('No access token found');
+        }
+      } catch (err) {
+        console.error('Error parsing JWT:', err);
+        setError('Invalid token');
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   useEffect(() => {
     const fetchInventory = async () => {
@@ -31,21 +51,23 @@ const Inventory = () => {
         }
 
         const response = await axios.get('/api/diraja/allinventories', {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'X-User-Role': 'procurement',
+          },
         });
         setInventory(response.data);
       } catch (err) {
-        setError('Error fetching inventory. Please try again.');
+        if (err.response && err.response.status === 403) {
+          setError('Access denied: You do not have permission to view this data.');
+        } else {
+          setError('Error fetching inventory. Please try again.');
+        }
       }
     };
+
     fetchInventory();
   }, []);
-
-  useEffect(() => {
-    if (editingInventoryId !== null) {
-      editInventoryRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [editingInventoryId]);
 
   const handleCheckboxChange = (inventoryId) => {
     setSelectedInventory((prevSelected) =>
@@ -69,31 +91,6 @@ const Inventory = () => {
   const handleAction = () => {
     if (selectedAction === 'distribute') {
       setShowModal(true);
-    } else if (selectedAction === 'delete') {
-      handleDelete();
-    }
-  };
-
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete the selected inventory items? This action cannot be undone."
-    );
-    if (!confirmDelete) return;
-
-    const accessToken = localStorage.getItem('access_token');
-    try {
-      await Promise.all(
-        selectedInventory.map((inventoryId) =>
-          axios.delete(`/api/diraja/inventory/${inventoryId}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-        )
-      );
-      setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
-      setSelectedInventory([]);
-      setSelectedAction('');
-    } catch (error) {
-      setError('Error deleting inventory. Please try again.');
     }
   };
 
@@ -131,8 +128,9 @@ const Inventory = () => {
             selectedInventory.length > 0 &&
             filteredInventory
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .every(item => selectedInventory.includes(item.inventory_id))
+              .every((item) => selectedInventory.includes(item.inventory_id))
           }
+          className="select-all-checkbox"
         />
       ),
       key: 'inventory_id',
@@ -141,80 +139,85 @@ const Inventory = () => {
           type="checkbox"
           checked={selectedInventory.includes(item.inventory_id)}
           onChange={() => handleCheckboxChange(item.inventory_id)}
+          className="item-checkbox"
         />
-      )
+      ),
+      className: 'checkbox-column',
     },
     {
       header: 'Date',
       key: 'created_at',
       render: (item) => {
         const date = new Date(item.created_at);
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-      }
+        return (
+          <span className="date-cell">
+            {date.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            })}
+          </span>
+        );
+      },
+      className: 'date-column',
     },
-    { header: 'Item', key: 'itemname' },
+    {
+      header: 'Item',
+      key: 'itemname',
+      className: 'item-column',
+    },
     {
       header: 'Batch No',
       key: 'batchnumber',
-      render: (item) => (
-        <span style={{ fontSize: '12px' }}>
-          {item.batchnumber}
-        </span>
-      )
+      render: (item) => <span className="batch-number-cell">{item.batchnumber}</span>,
+      className: 'batch-number-column',
     },
     {
       header: 'Initial Quantity',
       key: 'initial_quantity',
-      render: (item) => `${item.initial_quantity} ${item.metric}`
+      render: (item) => (
+        <span className="quantity-cell">
+          {`${item.initial_quantity} ${item.metric}`}
+        </span>
+      ),
+      className: 'quantity-column',
     },
     {
       header: 'Remaining Quantity',
       key: 'remaining_quantity',
-      render: (item) => `${item.remaining_quantity} ${item.metric}`
-    },
-    { header: 'Unit Cost (Ksh)', key: 'unitCost' },
-    { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
-    {
-      header: 'Payment Ref',
-      key: 'paymentRef',
       render: (item) => (
-        <span style={{ fontSize: '12px' }}>
-          {item.paymentRef}
+        <span className="quantity-cell">
+          {`${item.remaining_quantity} ${item.metric}`}
         </span>
-      )
+      ),
+      className: 'quantity-column',
     },
-    { header: 'Source', key: 'source' },
     {
-      header: 'Actions',
-      key: 'actions',
-      render: (item) => (
-        <button
-          className='editeInventory'
-          onClick={() => handleEditClick(item.inventory_id)}
-        >
-          Edit
-        </button>
-      )
+      header: 'Unit Cost (Ksh)',
+      key: 'unitCost',
+      className: 'cost-column',
     },
-    { header: 'Comments', key: 'note' },
   ];
 
-  const handleEditClick = (inventoryId) => {
-    setEditingInventoryId(inventoryId);
-  };
+  if (!userRole && !error) {
+    return <div className="loading">Loading user permissions...</div>;
+  }
 
-  const handleCloseUpdate = () => {
-    setEditingInventoryId(null);
-  };
+  if (error) {
+    return <div className="error-message">{error}</div>;
+  }
+
+  if (userRole && !['procurement', 'manager'].includes(userRole)) {
+    return (
+      <div className="error-message">
+        Access Denied: You don't have permission to view this page.
+      </div>
+    );
+  }
 
   return (
     <div className="inventory-container">
-      {error && <div className="error-message">{error}</div>}
-
+      <h1>Distribute Inventory</h1>
       <div className="inventory-controls">
         <input
           type="text"
@@ -232,16 +235,22 @@ const Inventory = () => {
 
         <div className="actions-container">
           <div className="actions">
-            <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
+            <select
+              onChange={(e) => setSelectedAction(e.target.value)}
+              value={selectedAction}
+              disabled={selectedInventory.length === 0}
+            >
               <option value="">With selected, choose an action</option>
               <option value="distribute">Distribute</option>
-              <option value="delete">Delete</option>
             </select>
-            <button onClick={handleAction} className="action-button">Apply</button>
+            <button
+              onClick={handleAction}
+              className="action-button"
+              disabled={selectedAction === '' || selectedInventory.length === 0}
+            >
+              Apply
+            </button>
           </div>
-
-          <ExportExcel data={inventory} fileName="InventoryData" />
-          <DownloadPDF data={filteredInventory} columns={columns} fileName="InventoryData" />
         </div>
       </div>
 
@@ -252,16 +261,6 @@ const Inventory = () => {
           onClose={() => setShowModal(false)}
           onDistributeSuccess={handleDistributeSuccess}
         />
-      )}
-
-      {editingInventoryId && (
-        <div ref={editInventoryRef}>
-          <UpdateInventory
-            inventoryId={editingInventoryId}
-            onClose={handleCloseUpdate}
-            onUpdateSuccess={() => setInventory([...inventory])}
-          />
-        </div>
       )}
 
       <GeneralTableLayout
@@ -276,4 +275,4 @@ const Inventory = () => {
   );
 };
 
-export default Inventory;
+export default ProcurementTable;
