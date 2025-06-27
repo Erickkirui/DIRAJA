@@ -167,8 +167,8 @@ const AddEmployee = () => {
           className="input"
         >
           <option value="">-- Select Account Status --</option>
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
         </select>
   
           <input

@@ -102,9 +102,9 @@ function ClerkDashbord() {
             {designation === "reliever" && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
             )}
-            {designation === "procurement" && (
+            {/* {designation === "procurement" && (
               <Link className='clerk-button' to='/distribute-stock'>Distribute Stock</Link>
-            )}
+            )} */}
 
                 {shopId === "12" && (
                   <Link className="clerk-button" to="/mabandasales">
