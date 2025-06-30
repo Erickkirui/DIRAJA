@@ -15,7 +15,7 @@ from Server.Views.Inventoryviews import AddInventory, GetAllInventory, Inventory
 
 from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock,GetItemStock
+from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock,GetItemStock, AddShopStock
 
 from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
 
@@ -108,6 +108,8 @@ api.add_resource(ShopStockByDate, '/shopstock/bydate')
 api.add_resource(AvailableItemsByShopResource, '/items/available-by-shop')
 api.add_resource(ItemDetailsResourceForShop, '/shop-itemdetails')
 
+#Add shopstock
+api.add_resource(AddShopStock, '/addstock')
 
 
 

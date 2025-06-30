@@ -11,7 +11,7 @@ class CashDeposits(db.Model):
     amount = db.Column(db.Float, nullable=False)
     deductions = db.Column(db.Float, nullable=True)
     reason = db.Column(db.String(255), nullable=True)
-    transaction_code = db.column(db.String(255))
+    transaction_code = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
 
     # Relationships

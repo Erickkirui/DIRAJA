@@ -182,7 +182,8 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
 
             <ExportExcel data={selectedStocks} fileName="ShopstocksData" />
             <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
-            <Link to="/mabandastocksmanager"  className='mabandabutton' >View Mabanda Stock </Link>
+            {/* <Link to="/mabandastocksmanager"  className='mabandabutton' >View Mabanda Stock </Link> */}
+            <Link to="/addshopstock"  className='mabandabutton' >Add Shop Stock </Link>
             
 
             {/* Delete Confirmation Modal */}
