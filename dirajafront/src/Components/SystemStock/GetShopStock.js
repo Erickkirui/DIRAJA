@@ -53,7 +53,7 @@ const Shopstock = () => {
     const filteredShopsStock = shopStocks
         .filter((stock) => {
             const matchesSearch =
-                stock.item_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                stock.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 stock.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 stock.shop_id.toString().includes(searchQuery);
             const matchesDate = !selectedDate || stock.date === selectedDate;
@@ -103,8 +103,8 @@ const Shopstock = () => {
         },
         {
             header: 'Item Name',
-            key: 'item_name',
-            render: (stock) => stock.item_name
+            key: 'itemname',
+            render: (stock) => stock.itemname
         },
         {
             header: 'Batch Number',
