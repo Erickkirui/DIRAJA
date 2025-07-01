@@ -196,7 +196,21 @@ const Employees = () => {
           { header: 'Role', key: 'role' },
           { header: 'Status', key: 'account_status' },
           { header: 'Merit Points', key: 'merit_points' },
-          { header: 'Last merit update', key: 'merit_points_updated_at' },
+          {
+              header: 'Last merit update',
+              key: 'merit_points_updated_at',
+              render: (entry) => {
+                if (!entry.merit_points_updated_at) return '';  // ✅ check for null or undefined
+
+                const date = new Date(entry.merit_points_updated_at);
+                return date.toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                });
+              }
+            },
+
           {
             header: 'Created at',
             render: (employee) =>
