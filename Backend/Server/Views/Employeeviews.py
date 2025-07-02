@@ -28,41 +28,50 @@ class AddNewemployee(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
-        current_user_id = get_jwt_identity()  # Get the current user's ID
-        # Query the database to get the user's details
+        current_user_id = get_jwt_identity()
         current_user = Users.query.get(current_user_id)
 
         if not current_user:
             return {"error": "Current user not found."}, 404
 
-        current_user_role = current_user.role  # Extract the role of the current user
+        current_user_role = current_user.role
 
         data = request.get_json()
 
-        # Check if the current user has the right to add a manager
+        # Restrict manager/procurement creation
         if data.get('role') in ['manager', 'procurement'] and current_user_role != 'super_admin':
             return {
                 "error": "Only users with the role 'super_admin' can add an employee with the role 'manager' or 'procurement'."
             }, 403
 
-
         # List of fields that are nullable
-        nullable_fields = ['national_id_number', 'kra_pin', 'payment_method', 'bank_account_number',
-                           'bank_name', 'department', 'date_of_birth', 'contract_termination_date',
-                           'contract_renewal_date', 'created_at']
+        nullable_fields = [
+            'national_id_number', 'kra_pin', 'payment_method', 'bank_account_number',
+            'bank_name', 'department', 'date_of_birth', 'contract_termination_date',
+            'contract_renewal_date', 'created_at'
+        ]
 
-        # Update the employee data to set empty strings to None
         for field in nullable_fields:
             if field in data and data[field] == '':
                 data[field] = None
 
-        # Parse date fields using the helper method
+        # Parse dates safely
         starting_date = self.parse_date(data.get('starting_date'))
         contract_termination_date = self.parse_date(data.get('contract_termination_date'))
         contract_renewal_date = self.parse_date(data.get('contract_renewal_date'))
         date_of_birth = self.parse_date(data.get('date_of_birth'))
 
-        # Create the employee object with the processed data
+        # Parse and sanitize salary
+        salary_raw = data.get('monthly_gross_salary')
+        if salary_raw == '' or salary_raw is None:
+            monthly_salary = None
+        else:
+            try:
+                monthly_salary = float(salary_raw)
+            except ValueError:
+                return {"error": "Invalid salary format."}, 400
+
+        # Create Employee record
         new_employee = Employees(
             first_name=data.get('first_name'),
             middle_name=data.get('middle_name'),
@@ -77,7 +86,7 @@ class AddNewemployee(Resource):
             date_of_birth=date_of_birth,
             national_id_number=data.get('national_id_number'),
             kra_pin=data.get('kra_pin'),
-            monthly_gross_salary=data.get('monthly_gross_salary'),
+            monthly_gross_salary=monthly_salary,
             payment_method=data.get('payment_method'),
             bank_account_number=data.get('bank_account_number'),
             bank_name=data.get('bank_name'),
@@ -85,20 +94,22 @@ class AddNewemployee(Resource):
             starting_date=starting_date,
             contract_termination_date=contract_termination_date,
             contract_renewal_date=contract_renewal_date,
-            created_at=datetime.now()  # Automatically set the current timestamp
+            created_at=datetime.now(),
+            merit_points=100,  # ✅ Set default merit points to 100
+            merit_points_updated_at=None
         )
 
         db.session.add(new_employee)
         db.session.commit()
 
-        # Add a new user with the employee details
-        default_password = 'defaultPassword123'  # Set a default password or generate one
+        # Create corresponding user record
+        default_password = 'defaultPassword123'
         new_user = Users(
-            username=data.get('first_name'),  # Use first name as username
-            email=data.get('work_email'),  # Use work email
-            role=data.get('role') if data.get('role') else 'manager',  # Set role to 'manager' if not provided
-            password=default_password,  # Set a default password, or use a password hash function
-            employee_id=new_employee.employee_id  # Link to the newly created employee
+            username=data.get('first_name'),
+            email=data.get('work_email'),
+            role=data.get('role') if data.get('role') else 'manager',
+            password=default_password,
+            employee_id=new_employee.employee_id
         )
 
         db.session.add(new_user)
@@ -108,16 +119,14 @@ class AddNewemployee(Resource):
 
     def parse_date(self, date_str):
         """
-        Helper method to parse a date string into a datetime object.
-        Handles both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' formats.
+        Helper to parse a string to a date object.
+        Accepts format: 'YYYY-MM-DD'
         """
         if date_str:
             try:
-                # Try parsing the full datetime format first
                 return datetime.strptime(date_str, '%Y-%m-%d')
             except ValueError:
-                # If only the date is provided, parse as date
-                return datetime.strptime(date_str, '%Y-%m-%d')
+                return None
         return None
 
 

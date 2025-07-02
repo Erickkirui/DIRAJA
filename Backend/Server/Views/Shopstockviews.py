@@ -288,28 +288,34 @@ class GetShopStock(Resource):
                 shop = Shops.query.filter_by(shops_id=stock.shop_id).first()
                 shopname = shop.shopname if shop else "Unknown Shop"
 
-                # Handle missing inventory reference
+                # Determine item details based on stock type
                 if stock.inventory:
-                    item_name = stock.inventory.itemname
+                    # Inventory-based stock
+                    itemname = stock.inventory.itemname
                     metric = stock.inventory.metric
-                else:
-                    # Fetch details from the transfer entry for manual stock
+                elif stock.transfer_id:
+                    # Transfer-based stock
                     transfer = Transfer.query.filter_by(transfer_id=stock.transfer_id).first()
-                    item_name = transfer.itemname if transfer else "Unknown Item"
+                    itemname = transfer.itemname if transfer else "Unknown Item"
                     metric = transfer.metric if transfer else "Unknown Metric"
-                
+                else:
+                    # Directly added stock (from AddShopStock)
+                    itemname = stock.itemname
+                    metric = stock.metric
 
                 shop_stock_list.append({
                     "stock_id": stock.stock_id,
                     "shop_id": stock.shop_id,
                     "shop_name": shopname,
-                    "inventory_id": stock.inventory_id,  # This will be None if manual stock
-                    "item_name": item_name,  # Prioritizes Transfer, then Inventory
+                    "inventory_id": stock.inventory_id,
+                    "transfer_id": stock.transfer_id,
+                    "itemname": itemname,
                     "batchnumber": stock.BatchNumber,
-                    "metric": metric,  # Prioritizes Transfer, then Inventory
+                    "metric": metric,
                     "quantity": stock.quantity,
                     "total_cost": stock.total_cost,
-                    "unitPrice": stock.unitPrice
+                    "unitPrice": stock.unitPrice,
+                    "stock_type": "inventory" if stock.inventory_id else "transfer" if stock.transfer_id else "direct"
                 })
 
             # Prepare the response
@@ -867,3 +873,97 @@ class GetItemStock(Resource):
                 "error": "An error occurred while fetching item stock data",
                 "details": str(e)
             }, 500
+
+
+class AddShopStock(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def post(self):
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+
+        # Validate required fields
+        required_fields = ['shop_id', 'itemname', 'unitPrice', 'metric']
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing required fields'}, 400
+
+        try:
+            # Extract fields
+            shop_id = data['shop_id']
+            itemname = data['itemname']
+            unitPrice = data['unitPrice']
+            metric = data['metric']
+            
+            # Get shop name (assuming you have a Shop model)
+            shop = Shops.query.get(shop_id)
+            if not shop:
+                return {'message': 'Shop not found'}, 404
+            shopname = shop.shopname  # Adjust according to your Shop model
+            
+            # Generate batch number (without unitPrice)
+            batch_number = self.generate_batch_code(
+                Suppliername="Kukuzetu",
+                Supplier_location=shopname,
+                itemname=itemname,
+                created_at=datetime.utcnow()
+            )
+            
+            # Use a large fixed number instead of infinity for better database compatibility
+            LARGE_QUANTITY = 999999
+            
+            # Create shop stock record directly
+            new_shop_stock = ShopStock(
+                shop_id=shop_id,
+                itemname=itemname,
+                quantity=LARGE_QUANTITY,
+                metric=metric,
+                BatchNumber=batch_number,  # Using generated batch number
+                unitPrice=unitPrice,
+                total_cost=0,  # Since quantity is effectively unlimited
+                inventory_id=None,
+                transfer_id=None
+            )
+
+            db.session.add(new_shop_stock)
+            db.session.commit()
+            
+            return {
+                'message': 'Item added directly to shop stock successfully',
+                'stock_id': new_shop_stock.stock_id,
+                'itemname': itemname,
+                'unitPrice': unitPrice,
+                'BatchNumber': batch_number,
+                'quantity': LARGE_QUANTITY
+            }, 201
+            
+        except ValueError as e:
+            db.session.rollback()
+            return {'message': 'Invalid numeric value', 'error': str(e)}, 400
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error creating direct shop stock entry', 'error': str(e)}, 500
+
+    @staticmethod
+    def generate_batch_code(Suppliername, Supplier_location, itemname, created_at):
+        """
+        Generate a batch code in the format: SUPPLIERNAME-SUPPLIERLOCATION-ITEM-YYMMDD
+        Example: KUKUZETU-SHOPNAME-RICE-240701
+        """
+        # Ensure created_at is a datetime object
+        if isinstance(created_at, str):
+            created_at = datetime.strptime(created_at, '%Y-%m-%d')
+
+        # Format date components
+        year = str(created_at.year)[-2:]  # Last two digits of the year
+        month = f'{created_at.month:02d}'  # Two-digit month
+        day = f'{created_at.day:02d}'  # Two-digit day
+
+        # Sanitize inputs to uppercase and remove spaces
+        item_code = itemname.upper().replace(' ', '')
+        supplier_name_code = Suppliername.upper().replace(' ', '')
+        supplier_location_code = Supplier_location.upper().replace(' ', '')
+
+        # Create the batch code
+        batch_code = f"{supplier_name_code}-{supplier_location_code}-{item_code}-{year}{month}{day}"
+
+        return batch_code

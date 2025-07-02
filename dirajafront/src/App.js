@@ -84,6 +84,7 @@ import MeritPointsTable from './Components/MeritPoints';
 import ProcurementTable from './Components/Inventory/ProcurementTable';
 import AddSuppliers from './Components/Suppliers/AddSuppliers';
 import Suppliers from './Pages/Suppliers';
+import AddShopStock from './Components/AddShopStock';
 
 
 const Layout = ({ children }) => {
@@ -219,6 +220,7 @@ function App() {
             <Route path='/meritrecords' element={<Layout><MeritRecords/></Layout>} ></Route>
             <Route path='/meritpoints' element={<Layout><MeritPointsTable/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
+            <Route path='/addshopstock' element={<Layout><AddShopStock/></Layout>} ></Route>
             <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTable /></ClerkLayout>} ></Route>
             <Route path="/add-suplier" element={<Layout><AddSuppliers /></Layout>}></Route>
           <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
