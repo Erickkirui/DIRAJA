@@ -1,9 +1,25 @@
 import React from 'react';
 import '../Styles/navigation.css';
 import { NavLink } from 'react-router-dom';
+import {
+  FaTachometerAlt,
+  FaBoxes,
+  FaChartLine,
+  FaMoneyBillWave,
+  FaTractor,
+  FaStore,
+  FaUsers,
+  FaUserTie,
+  FaTruck,
+  FaWarehouse,
+  FaBoxOpen,
+  FaTags,
+  FaBalanceScale,
+  FaBook,
+  FaClipboardList
+} from 'react-icons/fa';
 
 function Navbar() {
-  // Get the username from localStorage
   const username = localStorage.getItem('username');
 
   return (
@@ -15,55 +31,57 @@ function Navbar() {
 
         <ul>
           <NavLink exact to="/" className="menu-item" activeClassName="active">
-            <img src='/images/Dashbord.png' alt='menu-icon' />
+            <FaTachometerAlt className="menu-icon" />
             <li>Dashboard</li>
           </NavLink>
           <NavLink to="/allinventory" className="menu-item" activeClassName="active">
-            <img src='/images/Sales.png' alt='menu-icon' />
+            <FaBoxes className="menu-icon" />
             <li>Inventory</li>
           </NavLink>
           <NavLink to="/analytics" className="menu-item" activeClassName="active">
-            <img src='/images/Sales.png' alt='menu-icon' />
+            <FaChartLine className="menu-icon" />
             <li>Sales Analytics</li>
           </NavLink>
-          <NavLink to="/promo-sales-table" className="menu-item" activeClassName="active">
-            <img src='/images/Sales.png' alt='menu-icon' />
-            <li>Promo Sales</li>
-          </NavLink>
-         
           <NavLink to="/expenses" className="menu-item" activeClassName="active">
-            <img src='/images/Expenses.png' alt='menu-icon' />
+            <FaMoneyBillWave className="menu-icon" />
             <li>Expenses</li>
           </NavLink>
           <NavLink to="/mabandapage" className="menu-item" activeClassName="active">
-            <img src='/images/Expenses.png' alt='menu-icon' />
-            <li>Mabanda farm</li>
+            <FaTractor className="menu-icon" />
+            <li>Mabanda Farm</li>
           </NavLink>
           <NavLink to="/allshops" className="menu-item" activeClassName="active">
-            <img src='/images/Shop.png' alt='menu-icon' />
+            <FaStore className="menu-icon" />
             <li>Shops</li>
           </NavLink>
           <NavLink to="/allcustomers" className="menu-item" activeClassName="active">
-            <img src='/images/Customers.png' alt='menu-icon' />
+            <FaUsers className="menu-icon" />
             <li>Customers</li>
           </NavLink>
           <NavLink to="/allemployees" className="menu-item" activeClassName="active">
-            <img src='/images/Employees.png' alt='menu-icon' />
+            <FaUserTie className="menu-icon" />
             <li>Employees</li>
           </NavLink>
+          <NavLink to="/supplier" className="menu-item" activeClassName="active">
+            <FaTruck className="menu-icon" />
+            <li>Suppliers</li>
+          </NavLink>
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
-            <img src='/images/Shop.png' alt='menu-icon' />
+            <FaWarehouse className="menu-icon" />
             <li>System Stocks</li>
           </NavLink>
           <NavLink exact to="/stockstatus" className="menu-item" activeClassName="active">
-            <img src='/images/Shop.png' alt='menu-icon' />
+            <FaBoxOpen className="menu-icon" />
             <li>Shop Stocks</li>
           </NavLink>
+          <NavLink to="/promo-sales-table" className="menu-item" activeClassName="active">
+            <FaTags className="menu-icon" />
+            <li>Promo Sales</li>
+          </NavLink>
 
-          {/* ✅ Conditional rendering based on localStorage username */}
           {(username === 'Leo' || username === 'Namai' || username === 'External Auditor') && (
             <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
-              <img src='/images/Shop.png' alt='menu-icon' />
+              <FaBalanceScale className="menu-icon" />
               <li>Account Balances</li>
             </NavLink>
           )}
@@ -74,10 +92,12 @@ function Navbar() {
         <h4>ACCOUNTING</h4>
         <ul>
           <NavLink to="/ledgers" className="menu-item" activeClassName="active">
-            <li>Ledgers Accounts </li>
+            <FaBook className="menu-icon" />
+            <li>Ledgers Accounts</li>
           </NavLink>
           <NavLink to="/all-ledgers" className="menu-item" activeClassName="active">
-            <li>Ledgers </li>
+            <FaClipboardList className="menu-icon" />
+            <li>Ledgers</li>
           </NavLink>
         </ul>
       </div>
