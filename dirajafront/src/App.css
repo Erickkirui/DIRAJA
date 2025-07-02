@@ -89,6 +89,14 @@ a{
 
 }
 
+.menu-icon {
+  color:#ccc;
+  font-size: 20px;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+
 /* HTML: <div class="loader"></div> */
 .loader {
   width: 40px;
@@ -108,6 +116,7 @@ a{
   border-radius: 50%;
   animation: l15 2s infinite;
 }
+
 .loader::after {
   margin: 8px;
   animation-duration: 3s;

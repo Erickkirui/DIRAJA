@@ -82,6 +82,8 @@ import AssignMeritForm from './Components/Employees/Assignmerit';
 import MeritRecords from './Components/Employees/MeritRecords';
 import MeritPointsTable from './Components/MeritPoints';
 import ProcurementTable from './Components/Inventory/ProcurementTable';
+import AddSuppliers from './Components/Suppliers/AddSuppliers';
+import Suppliers from './Pages/Suppliers';
 
 
 const Layout = ({ children }) => {
@@ -218,7 +220,8 @@ function App() {
             <Route path='/meritpoints' element={<Layout><MeritPointsTable/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
             <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTable /></ClerkLayout>} ></Route>
-          
+            <Route path="/add-suplier" element={<Layout><AddSuppliers /></Layout>}></Route>
+          <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
            </Routes> 
        
       </Router>

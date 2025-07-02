@@ -57,7 +57,7 @@ from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, Meri
 from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
 
 from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
-
+from Server.Views.SupplierView import AddSupplier,GetAllSuppliers
 
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -303,3 +303,8 @@ api.add_resource(AssignMeritPoints, '/employee/<int:employee_id>/assign-merit')
 api.add_resource(GetMeritLedger, '/meritledger')
 
 api.add_resource(TopSalesUsers,'/promo-sales-rank')
+
+
+#Suppliers endpoints 
+api.add_resource(AddSupplier , '/creat-supplier')
+api.add_resource(GetAllSuppliers,'/all-suppliers' )
