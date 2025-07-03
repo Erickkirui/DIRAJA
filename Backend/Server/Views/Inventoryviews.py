@@ -426,13 +426,7 @@ class AddInventory(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
-
-
-
-
-
-   
-    
+        
 class GetAllInventory(Resource):
     @jwt_required()
     @check_role(['manager', 'procurement'])
