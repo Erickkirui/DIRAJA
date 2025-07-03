@@ -228,15 +228,12 @@ class GetTransfer(Resource):
         all_transfers = []
 
         for transfer in transfers:
-            # Fetch username and shop name manually using user_id and shop_id
             user = Users.query.filter_by(users_id=transfer.user_id).first()
             shop = Shops.query.filter_by(shops_id=transfer.shop_id).first()
             
-            # Handle cases where user or shop may not be found
             username = user.username if user else "Unknown User"
             shopname = shop.shopname if shop else "Unknown Shop"
         
-            # Append the data for each transfer
             all_transfers.append({
                 "transfer_id": transfer.transfer_id,
                 "shop_id": transfer.shop_id,
@@ -254,7 +251,8 @@ class GetTransfer(Resource):
                 "created_at": transfer.created_at,
             })
 
-        return make_response(jsonify(all_transfers), 200)
+        return jsonify(all_transfers), 200
+
 
 
 class GetTransferById(Resource):
