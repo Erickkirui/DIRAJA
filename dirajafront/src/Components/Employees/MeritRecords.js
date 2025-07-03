@@ -26,9 +26,8 @@ const MeritRecords = () => {
           }
         });
 
-        setLedgerData(response.data.entries || []);
+        setLedgerData(response.data.merit_ledger || []);
         setMessageType('success');
-        setMessage(response.data.message || 'Loaded successfully');
         console.log(response.data.entries);
       } catch (error) {
         console.error('Error fetching merit ledger:', error);
@@ -45,14 +44,22 @@ const MeritRecords = () => {
   }, []);
 
   const columns = [
-    { header: 'Ledger ID', key: 'ledger_id' },
+    { header: 'Ledger No', key: 'meritledger_id' },
     { header: 'Employee Name', key: 'employee_name' },
-    { header: 'Merit Reason', key: 'reason' },
+    { header: 'Points awarded', key: 'merit_point' },
+    { header: 'Merit Reason', key: 'merit_reason' },
     { header: 'Comment', key: 'comment' },
     {
       header: 'Date',
-      render: (entry) =>
-        entry.date ? new Date(entry.date).toLocaleString() : '-'
+      key: 'created_at',
+      render: (entry) => {
+        const date = new Date(entry.date);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
     },
     { header: 'Resulting Points', key: 'resulting_points' }
   ];

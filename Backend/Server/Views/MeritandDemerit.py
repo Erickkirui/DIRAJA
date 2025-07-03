@@ -80,32 +80,21 @@ class AssignMeritPoints(Resource):
         }, 200
 
 class GetMeritLedger(Resource):
-    @jwt_required()
     def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('employee_id', type=int, required=False, help='Optional employee ID to filter')
-        args = parser.parse_args()
-
-        # ✅ No request.get_json() used — that's correct for GET
-        if args['employee_id']:
-            ledger_entries = MeritLedger.query.filter_by(employee_id=args['employee_id']).order_by(MeritLedger.date.desc()).all()
-        else:
-            ledger_entries = MeritLedger.query.order_by(MeritLedger.date.desc()).all()
-
+        merit_entries = MeritLedger.query.all()
         result = []
-        for entry in ledger_entries:
+
+        for entry in merit_entries:
             result.append({
-                "ledger_id": entry.meritledger_id,
-                "employee_id": entry.employee_id,
-                "employee_name": f"{entry.employee.first_name} {entry.employee.middle_name} {entry.employee.surname}",
-                "merit_id": entry.merit_id,
-                "reason": entry.merit_reason.reason,
-                "point_change": entry.merit_reason.point,
-                "comment": entry.comment,
-                "date": entry.date.isoformat() if entry.date else None,
-                "resulting_points": entry.resulting_points
+                'meritledger_id': entry.meritledger_id,
+                'employee_id': entry.employee_id,
+                'employee_name': entry.employee.first_name if entry.employee else None,  # assuming 'name' exists
+                'merit_id': entry.merit_id,
+                'merit_reason': entry.merit_reason.reason if entry.merit_reason else None,  # assuming 'reason' field
+                'merit_point': entry.merit_reason.point if entry.merit_reason else None,
+                'comment': entry.comment,
+                'date': entry.date.strftime('%Y-%m-%d %H:%M:%S'),
+                'resulting_points': entry.resulting_points
             })
 
-        return {
-            "entries": result
-        }, 200
+        return {'merit_ledger': result}, 200

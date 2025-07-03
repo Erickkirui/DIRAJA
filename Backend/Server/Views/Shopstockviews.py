@@ -827,7 +827,6 @@ class GetBatchStock(Resource):
             return {"error": "An error occurred while fetching batch stock data", "details": str(e)}, 500
         
 
-from flask import request
 
 class GetItemStock(Resource):
     @jwt_required()
