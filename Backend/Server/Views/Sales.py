@@ -1879,6 +1879,7 @@ class TotalCashSalesByUser(Resource):
             }, 500
 
 
+
 class GenerateSalesReport(Resource):
     @jwt_required()
     def post(self):
