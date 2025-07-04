@@ -58,6 +58,19 @@ from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
 
 from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
 from Server.Views.SupplierView import AddSupplier,GetAllSuppliers
+from Server.Views.InventoryV2Views import (
+    GetInventoryByBatchV2,
+    DistributeInventoryV2,
+    DeleteShopStockV2,
+    GetTransferV2,
+    GetTransferByIdV2,
+    UpdateTransferV2,
+    AddInventoryV2,
+    GetAllInventoryV2,
+    InventoryResourceByIdV2,
+    StockDeletionResourceV2,
+    ManualTransferV2
+)
 from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -310,6 +323,24 @@ api.add_resource(TopSalesUsers,'/promo-sales-rank')
 #Suppliers endpoints 
 api.add_resource(AddSupplier , '/creat-supplier')
 api.add_resource(GetAllSuppliers,'/all-suppliers' )
+
+
+# Inventory V2 endpoints
+api.add_resource(AddInventoryV2, '/v2/newinventory')
+api.add_resource(GetAllInventoryV2, '/v2/allinventories')
+api.add_resource(InventoryResourceByIdV2, '/v2/inventory/<int:inventoryV2_id>')
+api.add_resource(DeleteShopStockV2, '/v2/deleteshopstock/<int:shop_stockV2_id>')
+api.add_resource(GetInventoryByBatchV2, '/v2/inventory-by-batch')
+
+# Transfer V2 endpoints
+api.add_resource(DistributeInventoryV2, '/v2/distribute-inventory')
+api.add_resource(GetTransferV2, '/v2/transfers')
+api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
+api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
+
+# Manual operations
+api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
+api.add_resource(ManualTransferV2, '/v2/manual-transfer')
 
 #stockv2 endpoints
 #Get stock
