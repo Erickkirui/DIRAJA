@@ -220,9 +220,10 @@ class DeleteShopStock(Resource):
             db.session.rollback()
             return jsonify({'message': 'Error deleting ShopStock', 'error': str(e)}), 500
 
+
 class GetTransfer(Resource):
     @jwt_required()
-    @check_role(['manager', 'procurement'])
+    @check_role('manager')
     def get(self):
         transfers = Transfer.query.all()
         all_transfers = []
@@ -248,10 +249,16 @@ class GetTransfer(Resource):
                 "itemname": transfer.itemname,
                 "amountPaid": transfer.amountPaid,
                 "unitCost": transfer.unitCost,
-                "created_at": transfer.created_at,
+                "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
             })
 
-        return jsonify(all_transfers), 200
+        return jsonify({
+            "status": "success",
+            "data": all_transfers,
+            "count": len(all_transfers),
+            "message": "Transfers retrieved successfully"
+        })
+
 
 
 

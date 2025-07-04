@@ -58,7 +58,7 @@ from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
 
 from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
 from Server.Views.SupplierView import AddSupplier,GetAllSuppliers
-
+from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -310,3 +310,15 @@ api.add_resource(TopSalesUsers,'/promo-sales-rank')
 #Suppliers endpoints 
 api.add_resource(AddSupplier , '/creat-supplier')
 api.add_resource(GetAllSuppliers,'/all-suppliers' )
+
+#stockv2 endpoints
+#Get stock
+api.add_resource(GetShopStockV2, '/shopstockv2')
+#Get stock by shopid
+api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+api.add_resource(GetAllStockV2, '/allstockv2')
