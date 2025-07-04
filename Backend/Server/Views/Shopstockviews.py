@@ -102,7 +102,7 @@ class BatchDetailsResourceForShop(Resource):
             'metric': shop_stock_item.metric,
             'unit_price': shop_stock_item.unitPrice,
             'BatchNumber': shop_stock_item.BatchNumber,
-            'stock_id': shop_stock_item.stock_id,
+            'stockv2_id': shop_stock_item.stockv2_id,
             'quantity': shop_stock_item.quantity
         }
         
@@ -136,7 +136,7 @@ class BatchDetailsResource(Resource):
             'metric': shop_stock_item.metric,
             'unit_price': shop_stock_item.unitPrice,
             'BatchNumber': shop_stock_item.BatchNumber,
-            'stock_id': shop_stock_item.stock_id,
+            'stockv2_id': shop_stock_item.stockv2_id,
             'quantity': shop_stock_item.quantity
         }
         
@@ -304,7 +304,7 @@ class GetShopStock(Resource):
                     metric = stock.metric
 
                 shop_stock_list.append({
-                    "stock_id": stock.stock_id,
+                    "stockv2_id": stock.stockv2_id,
                     "shop_id": stock.shop_id,
                     "shop_name": shopname,
                     "inventory_id": stock.inventory_id,
@@ -390,7 +390,7 @@ class GetAllStock(Resource):
             shop_stock_list = []
             for stock in shop_stocks:
                 shop_stock_list.append({
-                    "stock_id": stock.stock_id,
+                    "stockv2_id": stock.stockv2_id,
                     "shop_id": stock.shop_id,
                     "shop_name": stock.shop.shopname,  
                     "inventory_id": stock.inventory_id,
@@ -432,7 +432,7 @@ class GetItemsByShopId(Resource):
                     "BatchNumber": stock.BatchNumber,
                     "metric": stock.inventory.metric,
                     "unitPrice": stock.unitPrice,
-                    "stock_id": stock.stock_id
+                    "stockv2_id": stock.stockv2_id
                 })
             
             # Prepare the response
@@ -584,15 +584,15 @@ class ShopStockByDate(Resource):
                 shop_data[shop_id]["stock_breakdown"][inventory_id]["total_value"] += transfer.quantity * transfer.unitCost
                 shop_data[shop_id]["total_value"] += transfer.quantity * transfer.unitCost
 
-            # Process sales (based on stock_id)
+            # Process sales (based on stockv2_id)
             for sale in sales:
                 shop_id = sale.shop_id
-                stock_id = sale.stock_id  # Sale uses stock_id
+                stockv2_id = sale.stockv2_id  # Sale uses stockv2_id
 
                 if shop_id in shop_data:
-                    # Find the inventory_id linked to this stock_id
+                    # Find the inventory_id linked to this stockv2_id
                     for inventory_id, stock in shop_data[shop_id]["stock_breakdown"].items():
-                        if stock_id == inventory_id:
+                        if stockv2_id == inventory_id:
                             stock["quantity"] -= sale.quantity
                             stock["total_value"] -= sale.quantity * stock["unitCost"]
                             shop_data[shop_id]["total_value"] -= sale.quantity * stock["unitCost"]
@@ -630,12 +630,12 @@ class ShopStockByDate(Resource):
 
 
 class UpdateShopStockUnitPrice(Resource):
-    def put(self, stock_id):
+    def put(self, stockv2_id):
         parser = reqparse.RequestParser()
         parser.add_argument('unitPrice', type=float, required=True, help='unitPrice is required')
         args = parser.parse_args()
 
-        shop_stock = ShopStock.query.get(stock_id)
+        shop_stock = ShopStock.query.get(stockv2_id)
         
         if not shop_stock:
             return jsonify({'error': 'ShopStock not found'}), 404
@@ -643,7 +643,7 @@ class UpdateShopStockUnitPrice(Resource):
         shop_stock.unitPrice = args['unitPrice']
         db.session.commit()
 
-        return jsonify({'message': 'unitPrice updated successfully', 'stock_id': stock_id, 'new_unitPrice': args['unitPrice']})
+        return jsonify({'message': 'unitPrice updated successfully', 'stockv2_id': stockv2_id, 'new_unitPrice': args['unitPrice']})
 
 
 
@@ -694,7 +694,7 @@ class ItemDetailsResourceForShop(Resource):
             'itemname': first_batch.itemname,
             'metric': first_batch.metric,
             'unit_price': first_batch.unitPrice,
-            'stock_id': first_batch.stock_id,  # Just for reference, might not be needed
+            'stockv2_id': first_batch.stockv2_id,  # Just for reference, might not be needed
             'BatchNumber': first_batch.BatchNumber,  # First available batch
             'quantity': total_quantity  # Sum of all batches
         }
@@ -711,14 +711,14 @@ class TransferSystemStock(Resource):
 
             from_shop_id = data.get("from_shop_id")
             to_shop_id = data.get("to_shop_id")
-            stock_id = data.get("stock_id")
+            stockv2_id = data.get("stockv2_id")
             transfer_quantity = data.get("quantity")
 
             # Get the current user ID from JWT
             current_user_id = get_jwt_identity()
 
             # Fetch stock from source shop
-            stock = ShopStock.query.filter_by(stock_id=stock_id, shop_id=from_shop_id).first()
+            stock = ShopStock.query.filter_by(stockv2_id=stockv2_id, shop_id=from_shop_id).first()
             if not stock:
                 return {"error": "Stock not found in the source shop"}, 404
 
@@ -928,7 +928,7 @@ class AddShopStock(Resource):
             
             return {
                 'message': 'Item added directly to shop stock successfully',
-                'stock_id': new_shop_stock.stock_id,
+                'stockv2_id': new_shop_stock.stockv2_id,
                 'itemname': itemname,
                 'unitPrice': unitPrice,
                 'BatchNumber': batch_number,

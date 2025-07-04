@@ -1946,9 +1946,10 @@ class GenerateSalesReport(Resource):
                         "Quantity": item.quantity,
                         "Metric": item.metric,
                         "Unit Price": item.unit_price,
-                        "Item Total": item.total_price,
+                        "Total Price": item.total_price,
                         "Batch Number": item.BatchNumber,
-                        "Total Sale Amount": total_amount,
+                        "Amount Paid": total_amount,
+                        "Balance": sale.balance,
                         "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
                         "Note": sale.note or ""
                     })
