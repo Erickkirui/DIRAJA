@@ -3,9 +3,9 @@ import axios from 'axios';
 import ExportExcel from '../../Components/Download/ExportExcel';
 import DownloadPDF from '../../Components/Download/DownloadPDF';
 import UpdateTransfer from './UpdtaeTransfers';
-import '../../Styles/purchases.css';
+import GeneralTableLayout from '../../Components/GeneralTableLayout';
 import { Link } from 'react-router-dom';
-
+import '../../Styles/purchases.css';
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
@@ -13,41 +13,52 @@ const Purchases = () => {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTransferId, setSelectedTransferId] = useState(null); // Track which transfer is being updated
-  const itemsPerPage = 50;
+  const [selectedTransferId, setSelectedTransferId] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchPurchases = async () => {
       try {
+        setLoading(true);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
           setError('No access token found, please log in.');
+          setLoading(false);
           return;
         }
 
         const response = await axios.get('/api/diraja/alltransfers', {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { 
+            Authorization: `Bearer ${accessToken}`,
+            'X-User-Role': 'manager'
+          },
         });
 
-        const sortedPurchases = response.data.sort((a, b) => b.transfer_id - a.transfer_id);
-        setPurchases(sortedPurchases);
+        // Handle the structured response
+        if (response.data && response.data.status === "success") {
+          const sortedPurchases = response.data.data.sort((a, b) => b.transfer_id - a.transfer_id);
+          setPurchases(sortedPurchases);
+        } else {
+          throw new Error(response.data.message || 'Invalid response format');
+        }
       } catch (err) {
-        setError('Error fetching purchases. Please try again.');
+        setError(err.message || 'Error fetching purchases. Please try again.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPurchases();
   }, []);
 
-
   const getFirstName = (username) => {
-    return username.split(' ')[0];
+    return username?.split(' ')[0] || '';
   };
 
   const getFirstLetter = (username) => {
-    return username.charAt(0).toUpperCase();
+    return username?.charAt(0).toUpperCase() || '';
   };
-
 
   const handleEdit = (transferId) => {
     setSelectedTransferId(transferId);
@@ -60,10 +71,10 @@ const Purchases = () => {
   
   const filteredPurchases = purchases.filter((purchase) => {
     const matchesSearch =
-      purchase.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      purchase.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      purchase.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      purchase.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()); // Fixed
+      purchase.itemname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.shop_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      purchase.batchnumber?.toLowerCase().includes(searchQuery.toLowerCase());
   
     const matchesDate = selectedDate
       ? new Date(purchase.created_at).toLocaleDateString() ===
@@ -72,12 +83,47 @@ const Purchases = () => {
   
     return matchesSearch && matchesDate;
   });
-  
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentPurchases = filteredPurchases.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage);
+  const columns = [
+    {
+      header: 'Employee',
+      key: 'username',
+      render: (purchase) => (
+        <div className="employee-info">
+          <div className="employee-icon">{getFirstLetter(purchase.username)}</div>
+          <span className="employee-name">{getFirstName(purchase.username)}</span>
+        </div>
+      )
+    },
+    { header: 'Shop', key: 'shop_name' },
+    { header: 'Item', key: 'itemname' },
+    { header: 'Batch', key: 'batchnumber' },
+    {
+      header: 'Quantity',
+      key: 'quantity',
+      render: (purchase) => `${purchase.quantity} ${purchase.metric}`
+    },
+    { header: 'Unit Cost (Ksh)', key: 'unitCost' },
+    { header: 'Total Cost (Ksh)', key: 'totalCost' },
+    { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
+    {
+      header: 'Date',
+      key: 'created_at',
+      render: (purchase) => new Date(purchase.created_at).toLocaleDateString()
+    },
+    {
+      header: 'Actions',
+      key: 'actions',
+      render: (purchase) => (
+        <button
+          className='editeInventory'
+          onClick={() => handleEdit(purchase.transfer_id)}
+        >
+          Edit
+        </button>
+      )
+    }
+  ];
 
   return (
     <div className="purchases-container">
@@ -105,9 +151,10 @@ const Purchases = () => {
 
       <div className='actions-container'>
         <ExportExcel data={filteredPurchases} fileName="PurchasesData" />
-        <DownloadPDF tableId="purchases-table" fileName="PurchasesData" />
-        <Link to="/mabandapurchasesmanager"  className='mabandabutton' >View Mabanda Purchases </Link>
-        
+        <DownloadPDF data={filteredPurchases} columns={columns} fileName="PurchasesData" />
+        <Link to="/mabandapurchasesmanager" className='mabandabutton'>
+          View Mabanda Purchases
+        </Link>
       </div>
 
       {selectedTransferId && (
@@ -117,71 +164,22 @@ const Purchases = () => {
         </div>
       )}
 
-      {filteredPurchases.length > 0 ? (
-        <>
-          <table id="purchases-table" className="purchases-table">
-            <thead>
-              <tr>
-                {/* <th>ID</th> */}
-                <th>Employee</th> 
-                <th>Shop</th>
-                <th>Item</th>
-                <th>Batch</th>
-                <th>Quantity</th>
-                <th>Unit Cost (Ksh)</th>
-                <th>Total Cost (Ksh)</th>
-                <th>Amount Paid (Ksh)</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentPurchases.map((purchase) => (
-                <tr key={purchase.transfer_id}>
-                  {/* <td>{purchase.transfer_id}</td> */}
-                  <td>
-                    <div className="employee-info">
-                      <div className="employee-icon">{getFirstLetter(purchase.username)}</div>
-                      <span className="employee-name">{getFirstName(purchase.username)}</span>
-                    </div>
-                  </td>
-                  
-                  <td>{purchase.shop_name}</td>
-                  <td>{purchase.itemname}</td>
-                  <td>{purchase.batchnumber}</td>
-                  <td>{purchase.quantity} {purchase.metric}</td>
-                  <td>{purchase.unitCost}</td>
-                  <td>{purchase.totalCost}</td>
-                  <td>{purchase.amountPaid}</td>
-                  <td>{new Date(purchase.created_at).toLocaleDateString()}</td>
-                  <td>
-                    <button
-                      className='editeInventory'
-                      onClick={() => handleEdit(purchase.transfer_id)}
-                    >
-                      Edit
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          <div className="pagination">
-            {Array.from({ length: totalPages }, (_, index) => (
-              <button
-                key={index}
-                className={`page-button ${currentPage === index + 1 ? 'active' : ''}`}
-                onClick={() => setCurrentPage(index + 1)}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        </>
+      {loading ? (
+        <div>Loading...</div>
+      ) : error ? (
+        <div className="error-message">{error}</div>
+      ) : filteredPurchases.length > 0 ? (
+        <GeneralTableLayout
+          data={filteredPurchases}
+          columns={columns}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
       ) : (
         <p>No purchases found.</p>
-      )} 
+      )}
     </div>
   );
 };
