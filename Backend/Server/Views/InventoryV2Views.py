@@ -192,7 +192,7 @@ class GetTransferV2(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        transfers = Transfer.query.all()
+        transfers = TransfersV2.query.all()
         all_transfers = []
 
         for transfer in transfers:
@@ -203,13 +203,13 @@ class GetTransferV2(Resource):
             shopname = shop.shopname if shop else "Unknown Shop"
         
             all_transfers.append({
-                "transferV2_id": transfer.transferV2_id,
+                "transferv2_id": transfer.transferv2_id,  # lowercase to match model
                 "shop_id": transfer.shop_id,
                 "inventoryV2_id": transfer.inventoryV2_id,      
                 "quantity": transfer.quantity,             
                 "metric": transfer.metric,
-                "totalCost": transfer.total_cost,
-                "batchnumber": transfer.BatchNumber,
+                "total_cost": transfer.total_cost,  # lowercase to match model
+                "BatchNumber": transfer.BatchNumber,
                 "user_id": transfer.user_id,
                 "username": username,
                 "shop_name": shopname,

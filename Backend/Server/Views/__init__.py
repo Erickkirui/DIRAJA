@@ -19,7 +19,6 @@ from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,Av
 
 from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
 
-from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice
 from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
 from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers,AutoCheckoutStock
 
@@ -72,6 +71,7 @@ from Server.Views.InventoryV2Views import (
     StockDeletionResourceV2,
     ManualTransferV2
 )
+from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -352,3 +352,17 @@ api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
 # Manual operations
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
+
+
+#stockv2 endpoints
+#Get stock
+api.add_resource(GetShopStockV2, '/shopstockv2')
+#Get stock by shopid
+api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+api.add_resource(GetAllStockV2, '/allstockv2')
+

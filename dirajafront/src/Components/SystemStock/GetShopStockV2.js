@@ -31,7 +31,11 @@ const ShopStockV2 = () => {
                 if (!response.ok) throw new Error('Failed to fetch shop stock data');
 
                 const data = await response.json();
+
+                setShopStocks(data.shop_stocks.sort((a, b) => b.stockv2_id - a.stockv2_id));
+
                 setShopStocks(data.shop_stocks_v2.sort((a, b) => b.stockv2_id - a.stockv2_id));
+
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
@@ -108,8 +112,13 @@ const ShopStockV2 = () => {
         },
         {
             header: 'Batch Number',
+
+            key: 'batchnumber',
+            render: (stock) => stock.batchnumber
+
             key: 'BatchNumber',
             render: (stock) => stock.BatchNumber
+
         },
         {
             header: 'Quantity',

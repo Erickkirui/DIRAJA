@@ -192,6 +192,7 @@ class DeleteShopStock(Resource):
 class GetTransfer(Resource):
     @jwt_required()
     @check_role('manager')
+    @check_role('manager')
     def get(self):
         transfers = Transfer.query.all()
         all_transfers = []
@@ -218,6 +219,7 @@ class GetTransfer(Resource):
                 "amountPaid": transfer.amountPaid,
                 "unitCost": transfer.unitCost,
                 "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
+                "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
             })
 
         return jsonify({
@@ -226,6 +228,14 @@ class GetTransfer(Resource):
             "count": len(all_transfers),
             "message": "Transfers retrieved successfully"
         })
+        return jsonify({
+            "status": "success",
+            "data": all_transfers,
+            "count": len(all_transfers),
+            "message": "Transfers retrieved successfully"
+        })
+
+
 
 
 class GetTransferById(Resource):
