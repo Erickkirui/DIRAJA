@@ -30,7 +30,7 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allinventories', {
+        const response = await axios.get('/api/diraja/v2/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager',
@@ -62,7 +62,7 @@ const Inventory = () => {
     if (isSelected) {
       const currentPageIds = filteredInventory
         .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-        .map((inv) => inv.inventory_id);
+        .map((inv) => inv.inventoryV2_id);
       setSelectedInventory(currentPageIds);
     } else {
       setSelectedInventory([]);
@@ -87,7 +87,7 @@ const Inventory = () => {
     try {
       await Promise.all(
         selectedInventory.map((inventoryId) =>
-          axios.delete(`/api/diraja/inventory/${inventoryId}`, {
+          axios.delete(`/api/diraja/v2/inventory/${inventoryId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-User-Role': 'manager',
@@ -95,7 +95,7 @@ const Inventory = () => {
           })
         )
       );
-      setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventory_id)));
+      setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventoryV2_id)));
       setSelectedInventory([]);
       setSelectedAction('');
     } catch (error) {
@@ -137,16 +137,28 @@ const Inventory = () => {
             selectedInventory.length > 0 &&
             filteredInventory
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .every(item => selectedInventory.includes(item.inventory_id))
+              .every(item => selectedInventory.includes(item.inventoryV2_id)) &&
+            filteredInventory
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .length > 0
+          }
+          indeterminate={
+            selectedInventory.length > 0 &&
+            !filteredInventory
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .every(item => selectedInventory.includes(item.inventoryV2_id)) &&
+            filteredInventory
+              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+              .some(item => selectedInventory.includes(item.inventoryV2_id))
           }
         />
       ),
-      key: 'inventory_id',
+      key: 'inventoryV2_id',
       render: (item) => (
         <input
           type="checkbox"
-          checked={selectedInventory.includes(item.inventory_id)}
-          onChange={() => handleCheckboxChange(item.inventory_id)}
+          checked={selectedInventory.includes(item.inventoryV2_id)}
+          onChange={() => handleCheckboxChange(item.inventoryV2_id)}
         />
       )
     },
@@ -200,7 +212,7 @@ const Inventory = () => {
       render: (item) => (
         <button
           className='editeInventory'
-          onClick={() => handleEditClick(item.inventory_id)}
+          onClick={() => handleEditClick(item.inventoryV2_id)}
         >
           Edit
         </button>

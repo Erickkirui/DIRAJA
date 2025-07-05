@@ -37,68 +37,79 @@ const DistributeInventoryModal = ({
     fetchShops();
   }, []);
 
- const handleDistribute = async (e) => {
-  e.preventDefault();
-  const accessToken = localStorage.getItem('access_token');
-  if (quantity <= 0 || !shopId || !distributionDate) {
-    setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-    return;
-  }
-
-  setLoading(true);
-  setMessage({ type: '', text: '' });
-
-  try {
-    await Promise.all(
-      selectedInventory.map(async (inventoryId) => {
-        const inventoryItem = inventory.find((item) => item.inventory_id === inventoryId);
-        const requestData = {
-          shop_id: parseInt(shopId, 10),
-          inventory_id: inventoryItem.inventory_id,
-          quantity: parseFloat(quantity),
-          metric: inventoryItem.metric,
-          itemname: inventoryItem.itemname,
-          unitPrice: inventoryItem.unitPrice,
-          unitCost: inventoryItem.unitCost,
-          amountPaid: inventoryItem.unitCost * parseFloat(quantity),
-          BatchNumber: inventoryItem.batchnumber,
-          created_at: new Date(distributionDate).toISOString(),
-        };
-        await axios.post('/api/diraja/transfer', requestData, {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'X-User-Role': 'manager', // 👈 Added role here
-          },
-        });
-      })
-    );
-    setMessage({ type: 'success', text: 'Inventory distributed successfully' });
-    onDistributeSuccess();
-    setShopId('');
-    setQuantity('');
-    setDistributionDate('');
-    setTimeout(onClose, 1500);
-  } catch (error) {
-    if (error.response && error.response.data) {
-      setMessage({
-        type: 'error',
-        text: error.response.data.message || 'Error distributing inventory. Please try again.',
-      });
-    } else {
-      setMessage({ type: 'error', text: 'Error distributing inventory. Please try again.' });
+  const handleDistribute = async (e) => {
+    e.preventDefault();
+    const accessToken = localStorage.getItem('access_token');
+    if (quantity <= 0 || !shopId || !distributionDate) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+      return;
     }
-    console.error('Error distributing inventory:', error);
-  } finally {
-    setLoading(false);
-  }
-};
 
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      await Promise.all(
+        selectedInventory.map(async (inventoryV2_id) => {
+          const inventoryItem = inventory.find((item) => item.inventoryV2_id === inventoryV2_id);
+          if (!inventoryItem) {
+            throw new Error(`Inventory item with ID ${inventoryV2_id} not found`);
+          }
+
+          const requestData = {
+            shop_id: parseInt(shopId, 10),
+            inventoryV2_id: inventoryItem.inventoryV2_id,
+            quantity: parseFloat(quantity),
+            metric: inventoryItem.metric,
+            itemname: inventoryItem.itemname,
+            unitCost: inventoryItem.unitCost,
+            amountPaid: inventoryItem.unitCost * parseFloat(quantity),
+            BatchNumber: inventoryItem.batchnumber, // Ensure BatchNumber is included
+            created_at: new Date(distributionDate).toISOString(),
+          };
+          
+          await axios.post('/api/diraja/v2/distribute-inventory', requestData, {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'X-User-Role': 'manager',
+              'Content-Type': 'application/json'
+            },
+          });
+        })
+      );
+      setMessage({ type: 'success', text: 'Inventory distributed successfully' });
+      onDistributeSuccess();
+      setShopId('');
+      setQuantity('');
+      setDistributionDate('');
+      setTimeout(onClose, 1500);
+    } catch (error) {
+      let errorMessage = 'Error distributing inventory. Please try again.';
+      if (error.response) {
+        if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.status === 400) {
+          errorMessage = 'Missing required fields in the request';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setMessage({ 
+        type: 'error', 
+        text: errorMessage 
+      });
+      console.error('Error distributing inventory:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         {message.text && (
-          <Stack>
+          <Stack sx={{ marginBottom: 2 }}>
             <Alert severity={message.type === 'success' ? 'success' : 'error'} variant="outlined">
               {message.text}
             </Alert>
@@ -107,9 +118,10 @@ const DistributeInventoryModal = ({
 
         <h3>Distribute Inventory</h3>
         <form onSubmit={handleDistribute}>
-          <div>
-            <label>Shop</label>
+          <div className="form-group">
+            <label htmlFor="shop-select">Shop</label>
             <select
+              id="shop-select"
               className="modal-select"
               name="shop_id"
               value={shopId}
@@ -130,19 +142,23 @@ const DistributeInventoryModal = ({
             {shopError && <p className="text-red-500 mt-1">No shops available</p>}
           </div>
 
-          <div>
-            <label>Quantity to Transfer</label>
+          <div className="form-group">
+            <label htmlFor="quantity-input">Quantity to Transfer</label>
             <input
+              id="quantity-input"
               type="number"
+              min="0.01"
+              step="0.01"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               required
             />
           </div>
 
-          <div>
-            <label>Distribution Date</label>
+          <div className="form-group">
+            <label htmlFor="date-input">Distribution Date</label>
             <input
+              id="date-input"
               type="date"
               value={distributionDate}
               onChange={(e) => setDistributionDate(e.target.value)}
@@ -150,13 +166,23 @@ const DistributeInventoryModal = ({
             />
           </div>
 
-          <button type="submit"  className= "yes-button"disabled={loading}>
-            {loading ? 'Distributing...' : 'Distribute'}
-          </button>
-          <button type="button" className='cancel-button' onClick={onClose} >
-            Cancel
-          </button>
-        
+          <div className="button-group">
+            <button 
+              type="submit" 
+              className="yes-button" 
+              disabled={loading}
+            >
+              {loading ? 'Distributing...' : 'Distribute'}
+            </button>
+            <button 
+              type="button" 
+              className="cancel-button" 
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -13,7 +13,7 @@ class ShopStockV2(db.Model):
     total_cost = db.Column(db.Float, nullable=False)
     itemname = db.Column(db.String(50), nullable=False)
     metric = db.Column(db.String(50))
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventoryV2.inventoryV2_id'), nullable=False)
+    inventoryv2_id = db.Column(db.Integer, db.ForeignKey('inventoryV2.inventoryV2_id'), nullable=False)
     quantity = db.Column(db.Float, nullable=False)
     BatchNumber = db.Column(db.String(50), nullable=False)
     unitPrice = db.Column(db.Float, nullable=False)
