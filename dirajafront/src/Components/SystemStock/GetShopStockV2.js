@@ -34,8 +34,6 @@ const ShopStockV2 = () => {
 
                 setShopStocks(data.shop_stocks.sort((a, b) => b.stockv2_id - a.stockv2_id));
 
-                setShopStocks(data.shop_stocks_v2.sort((a, b) => b.stockv2_id - a.stockv2_id));
-
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
@@ -116,8 +114,6 @@ const ShopStockV2 = () => {
             key: 'batchnumber',
             render: (stock) => stock.batchnumber
 
-            key: 'BatchNumber',
-            render: (stock) => stock.BatchNumber
 
         },
         {
