@@ -8,9 +8,7 @@ class TransfersV2(db.Model):
     __tablename__ = 'transfers_v2'
 
     transferv2_id = db.Column(db.Integer, primary_key=True)
-    transferv2_id = db.Column(db.Integer, primary_key=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
-    inventory_id = db.Column(db.Integer, db.ForeignKey('inventoryV2.inventoryV2_id'), nullable=True)
     inventoryV2_id = db.Column(db.Integer, db.ForeignKey('inventoryV2.inventoryV2_id'), nullable=True)  # ✅ FK points to inventoryV2
     quantity = db.Column(db.Float, nullable=False)
     total_cost = db.Column(db.Float, nullable=False)
