@@ -119,7 +119,7 @@ class AddSale(Resource):
                 items.append({
                     'item_name': item['item_name'],
                     'quantity': float(item['quantity']),
-                    'metric': metric,  # Use the cleaned metric
+                    'metric': metric,
                     'unit_price': float(item['unit_price']),
                     'total_price': float(item['quantity']) * float(item['unit_price'])
                 })
@@ -149,30 +149,29 @@ class AddSale(Resource):
             14: 14, 16: 13
         }
 
-        # ===== STOCK PROCESSING (UPDATED FOR ShopStockV2) =====
+        # ===== STOCK PROCESSING =====
         stock_processing_errors = []
         batch_deductions = []
         stock_ids_used = []
         sold_items = []
+        livestock_deductions = []
         
         try:
             for item in items:
-                # Get batches ordered by BatchNumber (oldest first)
+                # Try to deduct from ShopStockV2 first
                 batches = ShopStockV2.query.filter(
                     ShopStockV2.itemname == item['item_name'],
                     ShopStockV2.shop_id == shop_id,
                     ShopStockV2.quantity > 0
                 ).order_by(ShopStockV2.BatchNumber).all()
 
-                if not batches:
-                    stock_processing_errors.append(f"No stock available for item: {item['item_name']}")
-                    continue
-
                 remaining_qty = item['quantity']
                 item_batch_deductions = []
                 item_stock_ids = []
                 item_purchase_account = 0.0
+                item_livestock_deduction = 0.0
 
+                # Process ShopStockV2 batches first
                 for batch in batches:
                     if remaining_qty <= 0:
                         break
@@ -190,17 +189,40 @@ class AddSale(Resource):
 
                     db.session.add(batch)
 
+                # If still remaining quantity, try to deduct from LiveStock
+                if remaining_qty > 0:
+                    livestock_entry = LiveStock.query.filter_by(
+                        shop_id=shop_id,
+                        item_name=item['item_name']
+                    ).first()
+
+                    if livestock_entry and livestock_entry.current_quantity > 0:
+                        deduct_qty = min(livestock_entry.current_quantity, remaining_qty)
+                        livestock_entry.current_quantity -= deduct_qty
+                        livestock_entry.clock_out_quantity -= deduct_qty
+                        remaining_qty -= deduct_qty
+                        item_livestock_deduction = deduct_qty
+                        db.session.add(livestock_entry)
+                        livestock_deductions.append({
+                            'item_name': item['item_name'],
+                            'quantity': deduct_qty,
+                            'original_current': livestock_entry.current_quantity + deduct_qty,
+                            'new_current': livestock_entry.current_quantity
+                        })
+
                 if remaining_qty > 0:
                     stock_processing_errors.append(
                         f"Insufficient stock for {item['item_name']}. Needed {item['quantity']}, available {item['quantity'] - remaining_qty}"
                     )
                     continue
 
-                batch_deductions.append({
-                    'item_name': item['item_name'],
-                    'deductions': item_batch_deductions
-                })
-                stock_ids_used.extend(item_stock_ids)
+                if item_batch_deductions:
+                    batch_deductions.append({
+                        'item_name': item['item_name'],
+                        'deductions': item_batch_deductions
+                    })
+                    stock_ids_used.extend(item_stock_ids)
+                
                 purchase_account += item_purchase_account
                 
                 sold_items.append({
@@ -209,10 +231,11 @@ class AddSale(Resource):
                     'metric': item['metric'],
                     'unit_price': item['unit_price'],
                     'total_price': item['total_price'],
-                    'BatchNumber': ", ".join(f"{bn} ({q})" for bn, q in item_batch_deductions),
-                    'stockv2_id': item_stock_ids[0],  # Take first stock_id as reference
+                    'BatchNumber': ", ".join(f"{bn} ({q})" for bn, q in item_batch_deductions) if item_batch_deductions else "From Livestock",
+                    'stockv2_id': item_stock_ids[0] if item_stock_ids else None,
                     'Cost_of_sale': item['total_price'],
-                    'Purchase_account': item_purchase_account
+                    'Purchase_account': item_purchase_account,
+                    'LivestockDeduction': item_livestock_deduction
                 })
 
             if stock_processing_errors:
@@ -229,7 +252,7 @@ class AddSale(Resource):
         sasapay_deposits = []
 
         try:
-            # Create sale record (simplified to match your Sales model)
+            # Create sale record
             new_sale = Sales(
                 user_id=current_user_id,
                 shop_id=shop_id,
@@ -241,7 +264,7 @@ class AddSale(Resource):
                 promocode=promocode
             )
             db.session.add(new_sale)
-            db.session.flush()  # Generate sales_id without committing
+            db.session.flush()
 
             # Create sold item records
             for item in sold_items:
@@ -255,7 +278,8 @@ class AddSale(Resource):
                     BatchNumber=item['BatchNumber'],
                     stockv2_id=item['stockv2_id'],
                     Cost_of_sale=item['Cost_of_sale'],
-                    Purchase_account=item['Purchase_account']
+                    Purchase_account=item['Purchase_account'],
+                    LivestockDeduction=item['LivestockDeduction']
                 )
                 db.session.add(sold_item)
 
@@ -331,6 +355,10 @@ class AddSale(Resource):
                 'items': {
                     'count': len(items),
                     'details': sold_items
+                },
+                'stock_deductions': {
+                    'shop_stock': batch_deductions,
+                    'livestock': livestock_deductions
                 },
                 'payments': {
                     'methods': [pm['method'] for pm in payment_methods],
@@ -656,7 +684,7 @@ class GetSalesByShop(Resource):
                         "unit_price": item.unit_price,
                         "total_price": item.total_price,
                         "batch_number": item.BatchNumber,
-                        "stock_id": item.stock_id,
+                        "stockv2_id": item.stockv2_id,
                         "cost_of_sale": item.Cost_of_sale,
                         "purchase_account": item.Purchase_account
                     }
@@ -723,7 +751,7 @@ class SalesResources(Resource):
                     "unit_price": item.unit_price,
                     "total_price": item.total_price,
                     "batch_number": item.BatchNumber,  # Ensure case matches DB model
-                    "stock_id": item.stock_id
+                    "stockv2_id": item.stockv2_id
                 }
                 for item in sale.items  # Assuming relationship: sale.items
             ]
@@ -1608,7 +1636,7 @@ class SalesByEmployeeResource(Resource):
                         "unit_price": item.unit_price,
                         "total_price": item.total_price,
                         "batch_number": item.BatchNumber,
-                        "stock_id": item.stock_id,
+                        "stockv2_id": item.stockv2_id,
                         "cost_of_sale": item.Cost_of_sale,
                         "purchase_account": item.Purchase_account
                     }

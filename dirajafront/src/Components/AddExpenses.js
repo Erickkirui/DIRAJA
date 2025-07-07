@@ -19,6 +19,7 @@ const AddExpense = () => {
   });
 
   const [shops, setShops] = useState([]);
+  const [category, setCategory] = useState([]);
   const [categorySuggestions, setCategorySuggestions] = useState([]);
   const [filteredCategories, setFilteredCategories] = useState([]);
   const [accounts, setAccounts] = useState([]);
@@ -27,11 +28,11 @@ const AddExpense = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [shopResponse, expenseResponse, accountResponse] = await Promise.all([
+        const [shopResponse, categoryResponse, accountResponse] = await Promise.all([
           axios.get('/api/diraja/allshops', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get('/api/diraja/allexpenses', {
+          axios.get('/api/diraja/expensecategories', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
           axios.get('/api/diraja/all-acounts', {
@@ -39,20 +40,31 @@ const AddExpense = () => {
           })
         ]);
 
-        setShops(shopResponse.data);
-        const categories = [...new Set(expenseResponse.data.map(expense => expense.category))];
-        setCategorySuggestions(categories);
+        console.log("Shops:", shopResponse.data);
+        console.log("Categories:", categoryResponse.data);
+        console.log("Accounts:", accountResponse.data);
 
-        if (Array.isArray(accountResponse.data.accounts)) {
+        setShops(shopResponse.data);
+
+        // Categories
+        if (Array.isArray(categoryResponse.data)) {
+          setCategory(categoryResponse.data);
+          setCategorySuggestions(categoryResponse.data.map(cat => cat.category_name || cat)); // handle both object or string
+        } else {
+          console.error('Categories response is not an array');
+        }
+
+        // Accounts
+        if (Array.isArray(accountResponse.data)) {
+          setAccounts(accountResponse.data);
+        } else if (Array.isArray(accountResponse.data.accounts)) {
           setAccounts(accountResponse.data.accounts);
         } else {
-          console.error('Bank accounts data is not an array');
-          setAccounts([]);
+          console.error('Accounts response format not supported');
         }
+
       } catch (error) {
         console.error("Error fetching data:", error);
-        setCategorySuggestions([]);
-        setAccounts([]);
       }
     };
 
@@ -62,18 +74,6 @@ const AddExpense = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setExpenseData({ ...expenseData, [name]: value });
-  };
-
-  const handleCategoryInput = (e) => {
-    const value = e.target.value;
-    setExpenseData({ ...expenseData, category: value });
-    setFilteredCategories(value ? categorySuggestions.filter(suggestion => 
-      suggestion.toLowerCase().includes(value.toLowerCase())) : []);
-  };
-
-  const handleCategorySelect = (suggestion) => {
-    setExpenseData({ ...expenseData, category: suggestion });
-    setFilteredCategories([]);
   };
 
   const handleSubmit = async (e) => {
@@ -156,22 +156,27 @@ const AddExpense = () => {
           ))}
         </select>
 
-        <div style={{ position: 'relative' }}>
-          <input type="text" name="category" value={expenseData.category} onChange={handleCategoryInput} placeholder="Enter category" className="input" />
-          {filteredCategories.length > 0 && (
-            <ul className="suggestions">
-              {filteredCategories.map((suggestion, index) => (
-                <li key={index} onClick={() => handleCategorySelect(suggestion)}>{suggestion}</li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <select
+          name="category"
+          value={expenseData.category}
+          onChange={handleChange}
+          className="select"
+        >
+          <option value="">Select category</option>
+          {category.map((cat, index) => (
+            <option key={index} value={cat.category_name || cat}>
+              {cat.category_name || cat}
+            </option>
+          ))}
+        </select>
 
         <select name="source" value={expenseData.source} onChange={handleChange} className="select">
           <option value="">Select Source</option>
           <option value="External funding">External funding</option>
           {Array.isArray(accounts) && accounts.map((account, index) => (
-            <option key={index} value={account.Account_name}>{account.Account_name}</option>
+            <option key={index} value={account.Account_name || account.account_name || account}>
+              {account.Account_name || account.account_name || account}
+            </option>
           ))}
         </select>
 

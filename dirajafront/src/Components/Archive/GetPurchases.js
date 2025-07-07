@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import ExportExcel from '../../Components/Download/ExportExcel';
-import DownloadPDF from '../../Components/Download/DownloadPDF';
-import UpdateTransfer from './UpdtaeTransfers';
-import GeneralTableLayout from '../../Components/GeneralTableLayout';
+import ExportExcel from '../Download/ExportExcel';
+import DownloadPDF from '../Download/DownloadPDF';
+import UpdateTransfer from '../Purchases/UpdtaeTransfers';
+import GeneralTableLayout from '../GeneralTableLayout';
 import { Link } from 'react-router-dom';
 import '../../Styles/purchases.css';
 
@@ -28,7 +28,7 @@ const Purchases = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/v2/transfers', {
+        const response = await axios.get('/api/diraja/alltransfers', {
           headers: { 
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager'
