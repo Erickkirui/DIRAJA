@@ -73,6 +73,8 @@ from Server.Views.InventoryV2Views import (
 )
 from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
 
+from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, ItemDetailsResourceForShopV2
+from Server.Views.ExpenseCategoies import PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -281,6 +283,15 @@ api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
 api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
 api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
 api.add_resource(GetAllStockV2, '/allstockv2')
+#Get stock
+#Get stock by shopid
+# api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+# api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+# api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+# api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+# api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+# api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+# api.add_resource(GetAllStockV2, '/allstockv2')
 
 # Inventory V2 endpoints
 api.add_resource(AddInventoryV2, '/v2/newinventory')
@@ -294,3 +305,23 @@ api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
+
+
+#stockv2 endpoints
+#Get stock
+api.add_resource(GetShopStockV2, '/shopstockv2')
+#Get stock by shopid
+api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+api.add_resource(GetAllStockV2, '/allstockv2')
+api.add_resource(ItemDetailsResourceForShopV2, '/shop-itemdetailsv2')
+
+#Expensecategories
+api.add_resource(PostExpenseCategory, '/add-expense-category')
+api.add_resource(GetAllExpenseCategories, '/expensecategories')
+api.add_resource(ExpenseCategoryResource, '/expensecategories/<int:category_id>')
+

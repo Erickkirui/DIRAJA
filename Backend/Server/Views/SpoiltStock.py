@@ -38,13 +38,23 @@ class AddSpoiltStock(Resource):
         if not all([item, quantity, unit, disposal_method]):
             return {"message": "Missing required fields"}, 400
 
-        # Find matching shop stock item(s), sorted by oldest batch (optional)
-        shop_stock_entries = ShopStock.query.filter_by(shop_id=shop_id, itemname=item).order_by(ShopStock.stock_id).all()
+        try:
+            # Convert quantity to float for safety
+            quantity = float(quantity)
+        except ValueError:
+            return {"message": "Invalid quantity format"}, 400
+
+        # Find matching shop stock item(s), sorted by oldest batch first (FIFO)
+        shop_stock_entries = ShopStockV2.query.filter_by(
+            shop_id=shop_id,
+            itemname=item
+        ).order_by(ShopStockV2.BatchNumber).all()
 
         if not shop_stock_entries:
-            return {"message": "Item not found in shop stock"}, 400
+            return {"message": f"Item '{item}' not found in shop {shop_id} stock"}, 400
 
-        remaining_to_deduct = float(quantity)
+        remaining_to_deduct = quantity
+        batch_deductions = []  # Track which batches were deducted
 
         for stock in shop_stock_entries:
             if remaining_to_deduct <= 0:
@@ -52,15 +62,22 @@ class AddSpoiltStock(Resource):
             if stock.quantity <= 0:
                 continue
 
-            if stock.quantity >= remaining_to_deduct:
-                stock.quantity -= remaining_to_deduct
-                remaining_to_deduct = 0
-            else:
-                remaining_to_deduct -= stock.quantity
-                stock.quantity = 0
+            deduct_amount = min(stock.quantity, remaining_to_deduct)
+            stock.quantity -= deduct_amount
+            remaining_to_deduct -= deduct_amount
+            batch_deductions.append({
+                'batch': stock.BatchNumber,
+                'deducted': deduct_amount,
+                'remaining': stock.quantity
+            })
+            db.session.add(stock)
 
         if remaining_to_deduct > 0:
-            return {"message": "Not enough stock to deduct spoilt quantity"}, 400
+            db.session.rollback()
+            return {
+                "message": f"Not enough stock to deduct spoilt quantity. Needed {quantity}, available {quantity - remaining_to_deduct}",
+                "available": quantity - remaining_to_deduct
+            }, 400
 
         # Record spoilt stock
         record = SpoiltStock(
@@ -72,13 +89,30 @@ class AddSpoiltStock(Resource):
             unit=unit,
             disposal_method=disposal_method,
             collector_name=collector_name,
-            comment=comment
+            comment=comment,
+            batches_affected=', '.join([f"{d['batch']}({d['deducted']})" for d in batch_deductions])
         )
 
         db.session.add(record)
-        db.session.commit()
-
-        return {"message": "Spoilt stock recorded and deducted from shop stock"}, 201
+        
+        try:
+            db.session.commit()
+            return {
+                "message": "Spoilt stock recorded and deducted from shop stock",
+                "details": {
+                    "item": item,
+                    "quantity": quantity,
+                    "unit": unit,
+                    "batches_affected": batch_deductions,
+                    "disposal_method": disposal_method
+                }
+            }, 201
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "message": "Failed to record spoilt stock",
+                "error": str(e)
+            }, 500
     
 class SpoiltStockResource(Resource):
     @jwt_required()

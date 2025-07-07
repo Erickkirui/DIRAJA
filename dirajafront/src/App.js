@@ -235,6 +235,7 @@ function App() {
            
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
 
+            <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
            </Routes> 
        
       </Router>
