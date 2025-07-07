@@ -50,6 +50,8 @@ def initialize_models():
     from Server.Models.SalesDepartment import SalesDepartment
     from Server.Models.Supplier import Suppliers, SupplierHistory
     from Server.Models.InventoryV2 import InventoryV2
+    from Server.Models.ShopstockV2 import ShopStockV2
+    from Server.Models.ExpenseCategory import ExpenseCategory
 
     
     # from Server.Models.Purchases import Purchases

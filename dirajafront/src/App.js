@@ -230,7 +230,6 @@ function App() {
             <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
 
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
-
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
            </Routes> 
        

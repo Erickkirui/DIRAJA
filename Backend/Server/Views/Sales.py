@@ -10,6 +10,8 @@ from Server.Models.Expenses import Expenses
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount
 from Server.Models.Inventory import Inventory
+from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.Customers import Customers
 from Server.Utils import get_sales_filtered, serialize_sales
 from flask import jsonify,request,make_response
@@ -147,7 +149,7 @@ class AddSale(Resource):
             14: 14, 16: 13
         }
 
-        # ===== STOCK PROCESSING =====
+        # ===== STOCK PROCESSING (UPDATED FOR ShopStockV2) =====
         stock_processing_errors = []
         batch_deductions = []
         stock_ids_used = []
@@ -155,11 +157,12 @@ class AddSale(Resource):
         
         try:
             for item in items:
-                batches = ShopStock.query.filter(
-                    ShopStock.itemname == item['item_name'],
-                    ShopStock.shop_id == shop_id,
-                    ShopStock.quantity > 0
-                ).order_by(ShopStock.BatchNumber).all()
+                # Get batches ordered by BatchNumber (oldest first)
+                batches = ShopStockV2.query.filter(
+                    ShopStockV2.itemname == item['item_name'],
+                    ShopStockV2.shop_id == shop_id,
+                    ShopStockV2.quantity > 0
+                ).order_by(ShopStockV2.BatchNumber).all()
 
                 if not batches:
                     stock_processing_errors.append(f"No stock available for item: {item['item_name']}")
@@ -178,9 +181,10 @@ class AddSale(Resource):
                     batch.quantity -= deduct_qty
                     remaining_qty -= deduct_qty
                     item_batch_deductions.append((batch.BatchNumber, deduct_qty))
-                    item_stock_ids.append(str(batch.stock_id))
+                    item_stock_ids.append(str(batch.stockv2_id))
 
-                    inventory = Inventory.query.filter_by(BatchNumber=batch.BatchNumber).first()
+                    # Get unit cost from associated inventory
+                    inventory = InventoryV2.query.filter_by(inventoryV2_id=batch.inventoryv2_id).first()
                     if inventory:
                         item_purchase_account += inventory.unitCost * deduct_qty
 
@@ -206,7 +210,7 @@ class AddSale(Resource):
                     'unit_price': item['unit_price'],
                     'total_price': item['total_price'],
                     'BatchNumber': ", ".join(f"{bn} ({q})" for bn, q in item_batch_deductions),
-                    'stock_id': item_stock_ids[0],  # Take first stock_id as reference
+                    'stockv2_id': item_stock_ids[0],  # Take first stock_id as reference
                     'Cost_of_sale': item['total_price'],
                     'Purchase_account': item_purchase_account
                 })
@@ -249,7 +253,7 @@ class AddSale(Resource):
                     unit_price=item['unit_price'],
                     total_price=item['total_price'],
                     BatchNumber=item['BatchNumber'],
-                    stock_id=item['stock_id'],
+                    stockv2_id=item['stockv2_id'],
                     Cost_of_sale=item['Cost_of_sale'],
                     Purchase_account=item['Purchase_account']
                 )

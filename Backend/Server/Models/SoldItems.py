@@ -13,11 +13,12 @@ class SoldItem(db.Model):
     unit_price = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
     BatchNumber = db.Column(db.String(255), nullable=False)
-    stock_id = db.Column(db.Integer, db.ForeignKey('shop_stock.stock_id'), nullable=False)
+    stockv2_id = db.Column(db.Integer, db.ForeignKey('shop_stock_v2.stockv2_id'), nullable=False)  # Updated reference
     Cost_of_sale = db.Column(db.Float, nullable=False)
     Purchase_account = db.Column(db.Float, nullable=False)
 
-    shop_stock = db.relationship('ShopStock', backref='sold_items', lazy=True)
+    # Updated relationship to point to ShopStockV2
+    shop_stock = db.relationship('ShopStockV2', backref='sold_items', lazy=True)
 
     @validates('metric')
     def validate_metric(self, key, metric):
