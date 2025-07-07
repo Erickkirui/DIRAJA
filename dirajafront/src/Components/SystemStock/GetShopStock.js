@@ -4,7 +4,7 @@ import LoadingAnimation from '../LoadingAnimation';
 import ActionsDropdown from './ActionsDropdown';
 import GeneralTableLayout from '../GeneralTableLayout';
 
-const Shopstock = () => {
+const ShopStock = () => {
     const [shopStocks, setShopStocks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,7 +21,7 @@ const Shopstock = () => {
                     setLoading(false);
                     return;
                 }
-                const response = await fetch('/api/diraja/shopstock', {
+                const response = await fetch('/api/diraja/shopstockv2', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
@@ -31,7 +31,9 @@ const Shopstock = () => {
                 if (!response.ok) throw new Error('Failed to fetch shop stock data');
 
                 const data = await response.json();
-                setShopStocks(data.shop_stocks.sort((a, b) => b.stock_id - a.stock_id));
+
+                setShopStocks(data.shop_stocks.sort((a, b) => b.stockv2_id - a.stockv2_id));
+
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
@@ -63,8 +65,8 @@ const Shopstock = () => {
             // Move zero quantity items to the bottom
             if (a.quantity === 0 && b.quantity !== 0) return 1;
             if (a.quantity !== 0 && b.quantity === 0) return -1;
-            // Maintain original sorting (by stock_id) for others
-            return b.stock_id - a.stock_id;
+            // Maintain original sorting (by stockv2_id) for others
+            return b.stockv2_id - a.stockv2_id;
         });
 
     // Define columns for GeneralTableLayout
@@ -75,7 +77,7 @@ const Shopstock = () => {
                     type="checkbox"
                     onChange={(e) =>
                         setSelectedStocks(
-                            e.target.checked ? filteredShopsStock.map((stock) => stock.stock_id) : []
+                            e.target.checked ? filteredShopsStock.map((stock) => stock.stockv2_id) : []
                         )
                     }
                     checked={selectedStocks.length === filteredShopsStock.length && filteredShopsStock.length > 0}
@@ -85,12 +87,12 @@ const Shopstock = () => {
             render: (stock) => (
                 <input
                     type="checkbox"
-                    checked={selectedStocks.includes(stock.stock_id)}
+                    checked={selectedStocks.includes(stock.stockv2_id)}
                     onChange={() =>
                         setSelectedStocks((prev) =>
-                            prev.includes(stock.stock_id)
-                                ? prev.filter((id) => id !== stock.stock_id)
-                                : [...prev, stock.stock_id]
+                            prev.includes(stock.stockv2_id)
+                                ? prev.filter((id) => id !== stock.stockv2_id)
+                                : [...prev, stock.stockv2_id]
                         )
                     }
                 />
@@ -108,8 +110,11 @@ const Shopstock = () => {
         },
         {
             header: 'Batch Number',
+
             key: 'batchnumber',
             render: (stock) => stock.batchnumber
+
+
         },
         {
             header: 'Quantity',
@@ -128,7 +133,7 @@ const Shopstock = () => {
 
     return (
         <div className="shopStocks-container">
-            <h2>System stock</h2>
+            
             {/* Search & Filter */}
             <div className="filter-container">
                 <input
@@ -152,6 +157,7 @@ const Shopstock = () => {
                 setShopStocks={setShopStocks}
                 selectedStocks={selectedStocks}
                 setSelectedStocks={setSelectedStocks}
+                isV2={true}
             />
 
             {/* Table */}
@@ -164,4 +170,4 @@ const Shopstock = () => {
     );
 };
 
-export default Shopstock;
+export default ShopStock;
