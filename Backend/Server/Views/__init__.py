@@ -71,12 +71,13 @@ from Server.Views.InventoryV2Views import (
     StockDeletionResourceV2,
     ManualTransferV2
 )
+from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
+
 from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, ItemDetailsResourceForShopV2
 from Server.Views.ExpenseCategoies import PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
-
 
 # add all endpoints 
 
@@ -95,12 +96,8 @@ api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
 api.add_resource(GetAllShops, '/allshops')
 
-
-
 #stock endpoints
-#Get stock
 api.add_resource(GetShopStock, '/shopstock')
-#Get stock by shopid
 api.add_resource(GetShopStockByShopId, '/shopstock/shop/<int:shop_id>')  
 api.add_resource(ShopStockDelete, '/shops/<int:shop_id>/inventory/<int:inventory_id>/delete')
 api.add_resource(BatchDetailsResource, '/batch-details')
@@ -112,33 +109,22 @@ api.add_resource(GetStockValueByShop, '/shop/<int:shop_id>/stock-value')
 api.add_resource(TotalStockValue, '/shopstock/value')
 api.add_resource(UpdateShopStockUnitPrice, '/shopstock/<int:stock_id>/update-unitprice')
 api.add_resource(TransferSystemStock, "/transfer-system-stock")
-api.add_resource(GetBatchStock, '/batch-stock-level' )
+api.add_resource(GetBatchStock, '/batch-stock-level')
 api.add_resource(GetItemStock, '/item-stock-level')
-
-#Shopstock date range
 api.add_resource(ShopStockByDate, '/shopstock/bydate')
-
-#Shopstock by item
 api.add_resource(AvailableItemsByShopResource, '/items/available-by-shop')
 api.add_resource(ItemDetailsResourceForShop, '/shop-itemdetails')
-
-#Add shopstock
 api.add_resource(AddShopStock, '/addstock')
-
-
-
+api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
 
 #Employess Routes
 api.add_resource(AddNewemployee, '/newemployee')
 api.add_resource(GetAllemployees,'/allemployees')
 api.add_resource(Employeeresource, '/employee/<int:employee_id>')
 api.add_resource(UpdateEmployeeShop, '/update-shop/<int:employee_id>')
-## Add get employess by shop_id
-#Employee loan 
 api.add_resource(AddEmployeeLoan,'/newloan')
 api.add_resource(GetEmployeeLeaderboard, '/leaderboard/employee')
-
-
+api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
 
 # inventory endpoints 
 api.add_resource(AddInventory, '/newinventory')
@@ -147,13 +133,6 @@ api.add_resource(InventoryResourceById, '/inventory/<int:inventory_id>')
 api.add_resource(DeleteShopStock, '/deleteshopstock/<int:shop_stock_id>')
 api.add_resource(GetInventoryByBatch, '/inventory-by-batch')
 
-
-#distribute stock to a specific shop
-# api.add_resource(InventoryDistribute, '/inventory/distribute')
-
-api.add_resource(GetEmployeeLoan,'/employee/loan/<int:employee_id>')
-
-
 # expenses endpoint 
 api.add_resource(AddExpense,'/newexpense')
 api.add_resource(AllExpenses, '/allexpenses')
@@ -161,23 +140,19 @@ api.add_resource(GetShopExpenses, '/expense/shop/<int:shop_id>')
 api.add_resource(ExpensesResources,'/expense/<int:expense_id>')
 api.add_resource(TotalBalance, '/accountsreceivable')
 
-
 # banks endpoint
 api.add_resource(AddBank, '/newbank')
 api.add_resource(BankResourceById, '/bank/<int:bank_id>')
-
 
 #Customers endpoints
 api.add_resource(AddCustomer, '/newcustomer')  
 api.add_resource(GetAllCustomers, '/allcustomers')  
 api.add_resource(GetCustomersByShop, '/customers/<shop_id>')
-# api.add_resource(GetCustomerById, '/customers/<int:customer_id>')  
-
+api.add_resource(GetCustomerById, '/customer/<int:customer_id>')
 
 #Sales 
 api.add_resource(AddSale, '/newsale')
 api.add_resource(GetSales, '/allsales')
-api.add_resource(GetSale, '/sale')
 api.add_resource(GetSalesByShop,'/sales/shop/<int:shop_id>')
 api.add_resource(SalesResources,'/sale/<int:sales_id>')
 api.add_resource(GetPaymentTotals, '/get_payment_totals')
@@ -192,15 +167,12 @@ api.add_resource(CreditHistoryResource, "/credit-history")
 api.add_resource(GetSingleSaleByShop, "/sale/<int:shop_id>/<int:sales_id>")
 api.add_resource(GetUnpaidSalesByClerk, "/unpaidsales/clerk")  
 
-
-
 #Distribution
 api.add_resource(DistributeInventory,'/transfer')
 api.add_resource(GetTransfer,'/alltransfers')
 api.add_resource(UpdateTransfer, "/updatetransfer/<int:transfer_id>")
 api.add_resource(ManualTransfer,'/manualtransfer')
 api.add_resource(GetTransferById, '/singletransfer/<int:transfer_id>')
-
 
 #Live stock 
 api.add_resource(GetStock,"/get-stock/<int:shop_id>")
@@ -214,7 +186,6 @@ api.add_resource(TransferStock , "/transfer-shop-stock")
 api.add_resource(GetShopTransfers, '/allshoptransfers' )
 api.add_resource(AutoCheckoutStock, "/auto-checkout")
 
-    
 #manager dashbord
 api.add_resource(CountShops, '/totalshops')
 api.add_resource(CountEmployees,'/totalemployees')
@@ -229,15 +200,7 @@ api.add_resource(TotalAmountPaidForMabanda,'/totalmabandasales')
 api.add_resource(TotalExpensesForMabanda,'/totalmabandaexpenses')
 api.add_resource(SalesSummary,'/Sale-Summery')
 api.add_resource(TotalFinancialSummary,'/summery')
-
-## clerkS Dashbord
-#Unpaid sales card for clerks
 api.add_resource(TotalUnpaidAmountPerClerk, "/unpaidsales/totalperclerk")
-
-
-api.add_resource(GetItemsByShopId, '/items/<int:shop_id>')
-
-# Sales dashboard
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
 api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
 
@@ -253,21 +216,16 @@ api.add_resource(MabandaExpenseResource,'/getmabandaexpense')
 api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
 api.add_resource(MabandaProfitLossAPI, '/mabandap&l')
 
-
-
 #Accounting 
 api.add_resource(CreateAccount, '/add-account')
 api.add_resource(AccountTypeListResource, '/account-types/all')
 api.add_resource(AccountTypeResource, '/account-types/<int:id>')
-#chart of accounts
 api.add_resource(CreateChartOfAccounts, '/add-chart-of-accounts')
 api.add_resource(ChartOfAccountsList, '/chart-of-accounts')
-#items 
 api.add_resource(CreateItemAccount, '/itemaccounts')
 api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
 api.add_resource(SalesLedger, '/sale-ledger')
 api.add_resource(PurchasesLedger , '/purchases-ledger')
-
 
 #Account Ballance 
 api.add_resource(PostBankAccount, '/bankaccount')
@@ -275,8 +233,6 @@ api.add_resource(GetAllBankAccounts, '/all-acounts')
 api.add_resource(DailySalesDeposit, '/sales/daily-deposit', '/sales/daily-deposit/<string:date_str>')
 api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
 api.add_resource(TotalBankBalance, '/total-balance')
-
-
 
 #Spoiltstock
 api.add_resource(AddSpoiltStock, '/newspoilt')
@@ -288,7 +244,6 @@ api.add_resource(GetAllStockItems, '/stockitems')
 api.add_resource(StockItem, '/stockitems/<int:item_id>')
 
 #Cash sales
-
 api.add_resource(CashSales, '/sales/cash/shops', '/sales/cash/sale/<int:sale_id>')
 api.add_resource(CashSalesByUser, '/sales/cash/user/<int:user_id>')
 api.add_resource(TotalCashSalesByUser, '/cashsaleperuser/<string:username>/<int:shop_id>')
@@ -296,7 +251,6 @@ api.add_resource(TotalCashSalesByUser, '/cashsaleperuser/<string:username>/<int:
 #Cash Deposits
 api.add_resource(AddCashDeposit, '/cashdeposits/add')
 api.add_resource(CashDepositResource, '/cashdeposits', '/cashdeposits/<int:deposit_id>')
-
 
 #reports 
 api.add_resource(GenerateSalesReport, '/generate-sales-report')
@@ -307,25 +261,28 @@ api.add_resource(GetSalesdepartmentSales, '/allsalesdepartmentsales')
 api.add_resource(GetSalesDepartmentSalesByUser, '/salesdepartmentsales/<int:user_id>')
 api.add_resource(TotalAmountDepartmentSales,"/salesdepartmenttotal")
 api.add_resource(TotalAmountDepartmentSalesByUser,"/salesdepartmenttotal/<int:user_id>")
-
+api.add_resource(TopSalesUsers,'/promo-sales-rank')
 
 #Merit points
 api.add_resource(PostMeritPoint, '/newmeritpoint')
 api.add_resource(GetAllMeripoints, '/allmeritpoints')
 api.add_resource(MeritPointResource, '/merit-points/<int:id>')
-
-#Assign meritpoints points
 api.add_resource(AssignMeritPoints, '/employee/<int:employee_id>/assign-merit')
 api.add_resource(GetMeritLedger, '/meritledger')
-
-api.add_resource(TopSalesUsers,'/promo-sales-rank')
-
 
 #Suppliers endpoints 
 api.add_resource(AddSupplier , '/creat-supplier')
 api.add_resource(GetAllSuppliers,'/all-suppliers' )
 
 #stockv2 endpoints
+api.add_resource(GetShopStockV2, '/shopstockv2')
+api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+api.add_resource(GetAllStockV2, '/allstockv2')
 #Get stock
 #Get stock by shopid
 # api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
@@ -342,14 +299,10 @@ api.add_resource(GetAllInventoryV2, '/v2/allinventories')
 api.add_resource(InventoryResourceByIdV2, '/v2/inventory/<int:inventoryV2_id>')
 api.add_resource(DeleteShopStockV2, '/v2/deleteshopstock/<int:shop_stockV2_id>')
 api.add_resource(GetInventoryByBatchV2, '/v2/inventory-by-batch')
-
-# Transfer V2 endpoints
 api.add_resource(DistributeInventoryV2, '/v2/distribute-inventory')
 api.add_resource(GetTransferV2, '/v2/transfers')
 api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
-
-# Manual operations
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
 

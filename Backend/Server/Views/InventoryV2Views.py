@@ -72,7 +72,6 @@ class GetInventoryByBatchV2(Resource):
         except Exception as e:
             return make_response(jsonify({'message': 'Error fetching inventory', 'error': str(e)}), 500)
 
-
 class DistributeInventoryV2(Resource):
     @jwt_required()
     @check_role('manager')
@@ -88,7 +87,7 @@ class DistributeInventoryV2(Resource):
         inventoryV2_id = data['inventoryV2_id']
         quantity = data['quantity']
         metric = data['metric']
-        itemname = data['itemname']
+        itemname = data['itemname']  
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
@@ -125,19 +124,19 @@ class DistributeInventoryV2(Resource):
 
         try:
             db.session.add(new_transfer)
-            db.session.flush()  # This generates the transferv2_id before commit
+            db.session.flush()
             
             # Create shop stock record
             new_shop_stock = ShopStockV2(
                 shop_id=shop_id,
-                transferv2_id=new_transfer.transferv2_id,  # Note lowercase 'v' to match schema
-                inventoryv2_id=inventoryV2_id,  # Note lowercase 'v' to match schema
+                transferv2_id=new_transfer.transferv2_id,
+                inventoryv2_id=inventoryV2_id,
                 quantity=quantity,
                 total_cost=unitCost * quantity,
                 itemname=itemname,
                 metric=metric,
                 BatchNumber=BatchNumber,
-                unitPrice=inventory_item.unitPrice
+                unitPrice=unitCost  # Use the provided unitCost instead of inventory_item.unitPrice
             )
 
             db.session.add(new_shop_stock)
@@ -148,22 +147,23 @@ class DistributeInventoryV2(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error creating transfer or shop stock', 'error': str(e)}, 500
-        
+
+
 class DeleteShopStockV2(Resource):
     @jwt_required()
     @check_role('manager')
     def delete(self, shop_stockV2_id):
         current_user_id = get_jwt_identity()
 
-        shop_stock = ShopStock.query.get(shop_stockV2_id)
+        shop_stock = ShopStockV2.query.get(shop_stockV2_id)
         if not shop_stock:
             return jsonify({'message': 'ShopStock record not found'}), 404
 
-        transfer = Transfer.query.get(shop_stock.transferV2_id)
+        transfer = TransfersV2.query.get(shop_stock.transferV2_id)
         if not transfer:
             return jsonify({'message': 'Related Transfer record not found'}), 404
 
-        inventory_item = Inventory.query.get(shop_stock.inventoryV2_id)
+        inventory_item = InventoryV2.query.get(shop_stock.inventoryV2_id)
         if not inventory_item:
             return jsonify({'message': 'Related Inventory item not found'}), 404
 
@@ -231,7 +231,7 @@ class GetTransferByIdV2(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self, transferV2_id):
-        transfer = Transfer.query.filter_by(transferV2_id=transferV2_id).first()
+        transfer = TransfersV2.query.filter_by(transferV2_id=transferV2_id).first()
         
         if not transfer:
             return make_response(jsonify({"message": "Transfer not found"})), 404
@@ -267,7 +267,7 @@ class UpdateTransferV2(Resource):
     @check_role('manager')
     def put(self, transferV2_id):
         data = request.get_json()
-        transfer = Transfer.query.filter_by(transferV2_id=transferV2_id).first()
+        transfer = TransfersV2.query.filter_by(transferV2_id=transferV2_id).first()
 
         if not transfer:
             return make_response(jsonify({"message": "Transfer not found"}), 404)
@@ -416,7 +416,7 @@ class InventoryResourceByIdV2(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self, inventoryV2_id):
-        inventory = Inventory.query.get(inventoryV2_id)
+        inventory = InventoryV2.query.get(inventoryV2_id)
    
         if inventory:
             return {
@@ -444,17 +444,17 @@ class InventoryResourceByIdV2(Resource):
     @jwt_required()
     @check_role('manager')
     def delete(self, inventoryV2_id):
-        inventory = Inventory.query.get(inventoryV2_id)
+        inventory = InventoryV2.query.get(inventoryV2_id)
 
         if not inventory:
             return {"error": "Inventory not found"}, 404
         
         try:
-            transfers = Transfer.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
             for transfer in transfers:
                 db.session.delete(transfer)
             
-            shop_stocks = ShopStock.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            shop_stocks = ShopStockV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 db.session.delete(stock)
 
@@ -471,7 +471,7 @@ class InventoryResourceByIdV2(Resource):
     @check_role('manager')
     def put(self, inventoryV2_id):
         data = request.get_json()
-        inventory = Inventory.query.get(inventoryV2_id)
+        inventory = InventoryV2.query.get(inventoryV2_id)
         if not inventory:
             return jsonify({'message': 'Inventory not found'}), 404
 
@@ -508,13 +508,13 @@ class InventoryResourceByIdV2(Resource):
             inventory.note = note
             inventory.created_at = created_at
 
-            transfers = Transfer.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
             for transfer in transfers:
                 transfer.itemname = itemname
                 transfer.unitCost = unitCost
                 transfer.amountPaid = amountPaid
 
-            shop_stocks = ShopStock.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            shop_stocks = ShopStockV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 stock.itemname = itemname
                 stock.unitPrice = unitPrice
@@ -534,23 +534,23 @@ class StockDeletionResourceV2(Resource):
     @jwt_required()
     @check_role('manager')
     def delete(self, stockV2_id):
-        stock = ShopStock.query.get(stockV2_id)
+        stock = ShopStockV2.query.get(stockV2_id)
 
         if not stock:
             return {"error": "Stock not found"}, 404
 
         try:
             if stock.inventoryV2_id == 0:
-                related_transfers = Transfer.query.filter_by(shop_id=stock.shop_id, itemname=stock.itemname).all()
+                related_transfers = TransfersV2.query.filter_by(shop_id=stock.shop_id, itemname=stock.itemname).all()
             else:
-                related_transfers = Transfer.query.filter_by(stockV2_id=stockV2_id).all()
+                related_transfers = TransfersV2.query.filter_by(stockV2_id=stockV2_id).all()
 
             if related_transfers:
                 for transfer in related_transfers:
                     db.session.delete(transfer)
 
             if stock.inventoryV2_id != 0:
-                inventory = Inventory.query.get(stock.inventoryV2_id)
+                inventory = InventoryV2.query.get(stock.inventoryV2_id)
                 if inventory:
                     inventory.quantity += stock.quantity
 
@@ -592,7 +592,7 @@ class ManualTransferV2(Resource):
                 quantity *= 30
                 metric = "egg"
 
-            new_transfer = Transfer(
+            new_transfer = TransfersV2(
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
                 inventoryV2_id=None,
                 quantity=quantity,
@@ -608,7 +608,7 @@ class ManualTransferV2(Resource):
             db.session.add(new_transfer)
             db.session.commit()
 
-            existing_stock = ShopStock.query.filter_by(
+            existing_stock = ShopStockV2.query.filter_by(
                 shop_id=MANUAL_TRANSFER_SHOP_ID,
                 itemname=itemname,
                 metric=metric,
@@ -620,7 +620,7 @@ class ManualTransferV2(Resource):
                 existing_stock.total_cost += unitCost * quantity
                 existing_stock.unitPrice = unitPrice
             else:
-                new_shop_stock = ShopStock(
+                new_shop_stock = ShopStockV2(
                     shop_id=MANUAL_TRANSFER_SHOP_ID,
                     inventoryV2_id=None,
                     transferV2_id=new_transfer.transferV2_id,

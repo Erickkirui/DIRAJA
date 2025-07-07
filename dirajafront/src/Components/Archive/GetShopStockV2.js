@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import '../../Styles/shopstock.css';
 import LoadingAnimation from '../LoadingAnimation';
-import ActionsDropdown from './ActionsDropdown';
+import ActionsDropdown from '../SystemStock/ActionsDropdown';
 import GeneralTableLayout from '../GeneralTableLayout';
 
 const ShopStockV2 = () => {

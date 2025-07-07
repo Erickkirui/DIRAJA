@@ -85,9 +85,10 @@ import ProcurementTable from './Components/Inventory/ProcurementTable';
 import AddSuppliers from './Components/Suppliers/AddSuppliers';
 import Suppliers from './Pages/Suppliers';
 import AddShopStock from './Components/AddShopStock';
-import ShopStockV2 from './Components/SystemStock/GetShopStockV2';
+import ShopStockV2 from './Components/Archive/GetShopStockV2';
 
 import PurchasesV2 from './Components/Purchases/GetPurchasesV2';
+import Achive from './Pages/Achive';
 
 
 
@@ -230,6 +231,10 @@ function App() {
             <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
 
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
+
+           
+            <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
+
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
            </Routes> 
        
