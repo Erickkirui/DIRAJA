@@ -1,6 +1,8 @@
 from  flask_restful import Resource
 from app import db
 from Server.Models.Inventory import Inventory
+from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.TransferV2 import  TransfersV2
 from Server.Models.Transfer import Transfer
 from Server.Models.Users import Users
 from Server.Models.Paymnetmethods import SalesPaymentMethods
@@ -299,7 +301,6 @@ class TotalAmountPaidExpenses(Resource):
 
 
 
-
 class TotalAmountPaidPurchasesInventory (Resource):
     @jwt_required()
     @check_role('manager')
@@ -342,13 +343,13 @@ class TotalAmountPaidPurchasesInventory (Resource):
 
         try:
             # Build query to sum the `amountPaid`
-            query = db.session.query(db.func.sum(Inventory.amountPaid))
+            query = db.session.query(db.func.sum(InventoryV2.amountPaid))
 
             # Apply date filtering only if start_date and end_date are defined
             if start_date and end_date:
-                query = query.filter(Inventory.created_at.between(start_date, end_date))
+                query = query.filter(InventoryV2.created_at.between(start_date, end_date))
             elif start_date:
-                query = query.filter(Inventory.created_at >= start_date)
+                query = query.filter(InventoryV2.created_at >= start_date)
 
             total_amount = query.scalar() or 0
 
@@ -407,13 +408,13 @@ class TotalAmountPaidPurchases(Resource):
 
         try:
             # Build query to sum the `amountPaid`
-            query = db.session.query(db.func.sum(Transfer.amountPaid))
+            query = db.session.query(db.func.sum(TransfersV2.amountPaid))
 
             # Apply date filtering only if start_date and end_date are defined
             if start_date and end_date:
-                query = query.filter(Transfer.created_at.between(start_date, end_date))
+                query = query.filter(TransfersV2.created_at.between(start_date, end_date))
             elif start_date:
-                query = query.filter(Transfer.created_at >= start_date)
+                query = query.filter(TransfersV2.created_at >= start_date)
 
             total_amount = query.scalar() or 0
 
