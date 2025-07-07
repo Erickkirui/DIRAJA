@@ -69,7 +69,7 @@ class GetAllExpenseCategories(Resource):
                 "type": category.type
             })
 
-        return {"expense_categories": result}, 200
+        return result, 200  # Directly return the array
 
 
 class ExpenseCategoryResource(Resource):

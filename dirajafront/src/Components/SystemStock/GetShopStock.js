@@ -21,7 +21,7 @@ const ShopStock = () => {
                     setLoading(false);
                     return;
                 }
-                const response = await fetch('/api/diraja/shopstockv2', {
+                const response = await fetch('/api/diraja/shopstock', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',

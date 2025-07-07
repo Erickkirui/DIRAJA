@@ -275,14 +275,14 @@ api.add_resource(AddSupplier , '/creat-supplier')
 api.add_resource(GetAllSuppliers,'/all-suppliers' )
 
 #stockv2 endpoints
-api.add_resource(GetShopStockV2, '/shopstockv2')
-api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
-api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
-api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
-api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
-api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
-api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
-api.add_resource(GetAllStockV2, '/allstockv2')
+# api.add_resource(GetShopStockV2, '/shopstockv2')
+# api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
+# api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+# api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
+# api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
+# api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')
+# api.add_resource(AvailableItemsByShopResourceV2, '/batches/available-by-shopv2')
+# api.add_resource(GetAllStockV2, '/allstockv2')
 #Get stock
 #Get stock by shopid
 # api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  

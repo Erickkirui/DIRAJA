@@ -21,7 +21,7 @@ const AddSpoiltStock = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get('/api/diraja/items/available-by-shop', {
+        const response = await axios.get('/api/diraja/batches/available-by-shopv2', {
           params: { shop_id: formData.shop_id },
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
@@ -41,7 +41,7 @@ const AddSpoiltStock = () => {
       if (!formData.item || !formData.shop_id) return;
 
       try {
-        const response = await axios.get('/api/diraja/shop-itemdetails', {
+        const response = await axios.get('/api/diraja/shop-itemdetailsv2', {
           params: {
             item_name: formData.item,
             shop_id: formData.shop_id

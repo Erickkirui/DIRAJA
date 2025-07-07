@@ -7,6 +7,8 @@ from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.SpoiltStock import SpoiltStock
 from Server.Models.Shopstock import ShopStock
+from Server.Models.ShopstockV2 import ShopStockV2
+from Server.Models.LiveStock import LiveStock
 
 from app import db
 from flask_restful import Resource
@@ -50,12 +52,20 @@ class AddSpoiltStock(Resource):
             itemname=item
         ).order_by(ShopStockV2.BatchNumber).all()
 
-        if not shop_stock_entries:
-            return {"message": f"Item '{item}' not found in shop {shop_id} stock"}, 400
+        # Find matching livestock entry
+        livestock_entry = LiveStock.query.filter_by(
+            shop_id=shop_id,
+            item_name=item
+        ).first()
+
+        if not shop_stock_entries and not livestock_entry:
+            return {"message": f"Item '{item}' not found in shop {shop_id} stock or livestock"}, 400
 
         remaining_to_deduct = quantity
         batch_deductions = []  # Track which batches were deducted
+        livestock_deduction = 0.0
 
+        # First deduct from shop stock if available
         for stock in shop_stock_entries:
             if remaining_to_deduct <= 0:
                 break
@@ -72,11 +82,29 @@ class AddSpoiltStock(Resource):
             })
             db.session.add(stock)
 
+        # If still remaining to deduct, try to deduct from livestock
+        if remaining_to_deduct > 0 and livestock_entry:
+            # Check if livestock has enough current quantity
+            if livestock_entry.current_quantity > 0:
+                deduct_amount = min(livestock_entry.current_quantity, remaining_to_deduct)
+                livestock_entry.current_quantity -= deduct_amount
+                livestock_deduction = deduct_amount
+                remaining_to_deduct -= deduct_amount
+                db.session.add(livestock_entry)
+
         if remaining_to_deduct > 0:
             db.session.rollback()
+            available = quantity - remaining_to_deduct
+            sources = []
+            if batch_deductions:
+                sources.append(f"shop stock: {sum(d['deducted'] for d in batch_deductions)}")
+            if livestock_deduction > 0:
+                sources.append(f"livestock: {livestock_deduction}")
+            
             return {
-                "message": f"Not enough stock to deduct spoilt quantity. Needed {quantity}, available {quantity - remaining_to_deduct}",
-                "available": quantity - remaining_to_deduct
+                "message": f"Not enough stock to deduct spoilt quantity. Needed {quantity}, available {available} ({' + '.join(sources) if sources else 'none'})",
+                "available": available,
+                "sources": sources
             }, 400
 
         # Record spoilt stock
@@ -89,21 +117,38 @@ class AddSpoiltStock(Resource):
             unit=unit,
             disposal_method=disposal_method,
             collector_name=collector_name,
-            comment=comment,
-            batches_affected=', '.join([f"{d['batch']}({d['deducted']})" for d in batch_deductions])
+            comment=comment
         )
+
+        # Add batches_affected as a separate field if your model supports it
+        # If not, we'll store it in the comment or handle it differently
+        if batch_deductions:
+            batches_info = ', '.join([f"{d['batch']}({d['deducted']})" for d in batch_deductions])
+            if hasattr(SpoiltStock, 'batches_affected'):
+                record.batches_affected = batches_info
+            else:
+                # Append to comment if batches_affected field doesn't exist
+                record.comment = f"{comment} | Batches: {batches_info}".strip(' |')
+
+        if livestock_deduction > 0:
+            if hasattr(SpoiltStock, 'livestock_deduction'):
+                record.livestock_deduction = livestock_deduction
+            else:
+                # Append to comment if livestock_deduction field doesn't exist
+                record.comment = f"{record.comment} | Livestock: {livestock_deduction}".strip(' |')
 
         db.session.add(record)
         
         try:
             db.session.commit()
             return {
-                "message": "Spoilt stock recorded and deducted from shop stock",
+                "message": "Spoilt stock recorded and deducted from inventory",
                 "details": {
                     "item": item,
                     "quantity": quantity,
                     "unit": unit,
                     "batches_affected": batch_deductions,
+                    "livestock_deduction": livestock_deduction,
                     "disposal_method": disposal_method
                 }
             }, 201

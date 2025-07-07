@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import ShopStock from '../Components/SystemStock/GetShopStock'
+import ShopStockV2 from '../Components/Archive/GetShopStockV2';
 import SpoiltStockTable from '../Components/StockManagement/GetSpoiltStock';
 
 
@@ -29,7 +29,7 @@ function ShopStockPage() {
 
   {/* Tab content */}
   <div className="tab-content">
-    {activeTab === 'SystemStock' && <ShopStock />}
+    {activeTab === 'SystemStock' && <ShopStockV2 />}
     {activeTab === 'spoiltstock' && <SpoiltStockTable />}
   </div>
 </>

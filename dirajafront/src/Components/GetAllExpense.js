@@ -162,7 +162,8 @@ const Expenses = () => {
 
         <ExportExcel data={expenses} fileName="ExpensesData" />
         <DownloadPDF tableId="expenses-table" fileName="ExpensesData" />
-        <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link>
+        {/* <Link to="/mabandaexpensesmanager" className='mabandabutton'>View Mabanda Expenses</Link> */}
+        <Link to="/addexpensecategory" className='mabandabutton'>Add Expense category</Link>
       </div>
 
       {editingExpenseId && (
