@@ -6,6 +6,7 @@ from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.TransferV2 import TransfersV2
 from Server.Models.Users import Users
 from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Expenses import Expenses
 from Server.Models.Sales import Sales
 from app import db
@@ -596,8 +597,6 @@ class TransferSystemStockV2(Resource):
 
             transfer_record = TransfersV2(
                 shop_id=from_shop_id,
-                from_shop_id=from_shop_id,
-                to_shop_id=to_shop_id,
                 user_id=current_user_id,
                 itemname=stock.itemname,
                 inventoryV2_id=stock.inventoryv2_id,
@@ -770,3 +769,52 @@ class AddShopStockV2(Resource):
         batch_code = f"{supplier_name_code}-{supplier_location_code}-{item_code}-{year}{month}{day}"
 
         return batch_code
+    
+class StockReturns(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        # Fetch all returns ordered by return_date in descending order
+        returns = ReturnsV2.query.order_by(ReturnsV2.return_date.desc()).all()
+        all_returns = []
+
+        for return_item in returns:
+            # Get related data
+            returned_by_user = Users.query.filter_by(users_id=return_item.returned_by).first()
+            shop = Shops.query.filter_by(shops_id=return_item.shop_id).first()
+            inventory_item = InventoryV2.query.filter_by(inventoryV2_id=return_item.inventoryv2_id).first()
+            shop_stock = ShopStockV2.query.filter_by(stockv2_id=return_item.stockv2_id).first()
+
+            # Format the data
+            username = returned_by_user.username if returned_by_user else "Unknown User"
+            shopname = shop.shopname if shop else "Unknown Shop"
+            item_name = inventory_item.itemname if inventory_item else "Unknown Item"
+            batch_number = shop_stock.BatchNumber if shop_stock else "N/A"
+
+            # Format return date
+            return_date = None
+            if return_item.return_date:
+                if isinstance(return_item.return_date, str):
+                    try:
+                        return_date = datetime.strptime(return_item.return_date, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                    except ValueError:
+                        return_date = return_item.return_date
+                elif isinstance(return_item.return_date, datetime):
+                    return_date = return_item.return_date.strftime('%Y-%m-%d %H:%M:%S')
+
+            all_returns.append({
+                "return_id": return_item.returnv2_id,
+                "stock_id": return_item.stockv2_id,
+                "inventory_id": return_item.inventoryv2_id,
+                "item_name": item_name,
+                "batch_number": batch_number,
+                "shop_id": return_item.shop_id,
+                "shop_name": shopname,
+                "quantity": return_item.quantity,
+                "returned_by": return_item.returned_by,
+                "returned_by_username": username,
+                "return_date": return_date,
+                "reason": return_item.reason
+            })
+
+        return make_response(jsonify(all_returns), 200)

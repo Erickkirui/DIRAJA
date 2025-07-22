@@ -3,21 +3,24 @@ import axios from 'axios';
 import { Alert, Stack } from '@mui/material';
 
 const BROILER_PARTS = [
-  { name: 'Breast', unitCost: 0 },
+  { name: 'Boneless Breast', unitCost: 0 },
   { name: 'Thighs', unitCost: 0 },
   { name: 'Drumstick', unitCost: 0 },
   { name: 'Big Legs', unitCost: 0 },
   { name: 'Backbone', unitCost: 0 },
   { name: 'Liver', unitCost: 0 },
   { name: 'Gizzards', unitCost: 0 },
-  { name: 'Necks and Feet', unitCost: 0 }
+  { name: 'Necks', unitCost: 0 },
+  { name: 'Feet', unitCost: 0 },
+  { name: 'Wings', unitCost: 0 },
+  { name: 'Broiler', unitCost: 0 }
 ];
 
-const DistributeInventoryModal = ({ 
-  selectedInventory, 
-  inventory, 
-  onClose, 
-  onDistributeSuccess 
+const DistributeInventoryModal = ({
+  selectedInventory,
+  inventory,
+  onClose,
+  onDistributeSuccess
 }) => {
   const [shopId, setShopId] = useState('');
   const [quantity, setQuantity] = useState('');
@@ -51,11 +54,12 @@ const DistributeInventoryModal = ({
     fetchShops();
   }, []);
 
-  // Check if selected inventory is Broiler Parts
   useEffect(() => {
     if (selectedInventory.length === 1) {
-      const selectedItem = inventory.find(item => item.inventoryV2_id === selectedInventory[0]);
-      setIsBroilerParts(selectedItem?.itemname?.toLowerCase() === 'broiler parts');
+      const selectedItem = inventory.find(
+        item => item.inventoryV2_id === selectedInventory[0]
+      );
+      setIsBroilerParts(selectedItem?.itemname?.toLowerCase() === 'broiler');
     } else {
       setIsBroilerParts(false);
     }
@@ -64,14 +68,14 @@ const DistributeInventoryModal = ({
   const handleDistribute = async (e) => {
     e.preventDefault();
     const accessToken = localStorage.getItem('access_token');
-    
+
     if (quantity <= 0 || !shopId || !distributionDate) {
       setMessage({ type: 'error', text: 'Please fill in all required fields.' });
       return;
     }
 
     if (isBroilerParts && (!selectedBroilerPart || broilerPartUnitCost <= 0)) {
-      setMessage({ type: 'error', text: 'Please select a broiler part and enter a valid unit cost.' });
+      setMessage({ type: 'error', text: 'Please select a broiler part and enter a valid unit price.' });
       return;
     }
 
@@ -86,20 +90,27 @@ const DistributeInventoryModal = ({
             throw new Error(`Inventory item with ID ${inventoryV2_id} not found`);
           }
 
+          const unitPrice = isBroilerParts
+            ? parseFloat(broilerPartUnitCost)
+            : inventoryItem.unitPrice;
+
+          const unitCost = isBroilerParts
+            ? parseFloat(broilerPartUnitCost)
+            : inventoryItem.unitCost;
+
           const requestData = {
             shop_id: parseInt(shopId, 10),
             inventoryV2_id: inventoryItem.inventoryV2_id,
             quantity: parseFloat(quantity),
             metric: inventoryItem.metric,
-            itemname: isBroilerParts ? `${selectedBroilerPart}` : inventoryItem.itemname,
-            unitCost: isBroilerParts ? parseFloat(broilerPartUnitCost) : inventoryItem.unitCost,
-            amountPaid: isBroilerParts 
-              ? parseFloat(broilerPartUnitCost) * parseFloat(quantity)
-              : inventoryItem.unitCost * parseFloat(quantity),
+            itemname: isBroilerParts ? selectedBroilerPart : inventoryItem.itemname,
+            unitCost: unitCost,
+            unitPrice: unitPrice,
+            amountPaid: unitPrice * parseFloat(quantity),
             BatchNumber: inventoryItem.batchnumber,
             created_at: new Date(distributionDate).toISOString(),
           };
-          
+
           await axios.post('/api/diraja/v2/distribute-inventory', requestData, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -109,6 +120,7 @@ const DistributeInventoryModal = ({
           });
         })
       );
+
       setMessage({ type: 'success', text: 'Inventory distributed successfully' });
       onDistributeSuccess();
       setShopId('');
@@ -128,10 +140,10 @@ const DistributeInventoryModal = ({
       } else if (error.message) {
         errorMessage = error.message;
       }
-      
-      setMessage({ 
-        type: 'error', 
-        text: errorMessage 
+
+      setMessage({
+        type: 'error',
+        text: errorMessage
       });
       console.error('Error distributing inventory:', error);
     } finally {
@@ -197,7 +209,7 @@ const DistributeInventoryModal = ({
               </div>
 
               <div className="form-group">
-                <label htmlFor="unit-cost-input">Unit Cost (Ksh)</label>
+                <label htmlFor="unit-cost-input">Unit Price (Ksh)</label>
                 <input
                   id="unit-cost-input"
                   type="number"
@@ -236,16 +248,16 @@ const DistributeInventoryModal = ({
           </div>
 
           <div className="button-group">
-            <button 
-              type="submit" 
-              className="yes-button" 
+            <button
+              type="submit"
+              className="yes-button"
               disabled={loading}
             >
               {loading ? 'Distributing...' : 'Distribute'}
             </button>
-            <button 
-              type="button" 
-              className="cancel-button" 
+            <button
+              type="button"
+              className="cancel-button"
               onClick={onClose}
               disabled={loading}
             >

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
-import { Link } from 'react-router-dom';
+import { Link } from "react-router-dom";
 
 const ItemStockList = () => {
   const [itemStock, setItemStock] = useState([]);
@@ -20,7 +20,12 @@ const ItemStockList = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        setShops(response.data);
+
+        const sortedShops = response.data.sort((a, b) =>
+          a.shopname.localeCompare(b.shopname)
+        );
+
+        setShops(sortedShops);
       } catch (err) {
         console.error("Failed to fetch shops", err);
       }
@@ -52,8 +57,10 @@ const ItemStockList = () => {
     fetchItemStock();
   }, [selectedShopId]);
 
-  const filteredStock = itemStock.filter(stock =>
-    activeTab === "inStock" ? stock.total_remaining > 0 : stock.total_remaining === 0
+  const filteredStock = itemStock.filter((stock) =>
+    activeTab === "inStock"
+      ? stock.total_remaining > 0
+      : stock.total_remaining === 0
   );
 
   const handleTabChange = (tab) => {
@@ -63,8 +70,8 @@ const ItemStockList = () => {
   return (
     <div className="stock-level-container">
       <div className="metric-top">
-<p>Item Stock List</p>
-<select
+        <p>Item Stock List</p>
+        <select
           value={selectedShopId}
           onChange={(e) => setSelectedShopId(e.target.value)}
         >
@@ -77,22 +84,21 @@ const ItemStockList = () => {
         </select>
       </div>
 
-      
-      <Link className="view-stock-link" to="/shopstock">View Stock</Link>
-
-
+      <Link className="view-stock-link" to="/shopstock">
+        View Stock
+      </Link>
 
       {/* Tabs */}
       <div className="tabs-container">
         <button
-          className={`tab-button ${activeTab === 'inStock' ? 'active' : ''}`}
-          onClick={() => handleTabChange('inStock')}
+          className={`tab-button ${activeTab === "inStock" ? "active" : ""}`}
+          onClick={() => handleTabChange("inStock")}
         >
           In Stock
         </button>
         <button
-          className={`tab-button ${activeTab === 'outOfStock' ? 'active' : ''}`}
-          onClick={() => handleTabChange('outOfStock')}
+          className={`tab-button ${activeTab === "outOfStock" ? "active" : ""}`}
+          onClick={() => handleTabChange("outOfStock")}
         >
           Out of Stock
         </button>
@@ -115,7 +121,9 @@ const ItemStockList = () => {
                 filteredStock.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.itemname}</td>
-                    <td>{stock.total_remaining} {stock.metric}</td>
+                    <td>
+                      {stock.total_remaining} {stock.metric}
+                    </td>
                   </tr>
                 ))
               ) : (

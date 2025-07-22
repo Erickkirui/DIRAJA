@@ -5,6 +5,8 @@ from Server.Models.Shops import Shops
 from Server.Models.Shopstock import ShopStock
 from Server.Models.SystemStockTransfer import SystemStockTransfer
 from Server.Models.Users import Users
+from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.Inventory import Inventory, db
 from Server.Models.Expenses import Expenses  # Import Expenses model
 from Server.Models.Transfer import Transfer  # Import Transfer model
@@ -837,17 +839,17 @@ class GetItemStock(Resource):
 
             # Base query
             query = db.session.query(
-                Inventory.itemname,
-                Inventory.metric,
-                func.sum(ShopStock.quantity).label("total_quantity")
-            ).join(Inventory, ShopStock.inventory_id == Inventory.inventory_id)
+                InventoryV2.itemname,
+                InventoryV2.metric,
+                func.sum(ShopStockV2.quantity).label("total_quantity")
+            ).join(InventoryV2, ShopStockV2.inventoryv2_id == InventoryV2.inventoryV2_id)
 
             # Optional filter by shop_id
             if shop_id:
-                query = query.filter(ShopStock.shop_id == shop_id)
+                query = query.filter(ShopStockV2.shop_id == shop_id)
 
             # Group and execute
-            item_stock = query.group_by(Inventory.itemname, Inventory.metric).all()
+            item_stock = query.group_by(InventoryV2.itemname, InventoryV2.metric).all()
 
             item_stock_list = [
                 {

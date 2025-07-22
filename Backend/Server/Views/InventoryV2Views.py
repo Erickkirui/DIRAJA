@@ -1,6 +1,7 @@
 from flask_restful import Resource
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.TransferV2 import TransfersV2
+from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Shops import Shops
 from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.BankAccounts import BankAccount, BankingTransaction
@@ -10,6 +11,7 @@ from functools import wraps
 from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from dateutil import parser
+from flask_restful import reqparse
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
@@ -149,43 +151,168 @@ class DistributeInventoryV2(Resource):
             return {'message': 'Error creating transfer or shop stock', 'error': str(e)}, 500
 
 
+# class DeleteShopStockV2(Resource):
+#     @jwt_required()
+#     # @check_role('manager')
+#     def delete(self, shop_stockV2_id):
+#         current_user_id = get_jwt_identity()
+
+#         shop_stock = ShopStockV2.query.get(shop_stockV2_id)
+#         if not shop_stock:
+#             return {'message': 'ShopStock record not found'}, 404
+
+#         # 🔁 Use the correct attribute name based on your model
+#         transfer = TransfersV2.query.get(shop_stock.transferv2_id)
+#         if not transfer:
+#             return {'message': 'Related Transfer record not found'}, 404
+
+#         inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+#         if not inventory_item:
+#             return {'message': 'Related Inventory item not found'}, 404
+
+#         try:
+#             # Restore quantity
+#             inventory_item.quantity += shop_stock.quantity
+#             print(f"Reverted inventory quantity for Inventory ID {inventory_item.inventoryV2_id}. New quantity: {inventory_item.quantity}")
+
+#             db.session.delete(transfer)
+#             db.session.delete(shop_stock)
+#             db.session.commit()
+
+#             return {
+#                 'message': 'ShopStock and associated records deleted successfully',
+#                 'details': {
+#                     'shop_stockV2_id': int(shop_stockV2_id),
+#                     'inventoryV2_id': int(inventory_item.inventoryV2_id),
+#                     'transferV2_id': int(transfer.transferv2_id)
+#                 }
+#             }, 200
+
+#         except Exception as e:
+#             db.session.rollback()
+#             return {'message': 'Error deleting ShopStock', 'error': str(e)}, 500
+
 class DeleteShopStockV2(Resource):
     @jwt_required()
-    @check_role('manager')
-    def delete(self, shop_stockV2_id):
+    def delete(self, stockv2_id):
         current_user_id = get_jwt_identity()
-
-        shop_stock = ShopStockV2.query.get(shop_stockV2_id)
-        if not shop_stock:
-            return jsonify({'message': 'ShopStock record not found'}), 404
-
-        transfer = TransfersV2.query.get(shop_stock.transferV2_id)
-        if not transfer:
-            return jsonify({'message': 'Related Transfer record not found'}), 404
-
-        inventory_item = InventoryV2.query.get(shop_stock.inventoryV2_id)
-        if not inventory_item:
-            return jsonify({'message': 'Related Inventory item not found'}), 404
-
+        
         try:
-            inventory_item.quantity += shop_stock.quantity
-            print(f"Reverted inventory quantity for Inventory ID {inventory_item.inventoryV2_id}. New quantity: {inventory_item.quantity}")
-            db.session.delete(transfer)
-            db.session.delete(shop_stock)
+            # Get JSON data from request
+            data = request.get_json()
+            if not data:
+                return {'message': 'Request body must be JSON'}, 400
+                
+            quantity_to_delete = data.get('quantity')
+            if quantity_to_delete is None:
+                return {'message': 'Quantity is required'}, 400
+            
+            try:
+                quantity_to_delete = int(quantity_to_delete)
+            except (ValueError, TypeError):
+                return {'message': 'Quantity must be an integer'}, 400
+
+            # Start a new session to avoid conflicts
+            db.session.begin_nested()
+
+            shop_stock = ShopStockV2.query.get(stockv2_id)
+            if not shop_stock:
+                db.session.rollback()
+                return {'message': 'ShopStock record not found'}, 404
+
+            # Validate the quantity to delete
+            if quantity_to_delete <= 0:
+                db.session.rollback()
+                return {'message': 'Quantity to delete must be positive'}, 400
+                
+            if quantity_to_delete > shop_stock.quantity:
+                db.session.rollback()
+                return {
+                    'message': f'Cannot delete more than available quantity ({shop_stock.quantity})',
+                    'available_quantity': shop_stock.quantity
+                }, 400
+
+            transfer = TransfersV2.query.get(shop_stock.transferv2_id)
+            if not transfer:
+                db.session.rollback()
+                return {'message': 'Related Transfer record not found'}, 404
+
+            inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+            if not inventory_item:
+                db.session.rollback()
+                return {'message': 'Related Inventory item not found'}, 404
+
+            # Restore partial quantity if not deleting all
+            if quantity_to_delete < shop_stock.quantity:
+                shop_stock.quantity -= quantity_to_delete
+                inventory_item.quantity += quantity_to_delete
+                
+                return_record = ReturnsV2(
+                    stockv2_id=shop_stock.stockv2_id,
+                    inventoryv2_id=inventory_item.inventoryV2_id,
+                    shop_id=shop_stock.shop_id,
+                    quantity=quantity_to_delete,
+                    returned_by=current_user_id,
+                    return_date=datetime.utcnow(),
+                    reason="Partial return to inventory"
+                )
+                db.session.add(return_record)
+            else:
+                # Delete entire record if deleting all quantity
+                inventory_item.quantity += shop_stock.quantity
+                
+                return_record = ReturnsV2(
+                    stockv2_id=shop_stock.stockv2_id,
+                    inventoryv2_id=inventory_item.inventoryV2_id,
+                    shop_id=shop_stock.shop_id,
+                    quantity=shop_stock.quantity,
+                    returned_by=current_user_id,
+                    return_date=datetime.utcnow(),
+                    reason="Full return to inventory"
+                )
+                db.session.add(return_record)
+                
+                # Delete related return records first to avoid foreign key constraint violation
+                ReturnsV2.query.filter_by(stockv2_id=shop_stock.stockv2_id).delete()
+                
+                db.session.delete(transfer)
+                db.session.delete(shop_stock)
+
             db.session.commit()
-
-            return {
-                'message': 'ShopStock and associated records deleted successfully',
+            
+            response_data = {
+                'message': 'Return processed successfully',
                 'details': {
-                    'shop_stockV2_id': shop_stockV2_id,
-                    'inventoryV2_id': inventory_item.inventoryV2_id,
-                    'transferV2_id': transfer.transferV2_id
+                    'stockv2_id': int(stockv2_id),
+                    'returned_quantity': quantity_to_delete,
+                    'inventoryv2_id': int(inventory_item.inventoryV2_id),
+                    'transferv2_id': int(transfer.transferv2_id),
+                    'return_record_id': return_record.returnv2_id
                 }
-            }, 200
+            }
+            
+            if quantity_to_delete < shop_stock.quantity:
+                response_data['details']['remaining_quantity'] = shop_stock.quantity
+            
+            return response_data, 200
 
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error in DeleteShopStockV2: {str(e)}")
+            return {
+                'message': 'Database operation failed',
+                'error': str(e),
+                'type': 'database_error'
+            }, 500
+            
         except Exception as e:
             db.session.rollback()
-            return jsonify({'message': 'Error deleting ShopStock', 'error': str(e)}), 500
+            current_app.logger.error(f"Unexpected error in DeleteShopStockV2: {str(e)}")
+            return {
+                'message': 'An unexpected error occurred',
+                'error': str(e),
+                'type': 'unexpected_error'
+            }, 500
 
 
 class GetTransferV2(Resource):

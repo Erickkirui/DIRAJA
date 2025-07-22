@@ -163,77 +163,49 @@ class TotalAmountPaidSalesPerShop(Resource):
             return {"message": "Invalid period specified"}, 400
 
         try:
-            # Debugging: Print the query parameters
-            print(f"Period: {period}, Shop ID: {shop_id}, Start Date: {start_date}, End Date: {end_date}")
-
-            # Query for paid sales (sum of payments)
+            # Query for total amount paid (sum of all payments regardless of status)
             query_paid = db.session.query(
-                db.func.sum(SalesPaymentMethods.amount_paid)
+                func.sum(SalesPaymentMethods.amount_paid)
             ).join(
                 Sales, Sales.sales_id == SalesPaymentMethods.sale_id
             ).filter(
-                Sales.shop_id == shop_id,
-                Sales.status == 'paid'
+                Sales.shop_id == shop_id
             )
 
-
-            # Query for unpaid sales (sum of total_price from SoldItems)
-            query_unpaid = db.session.query(
-                db.func.sum(SoldItem.total_price)
+            # Query for total sales amount (sum of all sold items)
+            query_total_sales = db.session.query(
+                func.sum(SoldItem.total_price)
             ).join(
                 Sales, Sales.sales_id == SoldItem.sales_id
             ).filter(
-                Sales.shop_id == shop_id,
-                Sales.status.in_(['unpaid', 'partially_paid']))
-
-            # Base query for unpaid/partially paid sales (using total_price)
-            query_unpaid = (
-                db.session.query(db.func.sum(SoldItem.total_price))
-                .filter(Sales.shop_id == shop_id)
-                .filter(Sales.status.in_(['unpaid', 'partially_paid']))
-
+                Sales.shop_id == shop_id
             )
 
             # Apply date filters if not 'alltime'
             if period != 'alltime':
                 if period == 'date':
                     query_paid = query_paid.filter(Sales.created_at.between(start_date, end_date))
-                    query_unpaid = query_unpaid.filter(Sales.created_at.between(start_date, end_date))
+                    query_total_sales = query_total_sales.filter(Sales.created_at.between(start_date, end_date))
                 else:
                     query_paid = query_paid.filter(Sales.created_at >= start_date)
-                    query_unpaid = query_unpaid.filter(Sales.created_at >= start_date)
+                    query_total_sales = query_total_sales.filter(Sales.created_at >= start_date)
 
             # Execute queries
             total_paid = query_paid.scalar() or 0
-            total_unpaid = query_unpaid.scalar() or 0
-
-            # Debugging: Print intermediate results
-            print(f"Total Paid: {total_paid}, Total Unpaid: {total_unpaid}")
-
-            total_sales = total_paid + total_unpaid
-
-            # Debugging: Print final result before formatting
-            print(f"Raw Total Sales: {total_sales}")
-
-            # Format the total sales
-            formatted_sales = "{:,.2f}".format(total_sales)
+            total_sales_amount = query_total_sales.scalar() or 0
+            total_unpaid = total_sales_amount - total_paid
 
             return {
-                "total_sales_amount_paid": formatted_sales,
-                "debug_info": {
-                    "total_paid": total_paid,
-                    "total_unpaid": total_unpaid,
-                    "period": period,
-                    "shop_id": shop_id,
-                    "start_date": str(start_date) if start_date else None,
-                    "end_date": str(end_date) if end_date else None
-                }
+                "total_sales_amount": "{:,.2f}".format(total_sales_amount),
+                "total_paid": "{:,.2f}".format(total_paid),
+                "total_unpaid": "{:,.2f}".format(total_unpaid),
+                "period": period,
+                "shop_id": shop_id
             }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            print(f"Database error: {str(e)}")
-            return {"error": "An error occurred while fetching the total sales amount"}, 500
+            return {"error": f"Database error: {str(e)}"}, 500
 
 
 class TotalAmountPaidExpenses(Resource):
@@ -657,7 +629,7 @@ class TotalSalesByShop(Resource):
                         "unit_price": item.unit_price,
                         "total_price": item.total_price,
                         "batch_number": item.BatchNumber,
-                        "stock_id": item.stock_id,
+                        "stockv2_id": item.stockv2_id,
                         "cost_of_sale": item.Cost_of_sale,
                         "purchase_account": item.Purchase_account
                     }
@@ -729,6 +701,9 @@ class TotalUnpaidAmountAllSales(Resource):
             elif period == 'month':
                 start_date = today - timedelta(days=30)
                 end_date = today.replace(hour=23, minute=59, second=59, microsecond=0)
+            elif period == 'alltime':
+                start_date = None
+                end_date = None
             else:
                 return {"message": "Invalid period specified"}, 400
 

@@ -1,11 +1,10 @@
 from flask_restful import Resource
-
-from flask import request, jsonify,make_response
+from flask import request, jsonify, make_response
 from flask_jwt_extended import jwt_required
 from app import db
 from Server.Models.Users import Users
 from Server.Models.StockItems import StockItems
-from flask_jwt_extended import jwt_required,get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
 
 
@@ -16,13 +15,13 @@ def check_role(required_role):
             current_user_id = get_jwt_identity()
             user = Users.query.get(current_user_id)
             if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+                return make_response(jsonify({"error": "Unauthorized access"})), 403
             return fn(*args, **kwargs)
         return decorator
     return wrapper
 
-class PostStockItem(Resource):
 
+class PostStockItem(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
@@ -30,9 +29,12 @@ class PostStockItem(Resource):
 
         item_name = data.get('item_name')
         item_code = data.get('item_code')
+        unit_price = data.get('unit_price')
+        pack_price = data.get('pack_price')
+        pack_quantity = data.get('pack_quantity')
 
-        if not item_name :
-            return {"message": "item_name  is required."}, 400
+        if not item_name:
+            return {"message": "item_name is required."}, 400
 
         # Check if item already exists
         existing = StockItems.query.filter_by(item_name=item_name).first()
@@ -41,7 +43,10 @@ class PostStockItem(Resource):
 
         new_item = StockItems(
             item_name=item_name,
-            item_code=item_code
+            item_code=item_code,
+            unit_price=unit_price,
+            pack_price=pack_price,
+            pack_quantity=pack_quantity
         )
 
         db.session.add(new_item)
@@ -52,7 +57,10 @@ class PostStockItem(Resource):
             "stock_item": {
                 "id": new_item.id,
                 "item_name": new_item.item_name,
-                "item_code": new_item.item_code
+                "item_code": new_item.item_code,
+                "unit_price": new_item.unit_price,
+                "pack_price": new_item.pack_price,
+                "pack_quantity": new_item.pack_quantity
             }
         }, 201
 
@@ -67,14 +75,16 @@ class GetAllStockItems(Resource):
             result.append({
                 "id": item.id,
                 "item_name": item.item_name,
-                "item_code": item.item_code
+                "item_code": item.item_code,
+                "unit_price": item.unit_price,
+                "pack_price": item.pack_price,
+                "pack_quantity": item.pack_quantity
             })
 
         return {"stock_items": result}, 200
 
 
 class StockItem(Resource):
-
     @jwt_required()
     @check_role('manager')
     def get(self, item_id=None):
@@ -89,7 +99,10 @@ class StockItem(Resource):
             return {
                 "id": item.id,
                 "item_name": item.item_name,
-                "item_code": item.item_code
+                "item_code": item.item_code,
+                "unit_price": item.unit_price,
+                "pack_price": item.pack_price,
+                "pack_quantity": item.pack_quantity
             }, 200
 
         # If no item_id provided, return all items
@@ -98,7 +111,10 @@ class StockItem(Resource):
             {
                 "id": item.id,
                 "item_name": item.item_name,
-                "item_code": item.item_code
+                "item_code": item.item_code,
+                "unit_price": item.unit_price,
+                "pack_price": item.pack_price,
+                "pack_quantity": item.pack_quantity
             }
             for item in items
         ], 200
@@ -108,32 +124,42 @@ class StockItem(Resource):
     def put(self, item_id):
         """Update an existing stock item by item_id."""
         data = request.get_json()
+        
+        if not data:
+            return {"message": "No input data provided"}, 400
 
         # Find the item by ID
         item = StockItems.query.get(item_id)
-
         if not item:
             return {"message": "Item not found."}, 404
 
-        # Update the fields
-        item_name = data.get('item_name', item.item_name)
-        item_code = data.get('item_code', item.item_code)
-
-        if item_name != item.item_name:
-            item.item_name = item_name
-        if item_code != item.item_code:
-            item.item_code = item_code
-
-        db.session.commit()
-
-        return {
-            "message": "Stock item updated successfully.",
-            "stock_item": {
-                "id": item.id,
-                "item_name": item.item_name,
-                "item_code": item.item_code
-            }
-        }, 200
+        try:
+            # Update all fields directly (simpler approach)
+            item.item_name = data.get('item_name', item.item_name)
+            item.item_code = data.get('item_code', item.item_code)
+            item.unit_price = float(data.get('unit_price', item.unit_price))
+            item.pack_price = float(data.get('pack_price', item.pack_price))
+            item.pack_quantity = int(data.get('pack_quantity', item.pack_quantity))
+            
+            # Explicit commit and refresh
+            db.session.commit()
+            db.session.refresh(item)
+            
+            return {
+                "message": "Stock item updated successfully.",
+                "stock_item": {
+                    "id": item.id,
+                    "item_name": item.item_name,
+                    "item_code": item.item_code,
+                    "unit_price": item.unit_price,
+                    "pack_price": item.pack_price,
+                    "pack_quantity": item.pack_quantity
+                }
+            }, 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return {"message": f"Error updating item: {str(e)}"}, 500
 
     @jwt_required()
     @check_role('manager')

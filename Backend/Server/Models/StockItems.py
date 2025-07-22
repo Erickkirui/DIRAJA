@@ -8,6 +8,9 @@ class StockItems(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     item_name = db.Column(db.String(150), nullable=False)
     item_code = db.Column(db.String(150), nullable=False)
+    unit_price = db.Column(db.Float, nullable=True)
+    pack_price = db.Column(db.Float, nullable=True)
+    pack_quantity = db.Column(db.Integer, nullable=True)
 
 
     def __str__(self):
