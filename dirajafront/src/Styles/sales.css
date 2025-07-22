@@ -196,6 +196,7 @@
 }
 .item-row select{
   width: 100%;
+  padding: 10px;
 }
 .delete-entry{
   padding: 10px;
@@ -338,4 +339,11 @@
 
 .reset-button:hover {
   background-color: #d1d5db;
+}
+
+.item-quantity-selector{
+  width: 90%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
