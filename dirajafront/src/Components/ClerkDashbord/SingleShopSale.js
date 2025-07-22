@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import PaymentMethods from '../PaymentMethod';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import ItemQuantitySelector from './ItemQuantitySelector';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -24,7 +25,9 @@ const SingleShopSale = () => {
             total_price: '',
             BatchNumber: '',
             stock_id: '',
-            remainingStock: 0
+            remainingStock: 0,
+            unit_type: 'pieces',
+            estimated_cost: 0
         }]
     });
     const [availableItems, setAvailableItems] = useState([]);
@@ -32,17 +35,29 @@ const SingleShopSale = () => {
     const [messageType, setMessageType] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [grandTotal, setGrandTotal] = useState(0);
+    const [stockItems, setStockItems] = useState([]);
 
+    const unitTypes = [
+        { value: 'pieces', label: 'Pieces' },
+        { value: 'pack', label: 'Pack' }
+    ];
     const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay', 'not payed'];
 
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                const response = await axios.get('/api/diraja/batches/available-by-shopv2', {
-                    params: { shop_id: formData.shop_id },
-                    headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-                });
-                setAvailableItems(response.data);
+                const [batchesResponse, stockItemsResponse] = await Promise.all([
+                    axios.get('/api/diraja/batches/available-by-shopv2', {
+                        params: { shop_id: formData.shop_id },
+                        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+                    }),
+                    axios.get('/api/diraja/stockitems', {
+                        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+                    })
+                ]);
+                
+                setAvailableItems(batchesResponse.data);
+                setStockItems(stockItemsResponse.data.stock_items || []);
             } catch (error) {
                 setMessageType('error');
                 setMessage('Error fetching items. Please try again.');
@@ -52,24 +67,22 @@ const SingleShopSale = () => {
     }, [formData.shop_id]);
 
     useEffect(() => {
-        // Calculate grand total whenever items change
-        const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.total_price) || 0), 0);
-        setGrandTotal(total);
-    }, [formData.items]);
+    const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
+    setGrandTotal(total);
+}, [formData.items]);
 
-    const handleItemChange = (index, field, value) => {
-        const newItems = [...formData.items];
-        newItems[index][field] = value;
+    const calculateEstimatedCost = (item) => {
+    const stockItem = stockItems.find(si => si.item_name === item.item_name);
+    if (!stockItem) return 0;
 
-        // Calculate total price if quantity or unit_price changes
-        if (field === 'quantity' || field === 'unit_price') {
-            const quantity = parseFloat(newItems[index].quantity) || 0;
-            const unitPrice = parseFloat(newItems[index].unit_price) || 0;
-            newItems[index].total_price = (quantity * unitPrice).toFixed(2);
-        }
-
-        setFormData({ ...formData, items: newItems });
-    };
+    const quantity = parseFloat(item.quantity) || 0;
+    
+    if (item.unit_type === 'pack' && stockItem.pack_price) {
+        return quantity * parseFloat(stockItem.pack_price);
+    } else {
+        return quantity * (parseFloat(item.unit_price) || 0);
+    }
+};
 
     const fetchItemDetails = async (index) => {
         const itemName = formData.items[index].item_name;
@@ -85,6 +98,7 @@ const SingleShopSale = () => {
             });
 
             const { metric, unit_price, stock_id, quantity, BatchNumber } = response.data;
+            const stockItem = stockItems.find(si => si.item_name === itemName);
 
             const newItems = [...formData.items];
             newItems[index] = {
@@ -93,10 +107,12 @@ const SingleShopSale = () => {
                 unit_price: unit_price || '',
                 stock_id: stock_id || '',
                 BatchNumber: BatchNumber || '',
-                remainingStock: quantity || 0
+                remainingStock: quantity || 0,
+                unit_type: 'pieces',
+                estimated_cost: calculateEstimatedCost(newItems[index])
             };
 
-            // Recalculate total price with new unit price
+            // Update total price after fetching unit price
             const qty = parseFloat(newItems[index].quantity) || 0;
             newItems[index].total_price = (qty * (unit_price || 0)).toFixed(2);
 
@@ -105,6 +121,40 @@ const SingleShopSale = () => {
             setMessageType('error');
             setMessage(`Error fetching details for ${itemName}. Please try again.`);
         }
+    };
+    const handleItemChange = (index, field, value) => {
+        const newItems = [...formData.items];
+        newItems[index][field] = value;
+
+        const stockItem = stockItems.find(si => si.item_name === newItems[index].item_name);
+
+        if (field === 'unit_type') {
+            // Recalculate estimated cost when unit type changes
+            newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
+            
+            const quantity = parseFloat(newItems[index].quantity) || 0;
+            if (value === 'pack' && stockItem?.pack_price) {
+                newItems[index].total_price = (quantity * parseFloat(stockItem.pack_price)).toFixed(2);
+            } else {
+                newItems[index].total_price = (quantity * parseFloat(newItems[index].unit_price)).toFixed(2);
+            }
+        }
+
+        if (field === 'quantity' || field === 'unit_price') {
+            const quantity = parseFloat(value) || 0;
+            
+            if (newItems[index].unit_type === 'pack' && stockItem?.pack_price) {
+                newItems[index].total_price = (quantity * parseFloat(stockItem.pack_price)).toFixed(2);
+            } else {
+                const unitPrice = field === 'unit_price' ? parseFloat(value) : parseFloat(newItems[index].unit_price);
+                newItems[index].total_price = (quantity * (unitPrice || 0)).toFixed(2);
+            }
+            
+            // Always recalculate estimated cost when quantity or price changes
+            newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
+        }
+
+        setFormData({ ...formData, items: newItems });
     };
 
     const addItem = () => {
@@ -120,7 +170,9 @@ const SingleShopSale = () => {
                     total_price: '',
                     BatchNumber: '',
                     stock_id: '',
-                    remainingStock: 0
+                    remainingStock: 0,
+                    unit_type: 'pieces',
+                    estimated_cost: 0
                 }
             ]
         });
@@ -178,9 +230,8 @@ const SingleShopSale = () => {
         setIsLoading(true);
         setMessage('');
         
-        // Validate items
         for (const item of formData.items) {
-            if (!item.item_name || !item.quantity || !item.unit_price) {
+            if (!item.item_name || item.quantity === '' || !item.unit_price) {
                 setMessageType('error');
                 setMessage('All items must have name, quantity, and unit price');
                 setIsLoading(false);
@@ -197,13 +248,18 @@ const SingleShopSale = () => {
 
         const formDataToSubmit = { 
             ...formData,
-            items: formData.items.map(item => ({
-                item_name: item.item_name,
-                quantity: parseFloat(item.quantity),
-                metric: item.metric,
-                unit_price: parseFloat(item.unit_price),
-                total_price: parseFloat(item.total_price)
-            })),
+            items: formData.items.map(item => {
+                const stockItem = stockItems.find(si => si.item_name === item.item_name);
+                return {
+                    item_name: item.item_name,
+                    quantity: item.unit_type === 'pack' && stockItem?.pack_quantity
+                        ? parseFloat(item.quantity) * parseFloat(stockItem.pack_quantity)
+                        : parseFloat(item.quantity),
+                    metric: item.metric,
+                    unit_price: parseFloat(item.unit_price),
+                    total_price: parseFloat(item.total_price)
+                };
+            }),
             payment_methods: formData.payment_methods.map(payment => ({
                 ...payment,
                 amount: parseFloat(payment.amount),
@@ -212,8 +268,6 @@ const SingleShopSale = () => {
         };
     
         try {
-            console.log("Submitting Sale Data:", JSON.stringify(formDataToSubmit, null, 2));
-    
             const response = await axios.post('/api/diraja/newsale', formDataToSubmit, {
                 headers: {
                     'Content-Type': 'application/json',
@@ -225,7 +279,6 @@ const SingleShopSale = () => {
                 setMessageType('success');
                 setMessage(response.data.message || 'Sale recorded successfully.');
     
-                // Reset the form
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',
                     customer_name: '',
@@ -242,7 +295,9 @@ const SingleShopSale = () => {
                         total_price: '',
                         BatchNumber: '',
                         stock_id: '',
-                        remainingStock: 0
+                        remainingStock: 0,
+                        unit_type: 'pieces',
+                        estimated_cost: 0
                     }]
                 });
     
@@ -264,8 +319,7 @@ const SingleShopSale = () => {
 
     return (
         <div>
-           
-            <h1>Record  Sales</h1>
+            <h1>Record Sales</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <h5>Customer Details</h5>
                 <input 
@@ -281,17 +335,19 @@ const SingleShopSale = () => {
                     placeholder="Customer Number (optional)" 
                 />
                 
-                {/* Items Section */}
-               
-                    <h5>Sold Items</h5>
-                    {formData.items.map((item, itemIndex) => (
+                <h5>Sold Items</h5>
+                {formData.items.map((item, itemIndex) => {
+                    const selectedStockItem = stockItems.find(stockItem => 
+                        stockItem.item_name === item.item_name
+                    );
+                    
+                    return (
                         <div key={itemIndex} className="item-row">
                             <select 
                                 name={`item_name_${itemIndex}`} 
                                 value={item.item_name} 
                                 onChange={(e) => {
                                     handleItemChange(itemIndex, 'item_name', e.target.value);
-                                    // Fetch details when item is selected
                                     if (e.target.value) {
                                         setTimeout(() => fetchItemDetails(itemIndex), 100);
                                     }
@@ -303,58 +359,81 @@ const SingleShopSale = () => {
                                 ))}
                             </select>
                             
-                            <input 
-                                type="number" 
-                                name={`quantity_${itemIndex}`}
-                                value={item.quantity} 
-                                onChange={(e) => handleItemChange(itemIndex, 'quantity', e.target.value)}
-                                placeholder="Quantity" 
-                                min="0"
-                                step="0.01"
-                            />
+                            {selectedStockItem && selectedStockItem.pack_quantity ? (
+                                <>
+                                    <ItemQuantitySelector
+                                        selectedItemId={selectedStockItem.id}
+                                        onQuantityChange={(quantity) => {
+                                            handleItemChange(itemIndex, 'quantity', quantity.toString());
+                                        }}
+                                        onUnitTypeChange={(unitType) => {
+                                            handleItemChange(itemIndex, 'unit_type', unitType);
+                                        }}
+                                        initialQuantity={item.quantity}
+                                        initialUnitType={item.unit_type}
+                                    />
+                                    <p className="estimated-cost">
+                                        Estimated Cost: Ksh {item.estimated_cost.toFixed(2)}
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <input 
+                                        type="text" 
+                                        name={`quantity_${itemIndex}`}
+                                        value={item.quantity} 
+                                        onChange={(e) => {
+                                            const value = e.target.value;
+                                            if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                                                handleItemChange(itemIndex, 'quantity', value);
+                                            }
+                                        }}
+                                        placeholder="Quantity" 
+                                    />
+                                    <p className="estimated-cost">
+                                        Estimated Cost: Ksh {item.estimated_cost.toFixed(2)}
+                                    </p>
+                                </>
+                            )}
                             
-                        
-                            <p className='qunatity-level'>Remaining In Stock : {item.remainingStock.toFixed(2)} {item.metric}</p>
+                            <p className='qunatity-level'>
+                                Remaining In Stock: {item.remainingStock.toFixed(2)} {item.metric}
+                            </p>
                                 
                             {formData.items.length > 1 && (
                                 <button 
                                     type="button" 
                                     onClick={() => removeItem(itemIndex)}
                                     className='delete-entry'
-                                   
                                 >
                                     <FontAwesomeIcon icon={faTrash} className="text-red-500 w-4 h-4" />
                                 </button>
                             )}
                         </div>
-                    ))}
-                    
-                    <button 
-                        type="button" 
-                        onClick={addItem}
-                        className="complimentary-button"
-                    >
-                        Add Another Item
-                    </button>
-              
+                    );
+                })}
                 
-                {/* Grand Total */}
+                <button 
+                    type="button" 
+                    onClick={addItem}
+                    className="complimentary-button"
+                >
+                    Add Another Item
+                </button>
+                
                 <div className="grand-total">
-                    <h3>Grand Total: {grandTotal.toFixed(2)}</h3>
+                    <h3> Estimate Total: {grandTotal.toFixed(2)}</h3>
                 </div>
                 
-                {/* Date Selection */}
-               
-                    <h5>Select date: </h5>
-                    <input
-                        type="date"
-                        placeholder="DD/MM/YYYY"
-                        name="sale_date"
-                        value={formData.sale_date}
-                        onChange={handleChange}
-                        required
-                    />
-              
+                <h5>Select date: </h5>
+                <input
+                    type="date"
+                    placeholder="DD/MM/YYYY"
+                    name="sale_date"
+                    value={formData.sale_date}
+                    onChange={handleChange}
+                    required
+                />
                 
                 <select 
                     name="status" 
@@ -377,27 +456,25 @@ const SingleShopSale = () => {
                     totalAmount={grandTotal}
                 />
                 
-             
-                   
-                    <input 
-                        name="promocode" 
-                        type="text" 
-                        value={formData.promocode} 
-                        onChange={handleChange} 
-                        placeholder="Enter promocode" 
-                    />
-              
+                <input 
+                    name="promocode" 
+                    type="text" 
+                    value={formData.promocode} 
+                    onChange={handleChange} 
+                    placeholder="Enter promocode" 
+                />
                 
                 <button className="add-sale-button" type="submit" disabled={isLoading}>
                     {isLoading ? 'Processing...' : 'Add Sale'}
                 </button>
-                 {message && (
-                <Stack>
-                    <Alert severity={messageType} variant="outlined">
-                        {message}
-                    </Alert>
-                </Stack>
-            )}
+                
+                {message && (
+                    <Stack>
+                        <Alert severity={messageType} variant="outlined">
+                            {message}
+                        </Alert>
+                    </Stack>
+                )}
 
                 <Link className="nav-clerk-button" to="/clerk">
                     Home

@@ -23,7 +23,7 @@ class SoldItem(db.Model):
 
     @validates('metric')
     def validate_metric(self, key, metric):
-        valid_metric = ['item', 'kg', 'ltrs']
+        valid_metric = ['item','pieces', 'kg', 'ltrs']
         if metric is not None:
             assert metric in valid_metric, f"Invalid metric. Must be one of: {', '.join(valid_metric)}"
         return metric

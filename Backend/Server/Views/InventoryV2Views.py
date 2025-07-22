@@ -91,6 +91,7 @@ class DistributeInventoryV2(Resource):
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
+        unitPrice = data['unitPrice']
 
         try:
             distribution_date = parser.isoparse(data['created_at'])
@@ -136,7 +137,7 @@ class DistributeInventoryV2(Resource):
                 itemname=itemname,
                 metric=metric,
                 BatchNumber=BatchNumber,
-                unitPrice=unitCost  # Use the provided unitCost instead of inventory_item.unitPrice
+                unitPrice=unitPrice # Use the provided unitCost instead of inventory_item.unitPrice
             )
 
             db.session.add(new_shop_stock)
