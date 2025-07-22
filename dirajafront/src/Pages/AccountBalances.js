@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TransactionList from '../Components/AccountBalance/TransactionList';
 import AccountsBalanceList from '../Components/AccountBalance/AccountsBalanceList';
+import CashDeposits from '../Components/AccountBalance/Cashdeposits';
 
 
 function AccountBalances() {
@@ -34,12 +35,21 @@ function AccountBalances() {
         >
           Transactions
         </button>
+        <button
+          className={`tab-button ${activeTab === 'cashdeposits' ? 'active' : ''}`}
+          onClick={() => setActiveTab('cashdeposits')}
+        >
+          Cash Deposits
+        </button>
       </div>
 
       {/* Tab content */}
       <div className="tab-content">
         {activeTab === 'accounts' && <AccountsBalanceList />}
         {activeTab === 'transactions' && <TransactionList />}
+        {activeTab === 'cashdeposits' && <CashDeposits />}
+
+        
       </div>
     </>
   );

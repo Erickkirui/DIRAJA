@@ -32,7 +32,6 @@ const SingleSaleShop = () => {
       );
 
       if (response.data && response.data.sale) {
-        // Format the sale data
         const formattedSale = {
           ...response.data.sale,
           created_at: new Date(response.data.sale.created_at).toLocaleString(),
@@ -40,6 +39,7 @@ const SingleSaleShop = () => {
             ...pm,
             created_at: new Date(pm.created_at).toLocaleString(),
           })),
+          sold_items: response.data.sale.sold_items || [],
         };
 
         setSale(formattedSale);
@@ -70,6 +70,7 @@ const SingleSaleShop = () => {
             <p><strong>Sale Status:</strong> {sale.status}</p>
             <p><strong>Sale Date:</strong> {sale.created_at}</p>
             <p><strong>Total Amount Paid:</strong> Ksh {sale.total_amount_paid}</p>
+            <p><strong>Amount due:</strong> Ksh {sale.balance}</p>
           </div>
 
           <div className="sale-details-container">
@@ -82,12 +83,18 @@ const SingleSaleShop = () => {
 
           <div className="sale-details-container">
             <h3>Item Details</h3>
-            <div className="sale-section">
-              <p><strong>Item Name:</strong> {sale.item_name}</p>
-              <p><strong>Quantity:</strong> {sale.quantity} {sale.metric}</p>
-              <p><strong>Unit Price:</strong> Ksh {sale.unit_price}</p>
-              <p><strong>Total Price:</strong> Ksh {sale.total_price}</p>
-            </div>
+            {sale.sold_items.length > 0 ? (
+              sale.sold_items.map((item, index) => (
+                <div key={index} className="sale-section">
+                  <p><strong>Item Name:</strong> {item.item_name}</p>
+                  <p><strong>Quantity:</strong> {item.quantity} {item.metric}</p>
+                  <p><strong>Unit Price:</strong> Ksh {item.unit_price}</p>
+                  <p><strong>Total Price:</strong> Ksh {item.total_price}</p>
+                </div>
+              ))
+            ) : (
+              <p>No sold items found for this sale.</p>
+            )}
           </div>
 
           <h3>Payment Made</h3>
@@ -98,7 +105,6 @@ const SingleSaleShop = () => {
                 {payment.payment_method !== "not payed" && (
                   <>
                     <p><strong>Amount:</strong> Ksh {payment.amount_paid}</p>
-                    <p><strong>Balance:</strong> {payment.balance !== null ? `Ksh ${payment.balance}` : "Paid in full"}</p>
                     <p><strong>Payment Date:</strong> {payment.created_at}</p>
                   </>
                 )}

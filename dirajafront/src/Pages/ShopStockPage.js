@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import ShopStockV2 from '../Components/Archive/GetShopStockV2';
 import SpoiltStockTable from '../Components/StockManagement/GetSpoiltStock';
+import StockReturns from '../Components/StockManagement/StockReturn';
 
 
 function ShopStockPage() {
@@ -24,6 +25,12 @@ function ShopStockPage() {
     >
       Spoilt Stock
     </button>
+    <button 
+      className={`tab-button ${activeTab === 'stockreturn' ? 'active' : ''}`} 
+      onClick={() => setActiveTab('stockreturn')}
+    >
+      Stock return
+    </button>
   </div>
 
 
@@ -31,6 +38,7 @@ function ShopStockPage() {
   <div className="tab-content">
     {activeTab === 'SystemStock' && <ShopStockV2 />}
     {activeTab === 'spoiltstock' && <SpoiltStockTable />}
+    {activeTab === 'stockreturn' && <StockReturns />}
   </div>
 </>
   )

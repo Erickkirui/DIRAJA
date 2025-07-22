@@ -5,7 +5,6 @@ import DownloadPDF from '../Download/DownloadPDF';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import { Link } from 'react-router-dom';
 
-
 const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelectedStocks }) => {
     const [selectedAction, setSelectedAction] = useState('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -39,8 +38,17 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         fetchShops();
     }, []);
 
-    // Handle bulk delete
-    const handleBulkDelete = async () => {
+    // Get the minimum quantity among selected stocks for bulk operations
+    const getMaxQuantity = () => {
+        if (selectedStocks.length === 0) return 0;
+        return Math.min(...selectedStocks.map(stockId => {
+            const stock = shopStocks.find(s => s.stockv2_id === stockId);
+            return stock ? stock.quantity : 0;
+        }));
+    };
+
+    // Enhanced bulk delete handler
+    const handleBulkDelete = async (quantity) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
             alert('Access token is missing. Please log in again.');
@@ -48,19 +56,44 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         }
 
         try {
-            await Promise.all(
+            const responses = await Promise.allSettled(
                 selectedStocks.map((stockId) =>
-                    axios.delete(`/api/diraja/deleteshopstock/${stockId}`, {
-                        headers: { Authorization: `Bearer ${accessToken}` }
+                    axios.delete(`/api/diraja/v2/deleteshopstock/${stockId}`, {
+                        headers: { 
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        data: { quantity }
                     })
                 )
             );
 
-            setShopStocks(shopStocks.filter(stock => !selectedStocks.includes(stock.stock_id)));
+            // Analyze results
+            const successfulDeletes = responses.filter(r => r.status === 'fulfilled');
+            const failedDeletes = responses.filter(r => r.status === 'rejected');
+
+            if (failedDeletes.length > 0) {
+                const errorMessages = failedDeletes.map(f => 
+                    f.reason.response?.data?.message || f.reason.message
+                ).join('\n');
+                throw new Error(`Some deletions failed:\n${errorMessages}`);
+            }
+
+            // Update UI state
+            setShopStocks(prev => 
+                prev.filter(stock => !selectedStocks.includes(stock.stockv2_id))
+            );
             setSelectedStocks([]);
             setIsDeleteModalOpen(false);
+            
+            alert(`${successfulDeletes.length} items returned successfully!`);
         } catch (error) {
-            console.error(`Error deleting shop stocks: ${error.response?.data?.error || error.message}`);
+            console.error('Detailed return error:', {
+                message: error.message,
+                stack: error.stack,
+                response: error.response?.data
+            });
+            alert(`Error: ${error.message}`);
         }
     };
 
@@ -78,14 +111,17 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         }
 
         try {
-            await axios.put(`/api/diraja/shopstock/${editingStockId}/update-unitprice`, 
-                { unitPrice: newUnitPrice },
+            await axios.put(
+                `/api/diraja/shopstock/${editingStockId}/update-unitprice`, 
+                { unitPrice: parseFloat(newUnitPrice) },
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
 
-            setShopStocks((prevStocks) =>
-                prevStocks.map((stock) =>
-                    stock.stock_id === editingStockId ? { ...stock, unitPrice: newUnitPrice } : stock
+            setShopStocks(prevStocks =>
+                prevStocks.map(stock =>
+                    stock.stockv2_id === editingStockId 
+                        ? { ...stock, unitPrice: parseFloat(newUnitPrice) } 
+                        : stock
                 )
             );
 
@@ -105,13 +141,13 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
             return;
         }
 
-        const stock = shopStocks.find(s => s.stock_id === selectedStocks[0]);
+        const stock = shopStocks.find(s => s.stockv2_id === selectedStocks[0]);
         if (!stock) {
             alert('Selected stock not found.');
             return;
         }
 
-        if (!toShopId || !transferQuantity || transferQuantity <= 0) {
+        if (!toShopId || !transferQuantity || transferQuantity <= 0 || transferQuantity > stock.quantity) {
             alert('Please select a destination shop and enter a valid quantity.');
             return;
         }
@@ -123,26 +159,29 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         }
 
         try {
-            await axios.post('/api/diraja/transfer-system-stock', 
+            await axios.post(
+                '/api/diraja/transfer-system-stock', 
                 {
                     from_shop_id: stock.shop_id,
                     to_shop_id: toShopId,
-                    stock_id: stock.stock_id,
+                    stockv2_id: stock.stockv2_id,
                     quantity: parseInt(transferQuantity, 10),
                 },
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
 
-            
-            setShopStocks(shopStocks.map(s => 
-                s.stock_id === stock.stock_id 
-                    ? { ...s, quantity: s.quantity - transferQuantity } 
-                    : s
-            ));
+            setShopStocks(prev => 
+                prev.map(s => 
+                    s.stockv2_id === stock.stockv2_id
+                        ? { ...s, quantity: s.quantity - parseInt(transferQuantity, 10) }
+                        : s
+                )
+            );
 
             setIsTransferModalOpen(false);
             setToShopId('');
             setTransferQuantity('');
+            alert('Stock transferred successfully!');
         } catch (error) {
             alert(`Error transferring stock: ${error.response?.data?.error || error.message}`);
         }
@@ -154,6 +193,10 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         setSelectedAction(value);
 
         if (value === 'delete') {
+            if (selectedStocks.length === 0) {
+                alert('Please select at least one item to delete.');
+                return;
+            }
             setIsDeleteModalOpen(true);
         } else if (value === 'edit-price') {
             if (selectedStocks.length !== 1) {
@@ -175,22 +218,22 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         <div className="actions-container">
             <select value={selectedAction} onChange={handleActionChange} className="action-dropdown">
                 <option value="">Select action</option>
-                <option value="delete">Delete Selected</option>
+                <option value="delete">Return to store</option>
                 <option value="edit-price">Edit Unit Price</option>
                 <option value="transfer-stock">Transfer Stock</option>
             </select>
 
             <ExportExcel data={selectedStocks} fileName="ShopstocksData" />
             <DownloadPDF tableId="shopStocks-table" fileName="ShopstocksData" />
-            {/* <Link to="/mabandastocksmanager"  className='mabandabutton' >View Mabanda Stock </Link> */}
-            <Link to="/addshopstock"  className='mabandabutton' >Add Shop Stock </Link>
-            
+            <Link to="/addshopstock" className='mabandabutton'>Add Shop Stock</Link>
 
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleBulkDelete}
+                maxQuantity={getMaxQuantity()}
+                isBulkAction={selectedStocks.length > 1}
             />
 
             {/* Edit Unit Price Modal */}
@@ -203,6 +246,8 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
                             value={newUnitPrice}
                             onChange={(e) => setNewUnitPrice(e.target.value)}
                             placeholder="Enter new unit price"
+                            step="0.01"
+                            min="0"
                         />
                         <div className="modal-actions">
                             <button onClick={handleUnitPriceUpdate}>Update</button>
@@ -217,7 +262,11 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
                 <div className="modal">
                     <div className="modal-content">
                         <h3>Transfer Stock</h3>
-                        <select value={toShopId} onChange={(e) => setToShopId(e.target.value)}>
+                        <select 
+                            value={toShopId} 
+                            onChange={(e) => setToShopId(e.target.value)}
+                            className="transfer-select"
+                        >
                             <option value="">Select Destination Shop</option>
                             {allShops.map((shop) => (
                                 <option key={shop.shop_id} value={shop.shop_id}>
@@ -227,9 +276,11 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
                         </select>
                         <input
                             type="number"
-                            placeholder="Ente quantity(Eggs, Smokies and Sausages as individual items)"
+                            placeholder="Enter quantity"
                             value={transferQuantity}
                             onChange={(e) => setTransferQuantity(e.target.value)}
+                            min="1"
+                            max={shopStocks.find(s => s.stockv2_id === selectedStocks[0])?.quantity || 1}
                         />
                         <div className="modal-actions">
                             <button onClick={handleStockTransfer}>Transfer</button>

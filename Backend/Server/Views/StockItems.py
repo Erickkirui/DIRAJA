@@ -124,44 +124,42 @@ class StockItem(Resource):
     def put(self, item_id):
         """Update an existing stock item by item_id."""
         data = request.get_json()
+        
+        if not data:
+            return {"message": "No input data provided"}, 400
 
         # Find the item by ID
         item = StockItems.query.get(item_id)
-
         if not item:
             return {"message": "Item not found."}, 404
 
-        # Update the fields
-        item_name = data.get('item_name', item.item_name)
-        item_code = data.get('item_code', item.item_code)
-        unit_price = data.get('unit_price', item.unit_price)
-        pack_price = data.get('pack_price', item.pack_price)
-        pack_quantity = data.get('pack_quantity', item.pack_quantity)
-
-        if item_name != item.item_name:
-            item.item_name = item_name
-        if item_code != item.item_code:
-            item.item_code = item_code
-        if unit_price != item.unit_price:
-            item.unit_price = unit_price
-        if pack_price != item.pack_price:
-            item.pack_price = pack_price
-        if pack_quantity != item.pack_quantity:
-            item.pack_quantity = pack_quantity
-
-        db.session.commit()
-
-        return {
-            "message": "Stock item updated successfully.",
-            "stock_item": {
-                "id": item.id,
-                "item_name": item.item_name,
-                "item_code": item.item_code,
-                "unit_price": item.unit_price,
-                "pack_price": item.pack_price,
-                "pack_quantity": item.pack_quantity
-            }
-        }, 200
+        try:
+            # Update all fields directly (simpler approach)
+            item.item_name = data.get('item_name', item.item_name)
+            item.item_code = data.get('item_code', item.item_code)
+            item.unit_price = float(data.get('unit_price', item.unit_price))
+            item.pack_price = float(data.get('pack_price', item.pack_price))
+            item.pack_quantity = int(data.get('pack_quantity', item.pack_quantity))
+            
+            # Explicit commit and refresh
+            db.session.commit()
+            db.session.refresh(item)
+            
+            return {
+                "message": "Stock item updated successfully.",
+                "stock_item": {
+                    "id": item.id,
+                    "item_name": item.item_name,
+                    "item_code": item.item_code,
+                    "unit_price": item.unit_price,
+                    "pack_price": item.pack_price,
+                    "pack_quantity": item.pack_quantity
+                }
+            }, 200
+            
+        except Exception as e:
+            db.session.rollback()
+            return {"message": f"Error updating item: {str(e)}"}, 500
 
     @jwt_required()
     @check_role('manager')
