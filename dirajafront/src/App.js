@@ -90,6 +90,7 @@ import ShopStockV2 from './Components/Archive/GetShopStockV2';
 import PurchasesV2 from './Components/Purchases/GetPurchasesV2';
 import Achive from './Pages/Achive';
 import AddExpenseCategory from './Components/AddExpenseCategory';
+import CashDeposit from './Components/Cashdeposits';
 
 
 
@@ -233,6 +234,8 @@ function App() {
             <Route path='/addexpensecategory' element={<Layout><AddExpenseCategory/></Layout>} ></Route>
 
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
+
+            <Route path='/deposit' element={<Layout><CashDeposit/></Layout>} ></Route>
 
            
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
