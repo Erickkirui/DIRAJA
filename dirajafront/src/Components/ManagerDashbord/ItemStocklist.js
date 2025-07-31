@@ -127,7 +127,7 @@ const ItemStockList = () => {
 
   return (
     <div className="stock-level-container">
-      <div className="metric-top">
+      <div className="top-stock">
         <p>Item Stock List</p>
         <select
           value={selectedShopId}

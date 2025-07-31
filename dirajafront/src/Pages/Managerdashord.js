@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 import MabandaProfitLoss from'../Components/ManagerDashbord/MabandaFarmP&L';
 import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
+import SoldItemsList from '../Components/ManagerDashbord/SoldItemsList';
 
 
 function Managerdashord() {
@@ -94,7 +95,7 @@ function Managerdashord() {
        <div className='long-data-section'>
         {/* <BatchStockList /> */}
         <ItemStockList />
-        
+        <SoldItemsList />
        </div>
           
 

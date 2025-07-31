@@ -30,7 +30,7 @@ from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeere
 from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
 
 
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource, GetSingleSaleByShop,SalesByEmployeeResource
+from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary,ItemsSoldSummary,UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource, GetSingleSaleByShop,SalesByEmployeeResource
 from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalAmountPaidForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
 
 from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk, TotalCashSalesByUser, CashSales, CashSalesByUser,GenerateSalesReport
@@ -165,7 +165,9 @@ api.add_resource(PaymentMethodsResource, "/sales/<int:sale_id>/payment_methods")
 api.add_resource(CapturePaymentResource, "/sales/<int:sale_id>/capture-payment")
 api.add_resource(CreditHistoryResource, "/credit-history")
 api.add_resource(GetSingleSaleByShop, "/sale/<int:shop_id>/<int:sales_id>")
-api.add_resource(GetUnpaidSalesByClerk, "/unpaidsales/clerk")  
+api.add_resource(GetUnpaidSalesByClerk, "/unpaidsales/clerk") 
+api.add_resource(ItemsSoldSummary, '/sold-items-summary', '/sold-items-summary/<int:shop_id>')
+
 
 #Distribution
 api.add_resource(DistributeInventory,'/transfer')
