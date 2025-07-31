@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount
 from Server.Models.CashDeposit import CashDeposits
-
+from flask import current_app
 from fuzzywuzzy import process
 
 from flask import send_file
@@ -79,43 +79,45 @@ class AddSale(Resource):
 
         # ===== VALIDATION =====
         required_fields = [
-            'shop_id', 'customer_name', 'customer_number', 
+            'shop_id', 'customer_name', 'customer_number',
             'items', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
-            return {'message': 'Missing required fields', 'missing': [f for f in required_fields if f not in data]}, 400
+            return {
+                'message': 'Missing required fields',
+                'missing': [f for f in required_fields if f not in data]
+            }, 400
 
         try:
-            # Parse data with strict validation
             shop_id = int(data['shop_id'])
             payment_methods = data['payment_methods']
             promocode = data.get('promocode', '')
             status = data['status'].lower()
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
-            
-            # Validate items
-            if not isinstance(data['items'], list) or len(data['items']) == 0:
+
+            if not isinstance(data['items'], list) or not data['items']:
                 return {'message': 'Items must be a non-empty list'}, 400
-            
+
             items = []
             total_price = 0.0
             total_quantity = 0.0
             purchase_account = 0.0
-            
-            # First pass validation for items
+
             for item in data['items']:
                 item_fields = ['item_name', 'quantity', 'metric', 'unit_price']
                 if not all(field in item for field in item_fields):
-                    return {'message': 'Missing required item fields', 'missing': [f for f in item_fields if f not in item]}, 400
-                
-                # Validate metric format before processing
+                    return {
+                        'message': 'Missing required item fields',
+                        'missing': [f for f in item_fields if f not in item]
+                    }, 400
+
                 metric = item['metric'].strip().lower()
                 if metric not in ['item', 'kg', 'ltrs']:
                     return {
-                        'message': f'Invalid metric "{metric}" for item "{item["item_name"]}". Must be one of: item, kg, ltrs',
+                        'message': f"Invalid metric '{metric}' for item '{item['item_name']}'. Must be one of: item, kg, ltrs",
                         'invalid_item': item
                     }, 400
-                
+
                 items.append({
                     'item_name': item['item_name'],
                     'quantity': float(item['quantity']),
@@ -125,7 +127,7 @@ class AddSale(Resource):
                 })
                 total_price += float(item['quantity']) * float(item['unit_price'])
                 total_quantity += float(item['quantity'])
-                
+
         except (ValueError, KeyError, TypeError) as e:
             return {'message': f'Invalid data format: {str(e)}'}, 400
 
@@ -133,7 +135,7 @@ class AddSale(Resource):
         if status != "unpaid":
             if not isinstance(payment_methods, list):
                 return {'message': 'Payment methods must be a list'}, 400
-            
+
             for pm in payment_methods:
                 if 'method' not in pm or 'amount' not in pm:
                     return {'message': 'Each payment method must have "method" and "amount"'}, 400
@@ -155,10 +157,9 @@ class AddSale(Resource):
         stock_ids_used = []
         sold_items = []
         livestock_deductions = []
-        
+
         try:
             for item in items:
-                # Try to deduct from ShopStockV2 first
                 batches = ShopStockV2.query.filter(
                     ShopStockV2.itemname == item['item_name'],
                     ShopStockV2.shop_id == shop_id,
@@ -171,7 +172,6 @@ class AddSale(Resource):
                 item_purchase_account = 0.0
                 item_livestock_deduction = 0.0
 
-                # Process ShopStockV2 batches first
                 for batch in batches:
                     if remaining_qty <= 0:
                         break
@@ -182,33 +182,32 @@ class AddSale(Resource):
                     item_batch_deductions.append((batch.BatchNumber, deduct_qty))
                     item_stock_ids.append(str(batch.stockv2_id))
 
-                    # Get unit cost from associated inventory
                     inventory = InventoryV2.query.filter_by(inventoryV2_id=batch.inventoryv2_id).first()
                     if inventory:
                         item_purchase_account += inventory.unitCost * deduct_qty
 
                     db.session.add(batch)
 
-                # If still remaining quantity, try to deduct from LiveStock
                 if remaining_qty > 0:
-                    livestock_entry = LiveStock.query.filter_by(
-                        shop_id=shop_id,
-                        item_name=item['item_name']
+                    livestock_entry = LiveStock.query.filter(
+                        LiveStock.shop_id == shop_id,
+                        func.lower(LiveStock.item_name) == item['item_name'].lower()
                     ).first()
 
-                    if livestock_entry and livestock_entry.current_quantity > 0:
-                        deduct_qty = min(livestock_entry.current_quantity, remaining_qty)
-                        livestock_entry.current_quantity -= deduct_qty
-                        livestock_entry.clock_out_quantity -= deduct_qty
-                        remaining_qty -= deduct_qty
-                        item_livestock_deduction = deduct_qty
-                        db.session.add(livestock_entry)
-                        livestock_deductions.append({
-                            'item_name': item['item_name'],
-                            'quantity': deduct_qty,
-                            'original_current': livestock_entry.current_quantity + deduct_qty,
-                            'new_current': livestock_entry.current_quantity
-                        })
+                    if livestock_entry:
+                        if livestock_entry.current_quantity > 0:
+                            deduct_qty = min(livestock_entry.current_quantity, remaining_qty)
+                            livestock_entry.current_quantity -= deduct_qty
+                            livestock_entry.clock_out_quantity -= deduct_qty
+                            remaining_qty -= deduct_qty
+                            item_livestock_deduction = deduct_qty
+                            db.session.add(livestock_entry)
+                            livestock_deductions.append({
+                                'item_name': item['item_name'],
+                                'quantity': deduct_qty,
+                                'original_current': livestock_entry.current_quantity + deduct_qty,
+                                'new_current': livestock_entry.current_quantity
+                            })
 
                 if remaining_qty > 0:
                     stock_processing_errors.append(
@@ -222,9 +221,9 @@ class AddSale(Resource):
                         'deductions': item_batch_deductions
                     })
                     stock_ids_used.extend(item_stock_ids)
-                
+
                 purchase_account += item_purchase_account
-                
+
                 sold_items.append({
                     'item_name': item['item_name'],
                     'quantity': item['quantity'],
@@ -252,7 +251,6 @@ class AddSale(Resource):
         sasapay_deposits = []
 
         try:
-            # Create sale record
             new_sale = Sales(
                 user_id=current_user_id,
                 shop_id=shop_id,
@@ -266,9 +264,8 @@ class AddSale(Resource):
             db.session.add(new_sale)
             db.session.flush()
 
-            # Create sold item records
             for item in sold_items:
-                sold_item = SoldItem(
+                db.session.add(SoldItem(
                     sales_id=new_sale.sales_id,
                     item_name=item['item_name'],
                     quantity=item['quantity'],
@@ -280,10 +277,8 @@ class AddSale(Resource):
                     Cost_of_sale=item['Cost_of_sale'],
                     Purchase_account=item['Purchase_account'],
                     LivestockDeduction=item['LivestockDeduction']
-                )
-                db.session.add(sold_item)
+                ))
 
-            # Process payments
             for payment in payment_methods:
                 method = payment['method'].strip().lower()
                 amount = float(payment['amount'])
@@ -298,14 +293,13 @@ class AddSale(Resource):
                             bank_account.Account_Balance += amount
                             db.session.add(bank_account)
 
-                            transaction = TranscationType(
+                            db.session.add(TranscationType(
                                 Transaction_type="Debit",
                                 Transaction_amount=amount,
                                 From_account=f"SASAPAY Sale #{new_sale.sales_id}",
                                 To_account=bank_account.Account_name,
                                 created_at=created_at
-                            )
-                            db.session.add(transaction)
+                            ))
 
                             sasapay_deposits.append({
                                 'shop_id': shop_id,
@@ -316,19 +310,16 @@ class AddSale(Resource):
                                 'new_balance': bank_account.Account_Balance
                             })
 
-                # Record payment method
-                payment_record = SalesPaymentMethods(
+                db.session.add(SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
                     payment_method=method,
                     amount_paid=amount,
                     transaction_code=transaction_code,
                     created_at=created_at
-                )
-                db.session.add(payment_record)
+                ))
 
-            # Create customer record if needed
             if data['customer_name'] or data['customer_number']:
-                customer = Customers(
+                db.session.add(Customers(
                     customer_name=data['customer_name'],
                     customer_number=data['customer_number'],
                     shop_id=shop_id,
@@ -338,8 +329,7 @@ class AddSale(Resource):
                     amount_paid=total_amount_paid,
                     payment_method=", ".join(pm['method'] for pm in payment_methods),
                     created_at=created_at
-                )
-                db.session.add(customer)
+                ))
 
             db.session.commit()
 
@@ -362,7 +352,7 @@ class AddSale(Resource):
                 },
                 'payments': {
                     'methods': [pm['method'] for pm in payment_methods],
-                    'sasapay_deposits': sasapay_deposits if sasapay_deposits else "No SASAPAY deposits processed"
+                    'sasapay_deposits': sasapay_deposits or "No SASAPAY deposits processed"
                 }
             }, 201
 
@@ -377,6 +367,7 @@ class AddSale(Resource):
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
+
 
 class GetSale(Resource):
     @jwt_required()
@@ -829,8 +820,8 @@ class SalesResources(Resource):
 
             # Restore stock quantities for each sold item
             for item in sale.items:  # Ensure `sale.items` is the correct relationship
-                if item.stock_id:
-                    stock = ShopStock.query.filter_by(stock_id=item.stock_id).first()
+                if item.stockv2_id:
+                    stock = ShopStockV2.query.filter_by(stockv2_id=item.stockv2_id).first()
                     if stock:
                         stock.quantity += item.quantity
 
@@ -855,6 +846,7 @@ class SalesResources(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error deleting sale', 'error': str(e)}, 500
+
 
 
 
@@ -1463,7 +1455,7 @@ class GetSingleSaleByShop(Resource):
                     "unit_price": item.unit_price,
                     "total_price": item.total_price,
                     "batch_number": item.BatchNumber,
-                    "stock_id": item.stock_id,
+                    "stockv2_id": item.stockv2_id,
                     "cost_of_sale": item.Cost_of_sale,
                     "purchase_account": item.Purchase_account
                 })
@@ -1537,7 +1529,7 @@ class GetUnpaidSalesByClerk(Resource):
                         "unit_price": item.unit_price,
                         "total_price": item.total_price,
                         "batch_number": item.BatchNumber,
-                        "stock_id": item.stock_id,
+                        "stockv2_id": item.stockv2_id,
                         "cost_of_sale": item.Cost_of_sale,
                         "purchase_account": item.Purchase_account
                     }

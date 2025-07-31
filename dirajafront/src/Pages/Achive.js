@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import InventoryAchive from '../Components/Archive/GetInventoryAchive'
 import ShopStock from '../Components/SystemStock/GetShopStock';
+import Purchases from '../Components/Archive/GetPurchases';
 
 function ArchivePage() {
   const [activeTab, setActiveTab] = useState('Inventory');
@@ -18,6 +19,12 @@ function ArchivePage() {
       Inventory
     </button>
     <button 
+      className={`tab-button ${activeTab === 'Purchases' ? 'active' : ''}`} 
+      onClick={() => setActiveTab('Purchases')}
+    >
+      Purchases
+    </button>
+    <button 
       className={`tab-button ${activeTab === 'ShopStock' ? 'active' : ''}`} 
       onClick={() => setActiveTab('ShopStock')}
     >
@@ -29,7 +36,9 @@ function ArchivePage() {
   {/* Tab content */}
   <div className="tab-content">
     {activeTab === 'Inventory' && <InventoryAchive />}
+    {activeTab === 'Purchases' && <Purchases />}
     {activeTab === 'ShopStock' && <ShopStock />}
+
   </div>
 </>
   )

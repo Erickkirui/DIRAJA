@@ -31,7 +31,7 @@ const TotalShopSales = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        setTotalAmountPaid(response.data.total_sales_amount_paid);
+        setTotalAmountPaid(response.data.total_paid);
       } catch (error) {
         // console.error('Error fetching total amount paid:', error);
         // setError('Could not fetch total amount paid');

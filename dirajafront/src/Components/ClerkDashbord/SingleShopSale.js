@@ -67,22 +67,22 @@ const SingleShopSale = () => {
     }, [formData.shop_id]);
 
     useEffect(() => {
-    const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
-    setGrandTotal(total);
-}, [formData.items]);
+        const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
+        setGrandTotal(total);
+    }, [formData.items]);
 
     const calculateEstimatedCost = (item) => {
-    const stockItem = stockItems.find(si => si.item_name === item.item_name);
-    if (!stockItem) return 0;
+        const stockItem = stockItems.find(si => si.item_name === item.item_name);
+        if (!stockItem) return 0;
 
-    const quantity = parseFloat(item.quantity) || 0;
-    
-    if (item.unit_type === 'pack' && stockItem.pack_price) {
-        return quantity * parseFloat(stockItem.pack_price);
-    } else {
-        return quantity * (parseFloat(item.unit_price) || 0);
-    }
-};
+        const quantity = parseFloat(item.quantity) || 0;
+        
+        if (item.unit_type === 'pack' && stockItem.pack_price) {
+            return quantity * parseFloat(stockItem.pack_price);
+        } else {
+            return quantity * (parseFloat(item.unit_price) || 0);
+        }
+    };
 
     const fetchItemDetails = async (index) => {
         const itemName = formData.items[index].item_name;
@@ -97,14 +97,15 @@ const SingleShopSale = () => {
                 headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
             });
 
-            const { metric, unit_price, stock_id, quantity, BatchNumber } = response.data;
             const stockItem = stockItems.find(si => si.item_name === itemName);
+            const { metric, stock_id, quantity, BatchNumber } = response.data;
 
             const newItems = [...formData.items];
             newItems[index] = {
                 ...newItems[index],
                 metric: metric || '',
-                unit_price: unit_price || '',
+                // Get unit_price from stockItem if available
+                unit_price: stockItem?.unit_price || '',
                 stock_id: stock_id || '',
                 BatchNumber: BatchNumber || '',
                 remainingStock: quantity || 0,
@@ -114,7 +115,7 @@ const SingleShopSale = () => {
 
             // Update total price after fetching unit price
             const qty = parseFloat(newItems[index].quantity) || 0;
-            newItems[index].total_price = (qty * (unit_price || 0)).toFixed(2);
+            newItems[index].total_price = (qty * (newItems[index].unit_price || 0)).toFixed(2);
 
             setFormData({ ...formData, items: newItems });
         } catch (error) {
@@ -122,6 +123,7 @@ const SingleShopSale = () => {
             setMessage(`Error fetching details for ${itemName}. Please try again.`);
         }
     };
+
     const handleItemChange = (index, field, value) => {
         const newItems = [...formData.items];
         newItems[index][field] = value;
@@ -230,6 +232,7 @@ const SingleShopSale = () => {
         setIsLoading(true);
         setMessage('');
         
+        // Validation
         for (const item of formData.items) {
             if (!item.item_name || item.quantity === '' || !item.unit_price) {
                 setMessageType('error');
@@ -246,6 +249,7 @@ const SingleShopSale = () => {
             }
         }
 
+        // Prepare data for submission
         const formDataToSubmit = { 
             ...formData,
             items: formData.items.map(item => {
@@ -279,6 +283,7 @@ const SingleShopSale = () => {
                 setMessageType('success');
                 setMessage(response.data.message || 'Sale recorded successfully.');
     
+                // Reset form after successful submission
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',
                     customer_name: '',

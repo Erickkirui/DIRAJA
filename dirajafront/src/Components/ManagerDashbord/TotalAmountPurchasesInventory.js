@@ -68,8 +68,8 @@ const TotalAmountPurchasesInventory = () => {
           <select id="period" value={period} onChange={handlePeriodChange}>
             <option value="today">Today</option>
             <option value="yesterday">Yesterday</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
+            <option value="week">Last 7 days</option>
+            <option value="month">Last 30 days</option>
             <option value="alltime">All Time</option>
             <option value="custom">Custom Date</option> {/* New option for custom date range */}
           </select>

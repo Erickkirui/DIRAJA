@@ -7,6 +7,8 @@ from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.SystemStockTransfer import SystemStockTransfer
 from Server.Models.Users import Users
+from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.Inventory import Inventory, db
 from Server.Models.Expenses import Expenses  # Import Expenses model
 from Server.Models.Transfer import Transfer  # Import Transfer model
