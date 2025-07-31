@@ -91,11 +91,11 @@ import PurchasesV2 from './Components/Purchases/GetPurchasesV2';
 import Achive from './Pages/Achive';
 import AddExpenseCategory from './Components/AddExpenseCategory';
 import CashDeposit from './Components/Cashdeposits';
-<<<<<<< HEAD
+
 import RelieverSales from './Components/ClerkDashbord/RelieverSales';
-=======
+
 import ShopStockList from './Components/ClerkDashbord/ShopStockList';
->>>>>>> bb427c9e8c1e9ae608dbf5002ec57336d369daa2
+
 
 
 

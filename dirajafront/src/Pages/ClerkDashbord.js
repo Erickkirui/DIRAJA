@@ -62,20 +62,25 @@ function ClerkDashbord() {
               </Link>
             )}
 
-            <div className='icon-container'>
 
-              {/* Procurement Group */}
-              {designation === "procurement" && (
-                <div className='icon-group'>
-                  <Link className='clerk-icon-button' to='/distribute-stock'>
-                    <FaTruck className="icon" />
-                    <span>Distribute Stock</span>
-                  </Link>
-                  {/* Placeholder or another procurement icon could go here */}
-                </div>
-              )}
+            {shopId === "2" && (
+              <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
+            )}
 
-<<<<<<< HEAD
+            {shopId === "12" && (
+              <>
+                <Link className="clerk-button" to="/mabandastock">
+                  Add Stock
+                </Link>
+                <Link className="clerk-button" to="/mabandaexpense">
+                  Add Expense
+                </Link>
+                <Link className="clerk-button" to="/mabandapurchase">
+                  Add Purchase
+                </Link>
+              </>
+            )}
+
             {isReliever && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
             )}
@@ -124,7 +129,20 @@ function ClerkDashbord() {
                 </Link>
               )
             )}
-=======
+
+            <div className='icon-container'>
+
+              {/* Procurement Group */}
+              {designation === "procurement" && (
+                <div className='icon-group'>
+                  <Link className='clerk-icon-button' to='/distribute-stock'>
+                    <FaTruck className="icon" />
+                    <span>Distribute Stock</span>
+                  </Link>
+                  {/* Placeholder or another procurement icon could go here */}
+                </div>
+              )}
+
               {/* Shop 2 Group */}
               {shopId === '2' && (
                 <div className='icon-group'>
@@ -210,7 +228,7 @@ function ClerkDashbord() {
                 </>
               )}
             </div>
->>>>>>> bb427c9e8c1e9ae608dbf5002ec57336d369daa2
+
           </div>
 
           {/* Dashboard Metrics */}
