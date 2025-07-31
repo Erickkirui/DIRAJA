@@ -41,7 +41,7 @@ const SingleShopSale = () => {
         { value: 'pieces', label: 'Pieces' },
         { value: 'pack', label: 'Pack' }
     ];
-    const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay', 'not payed'];
+    const validPaymentMethods = ['bank', 'cash', 'mpesa', 'sasapay', 'not payed', 'sasapay deliveries'];
 
     useEffect(() => {
         const fetchItems = async () => {

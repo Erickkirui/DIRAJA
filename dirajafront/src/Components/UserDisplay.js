@@ -110,7 +110,7 @@ const UserDisplay = () => {
               </>
             )}
 
-            {(username === 'Leo' || username === 'Namai' || username === 'External Auditor') &&  (
+            {(username === 'Leo' || username === 'Support' || username === 'Namai' || username === 'External Auditor') &&  (
               <>
                   <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>
               </>
