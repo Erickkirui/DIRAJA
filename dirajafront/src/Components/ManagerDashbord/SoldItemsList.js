@@ -2,40 +2,50 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
 import { DatePicker, Select, Alert } from "antd";
-import dayjs from "dayjs"; // ✅ Import dayjs
+import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-// ✅ Set yesterday as default date
 const yesterday = dayjs().subtract(1, "day");
 
 const SoldItemsList = () => {
   const [soldItems, setSoldItems] = useState([]);
+  const [stockItems, setStockItems] = useState([]); // Added for item info
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState("");
-  const [dateRange, setDateRange] = useState([yesterday, yesterday]); // ✅ Default to yesterday
+  const [dateRange, setDateRange] = useState([yesterday, yesterday]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Fetch shops and stock items
   useEffect(() => {
-    const fetchShops = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await axios.get("/api/diraja/allshops", {
+        // Fetch shops
+        const shopsRes = await axios.get("/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        const sortedShops = res.data.sort((a, b) =>
+        const sortedShops = shopsRes.data.sort((a, b) =>
           a.shopname.localeCompare(b.shopname)
         );
         setShops(sortedShops);
+
+        // Fetch stock items
+        const itemsRes = await axios.get("http://127.0.0.1:5000/api/diraja/stockitems", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setStockItems(itemsRes.data.stock_items || []);
       } catch (err) {
-        console.error("Failed to load shops", err);
-        setError("Failed to load shop list");
+        console.error("Failed to load initial data", err);
+        setError("Failed to load initial data");
       }
     };
-    fetchShops();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -60,7 +70,52 @@ const SoldItemsList = () => {
           },
         });
 
-        setSoldItems(res.data.items || []);
+        // Process sold items with display metrics
+        const processedItems = (res.data.items || []).map(item => {
+          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+          
+          if (!itemInfo) return { ...item, display: `${item.total_sold} ${item.metric || 'pcs'}` };
+          
+          // If metric is kgs, don't convert to packets/pieces
+          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+            return {
+              ...item,
+              display: `${item.total_sold} kgs`
+            };
+          }
+          
+          // For eggs, display as trays and pieces
+          if (itemInfo.item_name.toLowerCase() === "eggs" && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(item.total_sold / itemInfo.pack_quantity);
+            const pieces = item.total_sold % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For other items with pack quantity, display as packets and pieces
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(item.total_sold / itemInfo.pack_quantity);
+            const pieces = item.total_sold % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For items without pack quantity, just display with their metric
+          else {
+            return {
+              ...item,
+              display: `${item.total_sold} ${item.metric || 'pcs'}`
+            };
+          }
+        });
+
+        setSoldItems(processedItems);
       } catch (err) {
         console.error("Failed to fetch sold items", err);
         setError("Failed to fetch sold item data");
@@ -69,8 +124,10 @@ const SoldItemsList = () => {
       }
     };
 
-    fetchSoldItems();
-  }, [selectedShopId, dateRange]);
+    if (stockItems.length > 0) {
+      fetchSoldItems();
+    }
+  }, [selectedShopId, dateRange, stockItems]);
 
   return (
     <div className="stock-level-container">
@@ -127,9 +184,7 @@ const SoldItemsList = () => {
                 soldItems.map((item, index) => (
                   <tr key={index}>
                     <td>{item.item_name}</td>
-                    <td>
-                      {item.total_sold} {item.metric}
-                    </td>
+                    <td>{item.display}</td> {/* Changed to use display property */}
                   </tr>
                 ))
               ) : (
