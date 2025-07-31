@@ -21,7 +21,7 @@ import {
   FaFileInvoiceDollar,
   FaTruck,
   FaTools,
-   FaBoxes
+  FaBoxes
 } from 'react-icons/fa';
 import ShopStockList from '../Components/ClerkDashbord/ShopStockList';
 
@@ -52,7 +52,7 @@ function ClerkDashbord() {
               </Link>
             )}
             {shopId !== '12' && shopId !== '18' && (
-              <Link className="clerk-button" to="/shopsale">
+              <Link className="clerk-button" to={isReliever ? "/relieversales" : "/shopsale"}>
                 New Sale
               </Link>
             )}
@@ -60,74 +60,6 @@ function ClerkDashbord() {
               <Link className="clerk-button" to="/promo-sale">
                 New Sale
               </Link>
-            )}
-
-
-            {shopId === "2" && (
-              <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
-            )}
-
-            {shopId === "12" && (
-              <>
-                <Link className="clerk-button" to="/mabandastock">
-                  Add Stock
-                </Link>
-                <Link className="clerk-button" to="/mabandaexpense">
-                  Add Expense
-                </Link>
-                <Link className="clerk-button" to="/mabandapurchase">
-                  Add Purchase
-                </Link>
-              </>
-            )}
-
-            {isReliever && (
-              <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
-            )}
-
-            {/* View Sales links - Relievers don't see regular view sales links */}
-            {!isReliever && shopId === "12" && (
-              <Link className="clerk-button" to="/mabandasales">
-                View Sales
-              </Link>
-            )}
-
-            {!isReliever && shopId !== "12" && shopId !== "18" && (
-              <Link className="clerk-button" to="/shopsales">
-                View Sales
-              </Link>
-            )}
-
-            {/* Reliever-specific view sales link */}
-            {isReliever && shopId !== "12" && shopId !== "18" && (
-              <Link className="clerk-button" to="/reliever">
-                View Sales
-              </Link>
-            )}
-
-            {shopId !== "12" && shopId !== "18" && (
-              <Link className="clerk-button" to="/shopcredit">
-                View Credit Sales
-              </Link>
-            )}
-
-            {shopId !== "12" && shopId !== "18" && (
-              <Link className="clerk-button" to="/addspoiltstock">
-                Spoilt Stock
-              </Link>
-            )}
-
-            {/* Updated deposit cash link based on designation */}
-            {shopId !== "12" && shopId !== "18" && (
-              isReliever ? (
-                <Link className="clerk-button" to="/deposit">
-                  Deposit Cash
-                </Link>
-              ) : (
-                <Link className="clerk-button" to="/depositcash">
-                  Deposit Cash
-                </Link>
-              )
             )}
 
             <div className='icon-container'>
@@ -139,15 +71,13 @@ function ClerkDashbord() {
                     <FaTruck className="icon" />
                     <span>Distribute Stock</span>
                   </Link>
-                  {/* Placeholder or another procurement icon could go here */}
                 </div>
               )}
 
               {/* Shop 2 Group */}
               {shopId === '2' && (
                 <div className='icon-group'>
-                 
-                   <Link className='clerk-icon-button' to='/shop-stock-level'>
+                  <Link className='clerk-icon-button' to='/shop-stock-level'>
                     <FaBoxes className="icon" />
                     <span>Stock</span>
                   </Link>
@@ -177,7 +107,7 @@ function ClerkDashbord() {
                       <FaPiggyBank className="icon" />
                       <span>Add Purchase</span>
                     </Link>
-                    <Link className="clerk-icon-button" to="/mabandasales">
+                    <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/mabandasales"}>
                       <FaEye className="icon" />
                       <span>View Sales</span>
                     </Link>
@@ -186,23 +116,24 @@ function ClerkDashbord() {
               )}
 
               {/* Reliever Group */}
-              {designation === "reliever" && (
+              {/* {isReliever && (
                 <div className='icon-group'>
-                  <Link className='clerk-icon-button' to='/relieversales'>
+                  <Link className='clerk-icon-button' to='/reliever'>
                     <FaCashRegister className="icon" />
                     <span>Reliever Sales</span>
                   </Link>
                 </div>
-              )}
+              )} */}
 
               {/* Regular Shop Clerk Group */}
               {shopId !== '12' && shopId !== '18' && (
                 <>
                   <div className='icon-group'>
-                    <Link className="clerk-icon-button" to="/shopsales">
+                    <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/shopsales"}>
                       <FaEye className="icon" />
                       <span>View Sales</span>
                     </Link>
+                    
                     <Link className="clerk-icon-button" to="/shopcredit">
                       <FaCreditCard className="icon" />
                       <span>Credit Sales</span>
@@ -213,22 +144,14 @@ function ClerkDashbord() {
                       <FaTrashAlt className="icon" />
                       <span>Spoilt Stock</span>
                     </Link>
-                    {designation === 'reliever' ? (
-                      <Link className="clerk-icon-button" to="/deposit">
-                        <FaMoneyBillWave className="icon" />
-                        <span>Deposit Cash</span>
-                      </Link>
-                    ) : (
-                      <Link className="clerk-icon-button" to="/depositcash">
-                        <FaMoneyBillWave className="icon" />
-                        <span>Deposit Cash</span>
-                      </Link>
-                    )}
+                    <Link className="clerk-icon-button" to={isReliever ? "/deposit" : "/depositcash"}>
+                      <FaMoneyBillWave className="icon" />
+                      <span>Deposit Cash</span>
+                    </Link>
                   </div>
                 </>
               )}
             </div>
-
           </div>
 
           {/* Dashboard Metrics */}
