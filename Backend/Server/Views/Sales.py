@@ -145,11 +145,17 @@ class AddSale(Resource):
                     return {'message': f'Invalid amount for payment method {pm["method"]}'}, 400
 
         # ===== BANK MAPPING =====
+        # Specific shop to account mappings
+        #Left => shop id
+        #Right => account id
         shop_to_bank_mapping = {
             1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
             7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
-            14: 14, 16: 13
+            14: 14, 16: 13, 19: 22
         }
+        
+        # Default all other shops to account ID 11
+        bank_id = shop_to_bank_mapping.get(shop_id, 11)
 
         # ===== STOCK PROCESSING =====
         stock_processing_errors = []
