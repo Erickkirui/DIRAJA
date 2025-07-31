@@ -82,11 +82,17 @@ function ClerkDashbord() {
                     <FaBoxes className="icon" />
                     <span>Stock</span>
                   </Link>
+                      <Link className='clerk-icon-button' to='/sold-items'>
+                    <FaTools className="icon" />
+                    <span>Sold Items</span>
+                  </Link>
+                
 
-                  <Link className='clerk-icon-button' to='/managestock'>
+
+                  {/* <Link className='clerk-icon-button' to='/managestock'>
                     <FaTools className="icon" />
                     <span>Manage Stock</span>
-                  </Link>
+                  </Link> */}
                 </div>
               )}
 
