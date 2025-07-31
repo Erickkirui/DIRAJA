@@ -28,6 +28,7 @@ import ShopStockList from '../Components/ClerkDashbord/ShopStockList';
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation');
   const shopId = localStorage.getItem('shop_id');
+  const isReliever = designation === "reliever";
 
   return (
     <div className='Page-continer'>
@@ -59,6 +60,74 @@ function ClerkDashbord() {
               <Link className="clerk-button" to="/promo-sale">
                 New Sale
               </Link>
+            )}
+
+
+            {shopId === "2" && (
+              <Link className='clerk-button' to='/managestock'>Manage Stock</Link>
+            )}
+
+            {shopId === "12" && (
+              <>
+                <Link className="clerk-button" to="/mabandastock">
+                  Add Stock
+                </Link>
+                <Link className="clerk-button" to="/mabandaexpense">
+                  Add Expense
+                </Link>
+                <Link className="clerk-button" to="/mabandapurchase">
+                  Add Purchase
+                </Link>
+              </>
+            )}
+
+            {isReliever && (
+              <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
+            )}
+
+            {/* View Sales links - Relievers don't see regular view sales links */}
+            {!isReliever && shopId === "12" && (
+              <Link className="clerk-button" to="/mabandasales">
+                View Sales
+              </Link>
+            )}
+
+            {!isReliever && shopId !== "12" && shopId !== "18" && (
+              <Link className="clerk-button" to="/shopsales">
+                View Sales
+              </Link>
+            )}
+
+            {/* Reliever-specific view sales link */}
+            {isReliever && shopId !== "12" && shopId !== "18" && (
+              <Link className="clerk-button" to="/reliever">
+                View Sales
+              </Link>
+            )}
+
+            {shopId !== "12" && shopId !== "18" && (
+              <Link className="clerk-button" to="/shopcredit">
+                View Credit Sales
+              </Link>
+            )}
+
+            {shopId !== "12" && shopId !== "18" && (
+              <Link className="clerk-button" to="/addspoiltstock">
+                Spoilt Stock
+              </Link>
+            )}
+
+            {/* Updated deposit cash link based on designation */}
+            {shopId !== "12" && shopId !== "18" && (
+              isReliever ? (
+                <Link className="clerk-button" to="/deposit">
+                  Deposit Cash
+                </Link>
+              ) : (
+                <Link className="clerk-button" to="/depositcash">
+                  Deposit Cash
+                </Link>
+              )
             )}
 
             <div className='icon-container'>
@@ -159,6 +228,7 @@ function ClerkDashbord() {
                 </>
               )}
             </div>
+
           </div>
 
           {/* Dashboard Metrics */}
