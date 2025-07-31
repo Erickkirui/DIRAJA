@@ -834,7 +834,6 @@ class GetBatchStock(Resource):
 
 class GetItemStock(Resource):
     @jwt_required()
-    @check_role('manager')  # Only managers can access
     def get(self):
         try:
             shop_id = request.args.get('shop_id', type=int)
