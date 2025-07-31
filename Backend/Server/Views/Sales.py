@@ -2084,3 +2084,63 @@ class GenerateSalesReport(Resource):
             
         except Exception as e:
             return {"error": str(e)}, 500
+        
+
+class ItemsSoldSummary(Resource):
+    @jwt_required()
+    def get(self, shop_id=None):
+        try:
+            # Query params
+            start_date = request.args.get('start_date')  # format: 'YYYY-MM-DD'
+            end_date = request.args.get('end_date')      # format: 'YYYY-MM-DD'
+
+            # Parse and validate dates
+            try:
+                if start_date:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                if end_date:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+
+            # Base query
+            query = db.session.query(
+                SoldItem.item_name,
+                SoldItem.metric,
+                func.sum(SoldItem.quantity).label("total_sold")
+            ).join(Sales, SoldItem.sales_id == Sales.sales_id)
+
+            # Apply filters
+            if shop_id is not None:
+                query = query.filter(Sales.shop_id == shop_id)
+            if start_date:
+                query = query.filter(Sales.created_at >= start_date)
+            if end_date:
+                query = query.filter(Sales.created_at <= end_date)
+
+            # Group and fetch
+            result = query.group_by(SoldItem.item_name, SoldItem.metric).all()
+
+            sold_items_summary = [
+                {
+                    "item_name": item_name,
+                    "metric": metric,
+                    "total_sold": round(total_sold, 2)
+                }
+                for item_name, metric, total_sold in result
+            ]
+
+            response = {
+                "shop_id": shop_id,
+                "total_items_sold": len(sold_items_summary),
+                "items": sold_items_summary
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching sold item data",
+                "details": str(e)
+            }, 500
