@@ -5,32 +5,41 @@ import { Link } from "react-router-dom";
 
 const ItemStockList = () => {
   const [itemStock, setItemStock] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
   const [shops, setShops] = useState([]);
-  const [selectedShopId, setSelectedShopId] = useState(""); // default to all
+  const [selectedShopId, setSelectedShopId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
 
-  // Fetch all shops for dropdown
+  // Fetch all shops for dropdown and stock items
   useEffect(() => {
-    const fetchShops = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await axios.get("/api/diraja/allshops", {
+        // Fetch shops
+        const shopsResponse = await axios.get("/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
 
-        const sortedShops = response.data.sort((a, b) =>
+        const sortedShops = shopsResponse.data.sort((a, b) =>
           a.shopname.localeCompare(b.shopname)
         );
-
         setShops(sortedShops);
+
+        // Fetch stock items
+        const itemsResponse = await axios.get("http://127.0.0.1:5000/api/diraja/stockitems", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setStockItems(itemsResponse.data.stock_items || []);
       } catch (err) {
-        console.error("Failed to fetch shops", err);
+        console.error("Failed to fetch initial data", err);
       }
     };
-    fetchShops();
+    fetchInitialData();
   }, []);
 
   // Fetch item stock (optionally filtered by shop)
@@ -47,15 +56,64 @@ const ItemStockList = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        setItemStock(response.data.item_stocks || []);
+        
+        // Process the stock data to include proper display metrics
+        const processedStock = (response.data.item_stocks || []).map(stock => {
+          const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
+          
+          if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
+          
+          // If metric is kgs, don't convert to packets/pieces
+          if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
+            return {
+              ...stock,
+              display: `${stock.total_remaining} kgs`
+            };
+          }
+          
+          // For eggs, display as trays and pieces
+          if (itemInfo.item_name.toLowerCase() === "eggs" && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+            const pieces = stock.total_remaining % itemInfo.pack_quantity;
+            return {
+              ...stock,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For other items with pack quantity, display as packets and pieces
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+            const pieces = stock.total_remaining % itemInfo.pack_quantity;
+            return {
+              ...stock,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For items without pack quantity, just display with their metric
+          else {
+            return {
+              ...stock,
+              display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
+            };
+          }
+        });
+        
+        setItemStock(processedStock);
       } catch (err) {
         setError("An error occurred while fetching item stock data.");
       } finally {
         setLoading(false);
       }
     };
-    fetchItemStock();
-  }, [selectedShopId]);
+    
+    if (stockItems.length > 0) {
+      fetchItemStock();
+    }
+  }, [selectedShopId, stockItems]);
 
   const filteredStock = itemStock.filter((stock) =>
     activeTab === "inStock"
@@ -121,9 +179,7 @@ const ItemStockList = () => {
                 filteredStock.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.itemname}</td>
-                    <td>
-                      {stock.total_remaining} {stock.metric}
-                    </td>
+                    <td>{stock.display}</td>
                   </tr>
                 ))
               ) : (

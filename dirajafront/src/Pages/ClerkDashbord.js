@@ -12,6 +12,7 @@ import ShopNameDisplay from '../Components/ClerkDashbord/ShopNameDisplay';
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation');
   const shopId = localStorage.getItem('shop_id');
+  const isReliever = designation === "reliever";
 
   return (
     <div className='Page-continer'>
@@ -67,18 +68,26 @@ function ClerkDashbord() {
               </>
             )}
 
-            {designation === "reliever" && (
+            {isReliever && (
               <Link className='clerk-button' to='/relieversales'>Reliever Sales</Link>
             )}
 
-            {shopId === "12" && (
+            {/* View Sales links - Relievers don't see regular view sales links */}
+            {!isReliever && shopId === "12" && (
               <Link className="clerk-button" to="/mabandasales">
                 View Sales
               </Link>
             )}
 
-            {shopId !== "12" && shopId !== "18" && (
+            {!isReliever && shopId !== "12" && shopId !== "18" && (
               <Link className="clerk-button" to="/shopsales">
+                View Sales
+              </Link>
+            )}
+
+            {/* Reliever-specific view sales link */}
+            {isReliever && shopId !== "12" && shopId !== "18" && (
+              <Link className="clerk-button" to="/reliever">
                 View Sales
               </Link>
             )}
@@ -97,7 +106,7 @@ function ClerkDashbord() {
 
             {/* Updated deposit cash link based on designation */}
             {shopId !== "12" && shopId !== "18" && (
-              designation === "reliever" ? (
+              isReliever ? (
                 <Link className="clerk-button" to="/deposit">
                   Deposit Cash
                 </Link>
