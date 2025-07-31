@@ -91,7 +91,11 @@ import PurchasesV2 from './Components/Purchases/GetPurchasesV2';
 import Achive from './Pages/Achive';
 import AddExpenseCategory from './Components/AddExpenseCategory';
 import CashDeposit from './Components/Cashdeposits';
+
 import RelieverSales from './Components/ClerkDashbord/RelieverSales';
+
+import ShopStockList from './Components/ClerkDashbord/ShopStockList';
+
 
 
 
@@ -243,6 +247,7 @@ function App() {
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
 
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
+            <Route path='/shop-stock-level' element={<ClerkLayout><ShopStockList /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>
