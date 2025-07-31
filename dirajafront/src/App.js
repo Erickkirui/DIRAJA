@@ -95,6 +95,7 @@ import CashDeposit from './Components/Cashdeposits';
 import RelieverSales from './Components/ClerkDashbord/RelieverSales';
 
 import ShopStockList from './Components/ClerkDashbord/ShopStockList';
+import ShopSoldItems from './Components/ClerkDashbord/ShopSoldItems';
 
 
 
@@ -248,6 +249,7 @@ function App() {
 
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
             <Route path='/shop-stock-level' element={<ClerkLayout><ShopStockList /></ClerkLayout>} ></Route>
+            <Route path='/sold-items' element={<ClerkLayout><ShopSoldItems /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>
