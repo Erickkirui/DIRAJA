@@ -1,6 +1,8 @@
 from  flask_restful import Resource
 from Server.Models.Users import Users
+from Server.Models.Shops import Shops
 from Server.Models.Employees import Employees
+from Server.Models.StockReport import StockReport
 from app import db
 import bcrypt
 from flask_jwt_extended import create_access_token, create_refresh_token
@@ -29,7 +31,7 @@ class CountUsers(Resource):
         countUsers = Users.query.count()
         return {"total users": countUsers}, 200
 
-class Addusers(Resource):
+class Addusers(Resource):   
     
     def post (self):
         data = request.get_json()
@@ -70,9 +72,10 @@ class UserLogin(Resource):
         if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
             return make_response(jsonify({"error": "Wrong password"}), 401)
 
-        # Prepare response data
+        # Prepare base response
         username = user.username
         user_role = user.role
+
         response_data = {
             "access_token": create_access_token(identity=user.users_id, additional_claims={'roles': [user_role]}),
             "refresh_token": create_refresh_token(identity=user.users_id),
@@ -81,14 +84,23 @@ class UserLogin(Resource):
             "role": user_role
         }
 
-        # Check if the user is a clerk and include shop_id and designation
+        # Additional logic for clerks
         if user_role == "clerk":
             employee = Employees.query.filter_by(work_email=email).one_or_none()
             if employee:
-                response_data["shop_id"] = employee.shop_id
-                response_data["designation"] = employee.designation  # Add designation, even if not "reliever"
+                shop_id = employee.shop_id
+                response_data["shop_id"] = shop_id
+                response_data["designation"] = employee.designation
+
+                # Fetch report_status directly from the Shops model
+                shop = Shops.query.filter_by(shops_id=shop_id).first()
+                if shop:
+                    response_data["report_status"] = shop.report_status
+                else:
+                    response_data["report_status"] = None  # In case shop record is missing
 
         return make_response(jsonify(response_data), 200)
+
 
 
 

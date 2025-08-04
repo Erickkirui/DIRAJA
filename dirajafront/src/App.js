@@ -41,7 +41,7 @@ import GetAllLiveStock from './Components/GetAllLiveStock';
 import ShopSalesDetails from './Components/SingleShopSales';
 
 import UnpaidSales from './Components/CreditSales/UnpaidSales';
-
+import ClerkLayout from './Components/ClerkLayout';
 import AddMSale from './Components/ClerkDashbord/MabandaShop/Newsale';
 import AddMExpense from './Components/ClerkDashbord/MabandaShop/Newexpense';
 import AddMPurchase from './Components/ClerkDashbord/MabandaShop/Newpurchase';
@@ -121,31 +121,8 @@ const Layout = ({ children }) => {
   );
 
 };
-const ClerkLayout = ({ children }) => {
-  return(
-    <>
-    <div className='Page-continer'>
-      <div className='navigation'>
-        <ClerkNavbar />
-      </div>
-      <div className='body-area'>
-        <div className='body-header'>
-        <UserDisplay />
 
-        </div>
-        <div className='page-area'>
-        {children}
-        </div>
-       
-        
-      </div>
-    
-    </div>
-    </>
 
-  );
-
-};
 
 function App() {
   return (
@@ -174,7 +151,7 @@ function App() {
             <Route path='/salescash' element={<Layout><CashSalesPage/></Layout>} ></Route>
             <Route path='/allsales' element={<Layout><AllSales/></Layout>} ></Route>
             <Route path='/sale/:sale_id' element={<Layout><SingleSale /></Layout>} />
-            <Route path='/clerk' element={<ClerkDashbord/>}></Route>
+            <Route path='/clerk' element={<ClerkLayout><ClerkDashbord/></ClerkLayout>}></Route>
             <Route path='/cashsales' element={<ClerkLayout><CashSalesByUser/></ClerkLayout>}></Route>
             <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
             <Route path='/distribute' element = {<ClerkDashbord><ProcurementInventory /> </ClerkDashbord>}></Route>
