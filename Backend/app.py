@@ -52,7 +52,7 @@ def initialize_models():
     from Server.Models.InventoryV2 import InventoryV2
     from Server.Models.ShopstockV2 import ShopStockV2
     from Server.Models.ExpenseCategory import ExpenseCategory
-
+    from Server.Models.StockReport import StockReport
     
     # from Server.Models.Purchases import Purchases
 

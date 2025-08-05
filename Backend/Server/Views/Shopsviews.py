@@ -119,7 +119,8 @@ class GetAllShops(Resource):
             "location" :shop.location,
             "employee":shop.employee,
             "shopstatus" : shop.shopstatus,
-            "created_at" : shop.created_at
+            "created_at" : shop.created_at,
+            "report_status": shop.report_status
 
         } for shop in shops]
 

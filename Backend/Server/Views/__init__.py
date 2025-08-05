@@ -4,71 +4,136 @@ from flask_restful import Api
 api_endpoint = Blueprint 
 
 # add all file inputs 
-from Server.Views.Usersviews import CountUsers,Addusers,UsersResourceById,UserLogin,GetAllUsers
-from Server.Views.Shopsviews import AddShops, ShopsResourceById, GetAllShops
+from Server.Views.Usersviews import (
+    CountUsers, Addusers, UsersResourceById, UserLogin, GetAllUsers
+)
 
-from Server.Views.Shopstockviews import ShopStockDelete, GetShopStock, GetShopStockByShopId,GetAllStock,UpdateShopStockUnitPrice,AvailableItemsByShopResource,ItemDetailsResourceForShop,TransferSystemStock
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer, StockDeletionResource
+from Server.Views.Shopsviews import (
+    AddShops, ShopsResourceById, GetAllShops
+)
 
+from Server.Views.Shopstockviews import (
+    ShopStockDelete, GetShopStock, GetShopStockByShopId, GetAllStock,
+    UpdateShopStockUnitPrice, AvailableItemsByShopResource,
+    ItemDetailsResourceForShop, TransferSystemStock, GetItemsByShopId,
+    BatchDetailsResource, AvailableBatchesResource, AvailableBatchesByShopResource,
+    GetStockValueByShop, TotalStockValue, ShopStockByDate, GetBatchStock,
+    GetItemStock, AddShopStock, BatchDetailsResourceForShop
+)
 
-# from Server.Views.Inventoryviews import  GetAllInventory, InventoryResourceById,NewInventory,TransferInventory
+from Server.Views.Inventoryviews import (
+    AddInventory, GetAllInventory, InventoryResourceById, DistributeInventory,
+    GetTransfer, ManualTransfer, StockDeletionResource, UpdateTransfer,
+    GetTransferById, GetInventoryByBatch, DeleteShopStock
+)
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,GetStockValueByShop,TotalStockValue, ShopStockByDate
+from Server.Views.Mabandafarmviews import (
+    AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale,
+    MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource,
+    MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
+)
 
-from Server.Views.Shopstockviews import GetItemsByShopId,BatchDetailsResource,AvailableBatchesResource,AvailableBatchesByShopResource,BatchDetailsResourceForShop, GetBatchStock,GetItemStock, AddShopStock
+from Server.Views.LiveStock import (
+    GetStock, RegisterStock, CheckInStock, CheckoutStock, DeleteStock,
+    AddStock, GetAllLiveStock, TransferStock, GetShopTransfers, AutoCheckoutStock
+)
 
-from Server.Views.Mabandafarmviews import AddMabandaStock, AddMabandaExpense, AddMabandaPurchase, AddMabandaSale, MabandaSaleResource, MabandaPurchaseResource, MabandaStockResource, MabandaExpenseResource, TotalAmountPaidSalesMabanda, MabandaProfitLossAPI
+from Server.Views.Bankviews import (
+    AddBank, BankResourceById
+)
 
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,GetTransfer,ManualTransfer,UpdateTransfer,GetTransferById
-from Server.Views.LiveStock import GetStock,RegisterStock,CheckInStock,CheckoutStock,DeleteStock,AddStock,GetAllLiveStock,TransferStock,GetShopTransfers,AutoCheckoutStock
+from Server.Views.Expenses import (
+    AllExpenses, AddExpense, GetShopExpenses, ExpensesResources, TotalBalance
+)
 
-from Server.Views.Inventoryviews import AddInventory, GetAllInventory, InventoryResourceById,DistributeInventory,DeleteShopStock,GetInventoryByBatch
-from Server.Views.Bankviews import AddBank, BankResourceById
-from Server.Views.Expenses import AllExpenses,AddExpense,GetShopExpenses,ExpensesResources,TotalBalance
-from Server.Views.Customersviews import AddCustomer, GetAllCustomers, GetCustomerById,GetCustomersByShop
-from Server.Views.Employeeviews import AddNewemployee,GetAllemployees,Employeeresource, UpdateEmployeeShop,GetEmployeeLeaderboard
-from Server.Views.employeeloanview import AddEmployeeLoan,GetEmployeeLoan
+from Server.Views.Customersviews import (
+    AddCustomer, GetAllCustomers, GetCustomerById, GetCustomersByShop
+)
 
+from Server.Views.Employeeviews import (
+    AddNewemployee, GetAllemployees, Employeeresource, UpdateEmployeeShop,
+    GetEmployeeLeaderboard
+)
 
-from Server.Views.Sales import AddSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary,ItemsSoldSummary,UpdateSalePayment,GetUnpaidSales, PaymentMethodsResource, CapturePaymentResource ,CreditHistoryResource, GetSingleSaleByShop,SalesByEmployeeResource
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalAmountPaidForMabanda,TotalAmountPaidPurchasesInventory,SalesSummary,TotalFinancialSummary
+from Server.Views.employeeloanview import (
+    AddEmployeeLoan, GetEmployeeLoan
+)
 
-from Server.Views.Sales import AddSale,GetSale,GetSales,GetSalesByShop,SalesResources, GetPaymentTotals, SalesBalanceResource, TotalBalanceSummary, UpdateSalePayment,GetUnpaidSales, GetUnpaidSalesByClerk, TotalCashSalesByUser, CashSales, CashSalesByUser,GenerateSalesReport
-from Server.Views.ManagerDashbordViews import TotalAmountPaidExpenses,TotalAmountPaidSalesPerShop,CountEmployees,CountShops,TotalAmountPaidAllSales,TotalAmountPaidPerShop,TotalAmountPaidPurchases,StockAlert,TotalSalesByShop,TotalUnpaidAmountAllSales,TotalUnpaidAmountPerClerk,TotalAmountPaidForMabanda,TotalExpensesForMabanda
-from Server.Views.Emailnotifications import Report
-from Server.Views.Accountingviews import AccountTypeResource,AccountTypeListResource,CreateAccount,CreateChartOfAccounts,ChartOfAccountsList,CreateItemAccount,GetAllItemAccounts,SalesLedger,PurchasesLedger
-from Server.Views.AccountBalances import PostBankAccount,DepositToAccount,BankAccountResource,GetAllBankAccounts,DailySalesDeposit,TotalBankBalance
-from Server.Views.Emailnotifications import Report
-from Server.Views.SpoiltStock import AddSpoiltStock,SpoiltStockResource
-from Server.Views.StockItems import PostStockItem,GetAllStockItems,StockItem
-from Server.Views.CashDepositviews import AddCashDeposit, CashDepositResource
+from Server.Views.Sales import (
+    AddSale, GetSales, GetSalesByShop, SalesResources, GetPaymentTotals,
+    SalesBalanceResource, TotalBalanceSummary, ItemsSoldSummary,
+    UpdateSalePayment, GetUnpaidSales, PaymentMethodsResource,
+    CapturePaymentResource, CreditHistoryResource, GetSingleSaleByShop,
+    SalesByEmployeeResource, GetSale, GetUnpaidSalesByClerk,
+    TotalCashSalesByUser, CashSales, CashSalesByUser, GenerateSalesReport
+)
 
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
-from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, MeritPointResource
-from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
+from Server.Views.ManagerDashbordViews import (
+    TotalAmountPaidExpenses, TotalAmountPaidSalesPerShop, CountEmployees,
+    CountShops, TotalAmountPaidAllSales, TotalAmountPaidPerShop,
+    TotalAmountPaidPurchases, StockAlert, TotalSalesByShop,
+    TotalUnpaidAmountAllSales, TotalAmountPaidForMabanda,
+    TotalAmountPaidPurchasesInventory, SalesSummary, TotalFinancialSummary,
+    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda
+)
 
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
+from Server.Views.Emailnotifications import (
+    Report
+)
 
+from Server.Views.Accountingviews import (
+    AccountTypeResource, AccountTypeListResource, CreateAccount,
+    CreateChartOfAccounts, ChartOfAccountsList, CreateItemAccount,
+    GetAllItemAccounts, SalesLedger, PurchasesLedger
+)
 
+from Server.Views.AccountBalances import (
+    PostBankAccount, DepositToAccount, BankAccountResource,
+    GetAllBankAccounts, DailySalesDeposit, TotalBankBalance
+)
 
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser
-from Server.Views.Meritpointsviews import PostMeritPoint, GetAllMeripoints, MeritPointResource
-from Server.Views.MeritandDemerit import AssignMeritPoints, GetMeritLedger
+from Server.Views.SpoiltStock import (
+    AddSpoiltStock, SpoiltStockResource
+)
 
-from Server.Views.Saledepartmentviews import SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser, TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser,TopSalesUsers
-from Server.Views.SupplierView import AddSupplier,GetAllSuppliers
-from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2
+from Server.Views.StockItems import (
+    PostStockItem, GetAllStockItems, StockItem
+)
+
+from Server.Views.CashDepositviews import (
+    AddCashDeposit, CashDepositResource
+)
+
+from Server.Views.Saledepartmentviews import (
+    SalesdepartmentSale, GetSalesdepartmentSales, GetSalesDepartmentSalesByUser,
+    TotalAmountDepartmentSales, TotalAmountDepartmentSalesByUser, TopSalesUsers
+)
+
+from Server.Views.Meritpointsviews import (
+    PostMeritPoint, GetAllMeripoints, MeritPointResource
+)
+
+from Server.Views.MeritandDemerit import (
+    AssignMeritPoints, GetMeritLedger
+)
+
+from Server.Views.SupplierView import (
+    AddSupplier, GetAllSuppliers
+)
+
+from Server.Views.ShopstockviewsV2 import (
+    AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2,
+    GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2,
+    GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2,
+    AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2,
+    ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2,
+    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns
+)
+
 from Server.Views.InventoryV2Views import (
-    GetInventoryByBatchV2,
-    DistributeInventoryV2,
-    DeleteShopStockV2,
-    GetTransferV2,
-    GetTransferByIdV2,
-    UpdateTransferV2,
-    AddInventoryV2,
-    GetAllInventoryV2,
-    InventoryResourceByIdV2,
-    StockDeletionResourceV2,
+    GetInventoryByBatchV2, DistributeInventoryV2, DeleteShopStockV2,
+    GetTransferV2, GetTransferByIdV2, UpdateTransferV2, AddInventoryV2,
+    GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
     ManualTransferV2
 )
 from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, TransferSystemStockV2
@@ -337,3 +402,7 @@ api.add_resource(GetAllExpenseCategories, '/expensecategories')
 api.add_resource(ExpenseCategoryResource, '/expensecategories/<int:category_id>')
 
 
+
+#StockReport 
+api.add_resource(SubmitStockReport, '/report-stock')
+api.add_resource(ResetShopReportStatus, '/reset-report')

@@ -20,7 +20,7 @@ from sqlalchemy import func, or_
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
-from flask import jsonify, request
+from flask import jsonify, request, Response
 from functools import wraps
 from datetime import datetime, timedelta
 from Server.Models.Transactions import TranscationType
@@ -1920,12 +1920,11 @@ class GenerateSalesReport(Resource):
     @jwt_required()
     def post(self):
         try:
-            # Get all filter parameters from request
             filters = request.get_json() or {}
-            
+
             # Build the base query
             sales_query = Sales.query.order_by(Sales.created_at.desc()).join(Shops).join(Users)
-            
+
             # Apply filters
             if filters.get('search_query'):
                 search = f"%{filters['search_query']}%"
@@ -1934,42 +1933,38 @@ class GenerateSalesReport(Resource):
                     Users.username.ilike(search) |
                     Shops.shopname.ilike(search)
                 )
-            
+
             if filters.get('start_date'):
                 try:
                     start_date = datetime.strptime(filters['start_date'], '%Y-%m-%d').date()
                     sales_query = sales_query.filter(db.func.date(Sales.created_at) >= start_date)
                 except ValueError:
                     return {"error": "Invalid start date format. Use YYYY-MM-DD."}, 400
-            
+
             if filters.get('end_date'):
                 try:
                     end_date = datetime.strptime(filters['end_date'], '%Y-%m-%d').date()
                     sales_query = sales_query.filter(db.func.date(Sales.created_at) <= end_date)
                 except ValueError:
                     return {"error": "Invalid end date format. Use YYYY-MM-DD."}, 400
-            
+
             if filters.get('shopname'):
                 sales_query = sales_query.filter(Shops.shopname.ilike(f"%{filters['shopname']}%"))
-            
+
             if filters.get('status'):
                 sales_query = sales_query.filter(Sales.status == filters['status'])
-            
-            # Execute query
+
             sales = sales_query.all()
-            
-            # Prepare data for Excel - we'll create multiple sheets
+
             output = BytesIO()
             writer = pd.ExcelWriter(output, engine='xlsxwriter')
-            
-            # 1. Create summary sheet for all shops with separate columns for items and batch numbers
+
+            # === Sheet 1: All Sales ===
             all_shops_data = []
             for sale in sales:
                 user = Users.query.get(sale.user_id)
                 shop = Shops.query.get(sale.shop_id)
                 total_amount = sum(p.amount_paid for p in sale.payment)
-                
-                # Create separate entries for each item in the sale
                 for item in sale.items:
                     all_shops_data.append({
                         "Sale ID": sale.sales_id,
@@ -1989,24 +1984,20 @@ class GenerateSalesReport(Resource):
                         "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
                         "Note": sale.note or ""
                     })
-            
-            # Create all shops summary sheet
+
             if all_shops_data:
                 df_all_shops = pd.DataFrame(all_shops_data)
                 df_all_shops.to_excel(writer, sheet_name='All Sales', index=False)
-                
-                # Auto-adjust columns' width
                 for column in df_all_shops:
-                    column_width = max(df_all_shops[column].astype(str).map(len).max(), len(column))
+                    width = max(df_all_shops[column].astype(str).map(len).max(), len(column))
                     col_idx = df_all_shops.columns.get_loc(column)
-                    writer.sheets['All Sales'].set_column(col_idx, col_idx, column_width)
-            
-            # 2. Create detailed items sheet with all item details
+                    writer.sheets['All Sales'].set_column(col_idx, col_idx, width)
+
+            # === Sheet 2: Item Details ===
             detailed_items_data = []
             for sale in sales:
                 user = Users.query.get(sale.user_id)
                 shop = Shops.query.get(sale.shop_id)
-                
                 for item in sale.items:
                     detailed_items_data.append({
                         "Sale ID": sale.sales_id,
@@ -2026,76 +2017,66 @@ class GenerateSalesReport(Resource):
                         "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
                         "Note": sale.note or ""
                     })
-            
+
             if detailed_items_data:
                 df_detailed = pd.DataFrame(detailed_items_data)
                 df_detailed.to_excel(writer, sheet_name='Item Details', index=False)
-                
-                # Auto-adjust columns' width
                 for column in df_detailed:
-                    column_width = max(df_detailed[column].astype(str).map(len).max(), len(column))
+                    width = max(df_detailed[column].astype(str).map(len).max(), len(column))
                     col_idx = df_detailed.columns.get_loc(column)
-                    writer.sheets['Item Details'].set_column(col_idx, col_idx, column_width)
-            
-            # 3. Create summary statistics by shop
+                    writer.sheets['Item Details'].set_column(col_idx, col_idx, width)
+
+            # === Sheet 3: Summary Statistics ===
             if sales:
                 summary_stats = []
                 shop_totals = {}
-                
-                # Calculate totals per shop
                 for sale in sales:
                     shop = Shops.query.get(sale.shop_id)
-                    shop_name = shop.shopname if shop else f"Shop_{sale.shop_id}"
-                    total_amount = sum(p.amount_paid for p in sale.payment)
-                    
-                    if shop_name not in shop_totals:
-                        shop_totals[shop_name] = {
-                            'total_sales': 0,
-                            'transaction_count': 0,
-                            'item_count': 0
-                        }
-                    shop_totals[shop_name]['total_sales'] += total_amount
-                    shop_totals[shop_name]['transaction_count'] += 1
-                    shop_totals[shop_name]['item_count'] += len(sale.items)
-                
-                # Prepare summary data
-                for shop_name, totals in shop_totals.items():
+                    name = shop.shopname if shop else f"Shop_{sale.shop_id}"
+                    total = sum(p.amount_paid for p in sale.payment)
+                    if name not in shop_totals:
+                        shop_totals[name] = {'sales': 0, 'txs': 0, 'items': 0}
+                    shop_totals[name]['sales'] += total
+                    shop_totals[name]['txs'] += 1
+                    shop_totals[name]['items'] += len(sale.items)
+
+                for name, t in shop_totals.items():
                     summary_stats.append({
-                        "Shop": shop_name,
-                        "Total Sales": totals['total_sales'],
-                        "Number of Transactions": totals['transaction_count'],
-                        "Number of Items Sold": totals['item_count']
+                        "Shop": name,
+                        "Total Sales": t['sales'],
+                        "Transactions": t['txs'],
+                        "Items Sold": t['items']
                     })
-                
-                # Add overall totals
+
                 summary_stats.append({
                     "Shop": "ALL SHOPS",
-                    "Total Sales": sum(t['total_sales'] for t in shop_totals.values()),
-                    "Number of Transactions": sum(t['transaction_count'] for t in shop_totals.values()),
-                    "Number of Items Sold": sum(t['item_count'] for t in shop_totals.values())
+                    "Total Sales": sum(s['sales'] for s in shop_totals.values()),
+                    "Transactions": sum(s['txs'] for s in shop_totals.values()),
+                    "Items Sold": sum(s['items'] for s in shop_totals.values()),
                 })
-                
+
                 df_summary = pd.DataFrame(summary_stats)
                 df_summary.to_excel(writer, sheet_name='Summary Statistics', index=False)
-                
-                # Auto-adjust columns' width
                 for column in df_summary:
-                    column_width = max(df_summary[column].astype(str).map(len).max(), len(column))
+                    width = max(df_summary[column].astype(str).map(len).max(), len(column))
                     col_idx = df_summary.columns.get_loc(column)
-                    writer.sheets['Summary Statistics'].set_column(col_idx, col_idx, column_width)
-            
+                    writer.sheets['Summary Statistics'].set_column(col_idx, col_idx, width)
+
             writer.close()
             output.seek(0)
-            
-            return send_file(
-                output,
-                as_attachment=True,
-                download_name=f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+            # Return Excel file using Response to avoid fileno error
+            return Response(
+                output.read(),
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                headers={
+                    "Content-Disposition": f"attachment; filename=sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+                }
             )
-            
+
         except Exception as e:
             return {"error": str(e)}, 500
+
         
 
 class ItemsSoldSummary(Resource):

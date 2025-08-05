@@ -72,7 +72,7 @@ function Navbar() {
           </NavLink>
           <NavLink exact to="/stockstatus" className="menu-item" activeClassName="active">
             <FaBoxOpen className="menu-icon" />
-            <li>Shop Stocks</li>
+            <li>Stock Reports</li>
           </NavLink>
           <NavLink to="/promo-sales-table" className="menu-item" activeClassName="active">
             <FaTags className="menu-icon" />

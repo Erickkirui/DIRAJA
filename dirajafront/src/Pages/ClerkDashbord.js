@@ -31,16 +31,8 @@ function ClerkDashbord() {
   const isReliever = designation === "reliever";
 
   return (
-    <div className='Page-continer'>
-      <div className='navigation'>
-        <ClerkNavbar />
-      </div>
-      <div className='body-area'>
-        <div className='body-header'>
-          <UserDisplay />
-        </div>
-        
-
+    <div >
+     
         <div className='page-area'>
           <div className='nav-phone'>
             <ShopNameDisplay />
@@ -174,7 +166,7 @@ function ClerkDashbord() {
           </div>
         </div>
       </div>
-    </div>
+    
   );
 }
 

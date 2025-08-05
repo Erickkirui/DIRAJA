@@ -11,6 +11,8 @@ import TotalCreditSales from '../Components/ManagerDashbord/TotalCreditSales';
 import MabandaProfitLoss from'../Components/ManagerDashbord/MabandaFarmP&L';
 import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
 import SoldItemsList from '../Components/ManagerDashbord/SoldItemsList';
+import ManagerReportStock from '../Components/ManagerDashbord/ManagerStockReport';
+import ShopStatusList from '../Components/ManagerDashbord/ShopStstusList';
 
 
 function Managerdashord() {
@@ -94,8 +96,10 @@ function Managerdashord() {
        </div>
        <div className='long-data-section'>
         {/* <BatchStockList /> */}
+          <ShopStatusList />
         <ItemStockList />
         <SoldItemsList />
+      
        </div>
           
 
