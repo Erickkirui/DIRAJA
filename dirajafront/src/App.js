@@ -96,7 +96,12 @@ import RelieverSales from './Components/ClerkDashbord/RelieverSales';
 
 import ShopStockList from './Components/ClerkDashbord/ShopStockList';
 import ShopSoldItems from './Components/ClerkDashbord/ShopSoldItems';
+import ShopToShopTransfer from './Components/ClerkDashbord/StockTransfer';
 import ManagerReportStock from './Components/ManagerDashbord/ManagerStockReport';
+import StockReports from './Components/ManagerDashbord/StockReports';
+import SingleStockReport from './Components/ManagerDashbord/SingleStockReport';
+import StockReportPage from './Pages/Stockreportspage';
+import AllShopTransfers from './Components/ManagerDashbord/ShopTransfers';
 
 
 
@@ -225,10 +230,13 @@ function App() {
 
            
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
-
+            <Route path="/stockreport" element={<Layout><StockReportPage /></Layout>}></Route>
+            <Route path="/stockreport/:id" element={<Layout><SingleStockReport /></Layout>}></Route>
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
             <Route path='/shop-stock-level' element={<ClerkLayout><ShopStockList /></ClerkLayout>} ></Route>
             <Route path='/sold-items' element={<ClerkLayout><ShopSoldItems /></ClerkLayout>} ></Route>
+            <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
+            <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>}></Route>
            </Routes> 
        
       </Router>

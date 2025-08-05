@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 const ShopStockList = () => {
   const shopId = localStorage.getItem("shop_id");
   const [itemStock, setItemStock] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
@@ -15,23 +14,6 @@ const ShopStockList = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const navigate = useNavigate();
-
-  // Fetch stock items
-  useEffect(() => {
-    const fetchStockItems = async () => {
-      try {
-        const itemsResponse = await axios.get("http://127.0.0.1:5000/api/diraja/stockitems", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
-        setStockItems(itemsResponse.data.stock_items || []);
-      } catch (err) {
-        console.error("Failed to fetch stock items", err);
-      }
-    };
-    fetchStockItems();
-  }, []);
 
   useEffect(() => {
     const fetchShopStock = async () => {
@@ -45,54 +27,7 @@ const ShopStockList = () => {
             },
           }
         );
-        
-        // Process the stock data to include proper display metrics
-        const processedStock = (response.data.item_stocks || []).map(stock => {
-          const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
-          
-          if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
-          
-          // If metric is kgs, don't convert to packets/pieces
-          if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
-            return {
-              ...stock,
-              display: `${stock.total_remaining} kgs`
-            };
-          }
-          
-          // For eggs and kienyeji eggs, display as trays and pieces
-          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
-          if (isEggs && itemInfo.pack_quantity > 0) {
-            const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
-            const pieces = stock.total_remaining % itemInfo.pack_quantity;
-            return {
-              ...stock,
-              display: trays > 0 
-                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
-            };
-          }
-          // For other items with pack quantity, display as packets and pieces
-          else if (itemInfo.pack_quantity > 0) {
-            const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
-            const pieces = stock.total_remaining % itemInfo.pack_quantity;
-            return {
-              ...stock,
-              display: packets > 0
-                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
-            };
-          }
-          // For items without pack quantity, just display with their metric
-          else {
-            return {
-              ...stock,
-              display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
-            };
-          }
-        });
-        
-        setItemStock(processedStock);
+        setItemStock(response.data.item_stocks || []);
       } catch (err) {
         console.error("Error fetching stock data:", err);
         setError("Failed to load stock data for this shop.");
@@ -101,10 +36,8 @@ const ShopStockList = () => {
       }
     };
 
-    if (stockItems.length > 0) {
-      fetchShopStock();
-    }
-  }, [shopId, stockItems]);
+    fetchShopStock();
+  }, [shopId]);
 
   const filteredStock = itemStock.filter((stock) =>
     activeTab === "inStock"
@@ -141,7 +74,7 @@ const ShopStockList = () => {
       setMessageType("success");
       localStorage.setItem("report_status", "true");
       setTimeout(() => {
-        navigate("/depositcash"); // ✅ Step 3: Navigate after success
+        navigate("/depositcash");
       }, 1000);
     } catch (err) {
       const errorMsg =
@@ -155,7 +88,16 @@ const ShopStockList = () => {
 
   return (
     <div>
-      <h2>My Shop Stock</h2>
+      {/* Heading and Transfer Stock Button */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <h2 style={{ margin: 0 }}>My Shop Stock</h2>
+        <button
+          className="button"
+          onClick={() => navigate("/transfer")}
+        >
+          Transfer Stock
+        </button>
+      </div>
 
       {/* Tabs */}
       <div className="tabs-container">
@@ -183,7 +125,6 @@ const ShopStockList = () => {
       )}
 
       {!loading && !error && (
-
         <>
           {message && (
             <Stack sx={{ my: 2 }}>
@@ -195,11 +136,7 @@ const ShopStockList = () => {
 
           <div className="tab-content">
             <table className="inventory-table">
-            <thead>
-        <div className="tab-content">
-          <table className="inventory-table">
-            <thead>
-           
+              <thead>
                 <tr>
                   <th>Item Name</th>
                   <th>Total Remaining</th>
@@ -225,18 +162,17 @@ const ShopStockList = () => {
           </div>
 
           {/* Submit Report Button */}
-          
           <div style={{ marginTop: "20px" }}>
-              <Alert severity="info" style={{ marginBottom: "10px" }}>
-                Check the stock and press submit report it matches. If not, contact the manager.
-              </Alert>
-              <button
-                onClick={handleSubmitReport}
-                disabled={submitting}
-                className="button"
-              >
-                {submitting ? "Submitting..." : "Submit Stock Report"}
-              </button>
+            <Alert severity="info" style={{ marginBottom: "10px" }}>
+              Check the stock and press submit report if it matches. If not, contact the manager.
+            </Alert>
+            <button
+              onClick={handleSubmitReport}
+              disabled={submitting}
+              className="button"
+            >
+              {submitting ? "Submitting..." : "Submit Stock Report"}
+            </button>
           </div>
         </>
       )}
