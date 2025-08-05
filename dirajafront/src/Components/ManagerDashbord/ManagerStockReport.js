@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
-
+import { Alert, Stack } from "@mui/material";
 
 const ManagerReportStock = () => {
   const [itemStock, setItemStock] = useState([]);
@@ -11,7 +11,8 @@ const ManagerReportStock = () => {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
   const [submitting, setSubmitting] = useState(false);
-  const [submitMessage, setSubmitMessage] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
 
   // Popup states
   const [showDifferencePopup, setShowDifferencePopup] = useState(false);
@@ -76,12 +77,13 @@ const ManagerReportStock = () => {
 
   const handleSubmitReport = async () => {
     if (!selectedShopId) {
-      setSubmitMessage("❌ Please select a shop before submitting.");
+      setMessage("❌ Please select a shop before submitting.");
+      setMessageType("error");
       return;
     }
 
     setSubmitting(true);
-    setSubmitMessage("");
+    setMessage("");
 
     const reportData = {};
     itemStock.forEach((item) => {
@@ -108,17 +110,19 @@ const ManagerReportStock = () => {
     };
 
     try {
-      await axios.post("/api/diraja/report-stock", payload, {
+      const response = await axios.post("/api/diraja/report-stock", payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
       });
 
-      setSubmitMessage("✅ Stock report submitted successfully.");
+      setMessage(response.data.message || "✅ Stock report submitted successfully.");
+      setMessageType("success");
       setDifferenceEntries([]);
     } catch (err) {
       console.error("Submit report error:", err);
-      setSubmitMessage("❌ Failed to submit stock report.");
+      setMessage(err.response?.data?.message || "❌ Failed to submit stock report.");
+      setMessageType("error");
     } finally {
       setSubmitting(false);
     }
@@ -156,6 +160,22 @@ const ManagerReportStock = () => {
     <div className="manager-report-container">
       <h2>Manager Report Stock</h2>
 
+      {/* Error and Message Alerts */}
+      {error && (
+        <Stack sx={{ my: 2 }}>
+          <Alert severity="error" variant="outlined">
+            {error}
+          </Alert>
+        </Stack>
+      )}
+      {message && (
+        <Stack sx={{ my: 2 }}>
+          <Alert severity={messageType} variant="outlined">
+            {message}
+          </Alert>
+        </Stack>
+      )}
+
       <div className="top-stock">
         <label>Select Shop:</label>
         <select
@@ -188,9 +208,8 @@ const ManagerReportStock = () => {
       </div>
 
       {loading && <LoadingAnimation />}
-      {error && <p className="error">{error}</p>}
 
-      {!loading && !error && selectedShopId && (
+      {!loading && selectedShopId && (
         <>
           <div className="tab-content">
             <table className="inventory-table">
@@ -221,7 +240,7 @@ const ManagerReportStock = () => {
 
           {/* Report Difference Button */}
           <div style={{ marginTop: "20px" }}>
-            <button onClick={() => setShowDifferencePopup(true)}>
+            <button onClick={() => setShowDifferencePopup(true)} className="button">
               Report Differences
             </button>
           </div>
@@ -257,12 +276,9 @@ const ManagerReportStock = () => {
 
           {/* Submit Button */}
           <div style={{ marginTop: "20px" }}>
-            <button onClick={handleSubmitReport} disabled={submitting}>
+            <button onClick={handleSubmitReport} disabled={submitting} className="button">
               {submitting ? "Submitting..." : "Submit Stock Report"}
             </button>
-            {submitMessage && (
-              <p style={{ marginTop: "10px" }}>{submitMessage}</p>
-            )}
           </div>
         </>
       )}
