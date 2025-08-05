@@ -145,11 +145,17 @@ class AddSale(Resource):
                     return {'message': f'Invalid amount for payment method {pm["method"]}'}, 400
 
         # ===== BANK MAPPING =====
+        # Specific shop to account mappings
+        #Left => shop id
+        #Right => account id
         shop_to_bank_mapping = {
             1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
             7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
-            14: 14, 16: 13
+            14: 14, 16: 13, 19: 22
         }
+        
+        # Default all other shops to account ID 11
+        bank_id = shop_to_bank_mapping.get(shop_id, 11)
 
         # ===== STOCK PROCESSING =====
         stock_processing_errors = []
@@ -1577,7 +1583,7 @@ class GetUnpaidSalesByClerk(Resource):
 
 class SalesByEmployeeResource(Resource):
     @jwt_required()
-    def get(self, username, shop_id):
+    def get(self, username):
         try:
             # Get pagination parameters
             page = int(request.args.get('page', 1))
@@ -1587,10 +1593,17 @@ class SalesByEmployeeResource(Resource):
             # Use only the first name segment of the username
             first_name = username.split()[0]
 
-            # Base query for filtering sales by username and shop_id
-            base_query = Sales.query.join(Users, Users.users_id == Sales.user_id) \
-                                    .filter(Users.username.like(f"{first_name}%"), Sales.shop_id == shop_id) \
-                                    .order_by(Sales.created_at.desc())
+            # Find the user by username to get users_id
+            user = Users.query.filter(Users.username.like(f"{first_name}%")).first()
+            if not user:
+                return {"message": "Employee not found"}, 404
+
+            users_id = user.users_id
+
+            # Base query for filtering sales by users_id
+            base_query = Sales.query.filter(
+                Sales.user_id == users_id
+            ).order_by(Sales.created_at.desc())
 
             total_sales = base_query.count()  # Total records
             total_pages = (total_sales + limit - 1) // limit
@@ -1599,7 +1612,7 @@ class SalesByEmployeeResource(Resource):
             sales = base_query.offset(offset).limit(limit).all()
 
             if not sales:
-                return {"message": "No sales found for this employee in the specified shop."}, 404
+                return {"message": "No sales found for this employee."}, 404
 
             sales_data = []
             for sale in sales:
@@ -1658,8 +1671,7 @@ class SalesByEmployeeResource(Resource):
 
             return {
                 "employee": username,
-                "shop_id": shop_id,
-                "shop_name": shopname,
+                "employee_id": users_id,
                 "total_sales": total_sales,
                 "total_amount": sum(sale['total_amount_paid'] for sale in sales_data),
                 "current_page": page,

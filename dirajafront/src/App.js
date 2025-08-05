@@ -91,9 +91,13 @@ import PurchasesV2 from './Components/Purchases/GetPurchasesV2';
 import Achive from './Pages/Achive';
 import AddExpenseCategory from './Components/AddExpenseCategory';
 import CashDeposit from './Components/Cashdeposits';
+
+import RelieverSales from './Components/ClerkDashbord/RelieverSales';
+
 import ShopStockList from './Components/ClerkDashbord/ShopStockList';
 import ShopSoldItems from './Components/ClerkDashbord/ShopSoldItems';
 import ManagerReportStock from './Components/ManagerDashbord/ManagerStockReport';
+
 
 
 
@@ -157,6 +161,7 @@ function App() {
             <Route path='/procurement' element={<ClerkLayout><Procurement /></ClerkLayout>}></Route>
             <Route path='/distribute' element = {<ClerkDashbord><ProcurementInventory /> </ClerkDashbord>}></Route>
             <Route path='/shopsales' element={<ClerkLayout><ClerkSales /></ClerkLayout>}></Route>
+            <Route path='/reliever' element={<ClerkLayout><RelieverSales /></ClerkLayout>}></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/shopcustomers' element={<ClerkLayout><ShopCustomers/></ClerkLayout>} ></Route>
             <Route path='/relieversales' element={<ClerkLayout><AddSale /></ClerkLayout>}></Route>
