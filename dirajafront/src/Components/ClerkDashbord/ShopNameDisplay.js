@@ -32,6 +32,9 @@ const ShopNameDisplay = () => {
 
         if (shop) {
           setShopName(shop.shopname);
+
+          // ✅ Update localStorage with report_status (as a string)
+          localStorage.setItem("report_status", shop.report_status ? "true" : "false");
         } else {
           setError("Shop not found.");
         }
@@ -45,7 +48,7 @@ const ShopNameDisplay = () => {
 
   return (
     <div className="shop-name">
-      {error ? <p className="error-text">{error}</p> : <p> {shopName}</p>}
+      {error ? <p className="error-text">{error}</p> : <p>{shopName}</p>}
     </div>
   );
 };
