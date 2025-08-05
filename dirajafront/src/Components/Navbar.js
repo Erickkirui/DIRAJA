@@ -79,7 +79,7 @@ function Navbar() {
             <li>Promo Sales</li>
           </NavLink>
 
-          {(username === 'Leo' || username === 'Namai' || username === 'External Auditor') && (
+          {(username === 'Leo' ||  username === 'Support' || username === 'Namai' || username === 'External Auditor') && (
             <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
               <FaBalanceScale className="menu-icon" />
               <li>Account Balances</li>

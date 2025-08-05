@@ -75,6 +75,7 @@ from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatc
 
 from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, ItemDetailsResourceForShopV2, StockReturns
 from Server.Views.ExpenseCategoies import PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
+from Server.Views.Shoptoshoptransferviews import ShopToShopTransfer, GetAllShopToShopTransfers
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -323,6 +324,11 @@ api.add_resource(GetAllStockV2, '/allstockv2')
 api.add_resource(ItemDetailsResourceForShopV2, '/shop-itemdetailsv2')
 api.add_resource(TransferSystemStockV2, "/transfer-system-stock")
 api.add_resource(StockReturns, "/stockreturns")
+
+
+#Shoptoshop transfer
+api.add_resource(ShopToShopTransfer, '/transfer-stock')
+api.add_resource(GetAllShopToShopTransfers, '/allstocktransfers')
 
 
 #Expensecategories
