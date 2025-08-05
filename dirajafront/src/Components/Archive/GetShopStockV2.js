@@ -133,7 +133,7 @@ const ShopStockV2 = () => {
 
     return (
         <div className="shopStocks-container">
-            <h2>System stock V2</h2>
+            <h2>System stock</h2>
             {/* Search & Filter */}
             <div className="filter-container">
                 <input

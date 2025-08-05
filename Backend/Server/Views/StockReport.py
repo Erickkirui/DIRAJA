@@ -14,26 +14,22 @@ class SubmitStockReport(Resource):
 
         user_id = get_jwt_identity()
         shop_id = data.get('shop_id')
-        report_data = data.get('report')  # Full report JSON (includes stock levels and differences)
+        report_data = data.get('report')  # JSON report
         comment = data.get('note', '')
 
         if not shop_id or not report_data:
             return {'message': 'shop_id and report data are required'}, 400
 
-        # Check shop existence
+        # ✅ Check shop existence
         shop = Shops.query.filter_by(shops_id=shop_id).first()
         if not shop:
             return {'message': 'Shop not found'}, 404
 
-        # ✅ Check if a report already exists for today
-        existing_report = StockReport.query.filter_by(shop_id=shop_id).filter(
-            db.func.date(StockReport.timestamp) == date.today()
-        ).first()
-
-        if existing_report:
+        # ✅ Check if a report has already been submitted (today) based on report_status
+        if shop.report_status:
             return {'message': 'Stock report already submitted today'}, 400
 
-        # Optional: Extract general reason/comment from differences if not provided
+        # Optional: Extract comment from differences
         if not comment:
             differences = report_data.get("differences", {})
             for item in differences.values():
@@ -42,7 +38,7 @@ class SubmitStockReport(Resource):
                     comment = reason
                     break
 
-        # Create the StockReport
+        # ✅ Create the StockReport
         report = StockReport(
             shop_id=shop_id,
             user_id=user_id,
@@ -50,13 +46,14 @@ class SubmitStockReport(Resource):
             comment=comment
         )
 
-        # Optionally update report_status in shop table (legacy)
+        # ✅ Mark the shop as reported for today
         shop.report_status = True
 
         db.session.add(report)
         db.session.commit()
 
         return {'message': 'Stock report submitted successfully'}, 201
+
 
 
 class ResetShopReportStatus(Resource):

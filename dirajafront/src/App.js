@@ -93,6 +93,7 @@ import AddExpenseCategory from './Components/AddExpenseCategory';
 import CashDeposit from './Components/Cashdeposits';
 import ShopStockList from './Components/ClerkDashbord/ShopStockList';
 import ShopSoldItems from './Components/ClerkDashbord/ShopSoldItems';
+import ManagerReportStock from './Components/ManagerDashbord/ManagerStockReport';
 
 
 
@@ -167,7 +168,8 @@ function App() {
             <Route path='/CashFlowStatement' element={<Layout><CashFlowStatement/></Layout>} ></Route>
             <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
             <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>} ></Route>
-            <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route>
+            {/* <Route path='/stockstatus' element={<Layout><GetAllLiveStock /></Layout>} ></Route> */}
+            <Route path='/stockstatus' element={<Layout><ManagerReportStock /></Layout>} ></Route>
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
             <Route path='/Salesumery' element={<Layout><SalesSummaryTable /></Layout>} ></Route>
