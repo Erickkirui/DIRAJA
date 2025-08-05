@@ -136,11 +136,19 @@ from Server.Views.InventoryV2Views import (
     GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
     ManualTransferV2
 )
-from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, TransferSystemStockV2
 
-from Server.Views.ShopstockviewsV2 import AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, ItemDetailsResourceForShopV2, StockReturns
-from Server.Views.ExpenseCategoies import PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
-from Server.Views.Shoptoshoptransferviews import ShopToShopTransfer, GetAllShopToShopTransfers
+from Server.Views.ShopstockviewsV2 import (
+    AddShopStockV2, GetAllStockV2, GetBatchStockV2, GetItemsByShopIdV2, GetItemStockV2, GetStockValueByShopV2, GetShopStockByShopIdV2, GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2, AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2, ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2, ItemDetailsResourceForShopV2, StockReturns
+)
+from Server.Views.ExpenseCategoies import (
+    PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
+)
+from Server.Views.Shoptoshoptransferviews import (
+    ShopToShopTransfer, GetAllShopToShopTransfers
+)
+from Server.Views.StockReport import (
+    SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
+)
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -406,3 +414,5 @@ api.add_resource(ExpenseCategoryResource, '/expensecategories/<int:category_id>'
 #StockReport 
 api.add_resource(SubmitStockReport, '/report-stock')
 api.add_resource(ResetShopReportStatus, '/reset-report')
+api.add_resource(GetStockReports, '/stock-reports')
+api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
