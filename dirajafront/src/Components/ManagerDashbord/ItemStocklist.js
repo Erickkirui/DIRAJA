@@ -12,7 +12,7 @@ const ItemStockList = () => {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
 
-  // Fetch all shops for dropdown and stock items
+  // Fetch all shops and stock items
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -22,7 +22,6 @@ const ItemStockList = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-
         const sortedShops = shopsResponse.data.sort((a, b) =>
           a.shopname.localeCompare(b.shopname)
         );
@@ -42,7 +41,7 @@ const ItemStockList = () => {
     fetchInitialData();
   }, []);
 
-  // Fetch item stock (optionally filtered by shop)
+  // Fetch item stock
   useEffect(() => {
     const fetchItemStock = async () => {
       setLoading(true);
@@ -56,52 +55,74 @@ const ItemStockList = () => {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        
-        // Process the stock data to include proper display metrics
-        const processedStock = (response.data.item_stocks || []).map(stock => {
-          const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
-          
-          if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
-          
-          // If metric is kgs, don't convert to packets/pieces
-          if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
+
+        const processedStock = (response.data.item_stocks || []).map((stock) => {
+          const itemInfo = stockItems.find(
+            (item) => item.item_name === stock.itemname
+          );
+
+          // Default display if no itemInfo found
+          if (!itemInfo) {
             return {
               ...stock,
-              display: `${stock.total_remaining} kgs`
+              display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
             };
           }
-          
-          // For eggs, display as trays and pieces
-          if (itemInfo.item_name.toLowerCase() === "eggs" && itemInfo.pack_quantity > 0) {
-            const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+
+          // If metric is kgs, show in kgs only
+          if (stock.metric && stock.metric.toLowerCase() === "kgs") {
+            return {
+              ...stock,
+              display: `${stock.total_remaining} kgs`,
+            };
+          }
+
+          // For eggs → trays and pieces
+          if (
+            itemInfo.item_name.toLowerCase().includes("eggs") &&
+            (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
+          ) {
+            const packQty =
+              itemInfo.pack_quantity && itemInfo.pack_quantity > 0
+                ? itemInfo.pack_quantity
+                : 30; // default tray size
+            const trays = Math.floor(stock.total_remaining / packQty);
+            const pieces = stock.total_remaining % packQty;
+            return {
+              ...stock,
+              display:
+                trays > 0
+                  ? `${trays} tray${trays !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
+            };
+          }
+
+          // For other items with pack quantity → pkts and pcs
+          if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(
+              stock.total_remaining / itemInfo.pack_quantity
+            );
             const pieces = stock.total_remaining % itemInfo.pack_quantity;
             return {
               ...stock,
-              display: trays > 0 
-                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
+              display:
+                packets > 0
+                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
             };
           }
-          // For other items with pack quantity, display as packets and pieces
-          else if (itemInfo.pack_quantity > 0) {
-            const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
-            const pieces = stock.total_remaining % itemInfo.pack_quantity;
-            return {
-              ...stock,
-              display: packets > 0
-                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
-            };
-          }
-          // For items without pack quantity, just display with their metric
-          else {
-            return {
-              ...stock,
-              display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
-            };
-          }
+
+          // Fallback
+          return {
+            ...stock,
+            display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
+          };
         });
-        
+
         setItemStock(processedStock);
       } catch (err) {
         setError("An error occurred while fetching item stock data.");
@@ -109,7 +130,7 @@ const ItemStockList = () => {
         setLoading(false);
       }
     };
-    
+
     if (stockItems.length > 0) {
       fetchItemStock();
     }

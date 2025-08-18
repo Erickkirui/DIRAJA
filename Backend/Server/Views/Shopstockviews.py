@@ -838,29 +838,33 @@ class GetItemStock(Resource):
         try:
             shop_id = request.args.get('shop_id', type=int)
 
-            # Base query
+            # Query only from ShopStockV2
             query = db.session.query(
-                InventoryV2.itemname,
-                InventoryV2.metric,
+                ShopStockV2.itemname,
+                ShopStockV2.metric,
                 func.sum(ShopStockV2.quantity).label("total_quantity")
-            ).join(InventoryV2, ShopStockV2.inventoryv2_id == InventoryV2.inventoryV2_id)
+            ).filter(
+                ShopStockV2.quantity > 0  # Only batches with stock remaining
+            )
 
-            # Optional filter by shop_id
+            # Optional filter by shop
             if shop_id:
                 query = query.filter(ShopStockV2.shop_id == shop_id)
 
-            # Group and execute
-            item_stock = query.group_by(InventoryV2.itemname, InventoryV2.metric).all()
+            # Group by item and metric
+            item_stock = query.group_by(ShopStockV2.itemname, ShopStockV2.metric).all()
 
+            # Prepare list
             item_stock_list = [
                 {
                     "itemname": itemname,
                     "metric": metric,
-                    "total_remaining": round(total_quantity, 2)
+                    "total_remaining": round(total_quantity, 3)
                 }
                 for itemname, metric, total_quantity in item_stock
             ]
 
+            # Response
             response = {
                 "shop_id": shop_id,
                 "total_items": len(item_stock_list),

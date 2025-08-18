@@ -72,47 +72,54 @@ const SoldItemsList = () => {
 
         // Process sold items with display metrics
         const processedItems = (res.data.items || []).map(item => {
-          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
-          
-          if (!itemInfo) return { ...item, display: `${item.total_sold} ${item.metric || 'pcs'}` };
-          
-          // If metric is kgs, don't convert to packets/pieces
-          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+          const itemInfo = stockItems.find(
+            stockItem => stockItem.item_name === item.item_name
+          );
+
+          // If no match in stock items, just display quantity + metric
+          if (!itemInfo) {
+            return { ...item, display: `${item.total_sold} ${item.metric || "pcs"}` };
+          }
+
+          // If metric is kgs, display in kgs only
+          if (item.metric && item.metric.toLowerCase() === "kgs") {
             return {
               ...item,
               display: `${item.total_sold} kgs`
             };
           }
-          
-          // For eggs, display as trays and pieces
-          if (itemInfo.item_name.toLowerCase() === "eggs" && itemInfo.pack_quantity > 0) {
+
+          // Eggs: display as trays and pieces
+          if (itemInfo.item_name.toLowerCase().includes("egg") && itemInfo.pack_quantity > 0) {
             const trays = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
             return {
               ...item,
-              display: trays > 0 
-                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
+              display:
+                trays > 0
+                  ? `${trays} tray${trays !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+                  : `${pieces} pcs`
             };
           }
-          // For other items with pack quantity, display as packets and pieces
-          else if (itemInfo.pack_quantity > 0) {
+
+          // Other items with pack quantity: display as packets and pieces
+          if (itemInfo.pack_quantity > 0) {
             const packets = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
             return {
               ...item,
-              display: packets > 0
-                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
+              display:
+                packets > 0
+                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+                  : `${pieces} pcs`
             };
           }
-          // For items without pack quantity, just display with their metric
-          else {
-            return {
-              ...item,
-              display: `${item.total_sold} ${item.metric || 'pcs'}`
-            };
-          }
+
+          // Items without pack quantity: display quantity + metric
+          return {
+            ...item,
+            display: `${item.total_sold} ${item.metric || "pcs"}`
+          };
         });
 
         setSoldItems(processedItems);
@@ -184,7 +191,7 @@ const SoldItemsList = () => {
                 soldItems.map((item, index) => (
                   <tr key={index}>
                     <td>{item.item_name}</td>
-                    <td>{item.display}</td> {/* Changed to use display property */}
+                    <td>{item.display}</td>
                   </tr>
                 ))
               ) : (

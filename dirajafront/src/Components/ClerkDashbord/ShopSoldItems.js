@@ -8,7 +8,7 @@ const { RangePicker } = DatePicker;
 
 const ShopSoldItems = () => {
   const [soldItems, setSoldItems] = useState([]);
-  const [stockItems, setStockItems] = useState([]); // Added for item info
+  const [stockItems, setStockItems] = useState([]);
   const [dateRange, setDateRange] = useState([
     dayjs().subtract(1, "day"),
     dayjs().subtract(1, "day"),
@@ -22,11 +22,14 @@ const ShopSoldItems = () => {
   useEffect(() => {
     const fetchStockItems = async () => {
       try {
-        const itemsResponse = await axios.get("http://127.0.0.1:5000/api/diraja/stockitems", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
+        const itemsResponse = await axios.get(
+          "/api/diraja/stockitems",
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          }
+        );
         setStockItems(itemsResponse.data.stock_items || []);
       } catch (err) {
         console.error("Failed to fetch stock items", err);
@@ -57,55 +60,73 @@ const ShopSoldItems = () => {
           },
         });
 
-        // Process sold items with display metrics
-        const processedItems = (res.data.items || []).map(item => {
-          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
-          
-          if (!itemInfo) return { ...item, display: `${item.total_sold} ${item.metric || 'pcs'}` };
-          
-          // If metric is kgs, don't convert to packets/pieces
-          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+        const processedItems = (res.data.items || []).map((item) => {
+          const itemInfo = stockItems.find(
+            (stockItem) => stockItem.item_name === item.item_name
+          );
+
+          // If no stock info, fallback to metric
+          if (!itemInfo) {
             return {
               ...item,
-              display: `${item.total_sold} kgs`
+              display: `${item.total_sold} ${item.metric || "pcs"}`,
             };
           }
-          
-          // For eggs, display as trays and pieces
-          if (itemInfo.item_name.toLowerCase() === "eggs" && itemInfo.pack_quantity > 0) {
+
+          // If metric is kgs, display in kgs only
+          if (item.metric && item.metric.toLowerCase() === "kgs") {
+            return {
+              ...item,
+              display: `${item.total_sold} kgs`,
+            };
+          }
+
+          // Eggs — match any name containing "egg"
+          if (
+            itemInfo.item_name.toLowerCase().includes("egg") &&
+            itemInfo.pack_quantity > 0
+          ) {
             const trays = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
             return {
               ...item,
-              display: trays > 0 
-                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
+              display:
+                trays > 0
+                  ? `${trays} tray${trays !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
             };
           }
-          // For other items with pack quantity, display as packets and pieces
-          else if (itemInfo.pack_quantity > 0) {
+
+          // Other items with pack quantity
+          if (itemInfo.pack_quantity > 0) {
             const packets = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
             return {
               ...item,
-              display: packets > 0
-                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
+              display:
+                packets > 0
+                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
             };
           }
-          // For items without pack quantity, just display with their metric
-          else {
-            return {
-              ...item,
-              display: `${item.total_sold} ${item.metric || 'pcs'}`
-            };
-          }
+
+          // No pack quantity — fallback
+          return {
+            ...item,
+            display: `${item.total_sold} ${item.metric || "pcs"}`,
+          };
         });
 
         setSoldItems(processedItems);
       } catch (err) {
         console.error("Error fetching sold items:", err);
-        setError(err.response?.data?.error || err.message || "Failed to fetch data");
+        setError(
+          err.response?.data?.error || err.message || "Failed to fetch data"
+        );
       } finally {
         setLoading(false);
       }
@@ -154,7 +175,7 @@ const ShopSoldItems = () => {
                 soldItems.map((item, index) => (
                   <tr key={index}>
                     <td>{item.item_name}</td>
-                    <td>{item.display}</td> {/* Changed to use display property */}
+                    <td>{item.display}</td>
                   </tr>
                 ))
               ) : (
