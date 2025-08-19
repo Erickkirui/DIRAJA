@@ -98,6 +98,8 @@ import ShopStockList from './Components/ClerkDashbord/ShopStockList';
 import ShopSoldItems from './Components/ClerkDashbord/ShopSoldItems';
 import ShopToShopTransfer from './Components/ClerkDashbord/StockTransfer';
 import ManagerReportStock from './Components/ManagerDashbord/ManagerStockReport';
+
+import StockMovementList from './Components/ManagerDashbord/StockMovementList';
 import StockReports from './Components/ManagerDashbord/StockReports';
 import SingleStockReport from './Components/ManagerDashbord/SingleStockReport';
 import StockReportPage from './Pages/Stockreportspage';
@@ -183,11 +185,7 @@ function App() {
             <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>} ></Route>
             <Route path='/credit-sale' element ={<Layout><CreditsalePage /></Layout>} ></Route>
             <Route path='/Salesumery' element={<Layout><SalesSummaryTable /></Layout>} ></Route>
-
-
             <Route path='/mabandapage' element ={<Layout><MabandaPage /></Layout>} ></Route>
-
-
             <Route path='/mabandasale' element={<ClerkLayout><AddMSale /></ClerkLayout>} ></Route>
             <Route path='/mabandaexpense' element={<ClerkLayout><AddMExpense /></ClerkLayout>} ></Route>
             <Route path='/mabandapurchase' element={<Layout><AddMPurchase /></Layout>} ></Route>
@@ -235,8 +233,9 @@ function App() {
             <Route path="/shopstockv2" element={<Layout><ShopStockV2/></Layout>}></Route>
             <Route path='/shop-stock-level' element={<ClerkLayout><ShopStockList /></ClerkLayout>} ></Route>
             <Route path='/sold-items' element={<ClerkLayout><ShopSoldItems /></ClerkLayout>} ></Route>
+           <Route path="/stock-movement" element={<Layout><StockMovementList /></Layout>} ></Route>
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
-            <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>}></Route>
+            <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Lay
            </Routes> 
        
       </Router>

@@ -1,4 +1,4 @@
-from  flask_restful import Resource
+from  flask_restful import Resource,reqparse
 from app import db
 from Server.Models.Inventory import Inventory
 from Server.Models.InventoryV2 import InventoryV2
@@ -14,17 +14,22 @@ from Server.Models.SoldItems import SoldItem
 from Server.Models.Employees import Employees
 from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
+from Server.Models.SpoiltStock import SpoiltStock
+from Server.Models.ShopTransfers import ShopTransfer
+from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Mabandafarm import MabandaSale, MabandaExpense
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
 from sqlalchemy.orm import aliased
+from sqlalchemy import or_
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
 from flask import current_app
 import traceback
 from sqlalchemy import func
+
 
 def check_role(required_role):
     def wrapper(fn):
@@ -1128,3 +1133,145 @@ class TotalFinancialSummary(Resource):
                 "error": "An error occurred while fetching the financial summary.",
                 "details": str(e)
             }, 500
+
+
+class StockMovement(Resource):
+    @jwt_required()
+    def get(self):
+        # Set up request parser
+        parser = reqparse.RequestParser()
+        parser.add_argument('shop_id', type=int, help='Filter by specific shop ID')
+        parser.add_argument('days', type=int, default=30, help='Number of days to look back (ignored if from_date & end_date are provided)')
+        parser.add_argument('from_date', type=str, help='Start date in YYYY-MM-DD format')
+        parser.add_argument('end_date', type=str, help='End date in YYYY-MM-DD format')
+        args = parser.parse_args()
+
+        shop_id = args['shop_id']
+        days = args['days']
+        from_date = args['from_date']
+        end_date_arg = args['end_date']
+
+        try:
+            # Calculate date range
+            if from_date and end_date_arg:
+                start_date = datetime.strptime(from_date, "%Y-%m-%d")
+                end_date = datetime.strptime(end_date_arg, "%Y-%m-%d") + timedelta(days=1)
+                period_label = f"{from_date} to {end_date_arg}"
+            else:
+                end_date = datetime.utcnow()
+                start_date = end_date - timedelta(days=days)
+                period_label = f"Last {days} days"
+
+            # Initialize response
+            response = {
+                'time_period': period_label,
+                'transfers': [],
+                'spoilt_items': [],
+                'returns': [],
+                'shop_transfers': []
+            }
+            if shop_id:
+                response['shop_id'] = shop_id
+
+            # --- Transfers ---
+            transfer_filters = [
+                TransfersV2.created_at >= start_date,
+                TransfersV2.created_at < end_date
+            ]
+            if shop_id:
+                transfer_filters.append(TransfersV2.shop_id == shop_id)
+
+            for transfer in TransfersV2.query.filter(*transfer_filters).all():
+                response['transfers'].append({
+                    'type': 'inventory_transfer',
+                    'id': transfer.transferv2_id,
+                    'item_name': transfer.itemname,
+                    'quantity': transfer.quantity,
+                    'metric': transfer.metric,
+                    'batch_number': transfer.BatchNumber,
+                    'unit_cost': transfer.unitCost,
+                    'total_cost': transfer.total_cost,
+                    'date': transfer.created_at.isoformat(),
+                    'source': 'inventory',
+                    'destination': f'shop {transfer.shop_id}',
+                    'shop_id': transfer.shop_id
+                })
+
+            # --- Spoilt Items ---
+            spoilt_filters = [
+                SpoiltStock.created_at >= start_date,
+                SpoiltStock.created_at < end_date
+            ]
+            if shop_id:
+                spoilt_filters.append(SpoiltStock.shop_id == shop_id)
+
+            for item in SpoiltStock.query.filter(*spoilt_filters).all():
+                response['spoilt_items'].append({
+                    'type': 'spoilt_item',
+                    'id': item.id,
+                    'item_name': item.item,
+                    'quantity': item.quantity,
+                    'metric': item.unit,
+                    'disposal_method': item.disposal_method,
+                    'collector_name': item.collector_name,
+                    'comment': item.comment,
+                    'date': item.created_at.isoformat(),
+                    'location': f'shop {item.shop_id}',
+                    'shop_id': item.shop_id
+                })
+
+            # --- Returns ---
+            return_filters = [
+                ReturnsV2.return_date >= start_date,
+                ReturnsV2.return_date < end_date
+            ]
+            if shop_id:
+                return_filters.append(ReturnsV2.shop_id == shop_id)
+
+            for ret in ReturnsV2.query.filter(*return_filters).all():
+                response['returns'].append({
+                    'type': 'return',
+                    'id': ret.returnv2_id,
+                    'item_name': ret.inventory.itemname if ret.inventory else 'Unknown',
+                    'quantity': ret.quantity,
+                    'reason': ret.reason,
+                    'date': ret.return_date.isoformat(),
+                    'source': f'shop {ret.shop_id}',
+                    'destination': 'inventory',
+                    'shop_id': ret.shop_id
+                })
+
+            # --- Shop Transfers ---
+            shop_transfer_filters = [
+                ShopTransfer.created_at >= start_date,
+                ShopTransfer.created_at < end_date
+            ]
+            if shop_id:
+                shop_transfer_filters.append(or_(
+                    ShopTransfer.shop_id == shop_id,
+                    ShopTransfer.fromshop == str(shop_id)
+                ))
+
+            for transfer in ShopTransfer.query.filter(*shop_transfer_filters).all():
+                is_outgoing = (shop_id and transfer.fromshop == str(shop_id))
+                response['shop_transfers'].append({
+                    'type': 'shop_transfer',
+                    'id': transfer.id,
+                    'item_name': transfer.item_name,
+                    'quantity': transfer.quantity,
+                    'metric': transfer.metric,
+                    'date': transfer.created_at.isoformat(),
+                    'source': f'shop {transfer.fromshop}' if is_outgoing else f'shop {transfer.shop_id}',
+                    'destination': f'shop {transfer.toshop}' if is_outgoing else f'shop {transfer.shop_id}',
+                    'direction': 'outgoing' if is_outgoing else 'incoming',
+                    'shop_id': int(transfer.fromshop) if is_outgoing else transfer.shop_id
+                })
+
+            # ✅ return JSON properly (correct headers)
+            return jsonify(response)
+
+        except Exception as e:
+            return jsonify({
+                "message": "Error retrieving stock movement data",
+                "error": str(e)
+            }), 500
