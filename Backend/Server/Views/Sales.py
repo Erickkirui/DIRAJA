@@ -786,8 +786,8 @@ class SalesResources(Resource):
             return {"sale": sale_data}, 200
 
         except Exception as e:
-            return {"error": str(e)}, 500
-
+            return {"error": str(e)}, 500 
+        
     @jwt_required()
     def put(self, sales_id):
         try:
@@ -796,8 +796,9 @@ class SalesResources(Resource):
                 return {"message": "Sale not found"}, 404
 
             data = request.get_json()
+            stock_updates = {}  # To track stock quantity changes
 
-            # Update fields if they exist in the request data
+            # Update Sale fields
             if 'customer_name' in data:
                 sale.customer_name = data['customer_name']
             if 'status' in data:
@@ -808,14 +809,133 @@ class SalesResources(Resource):
                 sale.note = data['note']
             if 'promocode' in data:
                 sale.promocode = data['promocode']
+            if 'balance' in data:
+                sale.balance = data['balance']
 
-            # If you need to update sold items, handle separately or through another route
+            # Update or create Sold Items
+            if 'items' in data:
+                # First delete existing items if not in new data
+                existing_item_ids = [item.id for item in sale.items]
+                new_item_ids = [item.get('id') for item in data['items'] if item.get('id')]
+                
+                # Delete items not in new data and restore stock
+                for item in sale.items:
+                    if item.id not in new_item_ids:
+                        # Restore the stock quantity before deleting
+                        stock = ShopStockV2.query.get(item.stockv2_id)
+                        if stock:
+                            stock.quantity += item.quantity
+                            stock_updates[item.stockv2_id] = stock.quantity
+                        SoldItem.query.filter_by(id=item.id).delete()
+
+                # Update or create items
+                for item_data in data['items']:
+                    if 'id' in item_data and item_data['id'] in existing_item_ids:
+                        # Update existing item
+                        item = SoldItem.query.get(item_data['id'])
+                        stock = ShopStockV2.query.get(item.stockv2_id)
+                        
+                        # Calculate quantity difference
+                        old_quantity = item.quantity
+                        new_quantity = item_data.get('quantity', old_quantity)
+                        quantity_diff = new_quantity - old_quantity
+                        
+                        # Update stock if quantity changed
+                        if quantity_diff != 0 and stock:
+                            # Check if enough stock is available for increase
+                            if quantity_diff > 0 and stock.quantity < quantity_diff:
+                                return {"error": f"Insufficient stock for item {item.item_name}. Available: {stock.quantity}"}, 400
+                            
+                            stock.quantity -= quantity_diff
+                            stock_updates[item.stockv2_id] = stock.quantity
+                        
+                        # Update item fields
+                        item.item_name = item_data.get('item_name', item.item_name)
+                        item.quantity = new_quantity
+                        item.metric = item_data.get('metric', item.metric)
+                        item.unit_price = item_data.get('unit_price', item.unit_price)
+                        item.total_price = item_data.get('total_price', item.total_price)
+                        item.BatchNumber = item_data.get('BatchNumber', item.BatchNumber)
+                        item.stockv2_id = item_data.get('stockv2_id', item.stockv2_id)
+                        item.Cost_of_sale = item_data.get('Cost_of_sale', item.Cost_of_sale)
+                        item.Purchase_account = item_data.get('Purchase_account', item.Purchase_account)
+                        item.LivestockDeduction = item_data.get('LivestockDeduction', item.LivestockDeduction)
+                    else:
+                        # Create new item
+                        stockv2_id = item_data['stockv2_id']
+                        quantity = item_data['quantity']
+                        stock = ShopStockV2.query.get(stockv2_id)
+                        
+                        # Check stock availability
+                        if not stock:
+                            return {"error": f"Stock item with ID {stockv2_id} not found"}, 404
+                        if stock.quantity < quantity:
+                            return {"error": f"Insufficient stock for item {item_data['item_name']}. Available: {stock.quantity}"}, 400
+                        
+                        # Deduct from stock
+                        stock.quantity -= quantity
+                        stock_updates[stockv2_id] = stock.quantity
+                        
+                        new_item = SoldItem(
+                            sales_id=sales_id,
+                            item_name=item_data['item_name'],
+                            quantity=quantity,
+                            metric=item_data['metric'],
+                            unit_price=item_data['unit_price'],
+                            total_price=item_data['total_price'],
+                            BatchNumber=item_data.get('BatchNumber', ''),
+                            stockv2_id=stockv2_id,
+                            Cost_of_sale=item_data.get('Cost_of_sale', 0),
+                            Purchase_account=item_data.get('Purchase_account', 0),
+                            LivestockDeduction=item_data.get('LivestockDeduction', 0)
+                        )
+                        db.session.add(new_item)
+
+            # Update or create Payment Methods
+            if 'payment_methods' in data:
+                # First delete existing payment methods if not in new data
+                existing_payment_ids = [payment.id for payment in sale.payment]
+                new_payment_ids = [pm.get('id') for pm in data['payment_methods'] if pm.get('id')]
+                
+                # Delete payments not in new data
+                for payment_id in existing_payment_ids:
+                    if payment_id not in new_payment_ids:
+                        SalesPaymentMethods.query.filter_by(id=payment_id).delete()
+
+                # Update or create payment methods
+                for pm_data in data['payment_methods']:
+                    if 'id' in pm_data and pm_data['id'] in existing_payment_ids:
+                        # Update existing payment
+                        payment = SalesPaymentMethods.query.get(pm_data['id'])
+                        payment.payment_method = pm_data.get('payment_method', payment.payment_method)
+                        payment.amount_paid = pm_data.get('amount_paid', payment.amount_paid)
+                        payment.balance = pm_data.get('balance', payment.balance)
+                        payment.transaction_code = pm_data.get('transaction_code', payment.transaction_code)
+                    else:
+                        # Create new payment
+                        new_payment = SalesPaymentMethods(
+                            sale_id=sales_id,
+                            payment_method=pm_data['payment_method'],
+                            amount_paid=pm_data['amount_paid'],
+                            balance=pm_data.get('balance'),
+                            transaction_code=pm_data.get('transaction_code'),
+                            created_at=datetime.utcnow()
+                        )
+                        db.session.add(new_payment)
 
             db.session.commit()
-            return {"message": "Sale updated successfully"}, 200
+            
+            # Return success response with stock updates if any
+            response = {
+                "message": "Sale updated successfully",
+                "stock_updates": stock_updates
+            }
+            return response, 200
 
         except Exception as e:
+            db.session.rollback()
             return {"error": str(e)}, 500
+
 
     @jwt_required()
     def delete(self, sales_id):

@@ -298,3 +298,14 @@ select:focus{
 .table-row:hover {
   background-color: #f9f9f9;
 }
+
+
+/* In your CSS file */
+.ant-input {
+  padding: 15px !important;
+}
+
+/* For input with prefixes */
+.ant-input-affix-wrapper .ant-input {
+  padding: 15px !important;
+}

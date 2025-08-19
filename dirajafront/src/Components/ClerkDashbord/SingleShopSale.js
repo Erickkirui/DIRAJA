@@ -7,6 +7,11 @@ import PaymentMethods from '../PaymentMethod';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import ItemQuantitySelector from './ItemQuantitySelector';
+import {
+  Form,
+  DatePicker,
+  
+} from 'antd';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -431,14 +436,9 @@ const SingleShopSale = () => {
                 </div>
                 
                 <h5>Select date: </h5>
-                <input
-                    type="date"
-                    placeholder="DD/MM/YYYY"
-                    name="sale_date"
-                    value={formData.sale_date}
-                    onChange={handleChange}
-                    required
-                />
+                <Form.Item>
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
                 
                 <select 
                     name="status" 

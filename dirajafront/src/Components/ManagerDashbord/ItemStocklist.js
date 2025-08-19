@@ -10,7 +10,6 @@ const ItemStockList = () => {
   const [selectedShopId, setSelectedShopId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("inStock");
 
   // Fetch all shops for dropdown and stock items
   useEffect(() => {
@@ -115,15 +114,8 @@ const ItemStockList = () => {
     }
   }, [selectedShopId, stockItems]);
 
-  const filteredStock = itemStock.filter((stock) =>
-    activeTab === "inStock"
-      ? stock.total_remaining > 0
-      : stock.total_remaining === 0
-  );
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
+  // Filter to only show items with stock remaining
+  const currentStock = itemStock.filter((stock) => stock.total_remaining > 0);
 
   return (
     <div className="stock-level-container">
@@ -146,27 +138,12 @@ const ItemStockList = () => {
         View Stock
       </Link>
 
-      {/* Tabs */}
-      <div className="tabs-container">
-        <button
-          className={`tab-button ${activeTab === "inStock" ? "active" : ""}`}
-          onClick={() => handleTabChange("inStock")}
-        >
-          In Stock
-        </button>
-        <button
-          className={`tab-button ${activeTab === "outOfStock" ? "active" : ""}`}
-          onClick={() => handleTabChange("outOfStock")}
-        >
-          Out of Stock
-        </button>
-      </div>
-
       {loading && <LoadingAnimation />}
       {error && <p className="error">{error}</p>}
 
       {!loading && !error && (
         <div className="tab-content">
+          <h3>Current Stock</h3>
           <table className="inventory-table">
             <thead>
               <tr>
@@ -175,8 +152,8 @@ const ItemStockList = () => {
               </tr>
             </thead>
             <tbody className="batchnumber-size">
-              {filteredStock.length > 0 ? (
-                filteredStock.map((stock, index) => (
+              {currentStock.length > 0 ? (
+                currentStock.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.itemname}</td>
                     <td>{stock.display}</td>
@@ -184,7 +161,7 @@ const ItemStockList = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="2">No item stock data available.</td>
+                  <td colSpan="2">No current stock available.</td>
                 </tr>
               )}
             </tbody>
