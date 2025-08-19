@@ -66,8 +66,8 @@ function ClerkDashbord() {
                 </div>
               )}
 
-              {/* Shop 2 Group */}
-              {shopId === '2' && (
+              
+              {shopId !== '12' && shopId !== '18' && (
                 <div className='icon-group'>
                   <Link className='clerk-icon-button' to='/shop-stock-level'>
                     <FaBoxes className="icon" />

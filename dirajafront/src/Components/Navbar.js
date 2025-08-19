@@ -16,7 +16,8 @@ import {
   FaTags,
   FaBalanceScale,
   FaBook,
-  FaClipboardList
+  FaClipboardList,
+  FaStackExchange
 } from 'react-icons/fa';
 
 function Navbar() {
@@ -68,9 +69,13 @@ function Navbar() {
           </NavLink>
           <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
             <FaWarehouse className="menu-icon" />
-            <li>System Stocks</li>
+            <li>Stock</li>
           </NavLink>
-          <NavLink exact to="/stockstatus" className="menu-item" activeClassName="active">
+          <NavLink exact to="/shoptransfers" className="menu-item" activeClassName="active">
+            <FaStackExchange className="menu-icon" />
+            <li>Stock transfers</li>
+          </NavLink>
+          <NavLink exact to="/stockreport" className="menu-item" activeClassName="active">
             <FaBoxOpen className="menu-icon" />
             <li>Stock Reports</li>
           </NavLink>
@@ -79,7 +84,7 @@ function Navbar() {
             <li>Promo Sales</li>
           </NavLink>
 
-          {(username === 'Leo' || username === 'Namai' || username === 'External Auditor') && (
+          {(username === 'Leo' ||  username === 'Support' || username === 'Namai' || username === 'External Auditor') && (
             <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
               <FaBalanceScale className="menu-icon" />
               <li>Account Balances</li>

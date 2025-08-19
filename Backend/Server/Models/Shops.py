@@ -12,7 +12,7 @@ class Shops(db.Model):
     location = db.Column(db.String(50), nullable=False)
     employee = db.Column(db.JSON, unique=True, nullable=False)
     shopstatus = db.Column(db.String(50), default="active", nullable=False)
-    report_status = db.Column(db.Boolean, default=True, nullable=False)  # <-- Moved here
+    report_status = db.Column(db.Boolean, default=True, nullable=False)  
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
     @validates('shopstatus')
