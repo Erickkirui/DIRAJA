@@ -12,6 +12,8 @@ const ShopStockList = () => {
   const [activeTab, setActiveTab] = useState("inStock");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [stockItems, setStockItems] = useState([]); // ✅ Add this state
+
   const [messageType, setMessageType] = useState("success");
   const navigate = useNavigate();
 
