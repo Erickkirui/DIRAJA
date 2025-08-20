@@ -1172,6 +1172,14 @@ class StockMovement(Resource):
             if shop_id:
                 response['shop_id'] = shop_id
 
+            # Get all shops for name lookup
+            shops = Shops.query.all()
+            shop_name_map = {shop.shops_id: shop.shopname for shop in shops}
+
+            # Helper function to get shop name
+            def get_shop_name(shop_id):
+                return shop_name_map.get(shop_id, f"Shop {shop_id}")
+
             # --- Transfers ---
             transfer_filters = [
                 TransfersV2.created_at >= start_date,
@@ -1192,8 +1200,9 @@ class StockMovement(Resource):
                     'total_cost': transfer.total_cost,
                     'date': transfer.created_at.isoformat(),
                     'source': 'inventory',
-                    'destination': f'shop {transfer.shop_id}',
-                    'shop_id': transfer.shop_id
+                    'destination': get_shop_name(transfer.shop_id),
+                    'shop_id': transfer.shop_id,
+                    'shop_name': get_shop_name(transfer.shop_id)
                 })
 
             # --- Spoilt Items ---
@@ -1215,8 +1224,9 @@ class StockMovement(Resource):
                     'collector_name': item.collector_name,
                     'comment': item.comment,
                     'date': item.created_at.isoformat(),
-                    'location': f'shop {item.shop_id}',
-                    'shop_id': item.shop_id
+                    'location': get_shop_name(item.shop_id),
+                    'shop_id': item.shop_id,
+                    'shop_name': get_shop_name(item.shop_id)
                 })
 
             # --- Returns ---
@@ -1235,9 +1245,10 @@ class StockMovement(Resource):
                     'quantity': ret.quantity,
                     'reason': ret.reason,
                     'date': ret.return_date.isoformat(),
-                    'source': f'shop {ret.shop_id}',
+                    'source': get_shop_name(ret.shop_id),
                     'destination': 'inventory',
-                    'shop_id': ret.shop_id
+                    'shop_id': ret.shop_id,
+                    'shop_name': get_shop_name(ret.shop_id)
                 })
 
             # --- Shop Transfers ---
@@ -1253,6 +1264,15 @@ class StockMovement(Resource):
 
             for transfer in ShopTransfer.query.filter(*shop_transfer_filters).all():
                 is_outgoing = (shop_id and transfer.fromshop == str(shop_id))
+                
+                # Get source and destination shop names
+                if is_outgoing:
+                    source_shop_id = int(transfer.fromshop)
+                    destination_shop_id = int(transfer.toshop)
+                else:
+                    source_shop_id = transfer.shop_id
+                    destination_shop_id = int(transfer.toshop)
+                
                 response['shop_transfers'].append({
                     'type': 'shop_transfer',
                     'id': transfer.id,
@@ -1260,10 +1280,15 @@ class StockMovement(Resource):
                     'quantity': transfer.quantity,
                     'metric': transfer.metric,
                     'date': transfer.created_at.isoformat(),
-                    'source': f'shop {transfer.fromshop}' if is_outgoing else f'shop {transfer.shop_id}',
-                    'destination': f'shop {transfer.toshop}' if is_outgoing else f'shop {transfer.shop_id}',
+                    'source': get_shop_name(source_shop_id),
+                    'destination': get_shop_name(destination_shop_id),
                     'direction': 'outgoing' if is_outgoing else 'incoming',
-                    'shop_id': int(transfer.fromshop) if is_outgoing else transfer.shop_id
+                    'shop_id': source_shop_id if is_outgoing else transfer.shop_id,
+                    'shop_name': get_shop_name(source_shop_id if is_outgoing else transfer.shop_id),
+                    'source_shop_id': source_shop_id,
+                    'destination_shop_id': destination_shop_id,
+                    'source_shop_name': get_shop_name(source_shop_id),
+                    'destination_shop_name': get_shop_name(destination_shop_id)
                 })
 
             # ✅ return JSON properly (correct headers)

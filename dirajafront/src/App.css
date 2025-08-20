@@ -112,7 +112,13 @@ a{
   .body-area{
     width: 100%;
   }
+  .clerk-navigation{
+    display: none;
+  }
 
+  .page-area{
+    padding: 5px;
+  }
 }
 
 .menu-icon {
