@@ -1,6 +1,6 @@
-import React from 'react';
-import '../Styles/navigation.css';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from "react";
+import "../Styles/navigation.css";
+import { NavLink } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaBoxes,
@@ -11,103 +11,169 @@ import {
   FaUsers,
   FaUserTie,
   FaTruck,
-  FaWarehouse,
-  FaBoxOpen,
   FaTags,
   FaBalanceScale,
   FaBook,
-  FaClipboardList,
-  FaStackExchange
-} from 'react-icons/fa';
+  FaChevronDown,
+  FaChevronRight,
+} from "react-icons/fa";
 
-function Navbar() {
-  const username = localStorage.getItem('username');
+function Navbar({ onMenuItemClick }) {
+  const username = localStorage.getItem("username");
+
+  const [openGroups, setOpenGroups] = useState({
+    stock: true,
+    accounting: true,
+  });
+
+  const toggleGroup = (group) => {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  };
 
   return (
-    <div className='navigation-container'>
-      <h1>DIRAJA SHOP</h1>
+    <div className="navigation-container">
+      <h1 className="nav-title">DIRAJA</h1>
 
-      <div className='main-menu'>
-        <h4>MAIN MENU</h4>
-
+      <div className="main-menu">
+        <h4 className="section-label">MAIN MENU</h4>
         <ul>
-          <NavLink exact to="/" className="menu-item" activeClassName="active">
+          <NavLink to="/" className="menu-item" onClick={onMenuItemClick}>
             <FaTachometerAlt className="menu-icon" />
-            <li>Dashboard</li>
-          </NavLink>
-          <NavLink to="/allinventory" className="menu-item" activeClassName="active">
-            <FaBoxes className="menu-icon" />
-            <li>Inventory</li>
-          </NavLink>
-          <NavLink to="/analytics" className="menu-item" activeClassName="active">
-            <FaChartLine className="menu-icon" />
-            <li>Sales Analytics</li>
-          </NavLink>
-          <NavLink to="/expenses" className="menu-item" activeClassName="active">
-            <FaMoneyBillWave className="menu-icon" />
-            <li>Expenses</li>
-          </NavLink>
-          <NavLink to="/mabandapage" className="menu-item" activeClassName="active">
-            <FaTractor className="menu-icon" />
-            <li>Mabanda Farm</li>
-          </NavLink>
-          <NavLink to="/allshops" className="menu-item" activeClassName="active">
-            <FaStore className="menu-icon" />
-            <li>Shops</li>
-          </NavLink>
-          <NavLink to="/allcustomers" className="menu-item" activeClassName="active">
-            <FaUsers className="menu-icon" />
-            <li>Customers</li>
-          </NavLink>
-          <NavLink to="/allemployees" className="menu-item" activeClassName="active">
-            <FaUserTie className="menu-icon" />
-            <li>Employees</li>
-          </NavLink>
-          <NavLink to="/supplier" className="menu-item" activeClassName="active">
-            <FaTruck className="menu-icon" />
-            <li>Suppliers</li>
-          </NavLink>
-          <NavLink exact to="/shopstock" className="menu-item" activeClassName="active">
-            <FaWarehouse className="menu-icon" />
-            <li>Stock</li>
-          </NavLink>
-          <NavLink exact to="/shoptransfers" className="menu-item" activeClassName="active">
-            <FaStackExchange className="menu-icon" />
-            <li>Stock transfers</li>
-          </NavLink>
-          <NavLink exact to="/stockreport" className="menu-item" activeClassName="active">
-            <FaBoxOpen className="menu-icon" />
-            <li>Stock Reports</li>
-          </NavLink>
-          <NavLink to="/promo-sales-table" className="menu-item" activeClassName="active">
-            <FaTags className="menu-icon" />
-            <li>Promo Sales</li>
+            <span>Dashboard</span>
           </NavLink>
 
-          {(username === 'Leo' ||  username === 'Support' || username === 'Namai' || username === 'External Auditor') && (
-            <NavLink exact to='/accounts-balance' className="menu-item" activeClassName="active">
+          {/* Stock Group */}
+          <div className="menu-group">
+            <button
+              className="menu-item group-toggle"
+              onClick={() => toggleGroup("stock")}
+            >
+              {openGroups.stock ? (
+                <FaChevronDown className="chevron" />
+              ) : (
+                <FaChevronRight className="chevron" />
+              )}
+              <FaBoxes className="menu-icon" />
+              <span>Stock</span>
+            </button>
+            {openGroups.stock && (
+              <div className="submenu">
+                <NavLink
+                  to="/allinventory"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>Inventory</span>
+                </NavLink>
+                <NavLink
+                  to="/shopstock"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>System Stocks</span>
+                </NavLink>
+                <NavLink
+                  to="/stockstatus"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>Stock Reports</span>
+                </NavLink>
+                <NavLink
+                  to="/stock-movement"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>Stock Movement</span>
+                </NavLink>
+              </div>
+            )}
+          </div>
+
+          <NavLink to="/analytics" className="menu-item" onClick={onMenuItemClick}>
+            <FaChartLine className="menu-icon" />
+            <span>Sales Analytics</span>
+          </NavLink>
+
+          <NavLink to="/expenses" className="menu-item" onClick={onMenuItemClick}>
+            <FaMoneyBillWave className="menu-icon" />
+            <span>Expenses</span>
+          </NavLink>
+
+          <NavLink to="/mabandapage" className="menu-item" onClick={onMenuItemClick}>
+            <FaTractor className="menu-icon" />
+            <span>Mabanda Farm</span>
+          </NavLink>
+
+          <NavLink to="/allshops" className="menu-item" onClick={onMenuItemClick}>
+            <FaStore className="menu-icon" />
+            <span>Shops</span>
+          </NavLink>
+
+          <NavLink to="/allcustomers" className="menu-item" onClick={onMenuItemClick}>
+            <FaUsers className="menu-icon" />
+            <span>Customers</span>
+          </NavLink>
+
+          <NavLink to="/allemployees" className="menu-item" onClick={onMenuItemClick}>
+            <FaUserTie className="menu-icon" />
+            <span>Employees</span>
+          </NavLink>
+
+          <NavLink to="/supplier" className="menu-item" onClick={onMenuItemClick}>
+            <FaTruck className="menu-icon" />
+            <span>Suppliers</span>
+          </NavLink>
+
+          <NavLink to="/promo-sales-table" className="menu-item" onClick={onMenuItemClick}>
+            <FaTags className="menu-icon" />
+            <span>Promo Sales</span>
+          </NavLink>
+
+          {(username === "Leo" ||
+            username === "Namai" ||
+            username === "External Auditor") && (
+            <NavLink to="/accounts-balance" className="menu-item" onClick={onMenuItemClick}>
               <FaBalanceScale className="menu-icon" />
-              <li>Account Balances</li>
+              <span>Account Balances</span>
             </NavLink>
           )}
         </ul>
       </div>
 
-      <div className='accounting-menu'>
-        <h4>ACCOUNTING</h4>
-        <ul>
-          <NavLink to="/ledgers" className="menu-item" activeClassName="active">
+      {/* Accounting Group */}
+      <div className="accounting-menu">
+        <h4 className="section-label">ACCOUNTING</h4>
+        <div className="menu-group">
+          <button
+            className="menu-item group-toggle"
+            onClick={() => toggleGroup("accounting")}
+          >
+            {openGroups.accounting ? (
+              <FaChevronDown className="chevron" />
+            ) : (
+              <FaChevronRight className="chevron" />
+            )}
             <FaBook className="menu-icon" />
-            <li>Ledgers Accounts</li>
-          </NavLink>
-          <NavLink to="/all-ledgers" className="menu-item" activeClassName="active">
-            <FaClipboardList className="menu-icon" />
-            <li>Ledgers</li>
-          </NavLink>
-        </ul>
+            <span>Accounting</span>
+          </button>
+          {openGroups.accounting && (
+            <div className="submenu">
+              <NavLink to="/ledgers" className="menu-item sub-item" onClick={onMenuItemClick}>
+                <span>Ledgers Accounts</span>
+              </NavLink>
+              <NavLink to="/all-ledgers" className="menu-item sub-item" onClick={onMenuItemClick}>
+                <span>Ledgers</span>
+              </NavLink>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-export default Navbar;
+export default Navbar
