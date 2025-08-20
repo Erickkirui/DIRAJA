@@ -114,20 +114,8 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
-    { title: "Batch Number", dataIndex: "batch_number", key: "batch_number" },
-    {
-      title: "Unit Cost",
-      dataIndex: "unit_cost",
-      key: "unit_cost",
-      render: (cost) => (cost ? `ksh${cost.toFixed(2)}` : "-"),
-    },
-    {
-      title: "Total Cost",
-      dataIndex: "total_cost",
-      key: "total_cost",
-      render: (cost) => (cost ? `ksh${cost.toFixed(2)}` : "-"),
-    },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
+  
+    // { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Destination", dataIndex: "destination", key: "destination" },
   ];
 
@@ -142,7 +130,7 @@ const ShopStockMovement = () => {
     { title: "Disposal Method", dataIndex: "disposal_method", key: "disposal_method" },
     { title: "Collector", dataIndex: "collector_name", key: "collector_name" },
     { title: "Comment", dataIndex: "comment", key: "comment" },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
+    // { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Location", dataIndex: "location", key: "location" },
   ];
 
@@ -150,7 +138,7 @@ const ShopStockMovement = () => {
     { title: "Item Name", dataIndex: "item_name", key: "item_name" },
     { title: "Quantity", dataIndex: "quantity", key: "quantity" },
     { title: "Reason", dataIndex: "reason", key: "reason" },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
+    // { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Source", dataIndex: "source", key: "source" },
   ];
 
@@ -162,7 +150,7 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
+    // { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Source", dataIndex: "source", key: "source" },
     { title: "Destination", dataIndex: "destination", key: "destination" },
     {
@@ -213,7 +201,7 @@ const ShopStockMovement = () => {
       {!loading && !error && (
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
           <TabPane
-            tab={`Transfers (${movementData.transfers.length})`}
+            tab={`From store (${movementData.transfers.length})`}
             key="transfers"
           >
             {renderTable(movementData.transfers, transferColumns)}
