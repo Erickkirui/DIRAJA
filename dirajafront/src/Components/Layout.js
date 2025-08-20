@@ -8,7 +8,7 @@ const Layout = ({ children }) => {
 
   // Function that closes the sidebar ONLY on mobile
   const handleMenuClick = () => {
-    if (window.innerWidth <= 768 ) {  // ✅ mobile check
+    if (window.innerWidth <= 768) {  // ✅ mobile check
       setIsCollapsed(true);
     }
   };
@@ -17,7 +17,7 @@ const Layout = ({ children }) => {
     <div className="Page-continer">
       {/* Sidebar */}
       <div className={`navigation ${isCollapsed ? "collapsed" : ""}`}>
-        <Navbar onMenuClick={handleMenuClick} />
+        <Navbar onMenuItemClick={handleMenuClick} />
       </div>
 
       {/* Main content */}
