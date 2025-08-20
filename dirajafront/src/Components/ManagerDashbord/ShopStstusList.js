@@ -66,6 +66,7 @@ const ShopStatusList = () => {
         </table>
       )}
     </div>
+    
   );
 };
 
