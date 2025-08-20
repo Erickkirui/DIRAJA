@@ -176,4 +176,4 @@ function Navbar({ onMenuItemClick }) {
   );
 }
 
-export default Navbar
+export default Navbar;
