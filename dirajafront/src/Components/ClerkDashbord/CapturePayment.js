@@ -95,7 +95,7 @@ const CapturePayment = ({ saleId, onPaymentSuccess }) => {
         <label>Transaction Code (Optional):</label>
         <input
           type="text"
-          
+          required
           value={transactionCode}
           onChange={(e) => setTransactionCode(e.target.value)}
           placeholder="Enter transaction code (if available)"

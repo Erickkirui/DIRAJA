@@ -142,10 +142,11 @@ function ClerkDashbord() {
                       <FaTrashAlt className="icon" />
                       <span>Spoilt Stock</span>
                     </Link>
-                    <Link className='cleak-icon-button' to='/shop-stock-movement'>
-                     <FaTruck className='icon' />
-                     <span>Stock Movement</span>
+                    <Link className="clerk-icon-button" to="/stock-shop-move">
+                      <FaTruck className="icon" />
+                      <span>Stock Transfers</span>
                     </Link>
+                   
                     <Link className="clerk-icon-button" to={isReliever ? "/deposit" : "/depositcash"}>
                       <FaMoneyBillWave className="icon" />
                       <span>Deposit Cash</span>

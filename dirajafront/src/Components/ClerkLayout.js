@@ -16,7 +16,7 @@ const ClerkLayout = ({ children }) => {
 
   return (
     <div className='Page-continer'>
-      <div className='navigation'>
+      <div className='clerk-navigation'>
         <ClerkNavbar />
       </div>
       <div className='body-area'>
