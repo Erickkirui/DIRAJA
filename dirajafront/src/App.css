@@ -1,36 +1,60 @@
 .Page-continer {
   display: flex;
   height: 100vh;
-  overflow-y: auto; /* Allows the sticky element to work within the viewport */
+  overflow-y: auto;
+  padding: 10px;
 }
 
- input[type=date],
- input[type=time] {
-     border : 1px solid #ccc;
- }
+/* Sidebar */
 .navigation {
-  width: 15%;
-  padding: 20px;
+  width: 16%;
+  padding: 10px 10px 0 0;
   min-height: 100vh;
   border-right: 1px solid #ccc;
   position: sticky;
-  top: 0; /* Keeps it at the top while scrolling */
-  align-self: flex-start; /* Helps maintain sticky position within flex layout */
+  top: 0;
+  align-self: flex-start;
+  background: #fff;
+  transition: width 0.3s ease;
 }
 
-.body-area {
-  width: 85%; /* Adjusts the width to avoid overflow issues */
+.navigation.collapsed {
+  width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: none;
 }
-
-.body-header {
-  border-bottom: 1px solid #ccc;
-  
-}
-
-.page-area {
+.page-area{
   padding: 15px;
- 
 }
+
+/* Body */
+.body-area {
+  width: 85%;
+  transition: width 0.3s ease;
+}
+
+.navigation.collapsed + .body-area {
+  width: 100%;
+}
+
+/* Header */
+.body-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #ccc;
+}
+
+/* Hamburger */
+.hamburger {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
 
 a{
   text-decoration: none;
@@ -81,7 +105,9 @@ a{
 
 @media (max-width: 768px) {
   .navigation{
-    display: none;
+    width: 50%;
+    z-index: 100;
+    position: absolute;
   }
   .body-area{
     width: 100%;

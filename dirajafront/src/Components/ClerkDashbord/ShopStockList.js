@@ -13,9 +13,29 @@ const ShopStockList = () => {
   const [activeTab, setActiveTab] = useState("inStock");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [stockItems, setStockItems] = useState([]); // ✅ Add this state
+
   const [messageType, setMessageType] = useState("success");
   const navigate = useNavigate();
 
+  // Fetch stock items
+  useEffect(() => {
+    const fetchStockItems = async () => {
+      try {
+        const itemsResponse = await axios.get("/api/diraja/stockitems", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setStockItems(itemsResponse.data.stock_items || []);
+      } catch (err) {
+        console.error("Failed to fetch stock items", err);
+      }
+    };
+    fetchStockItems();
+  }, []);
+
+  // ✅ Fetch stock levels
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -116,14 +136,8 @@ const ShopStockList = () => {
   }, [shopId]);
 
   const filteredStock = itemStock.filter((stock) =>
-    activeTab === "inStock"
-      ? stock.total_remaining > 0
-      : stock.total_remaining === 0
+    activeTab === "inStock" ? stock.total_remaining > 0 : stock.total_remaining === 0
   );
-
-  const handleTabChange = (tab) => {
-    setActiveTab(tab);
-  };
 
   const handleSubmitReport = async () => {
     setSubmitting(true);
@@ -182,13 +196,13 @@ const ShopStockList = () => {
       <div className="tabs-container">
         <button
           className={`tab-button ${activeTab === "inStock" ? "active" : ""}`}
-          onClick={() => handleTabChange("inStock")}
+          onClick={() => setActiveTab("inStock")}
         >
           In Stock
         </button>
         <button
           className={`tab-button ${activeTab === "outOfStock" ? "active" : ""}`}
-          onClick={() => handleTabChange("outOfStock")}
+          onClick={() => setActiveTab("outOfStock")}
         >
           Out of Stock
         </button>
@@ -213,6 +227,7 @@ const ShopStockList = () => {
             </Stack>
           )}
 
+          {/* ✅ Cleaned table */}
           <div className="tab-content">
             <table className="inventory-table">
               <thead>
@@ -239,6 +254,7 @@ const ShopStockList = () => {
           </div>
 
           {/* Submit Report Button */}
+          
           <div style={{ marginTop: "20px" }}>
             <Alert severity="info" style={{ marginBottom: "10px" }}>
               Check the stock and press submit report if it matches. If not,

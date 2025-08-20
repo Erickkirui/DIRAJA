@@ -104,35 +104,12 @@ import StockReports from './Components/ManagerDashbord/StockReports';
 import SingleStockReport from './Components/ManagerDashbord/SingleStockReport';
 import StockReportPage from './Pages/Stockreportspage';
 import AllShopTransfers from './Components/ManagerDashbord/ShopTransfers';
+import ShopStockMovement from './Components/ClerkDashbord/ShopStockMovement';
+import Layout from './Components/Layout';
 
 
 
 
-const Layout = ({ children }) => {
-  return(
-    <>
-    <div className='Page-continer'>
-      <div className='navigation'>
-        <Navbar/>
-      </div>
-      <div className='body-area'>
-        <div className='body-header'>
-        <UserDisplay />
-
-        </div>
-        <div className='page-area'>
-        {children}
-        </div>
-       
-        
-      </div>
-    
-    </div>
-    </>
-
-  );
-
-};
 
 
 
@@ -235,7 +212,8 @@ function App() {
             <Route path='/sold-items' element={<ClerkLayout><ShopSoldItems /></ClerkLayout>} ></Route>
            <Route path="/stock-movement" element={<Layout><StockMovementList /></Layout>} ></Route>
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
-            {/* <Route path="/shoptransfers" element={<Layout><AllShopTransfers /></Layout} ></Route> */}
+            <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>} ></Route>
+            <Route path='/stock-shop-move' element={<ClerkLayout><ShopStockMovement /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>

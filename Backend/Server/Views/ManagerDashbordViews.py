@@ -1134,16 +1134,15 @@ class TotalFinancialSummary(Resource):
                 "details": str(e)
             }, 500
 
-
 class StockMovement(Resource):
     @jwt_required()
     def get(self):
-        # Set up request parser
+        # Set up request parser to parse from args (query parameters) instead of JSON
         parser = reqparse.RequestParser()
-        parser.add_argument('shop_id', type=int, help='Filter by specific shop ID')
-        parser.add_argument('days', type=int, default=30, help='Number of days to look back (ignored if from_date & end_date are provided)')
-        parser.add_argument('from_date', type=str, help='Start date in YYYY-MM-DD format')
-        parser.add_argument('end_date', type=str, help='End date in YYYY-MM-DD format')
+        parser.add_argument('shop_id', type=int, help='Filter by specific shop ID', location='args')
+        parser.add_argument('days', type=int, default=30, help='Number of days to look back (ignored if from_date & end_date are provided)', location='args')
+        parser.add_argument('from_date', type=str, help='Start date in YYYY-MM-DD format', location='args')
+        parser.add_argument('end_date', type=str, help='End date in YYYY-MM-DD format', location='args')
         args = parser.parse_args()
 
         shop_id = args['shop_id']
