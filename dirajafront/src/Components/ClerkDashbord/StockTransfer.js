@@ -8,7 +8,8 @@ const ShopToShopTransfer = () => {
     from_shop_id: shopIdFromStorage || '',
     to_shop_id: '',
     item_name: '',
-    quantity: '',
+    pack_quantity: '',   // new
+    piece_quantity: '',  // new
     BatchNumber: '',
     metric: '',
     remainingStock: 0
@@ -20,6 +21,9 @@ const ShopToShopTransfer = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isShopLoading, setIsShopLoading] = useState(true);
   const [isItemLoading, setIsItemLoading] = useState(false);
+  const [stockItems, setStockItems] = useState([]);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [displayQuantity, setDisplayQuantity] = useState('');
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -35,7 +39,23 @@ const ShopToShopTransfer = () => {
       }
     };
 
+    const fetchStockItems = async () => {
+      try {
+        const response = await axios.get('/api/diraja/stockitems', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        if (Array.isArray(response.data.stock_items)) {
+          setStockItems(response.data.stock_items);
+        }
+      } catch (error) {
+        console.error('Error fetching stock items:', error);
+      }
+    };
+
     fetchShops();
+    fetchStockItems();
   }, []);
 
   useEffect(() => {
@@ -63,6 +83,46 @@ const ShopToShopTransfer = () => {
 
     fetchItems();
   }, [formData.from_shop_id]);
+
+  useEffect(() => {
+    if (formData.item_name) {
+      const item = stockItems.find(stockItem => stockItem.item_name === formData.item_name);
+      setSelectedStockItem(item || null);
+    }
+  }, [formData.item_name, stockItems]);
+
+  useEffect(() => {
+    if (formData.remainingStock > 0 && selectedStockItem) {
+      const remaining = formData.remainingStock;
+
+      if (selectedStockItem.item_name.toLowerCase().includes("eggs")) {
+        const packQty = selectedStockItem.pack_quantity > 0 
+          ? selectedStockItem.pack_quantity 
+          : 30;
+        const trays = Math.floor(remaining / packQty);
+        const pieces = remaining % packQty;
+
+        setDisplayQuantity(
+          trays > 0
+            ? `${trays} tray${trays !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+            : `${pieces} pcs`
+        );
+      } else if (selectedStockItem.pack_quantity > 0) {
+        const packets = Math.floor(remaining / selectedStockItem.pack_quantity);
+        const pieces = remaining % selectedStockItem.pack_quantity;
+
+        setDisplayQuantity(
+          packets > 0
+            ? `${packets} pkt${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+            : `${pieces} pcs`
+        );
+      } else {
+        setDisplayQuantity(`${remaining} ${formData.metric || "pcs"}`);
+      }
+    } else {
+      setDisplayQuantity(`${formData.remainingStock} ${formData.metric || "pcs"}`);
+    }
+  }, [formData.remainingStock, formData.metric, selectedStockItem]);
 
   const fetchItemDetails = async (itemName) => {
     if (!itemName || !formData.from_shop_id) return;
@@ -116,12 +176,16 @@ const ShopToShopTransfer = () => {
       return;
     }
 
-    if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
+    let packs = parseInt(formData.pack_quantity || 0);
+    let pieces = parseInt(formData.piece_quantity || 0);
+    let finalQuantity = (packs * (selectedStockItem?.pack_quantity || 0)) + pieces;
+
+    if (finalQuantity <= 0) {
       setMessage({ type: 'error', text: 'Quantity must be greater than 0' });
       return;
     }
 
-    if (parseFloat(formData.quantity) > parseFloat(formData.remainingStock)) {
+    if (finalQuantity > parseFloat(formData.remainingStock)) {
       setMessage({ type: 'error', text: 'Quantity exceeds available stock' });
       return;
     }
@@ -134,7 +198,7 @@ const ShopToShopTransfer = () => {
         from_shop_id: parseInt(formData.from_shop_id),
         to_shop_id: parseInt(formData.to_shop_id),
         item_name: formData.item_name,
-        quantity: parseFloat(formData.quantity),
+        quantity: finalQuantity,
         BatchNumber: formData.BatchNumber
       };
 
@@ -152,7 +216,8 @@ const ShopToShopTransfer = () => {
       setFormData(prev => ({
         ...prev,
         item_name: '',
-        quantity: '',
+        pack_quantity: '',
+        piece_quantity: '',
         BatchNumber: '',
         metric: '',
         remainingStock: 0
@@ -171,9 +236,17 @@ const ShopToShopTransfer = () => {
     }
   };
 
+  const getUnitLabel = () => {
+    if (!selectedStockItem) return 'pack';
+    if (selectedStockItem.item_name.toLowerCase().includes("eggs")) {
+      return 'tray';
+    }
+    return 'pack';
+  };
+
   return (
     <div className="transfer-container">
-      <h1>Shop to Shop Transfer</h1>
+      <h1>Stock Transfer</h1>
 
       {message.text && (
         <div className={`message ${message.type}`}>
@@ -235,40 +308,48 @@ const ShopToShopTransfer = () => {
           </div>
         )}
 
+        {selectedStockItem && selectedStockItem.pack_quantity && (
+          <div className="form-group">
+            <label>Quantity to Transfer</label>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <input
+                name="pack_quantity"
+                type="number"
+                value={formData.pack_quantity}
+                onChange={handleChange}
+                placeholder={`No. of ${getUnitLabel()}s`}
+                className="input"
+                min="0"
+              />
+              <input
+                name="piece_quantity"
+                type="number"
+                value={formData.piece_quantity}
+                onChange={handleChange}
+                placeholder="No. of pieces"
+                className="input"
+                min="0"
+              />
+            </div>
+            <small className="text-muted">
+              1 {getUnitLabel()} = {selectedStockItem.pack_quantity} pieces
+            </small>
+          </div>
+        )}
+
         {formData.item_name && (
           <div className="form-group">
             <label>Item Details</label>
             <ul>
-              <li><strong>Batch Number:</strong> {formData.BatchNumber || 'N/A'}</li>
-              <li><strong>Metric:</strong> {formData.metric || 'N/A'}</li>
-              <li><strong>Available Quantity:</strong> {formData.remainingStock}</li>
+              <li><strong>Available Quantity:</strong> {displayQuantity}</li>
             </ul>
           </div>
         )}
 
-        <div className="form-group">
-          <label>Quantity to Transfer</label>
-          <input
-            name="quantity"
-            type="number"
-            value={formData.quantity}
-            onChange={handleChange}
-            placeholder="Enter quantity"
-            className="input"
-            required
-            min="0.01"
-            step="0.01"
-            max={formData.remainingStock}
-            disabled={!formData.item_name}
-          />
-        </div>
-
         <button
           type="submit"
           className="button"
-          disabled={
-            isLoading || isShopLoading || isItemLoading || !formData.from_shop_id
-          }
+          disabled={isLoading || isShopLoading || isItemLoading || !formData.from_shop_id}
         >
           {isLoading ? 'Processing Transfer...' : 'Transfer Items'}
         </button>

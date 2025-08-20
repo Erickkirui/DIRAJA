@@ -9,8 +9,8 @@ const BROILER_PARTS = [
   { name: 'Big Legs', unitCost: 0 },
   { name: 'Backbone', unitCost: 0 },
   { name: 'Liver', unitCost: 0 },
-  { name: 'Gizzards', unitCost: 0 },
-  { name: 'Necks', unitCost: 0 },
+  { name: 'Gizzard', unitCost: 0 },
+  { name: 'Neck', unitCost: 0 },
   { name: 'Feet', unitCost: 0 },
   { name: 'Wings', unitCost: 0 },
   { name: 'Broiler', unitCost: 0 }
@@ -32,6 +32,9 @@ const DistributeInventoryModal = ({
   const [selectedBroilerPart, setSelectedBroilerPart] = useState('');
   const [broilerPartUnitCost, setBroilerPartUnitCost] = useState(0);
   const [isBroilerParts, setIsBroilerParts] = useState(false);
+  const [stockItems, setStockItems] = useState([]);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [unitType, setUnitType] = useState('pieces'); // New state for pack/piece selection
 
   useEffect(() => {
     const fetchShops = async () => {
@@ -51,7 +54,26 @@ const DistributeInventoryModal = ({
       }
     };
 
+    const fetchStockItems = async () => {
+      try {
+        const response = await axios.get('/api/diraja/stockitems', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            'X-User-Role': 'manager',
+          },
+        });
+        if (Array.isArray(response.data.stock_items)) {
+          setStockItems(response.data.stock_items);
+        } else {
+          console.error('Stock items response is not an array');
+        }
+      } catch (error) {
+        console.error('Error fetching stock items:', error);
+      }
+    };
+
     fetchShops();
+    fetchStockItems();
   }, []);
 
   useEffect(() => {
@@ -60,10 +82,33 @@ const DistributeInventoryModal = ({
         item => item.inventoryV2_id === selectedInventory[0]
       );
       setIsBroilerParts(selectedItem?.itemname?.toLowerCase() === 'broiler');
+      
+      // Find the corresponding stock item
+      if (selectedItem?.itemname) {
+        const stockItem = stockItems.find(si => si.item_name === selectedItem.itemname);
+        setSelectedStockItem(stockItem || null);
+      }
     } else {
       setIsBroilerParts(false);
+      setSelectedStockItem(null);
     }
-  }, [selectedInventory, inventory]);
+    
+    // Reset unit type when selection changes
+    setUnitType('pieces');
+  }, [selectedInventory, inventory, stockItems]);
+
+  // Determine placeholder text for quantity input
+  const getQuantityPlaceholder = () => {
+    if (selectedInventory.length === 1) {
+      const selectedItem = inventory.find(
+        item => item.inventoryV2_id === selectedInventory[0]
+      );
+      if (selectedItem?.itemname?.toLowerCase() === 'broiler') {
+        return 'Quantity in kgs';
+      }
+    }
+    return `Quantity in ${unitType === 'pack' ? 'packs' : 'pieces'}`;
+  };
 
   const handleDistribute = async (e) => {
     e.preventDefault();
@@ -90,6 +135,12 @@ const DistributeInventoryModal = ({
             throw new Error(`Inventory item with ID ${inventoryV2_id} not found`);
           }
 
+          // Convert quantity if using pack unit type
+          let finalQuantity = parseFloat(quantity);
+          if (unitType === 'pack' && selectedStockItem?.pack_quantity) {
+            finalQuantity = finalQuantity * parseFloat(selectedStockItem.pack_quantity);
+          }
+
           const unitPrice = isBroilerParts
             ? parseFloat(broilerPartUnitCost)
             : inventoryItem.unitPrice;
@@ -101,12 +152,12 @@ const DistributeInventoryModal = ({
           const requestData = {
             shop_id: parseInt(shopId, 10),
             inventoryV2_id: inventoryItem.inventoryV2_id,
-            quantity: parseFloat(quantity),
+            quantity: finalQuantity,
             metric: inventoryItem.metric,
             itemname: isBroilerParts ? selectedBroilerPart : inventoryItem.itemname,
             unitCost: unitCost,
             unitPrice: unitPrice,
-            amountPaid: unitPrice * parseFloat(quantity),
+            amountPaid: unitPrice * finalQuantity,
             BatchNumber: inventoryItem.batchnumber,
             created_at: new Date(distributionDate).toISOString(),
           };
@@ -128,6 +179,7 @@ const DistributeInventoryModal = ({
       setDistributionDate('');
       setSelectedBroilerPart('');
       setBroilerPartUnitCost(0);
+      setUnitType('pieces');
       setTimeout(onClose, 1500);
     } catch (error) {
       let errorMessage = 'Error distributing inventory. Please try again.';
@@ -223,8 +275,31 @@ const DistributeInventoryModal = ({
             </>
           )}
 
+          {/* Unit type selector - only show if item has pack quantity */}
+          {selectedStockItem && selectedStockItem.pack_quantity && !isBroilerParts && (
+            <div className="form-group">
+              <label htmlFor="unit-type-select">Unit Type:</label>
+              <select
+                id="unit-type-select"
+                className="modal-select"
+                value={unitType}
+                onChange={(e) => setUnitType(e.target.value)}
+              >
+                <option value="pieces">Pieces</option>
+                <option value="pack">Pack</option>
+              </select>
+              {unitType === 'pack' && (
+                <small className="text-muted">
+                  1 pack = {selectedStockItem.pack_quantity} pieces
+                </small>
+              )}
+            </div>
+          )}
+
           <div className="form-group">
-            <label htmlFor="quantity-input">Quantity to Transfer</label>
+            <label htmlFor="quantity-input">
+              Quantity to Transfer: {getQuantityPlaceholder()}
+            </label>
             <input
               id="quantity-input"
               type="number"
@@ -232,6 +307,7 @@ const DistributeInventoryModal = ({
               step="0.01"
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
+              placeholder={getQuantityPlaceholder()}
               required
             />
           </div>

@@ -235,7 +235,7 @@ function App() {
             <Route path='/sold-items' element={<ClerkLayout><ShopSoldItems /></ClerkLayout>} ></Route>
            <Route path="/stock-movement" element={<Layout><StockMovementList /></Layout>} ></Route>
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
-            <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Lay
+            {/* <Route path="/shoptransfers" element={<Layout><AllShopTransfers /></Layout} ></Route> */}
            </Routes> 
        
       </Router>

@@ -11,6 +11,7 @@ const ShopStockV2 = () => {
     const [selectedStocks, setSelectedStocks] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDate, setSelectedDate] = useState('');
+    const [stockItems, setStockItems] = useState([]); // Added for stock items metadata
 
     useEffect(() => {
         const fetchShopStockData = async () => {
@@ -21,6 +22,8 @@ const ShopStockV2 = () => {
                     setLoading(false);
                     return;
                 }
+                
+                // Fetch shop stock data
                 const response = await fetch('/api/diraja/shopstockv2', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
@@ -29,11 +32,43 @@ const ShopStockV2 = () => {
                 });
 
                 if (!response.ok) throw new Error('Failed to fetch shop stock data');
-
                 const data = await response.json();
 
-                setShopStocks(data.shop_stocks.sort((a, b) => b.stockv2_id - a.stockv2_id));
+                // Fetch stock items metadata
+                const itemsResponse = await fetch('/api/diraja/stockitems', {
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                    },
+                });
 
+                if (!itemsResponse.ok) throw new Error('Failed to fetch stock items');
+                const itemsData = await itemsResponse.json();
+                const stockItemsData = itemsData.stock_items || [];
+                setStockItems(stockItemsData);
+
+                // Apply display formatting to shop stocks
+                const processedStocks = data.shop_stocks.map((stock) => {
+                    const itemInfo = stockItemsData.find(
+                        (item) => item.item_name === stock.itemname
+                    );
+
+                    if (!itemInfo) {
+                        return {
+                            ...stock,
+                            display: `${stock.quantity} ${stock.metric || "pcs"}`,
+                        };
+                    }
+
+                    // Format display for quantity
+                    const display = formatQuantityDisplay(stock.quantity, stock.metric, itemInfo);
+
+                    return {
+                        ...stock,
+                        display: display,
+                    };
+                });
+
+                setShopStocks(processedStocks.sort((a, b) => b.stockv2_id - a.stockv2_id));
                 setLoading(false);
             } catch (error) {
                 setError(error.message);
@@ -43,6 +78,46 @@ const ShopStockV2 = () => {
 
         fetchShopStockData();
     }, []);
+
+    // Helper function to format quantity display
+    const formatQuantityDisplay = (quantity, metric, itemInfo) => {
+        // If metric is kgs, display directly
+        if (metric && metric.toLowerCase() === "kgs") {
+            return `${quantity} kgs`;
+        }
+
+        // Eggs logic → trays and pieces
+        if (
+            itemInfo.item_name.toLowerCase().includes("eggs") &&
+            (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
+        ) {
+            const packQty =
+                itemInfo.pack_quantity && itemInfo.pack_quantity > 0
+                    ? itemInfo.pack_quantity
+                    : 30; // default tray size
+            const trays = Math.floor(quantity / packQty);
+            const pieces = quantity % packQty;
+            return trays > 0
+                ? `${trays} tray${trays !== 1 ? "s" : ""}${
+                    pieces > 0 ? `, ${pieces} pcs` : ""
+                  }`
+                : `${pieces} pcs`;
+        }
+
+        // Other items with pack_quantity → pkts and pcs
+        if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(quantity / itemInfo.pack_quantity);
+            const pieces = quantity % itemInfo.pack_quantity;
+            return packets > 0
+                ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+                    pieces > 0 ? `, ${pieces} pcs` : ""
+                  }`
+                : `${pieces} pcs`;
+        }
+
+        // Default
+        return `${quantity} ${metric || "pcs"}`;
+    };
 
     const handleSearchChange = (e) => {
         setSearchQuery(e.target.value);
@@ -110,22 +185,19 @@ const ShopStockV2 = () => {
         },
         {
             header: 'Batch Number',
-
             key: 'batchnumber',
             render: (stock) => stock.batchnumber
-
-
         },
         {
             header: 'Quantity',
             key: 'quantity',
-            render: (stock) => `${stock.quantity} ${stock.metric}`
+            render: (stock) => stock.display || `${stock.quantity} ${stock.metric}`
         },
-        {
-            header: 'Unit Price (ksh)',
-            key: 'unitPrice',
-            render: (stock) => stock.unitPrice
-        }
+        // {
+        //     header: 'Unit Price (ksh)',
+        //     key: 'unitPrice',
+        //     render: (stock) => stock.unitPrice
+        // }
     ];
 
     if (loading) return <LoadingAnimation />;
