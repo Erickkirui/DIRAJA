@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 const ShopStockList = () => {
   const shopId = localStorage.getItem("shop_id");
   const [itemStock, setItemStock] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
@@ -37,20 +36,10 @@ const ShopStockList = () => {
 
   // ✅ Fetch stock levels
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchShopStock = async () => {
       setLoading(true);
       try {
-        // Fetch stock items metadata
-        const itemsRes = await axios.get("/api/diraja/stockitems", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
-        const stockItemsData = itemsRes.data.stock_items || [];
-        setStockItems(stockItemsData);
-
-        // Fetch shop stock
-        const stockRes = await axios.get(
+        const response = await axios.get(
           `/api/diraja/item-stock-level?shop_id=${shopId}`,
           {
             headers: {
@@ -58,71 +47,53 @@ const ShopStockList = () => {
             },
           }
         );
-
-        // Apply display formatting
-        const processedStock = (stockRes.data.item_stocks || []).map((stock) => {
-          const itemInfo = stockItemsData.find(
-            (item) => item.item_name === stock.itemname
-          );
-
-          if (!itemInfo) {
+        
+        // Process the stock data to include proper display metrics
+        const processedStock = (response.data.item_stocks || []).map(stock => {
+          const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
+          
+          if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
+          
+          // If metric is kgs, don't convert to packets/pieces
+          if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
             return {
               ...stock,
-              display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
+              display: `${stock.total_remaining} kgs`
             };
           }
-
-          // If metric is kgs, display directly
-          if (stock.metric && stock.metric.toLowerCase() === "kgs") {
-            return { ...stock, display: `${stock.total_remaining} kgs` };
-          }
-
-          // Eggs logic → trays and pieces
-          if (
-            itemInfo.item_name.toLowerCase().includes("eggs") &&
-            (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
-          ) {
-            const packQty =
-              itemInfo.pack_quantity && itemInfo.pack_quantity > 0
-                ? itemInfo.pack_quantity
-                : 30; // default tray size
-            const trays = Math.floor(stock.total_remaining / packQty);
-            const pieces = stock.total_remaining % packQty;
-            return {
-              ...stock,
-              display:
-                trays > 0
-                  ? `${trays} tray${trays !== 1 ? "s" : ""}${
-                      pieces > 0 ? `, ${pieces} pcs` : ""
-                    }`
-                  : `${pieces} pcs`,
-            };
-          }
-
-          // Other items with pack_quantity → pkts and pcs
-          if (itemInfo.pack_quantity > 0) {
-            const packets = Math.floor(
-              stock.total_remaining / itemInfo.pack_quantity
-            );
+          
+          // For eggs and kienyeji eggs, display as trays and pieces
+          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+          if (isEggs && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
             const pieces = stock.total_remaining % itemInfo.pack_quantity;
             return {
               ...stock,
-              display:
-                packets > 0
-                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${
-                      pieces > 0 ? `, ${pieces} pcs` : ""
-                    }`
-                  : `${pieces} pcs`,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
             };
           }
-
-          // Default
-          return {
-            ...stock,
-            display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
-          };
+          // For other items with pack quantity, display as packets and pieces
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+            const pieces = stock.total_remaining % itemInfo.pack_quantity;
+            return {
+              ...stock,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For items without pack quantity, just display with their metric
+          else {
+            return {
+              ...stock,
+              display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
+            };
+          }
         });
-
+        
         setItemStock(processedStock);
       } catch (err) {
         console.error("Error fetching stock data:", err);
@@ -132,7 +103,7 @@ const ShopStockList = () => {
       }
     };
 
-    fetchData();
+    fetchShopStock();
   }, [shopId]);
 
   const filteredStock = itemStock.filter((stock) =>
@@ -145,7 +116,7 @@ const ShopStockList = () => {
 
     const reportData = {};
     itemStock.forEach((item) => {
-      reportData[item.itemname] = item.display;
+      reportData[item.itemname] = `${item.total_remaining} ${item.metric}`;
     });
 
     const payload = {
@@ -179,15 +150,12 @@ const ShopStockList = () => {
   return (
     <div>
       {/* Heading and Transfer Stock Button */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <h2 style={{ margin: 0 }}>My Shop Stock</h2>
-        <button className="button" onClick={() => navigate("/transfer")}>
+        <button
+          className="button"
+          onClick={() => navigate("/transfer")}
+        >
           Transfer Stock
         </button>
       </div>
@@ -241,7 +209,7 @@ const ShopStockList = () => {
                   filteredStock.map((stock, index) => (
                     <tr key={index}>
                       <td>{stock.itemname}</td>
-                      <td>{stock.display}</td>
+                      <td>{stock.display}</td> {/* ✅ use formatted display */}
                     </tr>
                   ))
                 ) : (
@@ -256,17 +224,16 @@ const ShopStockList = () => {
           {/* Submit Report Button */}
           
           <div style={{ marginTop: "20px" }}>
-            <Alert severity="info" style={{ marginBottom: "10px" }}>
-              Check the stock and press submit report if it matches. If not,
-              contact the manager.
-            </Alert>
-            <button
-              onClick={handleSubmitReport}
-              disabled={submitting}
-              className="button"
-            >
-              {submitting ? "Submitting..." : "Submit Stock Report"}
-            </button>
+              <Alert severity="info" style={{ marginBottom: "10px" }}>
+                Check the stock and press submit report it matches. If not, contact the manager.
+              </Alert>
+              <button
+                onClick={handleSubmitReport}
+                disabled={submitting}
+                className="button"
+              >
+                {submitting ? "Submitting..." : "Submit Stock Report"}
+              </button>
           </div>
         </>
       )}

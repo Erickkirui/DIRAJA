@@ -80,7 +80,7 @@ class AddSale(Resource):
         # ===== VALIDATION =====
         required_fields = [
             'shop_id', 'customer_name', 'customer_number',
-            'items', 'payment_methods', 'status', 'balance'  # Added balance to required fields
+            'items', 'payment_methods', 'status'
         ]
         if not all(field in data for field in required_fields):
             return {
@@ -93,7 +93,8 @@ class AddSale(Resource):
             payment_methods = data['payment_methods']
             promocode = data.get('promocode', '')
             status = data['status'].lower()
-            balance = float(data['balance'])  # Get balance from request
+            # Get balance from request or default to 0 if not provided
+            balance = float(data.get('balance', 0))
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
             if not isinstance(data['items'], list) or not data['items']:
@@ -259,7 +260,7 @@ class AddSale(Resource):
                 customer_number=data['customer_number'],
                 status=status,
                 created_at=created_at,
-                balance=balance,  # Use the balance provided by the frontend
+                balance=balance,  # Use the balance provided or default to 0
                 promocode=promocode
             )
             db.session.add(new_sale)
@@ -340,7 +341,7 @@ class AddSale(Resource):
                 'financial': {
                     'total': total_price,
                     'paid': total_amount_paid,
-                    'balance': balance,  # Return the balance that was provided
+                    'balance': balance,  # Return the balance that was provided or 0
                     'purchase_cost': purchase_account
                 },
                 'items': {
@@ -368,6 +369,7 @@ class AddSale(Resource):
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
+
 
 
 class GetSale(Resource):

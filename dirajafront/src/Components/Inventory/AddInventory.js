@@ -173,12 +173,17 @@ const AddInventory = () => {
     }
   };
 
+  // Determine if the selected item is eggs
+  const isEggs = () => {
+    return selectedStockItem?.item_name?.toLowerCase().includes('eggs');
+  };
+
   // Determine placeholder text for quantity input
   const getQuantityPlaceholder = () => {
     if (formData.itemname.toLowerCase() === 'broiler') {
       return 'Quantity in kgs';
     }
-    return `Quantity in ${formData.unit_type === 'pack' ? 'packs' : 'pieces'}`;
+    return `Quantity in ${formData.unit_type === 'pack' ? (isEggs() ? 'trays' : 'packs') : 'pieces'}`;
   };
 
   return (
@@ -220,11 +225,11 @@ const AddInventory = () => {
               className="input"
             >
               <option value="pieces">Pieces</option>
-              <option value="pack">Pack</option>
+              <option value="pack">{isEggs() ? 'Trays' : 'Packs'}</option>
             </select>
             {formData.unit_type === 'pack' && (
               <small className="text-muted">
-                1 pack = {selectedStockItem.pack_quantity} pieces
+                1 {isEggs() ? 'tray' : 'pack'} = {selectedStockItem.pack_quantity} pieces
               </small>
             )}
           </div>

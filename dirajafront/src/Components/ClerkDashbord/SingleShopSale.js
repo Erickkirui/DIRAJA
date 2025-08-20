@@ -10,8 +10,8 @@ import ItemQuantitySelector from './ItemQuantitySelector';
 import {
   Form,
   DatePicker,
-  
 } from 'antd';
+import dayjs from 'dayjs';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ const SingleShopSale = () => {
         customer_name: '',
         customer_number: '',
         status: '',
-        sale_date: '',
+        sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
         payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
         items: [{
@@ -197,6 +197,10 @@ const SingleShopSale = () => {
         setFormData({ ...formData, [name]: value });
     };
 
+    const handleDateChange = (date, dateString) => {
+        setFormData({ ...formData, sale_date: dateString });
+    };
+
     const handlePaymentChange = (index, field, value) => {
         const newPaymentMethods = [...formData.payment_methods];
         newPaymentMethods[index][field] = value;
@@ -309,7 +313,7 @@ const SingleShopSale = () => {
                     customer_name: '',
                     customer_number: '',
                     status: '',
-                    sale_date: '',
+                    sale_date: dayjs().format('YYYY-MM-DD'), // Reset to current date
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                     promocode: '',
                     items: [{
@@ -452,8 +456,13 @@ const SingleShopSale = () => {
                 
                 <h5>Select date: </h5>
                 <Form.Item>
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
+                    <DatePicker 
+                        style={{ width: '100%' }} 
+                        value={formData.sale_date ? dayjs(formData.sale_date) : dayjs()}
+                        onChange={handleDateChange}
+                        format="YYYY-MM-DD"
+                    />
+                </Form.Item>
                 
                 <select 
                     name="status" 
