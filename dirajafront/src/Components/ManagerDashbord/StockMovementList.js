@@ -66,10 +66,9 @@ const StockMovement = () => {
         }
 
         const res = await axios.get("/api/diraja/stock-movement", {
-          params: params, // This will be converted to query string by axios
+          params: params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-            'Content-Type': 'application/json'
           },
         });
 
@@ -142,27 +141,15 @@ const StockMovement = () => {
       key: "batch_number",
     },
     {
-      title: "Unit Cost",
-      dataIndex: "unit_cost",
-      key: "unit_cost",
-      render: (cost) => cost ? `$${cost.toFixed(2)}` : "-",
-    },
-    {
-      title: "Total Cost",
-      dataIndex: "total_cost",
-      key: "total_cost",
-      render: (cost) => cost ? `$${cost.toFixed(2)}` : "-",
-    },
-    {
       title: "Date",
       dataIndex: "date",
       key: "date",
       render: formatDate,
     },
     {
-      title: "Destination",
-      dataIndex: "destination",
-      key: "destination",
+      title: "Shop Name",
+      dataIndex: "shop_name",
+      key: "shop_name",
     },
   ];
 
@@ -204,6 +191,11 @@ const StockMovement = () => {
       dataIndex: "location",
       key: "location",
     },
+    {
+      title: "Shop Name",
+      dataIndex: "shop_name",
+      key: "shop_name",
+    },
   ];
 
   const returnsColumns = [
@@ -233,6 +225,11 @@ const StockMovement = () => {
       dataIndex: "source",
       key: "source",
     },
+    {
+      title: "Shop Name",
+      dataIndex: "shop_name",
+      key: "shop_name",
+    },
   ];
 
   const shopTransferColumns = [
@@ -254,14 +251,14 @@ const StockMovement = () => {
       render: formatDate,
     },
     {
-      title: "Source",
-      dataIndex: "source",
-      key: "source",
+      title: "Source Shop",
+      dataIndex: "source_shop_name",
+      key: "source_shop_name",
     },
     {
-      title: "Destination",
-      dataIndex: "destination",
-      key: "destination",
+      title: "Destination Shop",
+      dataIndex: "destination_shop_name",
+      key: "destination_shop_name",
     },
     {
       title: "Direction",

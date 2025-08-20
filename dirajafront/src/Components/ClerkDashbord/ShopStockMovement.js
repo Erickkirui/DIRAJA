@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
-import { DatePicker, Alert, Tabs } from "antd";
+import { DatePicker, Alert, Select } from "antd";
 import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
-const { TabPane } = Tabs;
+const { Option } = Select;
 
 const ShopStockMovement = () => {
   const [movementData, setMovementData] = useState({
@@ -33,9 +33,7 @@ const ShopStockMovement = () => {
       try {
         if (!shopId) throw new Error("Shop ID not found in localStorage");
 
-        const params = {
-          shop_id: shopId,
-        };
+        const params = { shop_id: shopId };
 
         if (dateRange && dateRange.length === 2) {
           params.from_date = dateRange[0].format("YYYY-MM-DD");
@@ -55,7 +53,9 @@ const ShopStockMovement = () => {
       } catch (err) {
         console.error("Failed to fetch stock movement data", err);
         setError(
-          err.response?.data?.message || err.message || "Failed to fetch stock movement data"
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to fetch stock movement data"
         );
       } finally {
         setLoading(false);
@@ -65,17 +65,9 @@ const ShopStockMovement = () => {
     fetchStockMovement();
   }, [dateRange, daysBack, shopId]);
 
-  const formatDate = (dateString) => {
-    return dayjs(dateString).format("YYYY-MM-DD HH:mm");
-  };
-
   const renderTable = (data, columns) => {
     if (!data || data.length === 0) {
-      return (
-        <div className="no-data">
-          No data available for the selected period
-        </div>
-      );
+      return <div className="no-data">No data available for the selected period</div>;
     }
 
     return (
@@ -106,6 +98,7 @@ const ShopStockMovement = () => {
     );
   };
 
+  // Column definitions (same as before)
   const transferColumns = [
     { title: "Item Name", dataIndex: "item_name", key: "item_name" },
     {
@@ -114,21 +107,7 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
-    { title: "Batch Number", dataIndex: "batch_number", key: "batch_number" },
-    {
-      title: "Unit Cost",
-      dataIndex: "unit_cost",
-      key: "unit_cost",
-      render: (cost) => (cost ? `ksh${cost.toFixed(2)}` : "-"),
-    },
-    {
-      title: "Total Cost",
-      dataIndex: "total_cost",
-      key: "total_cost",
-      render: (cost) => (cost ? `ksh${cost.toFixed(2)}` : "-"),
-    },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
-    { title: "Destination", dataIndex: "destination", key: "destination" },
+   
   ];
 
   const spoiltColumns = [
@@ -142,7 +121,6 @@ const ShopStockMovement = () => {
     { title: "Disposal Method", dataIndex: "disposal_method", key: "disposal_method" },
     { title: "Collector", dataIndex: "collector_name", key: "collector_name" },
     { title: "Comment", dataIndex: "comment", key: "comment" },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Location", dataIndex: "location", key: "location" },
   ];
 
@@ -150,7 +128,6 @@ const ShopStockMovement = () => {
     { title: "Item Name", dataIndex: "item_name", key: "item_name" },
     { title: "Quantity", dataIndex: "quantity", key: "quantity" },
     { title: "Reason", dataIndex: "reason", key: "reason" },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Source", dataIndex: "source", key: "source" },
   ];
 
@@ -162,7 +139,6 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
-    { title: "Date", dataIndex: "date", key: "date", render: formatDate },
     { title: "Source", dataIndex: "source", key: "source" },
     { title: "Destination", dataIndex: "destination", key: "destination" },
     {
@@ -176,6 +152,30 @@ const ShopStockMovement = () => {
       ),
     },
   ];
+
+  // Map tabs to dropdown options
+  const tabOptions = {
+    transfers: {
+      label: `From store (${movementData.transfers.length})`,
+      columns: transferColumns,
+      data: movementData.transfers,
+    },
+    spoilt_items: {
+      label: `Spoilt Items (${movementData.spoilt_items.length})`,
+      columns: spoiltColumns,
+      data: movementData.spoilt_items,
+    },
+    returns: {
+      label: `Returns (${movementData.returns.length})`,
+      columns: returnsColumns,
+      data: movementData.returns,
+    },
+    shop_transfers: {
+      label: `Shop Transfers (${movementData.shop_transfers.length})`,
+      columns: shopTransferColumns,
+      data: movementData.shop_transfers,
+    },
+  };
 
   return (
     <div className="stock-movement-container">
@@ -211,32 +211,23 @@ const ShopStockMovement = () => {
       {loading && <LoadingAnimation />}
 
       {!loading && !error && (
-        <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <TabPane
-            tab={`Transfers (${movementData.transfers.length})`}
-            key="transfers"
+        <>
+          {/* ✅ Dropdown instead of tabs */}
+          <Select
+            value={activeTab}
+            onChange={(val) => setActiveTab(val)}
+            style={{ width: 250, marginBottom: 16 }}
           >
-            {renderTable(movementData.transfers, transferColumns)}
-          </TabPane>
-          <TabPane
-            tab={`Spoilt Items (${movementData.spoilt_items.length})`}
-            key="spoilt_items"
-          >
-            {renderTable(movementData.spoilt_items, spoiltColumns)}
-          </TabPane>
-          <TabPane
-            tab={`Returns (${movementData.returns.length})`}
-            key="returns"
-          >
-            {renderTable(movementData.returns, returnsColumns)}
-          </TabPane>
-          <TabPane
-            tab={`Shop Transfers (${movementData.shop_transfers.length})`}
-            key="shop_transfers"
-          >
-            {renderTable(movementData.shop_transfers, shopTransferColumns)}
-          </TabPane>
-        </Tabs>
+            {Object.entries(tabOptions).map(([key, option]) => (
+              <Option key={key} value={key}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
+
+          {/* ✅ Render selected table */}
+          {renderTable(tabOptions[activeTab].data, tabOptions[activeTab].columns)}
+        </>
       )}
     </div>
   );
