@@ -11,7 +11,7 @@ function SalesLedger() {
     const fetchSalesLedger = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await fetch('/api/diraja/sale-ledger', {
+        const response = await fetch('https://kulima.co.ke/api/diraja/sale-ledger', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

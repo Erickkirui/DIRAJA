@@ -10,7 +10,7 @@ const SalesSummaryTable = () => {
   });
 
   useEffect(() => {
-    fetch("/api/diraja/Sale-Summery", {
+    fetch("https://kulima.co.ke/api/diraja/Sale-Summery", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
       },

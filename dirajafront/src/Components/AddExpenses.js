@@ -29,13 +29,13 @@ const AddExpense = () => {
     const fetchData = async () => {
       try {
         const [shopResponse, categoryResponse, accountResponse] = await Promise.all([
-          axios.get('/api/diraja/allshops', {
+          axios.get('https://kulima.co.ke/api/diraja/allshops', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get('/api/diraja/expensecategories', {
+          axios.get('https://kulima.co.ke/api/diraja/expensecategories', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get('/api/diraja/all-acounts', {
+          axios.get('https://kulima.co.ke/api/diraja/all-acounts', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           })
         ]);
@@ -112,7 +112,7 @@ const AddExpense = () => {
     };
 
     try {
-      const response = await axios.post('/api/diraja/newexpense', formattedData, {
+      const response = await axios.post('https://kulima.co.ke/api/diraja/newexpense', formattedData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
 

@@ -17,7 +17,7 @@ const AddShop = () => {
     const fetchEmployees = async () => {
       setIsLoading(true);
       try {
-        const response = await axios.get('/api/diraja/allemployees', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allemployees', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
         setEmployees(response.data);
@@ -47,7 +47,7 @@ const AddShop = () => {
       );
 
       const response = await axios.post(
-        '/api/diraja/newshop',
+        'https://kulima.co.ke/api/diraja/newshop',
         {
           shopname,
           location,

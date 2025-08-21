@@ -20,7 +20,7 @@ const SpoiltStockTable = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allspoilt', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allspoilt', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

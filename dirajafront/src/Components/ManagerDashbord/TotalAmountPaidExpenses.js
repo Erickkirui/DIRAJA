@@ -16,7 +16,7 @@ const TotalAmountPaidExpenses = () => {
   const fetchTotalAmountPaid = async () => {
     setIsLoading(true);
     try {
-      let url = `/api/diraja/totalexpenses?period=${period}`;
+      let url = `https://kulima.co.ke/api/diraja/totalexpenses?period=${period}`;
 
       // Use custom dates only if both are provided
       if (period === 'custom' && customDateRange.startDate && customDateRange.endDate) {
@@ -24,7 +24,7 @@ const TotalAmountPaidExpenses = () => {
         const formattedStartDate = new Date(customDateRange.startDate).toISOString().split('T')[0];
         const formattedEndDate = new Date(customDateRange.endDate).toISOString().split('T')[0];
 
-        url = `/api/diraja/totalexpenses?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
+        url = `https://kulima.co.ke/api/diraja/totalexpenses?start_date=${formattedStartDate}&end_date=${formattedEndDate}`;
       }
 
       const response = await axios.get(url, {

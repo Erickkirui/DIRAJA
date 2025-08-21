@@ -24,7 +24,7 @@ function AddAccounts() {
     }
 
     try {
-      const response = await fetch('/api/diraja/bankaccount', {
+      const response = await fetch('https://kulima.co.ke/api/diraja/bankaccount', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

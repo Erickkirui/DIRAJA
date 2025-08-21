@@ -24,7 +24,7 @@ function PurchasesLedger() {
       }
 
       try {
-        const res = await axios.get('/api/diraja/purchases-ledger', {
+        const res = await axios.get('https://kulima.co.ke/api/diraja/purchases-ledger', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

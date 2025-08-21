@@ -23,7 +23,7 @@ const SalesFilters = ({
     const fetchShops = async () => {
       const token = localStorage.getItem('access_token');
       try {
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setShops(response.data.shops || []);

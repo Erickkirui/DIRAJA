@@ -33,7 +33,7 @@ const StockTable = () => {
           return;
         }
 
-        const response = await axios.get(`/api/diraja/get-stock/${shopId}`, {
+        const response = await axios.get(`https://kulima.co.ke/api/diraja/get-stock/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -69,7 +69,7 @@ const StockTable = () => {
         mismatch_reason: mismatchQuantity !== 0 ? mismatchReason : null,
       };
 
-      const response = await axios.post("/api/diraja/stockcheckin", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/stockcheckin", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -106,7 +106,7 @@ const StockTable = () => {
         added_stock: parseFloat(addedStock),
       };
 
-      const response = await axios.post("/api/diraja/addstock", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/addstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -146,7 +146,7 @@ const StockTable = () => {
         added_stock: parseFloat(addedStock),
       };
 
-      const response = await axios.post("/api/diraja/registerstock", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/registerstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

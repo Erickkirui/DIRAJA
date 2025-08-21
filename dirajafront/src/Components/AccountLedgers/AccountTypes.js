@@ -18,7 +18,7 @@ function AccountTypes() {
       }
 
       try {
-        const response = await fetch('/api/diraja/account-types/all', {
+        const response = await fetch('https://kulima.co.ke/api/diraja/account-types/all', {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }

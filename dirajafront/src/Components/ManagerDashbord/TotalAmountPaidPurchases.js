@@ -16,7 +16,7 @@ const TotalAmountPaidPurchases = () => {
   const fetchTotalAmountPaid = async (selectedPeriod, dateRange) => {
     setLoading(true);
     try {
-      let url = `/api/diraja/totalpurchases`;
+      let url = `https://kulima.co.ke/api/diraja/totalpurchases`;
       
       // Prepare the parameters for the API request
       const params =

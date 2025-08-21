@@ -17,7 +17,7 @@ function ChartOfAccounts() {
       }
 
       try {
-        const response = await fetch('/api/diraja/chart-of-accounts', {
+        const response = await fetch('https://kulima.co.ke/api/diraja/chart-of-accounts', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

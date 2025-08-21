@@ -20,7 +20,7 @@ const CashDeposit = () => {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
         setShops(response.data);
@@ -70,7 +70,7 @@ const CashDeposit = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.post('/api/diraja/cashdeposits/add', 
+      const response = await axios.post('https://kulima.co.ke/api/diraja/cashdeposits/add', 
         formData, 
         {
           headers: {

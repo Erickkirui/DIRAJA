@@ -39,7 +39,7 @@ const DistributeInventoryModal = ({
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
@@ -162,7 +162,7 @@ const DistributeInventoryModal = ({
             created_at: new Date(distributionDate).toISOString(),
           };
 
-          await axios.post('/api/diraja/v2/distribute-inventory', requestData, {
+          await axios.post('https://kulima.co.ke/api/diraja/v2/distribute-inventory', requestData, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-User-Role': 'manager',

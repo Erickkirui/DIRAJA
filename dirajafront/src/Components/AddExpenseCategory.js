@@ -35,7 +35,7 @@ const AddExpenseCategory = () => {
     }
 
     try {
-      const response = await axios.post('/api/diraja/add-expense-category', categoryData, {
+      const response = await axios.post('https://kulima.co.ke/api/diraja/add-expense-category', categoryData, {
         headers: { 
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           'Content-Type': 'application/json'

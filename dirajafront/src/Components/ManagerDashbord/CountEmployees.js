@@ -16,7 +16,7 @@ const CountEmployees = () => {
     const fetchEmployeeCount = async () => {
       setIsLoading(true); // Start loading
       try {
-        const response = await axios.get('/api/diraja/totalemployees', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/totalemployees', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }

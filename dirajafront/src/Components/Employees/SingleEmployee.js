@@ -19,7 +19,7 @@ const SingleEmployee = () => {
  
 
 
-        const response = await fetch(` /api/diraja/employee/${employee_id}`, {
+        const response = await fetch(` https://kulima.co.ke/api/diraja/employee/${employee_id}`, {
 
 
           method: 'GET',
@@ -58,7 +58,7 @@ const SingleEmployee = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/diraja/employee/${employee_id}`, {
+      const response = await fetch(`https://kulima.co.ke/api/diraja/employee/${employee_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

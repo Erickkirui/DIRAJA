@@ -20,7 +20,7 @@ const TodaysSales = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allsales', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allsales', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 

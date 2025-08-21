@@ -26,7 +26,7 @@ const TotalAmountPaidSales = () => {
             }
           : { period };
 
-        const response = await axios.get('/api/diraja/allshopstotal', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshopstotal', {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,

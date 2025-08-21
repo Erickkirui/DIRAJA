@@ -25,7 +25,7 @@ const EmployeeSales = () => {
           return;
         }
 
-        const response = await axios.get(`/api/diraja/sales/${userName}/${shopId}`, {
+        const response = await axios.get(`https://kulima.co.ke/api/diraja/sales/${userName}/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

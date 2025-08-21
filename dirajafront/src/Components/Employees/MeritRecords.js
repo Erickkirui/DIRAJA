@@ -20,7 +20,7 @@ const MeritRecords = () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('access_token');
-        const response = await axios.get('/api/diraja/meritledger', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/meritledger', {
           headers: {
             Authorization: `Bearer ${token}`
           }

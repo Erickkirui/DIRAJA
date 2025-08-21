@@ -21,7 +21,7 @@ const ShopNameDisplay = () => {
 
     const fetchShopName = async () => {
       try {
-        const response = await axios.get("/api/diraja/allshops", {
+        const response = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },

@@ -44,7 +44,7 @@ const ShopStockMovement = () => {
           params.days = daysBack;
         }
 
-        const res = await axios.get("/api/diraja/stock-movement", {
+        const res = await axios.get("https://kulima.co.ke/api/diraja/stock-movement", {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,

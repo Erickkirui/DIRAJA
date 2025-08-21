@@ -21,7 +21,7 @@ const ShopStockList = () => {
   useEffect(() => {
     const fetchStockItems = async () => {
       try {
-        const itemsResponse = await axios.get("/api/diraja/stockitems", {
+        const itemsResponse = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -40,7 +40,7 @@ const ShopStockList = () => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `/api/diraja/item-stock-level?shop_id=${shopId}`,
+          `https://kulima.co.ke/api/diraja/item-stock-level?shop_id=${shopId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -125,7 +125,7 @@ const ShopStockList = () => {
     };
 
     try {
-      const response = await axios.post("/api/diraja/report-stock", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/report-stock", payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },

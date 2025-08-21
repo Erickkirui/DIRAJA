@@ -23,7 +23,7 @@ const SoldItemsList = () => {
     const fetchInitialData = async () => {
       try {
         // Fetch shops
-        const shopsRes = await axios.get("/api/diraja/allshops", {
+        const shopsRes = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -34,7 +34,7 @@ const SoldItemsList = () => {
         setShops(sortedShops);
 
         // Fetch stock items
-        const itemsRes = await axios.get("/api/diraja/stockitems", {
+        const itemsRes = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -61,8 +61,8 @@ const SoldItemsList = () => {
         }
 
         const url = selectedShopId
-          ? `/api/diraja/sold-items-summary/${selectedShopId}?${params}`
-          : `/api/diraja/sold-items-summary?${params}`;
+          ? `https://kulima.co.ke/api/diraja/sold-items-summary/${selectedShopId}?${params}`
+          : `https://kulima.co.ke/api/diraja/sold-items-summary?${params}`;
 
         const res = await axios.get(url, {
           headers: {

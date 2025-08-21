@@ -24,7 +24,7 @@ function AddAccountType() {
     }
 
     try {
-      const response = await fetch('/api/diraja/add-account', {
+      const response = await fetch('https://kulima.co.ke/api/diraja/add-account', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
