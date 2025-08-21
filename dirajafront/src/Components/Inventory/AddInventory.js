@@ -16,12 +16,14 @@ const AddInventory = () => {
     created_at: '',
     paymentRef: '',
     source: '',
+    unit_type: 'pieces', // New field for pack/piece selection
   });
 
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
   const [accounts, setAccounts] = useState([]);
   const [stockItems, setStockItems] = useState([]);
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -68,6 +70,20 @@ const AddInventory = () => {
     fetchStockItems();
   }, []);
 
+  // Update selectedStockItem when itemname changes
+  useEffect(() => {
+    if (formData.itemname) {
+      const item = stockItems.find(stockItem => stockItem.item_name === formData.itemname);
+      setSelectedStockItem(item || null);
+      
+      // Reset unit_type to pieces when changing items
+      setFormData(prev => ({
+        ...prev,
+        unit_type: 'pieces'
+      }));
+    }
+  }, [formData.itemname, stockItems]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const updatedFormData = {
@@ -75,12 +91,18 @@ const AddInventory = () => {
       [name]: value
     };
 
-    if (name === 'amountPaid' || name === 'quantity') {
+    if (name === 'amountPaid' || name === 'quantity' || name === 'unit_type') {
       const quantity = parseFloat(updatedFormData.quantity) || 0;
       const amountPaid = parseFloat(updatedFormData.amountPaid) || 0;
 
       if (quantity > 0) {
-        updatedFormData.unitCost = (amountPaid / quantity).toFixed(2);
+        // If using pack unit type and pack quantity is available
+        if (updatedFormData.unit_type === 'pack' && selectedStockItem?.pack_quantity) {
+          const packQuantity = parseFloat(selectedStockItem.pack_quantity);
+          updatedFormData.unitCost = (amountPaid / (quantity * packQuantity)).toFixed(2);
+        } else {
+          updatedFormData.unitCost = (amountPaid / quantity).toFixed(2);
+        }
       } else {
         updatedFormData.unitCost = '';
       }
@@ -98,13 +120,20 @@ const AddInventory = () => {
       return;
     }
 
-    const quantity = parseFloat(formData.quantity) || 0;
+    let finalQuantity = parseFloat(formData.quantity) || 0;
+    
+    // Convert to pieces if using pack unit type
+    if (formData.unit_type === 'pack' && selectedStockItem?.pack_quantity) {
+      const packQuantity = parseFloat(selectedStockItem.pack_quantity);
+      finalQuantity = finalQuantity * packQuantity;
+    }
+
     const amountPaid = parseFloat(formData.amountPaid) || 0;
-    const finalUnitCost = quantity > 0 ? (amountPaid / quantity) : 0;
+    const finalUnitCost = finalQuantity > 0 ? (amountPaid / finalQuantity) : 0;
 
     const numericFormData = {
       ...formData,
-      quantity: quantity,
+      quantity: finalQuantity, // Send the converted quantity
       unitCost: finalUnitCost,
       amountPaid: amountPaid,
       unitPrice: parseFloat(formData.unitPrice) || 0,
@@ -134,11 +163,27 @@ const AddInventory = () => {
         created_at: '',
         paymentRef: '',
         source: '',
+        unit_type: 'pieces',
       });
+      
+      setSelectedStockItem(null);
     } catch (error) {
       setMessage('Error adding inventory: ' + (error.response?.data?.message || error.message));
       setMessageType('error');
     }
+  };
+
+  // Determine if the selected item is eggs
+  const isEggs = () => {
+    return selectedStockItem?.item_name?.toLowerCase().includes('eggs');
+  };
+
+  // Determine placeholder text for quantity input
+  const getQuantityPlaceholder = () => {
+    if (formData.itemname.toLowerCase() === 'broiler') {
+      return 'Quantity in kgs';
+    }
+    return `Quantity in ${formData.unit_type === 'pack' ? (isEggs() ? 'trays' : 'packs') : 'pieces'}`;
   };
 
   return (
@@ -169,12 +214,33 @@ const AddInventory = () => {
           ))}
         </select>
 
+        {/* Unit type selector - only show if item has pack quantity */}
+        {selectedStockItem && selectedStockItem.pack_quantity && (
+          <div className="form-group">
+            <label>Select Unit Type:</label>
+            <select
+              name="unit_type"
+              value={formData.unit_type}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="pieces">Pieces</option>
+              <option value="pack">{isEggs() ? 'Trays' : 'Packs'}</option>
+            </select>
+            {formData.unit_type === 'pack' && (
+              <small className="text-muted">
+                1 {isEggs() ? 'tray' : 'pack'} = {selectedStockItem.pack_quantity} pieces
+              </small>
+            )}
+          </div>
+        )}
+
         <input
           type="number"
           name="quantity"
           value={formData.quantity}
           onChange={handleChange}
-          placeholder="Quantity"
+          placeholder={getQuantityPlaceholder()}
           className="input"
           min="0"
           step="0.01"
@@ -223,19 +289,19 @@ const AddInventory = () => {
           required
         />
 
-        <div className="form-group">
+        {/* <div className="form-group">
           <input
             type="number"
             name="unitCost"
             value={formData.unitCost || ''}
             className="input"
             readOnly
-            placeholder="Unit Cost (Used to determine ideal sale per item)"
+            placeholder="Unit Cost (per piece)"
           />
           <small className="text-muted">
-            Calculated as: Total Amount Paid / Quantity
+            Calculated as: Total Amount Paid / Total Pieces
           </small>
-        </div>
+        </div> */}
 
         <input
           type="text"
@@ -247,17 +313,17 @@ const AddInventory = () => {
           required
         />
 
-        <input
+        {/* <input
           type="number"
           name="unitPrice"
           value={formData.unitPrice}
           onChange={handleChange}
-          placeholder="Unit price (Used to determine ideal sale price per item)"
+          placeholder="Unit price (per piece)"
           className="input"
           min="0"
           step="0.01"
           required
-        />
+        /> */}
 
         <input
           type="text"

@@ -13,7 +13,7 @@ const DeleteConfirmationModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleQuantityChange = (e) => {
-    const value = parseInt(e.target.value);
+    const value = parseFloat(e.target.value);
     if (isNaN(value)) {
       setQuantity('');
       return;
@@ -22,7 +22,7 @@ const DeleteConfirmationModal = ({
     if (value > maxQuantity) {
       setError(`Cannot return more than ${maxQuantity}`);
     } else if (value <= 0) {
-      setError('Quantity must be at least 1');
+      setError('Quantity must be greater than 0');
     } else {
       setError('');
     }
@@ -65,7 +65,8 @@ const DeleteConfirmationModal = ({
           <input
             id="return-quantity"
             type="number"
-            min="1"
+            min="0.01"
+            step="0.01"
             max={maxQuantity}
             value={quantity}
             onChange={handleQuantityChange}

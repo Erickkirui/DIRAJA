@@ -515,7 +515,7 @@ class AddInventoryV2(Resource):
 
 class GetAllInventoryV2(Resource):
     @jwt_required()
-    @check_role('manager')
+    # @check_role('manager')
     def get(self):
         inventories = InventoryV2.query.order_by(InventoryV2.created_at.desc()).all()
 

@@ -10,8 +10,8 @@ import ItemQuantitySelector from './ItemQuantitySelector';
 import {
   Form,
   DatePicker,
-  
 } from 'antd';
+import dayjs from 'dayjs';
 
 const SingleShopSale = () => {
     const [formData, setFormData] = useState({
@@ -19,7 +19,7 @@ const SingleShopSale = () => {
         customer_name: '',
         customer_number: '',
         status: '',
-        sale_date: '',
+        sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
         payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
         items: [{
@@ -109,7 +109,6 @@ const SingleShopSale = () => {
             newItems[index] = {
                 ...newItems[index],
                 metric: metric || '',
-                // Get unit_price from stockItem if available
                 unit_price: stockItem?.unit_price || '',
                 stock_id: stock_id || '',
                 BatchNumber: BatchNumber || '',
@@ -118,7 +117,6 @@ const SingleShopSale = () => {
                 estimated_cost: calculateEstimatedCost(newItems[index])
             };
 
-            // Update total price after fetching unit price
             const qty = parseFloat(newItems[index].quantity) || 0;
             newItems[index].total_price = (qty * (newItems[index].unit_price || 0)).toFixed(2);
 
@@ -136,7 +134,6 @@ const SingleShopSale = () => {
         const stockItem = stockItems.find(si => si.item_name === newItems[index].item_name);
 
         if (field === 'unit_type') {
-            // Recalculate estimated cost when unit type changes
             newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
             
             const quantity = parseFloat(newItems[index].quantity) || 0;
@@ -157,7 +154,6 @@ const SingleShopSale = () => {
                 newItems[index].total_price = (quantity * (unitPrice || 0)).toFixed(2);
             }
             
-            // Always recalculate estimated cost when quantity or price changes
             newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
         }
 
@@ -199,6 +195,10 @@ const SingleShopSale = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
+    };
+
+    const handleDateChange = (date, dateString) => {
+        setFormData({ ...formData, sale_date: dateString });
     };
 
     const handlePaymentChange = (index, field, value) => {
@@ -254,9 +254,27 @@ const SingleShopSale = () => {
             }
         }
 
-        // Prepare data for submission
+        // Calculate total amount paid
+        const totalAmountPaid = formData.payment_methods.reduce(
+            (sum, payment) => sum + (parseFloat(payment.amount) || 0), 0
+        );
+
+        // Calculate balance according to business rules
+        let balance;
+        if (totalAmountPaid === 0) {
+            // If amount is 0, balance equals the estimated cost
+            balance = grandTotal;
+        } else {
+            // Otherwise balance is the difference between estimated cost and amount paid
+            balance = Math.max(0, grandTotal - totalAmountPaid);
+        }
+
+        // Prepare data for submission with explicit balance
         const formDataToSubmit = { 
             ...formData,
+            balance: balance, // Explicitly set the balance
+            estimated_cost: grandTotal, // Include estimated_cost at root level
+            total_amount_paid: totalAmountPaid, // Include total amount paid
             items: formData.items.map(item => {
                 const stockItem = stockItems.find(si => si.item_name === item.item_name);
                 return {
@@ -266,7 +284,8 @@ const SingleShopSale = () => {
                         : parseFloat(item.quantity),
                     metric: item.metric,
                     unit_price: parseFloat(item.unit_price),
-                    total_price: parseFloat(item.total_price)
+                    total_price: parseFloat(item.total_price),
+                    estimated_cost: parseFloat(item.estimated_cost) // Include estimated_cost per item
                 };
             }),
             payment_methods: formData.payment_methods.map(payment => ({
@@ -294,7 +313,7 @@ const SingleShopSale = () => {
                     customer_name: '',
                     customer_number: '',
                     status: '',
-                    sale_date: '',
+                    sale_date: dayjs().format('YYYY-MM-DD'), // Reset to current date
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                     promocode: '',
                     items: [{
@@ -437,8 +456,13 @@ const SingleShopSale = () => {
                 
                 <h5>Select date: </h5>
                 <Form.Item>
-              <DatePicker style={{ width: '100%' }} />
-            </Form.Item>
+                    <DatePicker 
+                        style={{ width: '100%' }} 
+                        value={formData.sale_date ? dayjs(formData.sale_date) : dayjs()}
+                        onChange={handleDateChange}
+                        format="YYYY-MM-DD"
+                    />
+                </Form.Item>
                 
                 <select 
                     name="status" 

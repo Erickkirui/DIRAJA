@@ -1,32 +1,21 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
-import { Link } from "react-router-dom";
 
-const ItemStockList = () => {
-  const [itemStock, setItemStock] = useState([]);
+const InventoryStockCount = () => {
+  const [inventoryStock, setInventoryStock] = useState([]);
   const [stockItems, setStockItems] = useState([]);
-  const [shops, setShops] = useState([]);
-  const [selectedShopId, setSelectedShopId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState({
+    item_name: "",
+    supplier_name: ""
+  });
 
-  // Fetch all shops and stock items
+  // Fetch stock items
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchStockItems = async () => {
       try {
-        // Fetch shops
-        const shopsResponse = await axios.get("/api/diraja/allshops", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
-        const sortedShops = shopsResponse.data.sort((a, b) =>
-          a.shopname.localeCompare(b.shopname)
-        );
-        setShops(sortedShops);
-
-        // Fetch stock items
         const itemsResponse = await axios.get("/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -34,20 +23,23 @@ const ItemStockList = () => {
         });
         setStockItems(itemsResponse.data.stock_items || []);
       } catch (err) {
-        console.error("Failed to fetch initial data", err);
+        console.error("Failed to fetch stock items", err);
       }
     };
-    fetchInitialData();
+    fetchStockItems();
   }, []);
 
-  // Fetch item stock
+  // Fetch inventory stock
   useEffect(() => {
-    const fetchItemStock = async () => {
+    const fetchInventoryStock = async () => {
       setLoading(true);
       try {
-        const url = selectedShopId
-          ? `/api/diraja/item-stock-level?shop_id=${selectedShopId}`
-          : `/api/diraja/item-stock-level`;
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (filters.item_name) params.append('item_name', filters.item_name);
+        if (filters.supplier_name) params.append('supplier_name', filters.supplier_name);
+
+        const url = `/api/diraja/inventory-stock-level${params.toString() ? `?${params.toString()}` : ''}`;
 
         const response = await axios.get(url, {
           headers: {
@@ -55,7 +47,8 @@ const ItemStockList = () => {
           },
         });
 
-        const processedStock = (response.data.item_stocks || []).map((stock) => {
+        // Process stock with the same logic as ItemStockList
+        const processedStock = (response.data.inventory_stocks || []).map((stock) => {
           const itemInfo = stockItems.find(
             (item) => item.item_name === stock.itemname
           );
@@ -68,11 +61,11 @@ const ItemStockList = () => {
             };
           }
 
-          // If metric is kgs, show in kgs only
-          if (stock.metric && stock.metric.toLowerCase() === "kgs") {
+          // If metric is kg, show in kg only
+          if (stock.metric && stock.metric.toLowerCase() === "kg") {
             return {
               ...stock,
-              display: `${stock.total_remaining} kgs`,
+              display: `${stock.total_remaining} kg`,
             };
           }
 
@@ -122,67 +115,80 @@ const ItemStockList = () => {
           };
         });
 
-        setItemStock(processedStock);
+        setInventoryStock(processedStock);
       } catch (err) {
-        setError("An error occurred while fetching item stock data.");
+        setError("An error occurred while fetching inventory stock data.");
+        console.error("Failed to fetch inventory stock", err);
       } finally {
         setLoading(false);
       }
     };
 
     if (stockItems.length > 0) {
-      fetchItemStock();
+      fetchInventoryStock();
     }
-  }, [selectedShopId, stockItems]);
+  }, [filters, stockItems]);
 
-  // Filter to only show items with stock remaining
-  const currentStock = itemStock.filter((stock) => stock.total_remaining > 0);
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   return (
     <div className="stock-level-container">
       <div className="top-stock">
-        <p>Item Stock List</p>
-        <select
-          value={selectedShopId}
-          onChange={(e) => setSelectedShopId(e.target.value)}
-        >
-          <option value="">All Shops</option>
-          {shops.map((shop) => (
-            <option key={shop.shop_id} value={shop.shop_id}>
-              {shop.shopname}
-            </option>
-          ))}
-        </select>
+        <h2>Inventory Stock Count</h2>
+        
+        {/* Filter inputs */}
+        <div className="filter-controls">
+          <input
+            type="text"
+            name="item_name"
+            placeholder="Filter by item name..."
+            value={filters.item_name}
+            onChange={handleFilterChange}
+            className="filter-input"
+          />
+          <input
+            type="text"
+            name="supplier_name"
+            placeholder="Filter by supplier..."
+            value={filters.supplier_name}
+            onChange={handleFilterChange}
+            className="filter-input"
+          />
+        </div>
       </div>
-
-      <Link className="view-stock-link" to="/shopstock">
-        View Stock
-      </Link>
 
       {loading && <LoadingAnimation />}
       {error && <p className="error">{error}</p>}
 
       {!loading && !error && (
         <div className="tab-content">
-          <h3>Current Stock</h3>
+          <h3>Current Inventory Stock</h3>
           <table className="inventory-table">
             <thead>
               <tr>
                 <th>Item Name</th>
                 <th>Total Remaining</th>
+                <th>Batches</th>
               </tr>
             </thead>
             <tbody className="batchnumber-size">
-              {currentStock.length > 0 ? (
-                currentStock.map((stock, index) => (
+              {inventoryStock.length > 0 ? (
+                inventoryStock.map((stock, index) => (
                   <tr key={index}>
                     <td>{stock.itemname}</td>
                     <td>{stock.display}</td>
+                    <td>{stock.batch_count}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="2">No current stock available.</td>
+                  <td colSpan="3">No inventory stock available.</td>
                 </tr>
               )}
             </tbody>
@@ -193,4 +199,4 @@ const ItemStockList = () => {
   );
 };
 
-export default ItemStockList;
+export default InventoryStockCount;

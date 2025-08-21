@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import GeneralTableLayout from '../GeneralTableLayout';
 import '../../Styles/expenses.css';
 
 const AllShopTransfers = () => {
@@ -8,8 +9,7 @@ const AllShopTransfers = () => {
   const [selectedDate, setSelectedDate] = useState('');
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
-  const itemsPerPage = 50;
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   useEffect(() => {
     const fetchTransfers = async () => {
@@ -44,22 +44,26 @@ const AllShopTransfers = () => {
     return matchesSearch && matchesDate;
   });
 
-  const currentTransfers = filteredTransfers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredTransfers.length / itemsPerPage);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  if (error) return <div className="error-message">{error}</div>;
+  const columns = [
+    {
+      header: 'Date',
+      key: 'transfer_date',
+      render: (item) =>
+        new Date(item.transfer_date).toLocaleDateString('en-CA')
+    },
+    { header: 'From Shop', key: 'from_shop_name' },
+    { header: 'To Shop', key: 'to_shop_name' },
+    { header: 'User', key: 'username' },
+    { header: 'Item', key: 'itemname' },
+    { header: 'Qty', key: 'quantity' },
+    { header: 'Batch No', key: 'batch_number' },
+  ];
 
   return (
     <div className="expenses-container">
       <h2>All Shop-to-Shop Transfers</h2>
+
+      {error && <div className="error-message">{error}</div>}
 
       <div className="filter-bar">
         <input
@@ -78,52 +82,14 @@ const AllShopTransfers = () => {
         />
       </div>
 
-      <table className="expenses-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>From Shop</th>
-            <th>To Shop</th>
-            <th>User</th>
-            <th>Item</th>
-            <th>Qty</th>
-            <th>Batch No</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentTransfers.map((transfer) => (
-            <tr key={transfer.transfer_id}>
-              <td>{new Date(transfer.transfer_date).toLocaleDateString('en-CA')}</td>
-              <td>{transfer.from_shop_name}</td>
-              <td>{transfer.to_shop_name}</td>
-              <td>{transfer.username}</td>
-              <td>{transfer.itemname}</td>
-              <td>{transfer.quantity}</td>
-              <td>{transfer.batch_number}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="pagination">
-        <button
-          className="pagination-button"
-          disabled={currentPage === 1}
-          onClick={() => handlePageChange(currentPage - 1)}
-        >
-          Previous
-        </button>
-        <span>
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          className="pagination-button"
-          disabled={currentPage === totalPages}
-          onClick={() => handlePageChange(currentPage + 1)}
-        >
-          Next
-        </button>
-      </div>
+      <GeneralTableLayout
+        data={filteredTransfers}
+        columns={columns}
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={setItemsPerPage}
+      />
     </div>
   );
 };

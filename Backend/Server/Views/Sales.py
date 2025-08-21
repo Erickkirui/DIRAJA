@@ -93,6 +93,8 @@ class AddSale(Resource):
             payment_methods = data['payment_methods']
             promocode = data.get('promocode', '')
             status = data['status'].lower()
+            # Get balance from request or default to 0 if not provided
+            balance = float(data.get('balance', 0))
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
             if not isinstance(data['items'], list) or not data['items']:
@@ -145,16 +147,11 @@ class AddSale(Resource):
                     return {'message': f'Invalid amount for payment method {pm["method"]}'}, 400
 
         # ===== BANK MAPPING =====
-        # Specific shop to account mappings
-        #Left => shop id
-        #Right => account id
         shop_to_bank_mapping = {
             1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
             7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
             14: 14, 16: 13, 19: 22
         }
-        
-        # Default all other shops to account ID 11
         bank_id = shop_to_bank_mapping.get(shop_id, 11)
 
         # ===== STOCK PROCESSING =====
@@ -253,7 +250,6 @@ class AddSale(Resource):
 
         # ===== PAYMENT PROCESSING =====
         total_amount_paid = sum(float(pm['amount']) for pm in payment_methods) if status != "unpaid" else 0
-        balance = total_price - total_amount_paid
         sasapay_deposits = []
 
         try:
@@ -264,7 +260,7 @@ class AddSale(Resource):
                 customer_number=data['customer_number'],
                 status=status,
                 created_at=created_at,
-                balance=balance,
+                balance=balance,  # Use the balance provided or default to 0
                 promocode=promocode
             )
             db.session.add(new_sale)
@@ -345,7 +341,7 @@ class AddSale(Resource):
                 'financial': {
                     'total': total_price,
                     'paid': total_amount_paid,
-                    'balance': balance,
+                    'balance': balance,  # Return the balance that was provided or 0
                     'purchase_cost': purchase_account
                 },
                 'items': {
@@ -373,6 +369,7 @@ class AddSale(Resource):
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
+
 
 
 class GetSale(Resource):

@@ -19,32 +19,19 @@ class ShopToShopTransfer(Resource):
     def post(self):
         data = request.get_json()
 
-        # Get user from JWT
+        # User
         user_id = get_jwt_identity()
         user = Users.query.get(user_id)
         if not user:
             return {"message": "Invalid user"}, 400
 
-        # Required fields
         from_shop_id = data.get('from_shop_id')
         to_shop_id = data.get('to_shop_id')
-        stockv2_id = data.get('stockv2_id')
         quantity = data.get('quantity')
         item_name = data.get('item_name')
-        batch_number = data.get('BatchNumber')
 
-        # If stockv2_id not provided, try to get it from item name + batch
-        if not stockv2_id and item_name and batch_number:
-            stock = ShopStockV2.query.filter_by(
-                itemname=item_name,
-                BatchNumber=batch_number,
-                shop_id=from_shop_id
-            ).first()
-            if stock:
-                stockv2_id = stock.stockv2_id
-
-        if not all([from_shop_id, to_shop_id, stockv2_id, quantity]):
-            return {"message": "Missing required fields (from_shop_id, to_shop_id, stockv2_id, quantity)"}, 400
+        if not all([from_shop_id, to_shop_id, item_name, quantity]):
+            return {"message": "Missing required fields"}, 400
 
         if from_shop_id == to_shop_id:
             return {"message": "Source and destination shops cannot be the same"}, 400
@@ -54,94 +41,96 @@ class ShopToShopTransfer(Resource):
             if quantity <= 0:
                 return {"message": "Quantity must be a positive number"}, 400
         except ValueError:
-            return {"message": "Quantity must be a valid number"}, 400
+            return {"message": "Quantity must be numeric"}, 400
 
-        # Get the source stock item with its inventory
-        source_stock = ShopStockV2.query.options(
-            db.joinedload(ShopStockV2.inventory)
-        ).filter_by(
-            stockv2_id=stockv2_id,  # Changed from 'id' to 'stockv2_id'
-            shop_id=from_shop_id
-        ).first()
+        # Get ALL batches of this item in source shop (FIFO by batch number or created_at)
+        source_batches = ShopStockV2.query.filter_by(
+            shop_id=from_shop_id,
+            itemname=item_name
+        ).order_by(ShopStockV2.BatchNumber.asc()).all()
 
-        if not source_stock:
-            return {"message": "Stock item not found in source shop"}, 404
+        if not source_batches:
+            return {"message": "Item not found in source shop"}, 404
 
-        # Check if destination shop exists
-        to_shop = Shops.query.get(to_shop_id)
-        if not to_shop:
-            return {"message": f"Destination shop {to_shop_id} not found"}, 404
-
-        if source_stock.quantity < quantity - 0.001:
+        total_available = sum(batch.quantity for batch in source_batches)
+        if total_available < quantity - 0.001:
             return {
                 "message": "Insufficient stock",
-                "available": source_stock.quantity,
+                "available": total_available,
                 "requested": quantity
             }, 400
 
+        # Process batch-by-batch deduction
+        qty_to_transfer = quantity
+        transfer_records = []
         try:
-            # Deduct from source
-            source_stock.quantity -= quantity
-            db.session.add(source_stock)
+            for batch in source_batches:
+                if qty_to_transfer <= 0:
+                    break
 
-            # Add to or create destination stock
-            destination_stock = ShopStockV2.query.filter_by(
-                shop_id=to_shop_id,
-                BatchNumber=source_stock.BatchNumber,
-                inventoryv2_id=source_stock.inventoryv2_id
-            ).first()
+                take_qty = min(batch.quantity, qty_to_transfer)
 
-            if destination_stock:
-                destination_stock.quantity += quantity
-                destination_stock.unitPrice = source_stock.unitPrice
-                db.session.add(destination_stock)
-            else:
-                new_stock = ShopStockV2(
+                # Deduct from source
+                batch.quantity -= take_qty
+                db.session.add(batch)
+
+                # Add to destination (same batch number)
+                destination_stock = ShopStockV2.query.filter_by(
                     shop_id=to_shop_id,
-                    inventoryv2_id=source_stock.inventoryv2_id,
-                    itemname=source_stock.itemname,
-                    quantity=quantity,
-                    BatchNumber=source_stock.BatchNumber,
-                    unitPrice=source_stock.unitPrice,
-                    metric=source_stock.metric,
-                    total_cost=source_stock.unitPrice * quantity,
-                    
-                )
-                db.session.add(new_stock)
+                    BatchNumber=batch.BatchNumber,
+                    inventoryv2_id=batch.inventoryv2_id
+                ).first()
 
-            # Record transfer
-            transfer = Shoptoshoptransfer(
-                shops_id=from_shop_id,
-                from_shop_id=from_shop_id,
-                to_shop_id=to_shop_id,
-                users_id=user_id,
-                stockv2_id=stockv2_id,
-                itemname=source_stock.itemname,
-                quantity=quantity
-            )
-            db.session.add(transfer)
+                if destination_stock:
+                    destination_stock.quantity += take_qty
+                    destination_stock.unitPrice = batch.unitPrice
+                    db.session.add(destination_stock)
+                else:
+                    new_stock = ShopStockV2(
+                        shop_id=to_shop_id,
+                        inventoryv2_id=batch.inventoryv2_id,
+                        itemname=batch.itemname,
+                        quantity=take_qty,
+                        BatchNumber=batch.BatchNumber,
+                        unitPrice=batch.unitPrice,
+                        metric=batch.metric,
+                        total_cost=batch.unitPrice * take_qty,
+                    )
+                    db.session.add(new_stock)
+
+                # Record transfer (batch-level)
+                transfer = Shoptoshoptransfer(
+                    shops_id=from_shop_id,
+                    from_shop_id=from_shop_id,
+                    to_shop_id=to_shop_id,
+                    users_id=user_id,
+                    stockv2_id=batch.stockv2_id,
+                    itemname=batch.itemname,
+                    quantity=take_qty
+                )
+                db.session.add(transfer)
+
+                transfer_records.append({
+                    "batch": batch.BatchNumber,
+                    "transferred": take_qty
+                })
+
+                qty_to_transfer -= take_qty
 
             db.session.commit()
 
             return {
                 "message": "Transfer completed successfully",
-                "transfer_id": transfer.transfer_id,
-                "details": {
-                    "item": source_stock.itemname,
-                    "batch": source_stock.BatchNumber,
-                    "quantity_transferred": quantity,
-                    "source_shop": from_shop_id,
-                    "destination_shop": to_shop_id,
-                    "remaining_quantity": source_stock.quantity
-                }
+                "item": item_name,
+                "requested_quantity": quantity,
+                "batches_used": transfer_records,
+                "destination_shop": to_shop_id
             }, 201
 
         except Exception as e:
             db.session.rollback()
-            return {
-                "message": "Transfer failed due to database error",
-                "error": str(e)
-            }, 500
+            return {"message": "Transfer failed", "error": str(e)}, 500
+
             
             
 class GetAllShopToShopTransfers(Resource):

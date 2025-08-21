@@ -18,11 +18,12 @@ const Inventory = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingInventoryId, setEditingInventoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [stockItems, setStockItems] = useState([]); // Added for stock items metadata
 
   const editInventoryRef = useRef(null);
 
   useEffect(() => {
-    const fetchInventory = async () => {
+    const fetchData = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -30,19 +31,97 @@ const Inventory = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/v2/allinventories', {
+        // Fetch inventory
+        const inventoryResponse = await axios.get('/api/diraja/v2/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager',
           },
         });
-        setInventory(response.data);
+
+        // Fetch stock items metadata
+        const itemsRes = await axios.get('/api/diraja/stockitems', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+        
+        const stockItemsData = itemsRes.data.stock_items || [];
+        setStockItems(stockItemsData);
+
+        // Apply display formatting to inventory
+        const processedInventory = inventoryResponse.data.map((item) => {
+          const itemInfo = stockItemsData.find(
+            (stockItem) => stockItem.item_name === item.itemname
+          );
+
+          if (!itemInfo) {
+            return {
+              ...item,
+              initial_display: `${item.initial_quantity} ${item.metric || "pcs"}`,
+              remaining_display: `${item.remaining_quantity} ${item.metric || "pcs"}`,
+            };
+          }
+
+          // Format display for initial quantity
+          const initialDisplay = formatQuantityDisplay(item.initial_quantity, item.metric, itemInfo);
+          const remainingDisplay = formatQuantityDisplay(item.remaining_quantity, item.metric, itemInfo);
+
+          return {
+            ...item,
+            initial_display: initialDisplay,
+            remaining_display: remainingDisplay,
+          };
+        });
+
+        setInventory(processedInventory);
       } catch (err) {
-        setError('Error fetching inventory. Please try again.');
+        setError('Error fetching data. Please try again.');
       }
     };
-    fetchInventory();
+    
+    fetchData();
   }, []);
+
+  // Helper function to format quantity display
+  const formatQuantityDisplay = (quantity, metric, itemInfo) => {
+    // If metric is kgs, display directly
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${quantity} kgs`;
+    }
+
+    // Eggs logic → trays and pieces
+    if (
+      itemInfo.item_name.toLowerCase().includes("eggs") &&
+      (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
+    ) {
+      const packQty =
+        itemInfo.pack_quantity && itemInfo.pack_quantity > 0
+          ? itemInfo.pack_quantity
+          : 30; // default tray size
+      const trays = Math.floor(quantity / packQty);
+      const pieces = quantity % packQty;
+      return trays > 0
+        ? `${trays} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${pieces} pcs` : ""
+          }`
+        : `${pieces} pcs`;
+    }
+
+    // Other items with pack_quantity → pkts and pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return packets > 0
+        ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${pieces} pcs` : ""
+          }`
+        : `${pieces} pcs`;
+    }
+
+    // Default
+    return `${quantity} ${metric || "pcs"}`;
+  };
 
   useEffect(() => {
     if (editingInventoryId !== null) {
@@ -187,12 +266,12 @@ const Inventory = () => {
     {
       header: 'Initial Quantity',
       key: 'initial_quantity',
-      render: (item) => `${item.initial_quantity} ${item.metric}`
+      render: (item) => item.initial_display || `${item.initial_quantity} ${item.metric}`
     },
     {
       header: 'Remaining Quantity',
       key: 'remaining_quantity',
-      render: (item) => `${item.remaining_quantity} ${item.metric}`
+      render: (item) => item.remaining_display || `${item.remaining_quantity} ${item.metric}`
     },
     { header: 'Unit Cost (Ksh)', key: 'unitCost' },
     { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
