@@ -150,6 +150,10 @@ from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
 )
 
+from Server.Views.DirajaAI import (
+    AskAI
+)
+
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
@@ -417,3 +421,6 @@ api.add_resource(SubmitStockReport, '/report-stock')
 api.add_resource(ResetShopReportStatus, '/reset-report')
 api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
+
+#AI
+api.add_resource(AskAI , '/ask-ai')
