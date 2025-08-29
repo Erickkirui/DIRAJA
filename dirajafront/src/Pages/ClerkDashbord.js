@@ -53,6 +53,9 @@ function ClerkDashbord() {
                 New Sale
               </Link>
             )}
+            <Link className='clerk-button' to="/recieve-stock">
+            Recieve Stock
+            </Link>
 
             <div className='icon-container'>
 

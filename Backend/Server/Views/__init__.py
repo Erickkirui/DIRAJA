@@ -134,7 +134,7 @@ from Server.Views.InventoryV2Views import (
     GetInventoryByBatchV2, DistributeInventoryV2, DeleteShopStockV2,
     GetTransferV2, GetTransferByIdV2, UpdateTransferV2, AddInventoryV2,
     GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
-    ManualTransferV2
+    ManualTransferV2,ReceiveTransfer,PendingTransfers
 )
 
 from Server.Views.ShopstockviewsV2 import (
@@ -150,9 +150,9 @@ from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
 )
 
-from Server.Views.DirajaAI import (
-    AskAI
-)
+# from Server.Views.DirajaAI import (
+#     AskAI
+# )
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -386,6 +386,9 @@ api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
+api.add_resource(ReceiveTransfer, '/transfers/<int:transfer_id>/receive')
+api.add_resource(PendingTransfers, '/transfers/pending')
+
 
 
 #stockv2 endpoints
@@ -423,4 +426,4 @@ api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
 
 #AI
-api.add_resource(AskAI , '/ask-ai')
+# api.add_resource(AskAI , '/ask-ai')

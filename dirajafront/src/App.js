@@ -106,6 +106,7 @@ import StockReportPage from './Pages/Stockreportspage';
 import AllShopTransfers from './Components/ManagerDashbord/ShopTransfers';
 import ShopStockMovement from './Components/ClerkDashbord/ShopStockMovement';
 import Layout from './Components/Layout';
+import PendingTransfers from './Components/ClerkDashbord/PendingTransfers';
 
 
 
@@ -214,6 +215,7 @@ function App() {
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
             <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>} ></Route>
             <Route path='/stock-shop-move' element={<ClerkLayout><ShopStockMovement /></ClerkLayout>} ></Route>
+            <Route path='/recieve-stock'  element={<ClerkLayout><PendingTransfers /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>

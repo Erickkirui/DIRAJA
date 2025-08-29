@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 from flask_mail import Mail
 
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_experimental.sql import SQLDatabaseChain
-from langchain_community.utilities import SQLDatabase
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain_experimental.sql import SQLDatabaseChain
+# from langchain_community.utilities import SQLDatabase
 
 load_dotenv()
 
@@ -35,7 +35,7 @@ if not api_key:
 
 
 #LLM set up
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+# llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
 def initialize_models():
     from Server.Models.Users import Users
