@@ -28,12 +28,7 @@ const StockMovement = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-<<<<<<< HEAD
-        // Fetch shops
-        const shopsRes = await axios.get("/api/diraja/allshops", {
-=======
         const shopsRes = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
->>>>>>> 31b71b1 (changed endpoints)
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },

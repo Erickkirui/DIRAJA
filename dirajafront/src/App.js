@@ -106,6 +106,8 @@ import StockReportPage from './Pages/Stockreportspage';
 import AllShopTransfers from './Components/ManagerDashbord/ShopTransfers';
 import ShopStockMovement from './Components/ClerkDashbord/ShopStockMovement';
 import Layout from './Components/Layout';
+import CSVUploader from './Components/Reports/CSVUploader';
+import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
 
 
 
@@ -202,7 +204,7 @@ function App() {
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
 
             <Route path='/deposit' element={<Layout><CashDeposit/></Layout>} ></Route>
-
+            <Route path='/custom-sale' element={<ClerkLayout><CategorizedShopSale /></ClerkLayout>} ></Route>
            
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
             <Route path="/stockreport" element={<Layout><StockReportPage /></Layout>}></Route>
@@ -214,6 +216,7 @@ function App() {
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
             <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>} ></Route>
             <Route path='/stock-shop-move' element={<ClerkLayout><ShopStockMovement /></ClerkLayout>} ></Route>
+            <Route path='/transaction-analyse' element={<Layout><CSVUploader /></Layout>} ></Route>
            </Routes> 
        
       </Router>

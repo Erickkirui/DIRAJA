@@ -50,11 +50,7 @@ const ProcurementTable = () => {
           return;
         }
 
-<<<<<<< HEAD
-        const response = await axios.get('/api/diraja/v2/allinventories', {
-=======
         const response = await axios.get('https://kulima.co.ke/api/diraja/allinventories', {
->>>>>>> 31b71b1 (changed endpoints)
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'procurement',

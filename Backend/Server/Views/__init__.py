@@ -150,7 +150,7 @@ from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
 )
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='https://kulima.co.ke/api/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
 # add all endpoints 

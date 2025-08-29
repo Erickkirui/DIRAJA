@@ -19,15 +19,27 @@ from flask import current_app
 import re
 
 
+# def check_role(required_role):
+#     def wrapper(fn):
+#         @wraps(fn)
+#         def decorator(*args, **kwargs):
+#             verify_jwt_in_request()
+#             user_role = request.headers.get('X-User-Role', None)
+            
+#             if user_role != required_role:
+#                 return jsonify({"message": "Access denied: insufficient permissions"}), 403
+#             return fn(*args, **kwargs)
+#         return decorator
+#     return wrapper
+
 def check_role(required_role):
     def wrapper(fn):
         @wraps(fn)
         def decorator(*args, **kwargs):
-            verify_jwt_in_request()
-            user_role = request.headers.get('X-User-Role', None)
-            
-            if user_role != required_role:
-                return jsonify({"message": "Access denied: insufficient permissions"}), 403
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
             return fn(*args, **kwargs)
         return decorator
     return wrapper
@@ -539,10 +551,8 @@ class GetAllInventoryV2(Resource):
 
         return make_response(jsonify(all_inventory), 200)
 
-
 class InventoryResourceByIdV2(Resource):
     @jwt_required()
-    @check_role('manager')
     def get(self, inventoryV2_id):
         inventory = InventoryV2.query.get(inventoryV2_id)
    
@@ -570,7 +580,6 @@ class InventoryResourceByIdV2(Resource):
             return {"error": "Inventory not found"}, 404
         
     @jwt_required()
-    @check_role('manager')
     def delete(self, inventoryV2_id):
         inventory = InventoryV2.query.get(inventoryV2_id)
 
@@ -578,11 +587,14 @@ class InventoryResourceByIdV2(Resource):
             return {"error": "Inventory not found"}, 404
         
         try:
-            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
+            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for transfer in transfers:
                 db.session.delete(transfer)
             
-            shop_stocks = ShopStockV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 db.session.delete(stock)
 
@@ -596,12 +608,11 @@ class InventoryResourceByIdV2(Resource):
             return {"message": "Error deleting inventory", "error": str(e)}, 500
 
     @jwt_required()
-    @check_role('manager')
     def put(self, inventoryV2_id):
         data = request.get_json()
         inventory = InventoryV2.query.get(inventoryV2_id)
         if not inventory:
-            return jsonify({'message': 'Inventory not found'}), 404
+            return {'message': 'Inventory not found'}, 404
 
         try:
             itemname = data.get('itemname', inventory.itemname)
@@ -620,7 +631,7 @@ class InventoryResourceByIdV2(Resource):
                 try:
                     created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
                 except ValueError:
-                    return jsonify({'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}), 400
+                    return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
             else:
                 created_at = inventory.created_at
 
@@ -636,13 +647,15 @@ class InventoryResourceByIdV2(Resource):
             inventory.note = note
             inventory.created_at = created_at
 
+            # Check what the actual foreign key column name is in your models
             transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
             for transfer in transfers:
                 transfer.itemname = itemname
                 transfer.unitCost = unitCost
                 transfer.amountPaid = amountPaid
 
-            shop_stocks = ShopStockV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 stock.itemname = itemname
                 stock.unitPrice = unitPrice

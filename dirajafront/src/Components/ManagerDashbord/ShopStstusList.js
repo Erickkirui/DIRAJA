@@ -31,8 +31,6 @@ const ShopStatusList = () => {
   };
 
   useEffect(() => {
-<<<<<<< HEAD
-=======
     const fetchShopStatuses = async () => {
       setLoading(true);
       try {
@@ -54,7 +52,6 @@ const ShopStatusList = () => {
       }
     };
 
->>>>>>> 31b71b1 (changed endpoints)
     fetchShopStatuses();
   }, []);
 
