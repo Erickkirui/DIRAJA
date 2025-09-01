@@ -15,7 +15,7 @@ const AllShopTransfers = () => {
     const fetchTransfers = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await axios.get('/api/diraja/allstocktransfers', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allstocktransfers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -56,7 +56,9 @@ const AllShopTransfers = () => {
     { header: 'User', key: 'username' },
     { header: 'Item', key: 'itemname' },
     { header: 'Qty', key: 'quantity' },
-    { header: 'Batch No', key: 'batch_number' },
+    { header: 'Status', key: 'status' },
+    // { header: 'Note', key: 'decline_note' },
+    { header: 'Batch', key: 'batch_number' },
   ];
 
   return (

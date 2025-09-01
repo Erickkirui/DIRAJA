@@ -2081,7 +2081,18 @@ class GenerateSalesReport(Resource):
             for sale in sales:
                 user = Users.query.get(sale.user_id)
                 shop = Shops.query.get(sale.shop_id)
-                total_amount = sum(p.amount_paid for p in sale.payment)
+                
+                # Get payment information including transaction codes
+                payment_methods = []
+                transaction_codes = []
+                total_amount = 0
+                
+                for payment in sale.payment:
+                    total_amount += payment.amount_paid
+                    payment_methods.append(payment.payment_method)
+                    if payment.transaction_code:
+                        transaction_codes.append(payment.transaction_code)
+                
                 for item in sale.items:
                     all_shops_data.append({
                         "Sale ID": sale.sales_id,
@@ -2096,11 +2107,36 @@ class GenerateSalesReport(Resource):
                         "Unit Price": item.unit_price,
                         "Total Price": item.total_price,
                         "Batch Number": item.BatchNumber,
-                        "Amount Paid": total_amount,
+                        "Amount Paid": total_amount, 
                         "Balance": sale.balance,
-                        "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
+                        "Payment Methods": ", ".join(set(payment_methods)),
+                        "Transaction Codes": ", ".join(transaction_codes) if transaction_codes else "N/A",
                         "Note": sale.note or ""
                     })
+
+            # Create DataFrame and write to Excel
+            if all_shops_data:
+                df_all_shops = pd.DataFrame(all_shops_data)
+                df_all_shops.to_excel(writer, sheet_name='All Sales', index=False)
+                
+                # Auto-adjust columns' width
+                worksheet = writer.sheets['All Sales']
+                for idx, col in enumerate(df_all_shops.columns):
+                    max_len = max(df_all_shops[col].astype(str).map(len).max(), len(col)) + 2
+                    worksheet.set_column(idx, idx, max_len)
+            
+            writer.close()
+            output.seek(0)
+            
+            return send_file(
+                output,
+                as_attachment=True,
+                download_name=f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            
+        except Exception as e:
+            return {"error": f"Failed to generate report: {str(e)}"}, 500
 
             if all_shops_data:
                 df_all_shops = pd.DataFrame(all_shops_data)

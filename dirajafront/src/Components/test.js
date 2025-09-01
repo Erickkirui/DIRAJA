@@ -31,7 +31,7 @@ const AddSale = () => {
     useEffect(() => {
         const fetchShops = async () => {
             try {
-                const response = await axios.get('/api/diraja/allshops', {
+                const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                     },
@@ -54,7 +54,7 @@ const AddSale = () => {
                 return;
             }
             try {
-                const response = await axios.get('/api/diraja/batches/available-by-shop', {
+                const response = await axios.get('https://kulima.co.ke/api/diraja/batches/available-by-shop', {
                     params: { shop_id: formData.shop_id },
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('access_token')}`,
@@ -149,7 +149,7 @@ const AddSale = () => {
         console.log("Payload data being sent:", payload);
     
         try {
-            const response = await axios.post('/api/diraja/newsale', payload, {
+            const response = await axios.post('https://kulima.co.ke/api/diraja/newsale', payload, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,

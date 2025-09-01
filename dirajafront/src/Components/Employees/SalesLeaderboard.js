@@ -10,7 +10,7 @@ const SalesLeaderboard = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await axios.get('/api/diraja/leaderboard/employee', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/leaderboard/employee', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },

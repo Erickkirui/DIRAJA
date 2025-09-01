@@ -24,7 +24,7 @@ const ShopSales = () => {
         return;
       }
 
-      const response = await axios.get(`/api/diraja/sales/shop/${shopId}`, {
+      const response = await axios.get(`https://kulima.co.ke/api/diraja/sales/shop/${shopId}`, {
         headers: { Authorization: `Bearer ${token}` },
         params: {
           page: page,
@@ -62,7 +62,7 @@ const ShopSales = () => {
     if (!window.confirm('Are you sure you want to delete this sale?')) return;
 
     try {
-      await axios.delete(`/api/diraja/sale/${saleId}`, {
+      await axios.delete(`https://kulima.co.ke/api/diraja/sale/${saleId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

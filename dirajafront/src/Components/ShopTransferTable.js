@@ -6,7 +6,7 @@ const ShopTransferTable = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch("/api/diraja/allshoptransfers", {
+    fetch("https://kulima.co.ke/api/diraja/allshoptransfers", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("access_token")}`,
       },

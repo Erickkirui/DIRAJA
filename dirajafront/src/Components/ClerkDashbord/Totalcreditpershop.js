@@ -25,7 +25,7 @@ const TotalUnpaidAmountPerClerk = () => {
           params.date = selectedDate;
         }
 
-        const response = await axios.get('/api/diraja/unpaidsales/totalperclerk', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/unpaidsales/totalperclerk', {
           params,
           headers: { Authorization: `Bearer ${accessToken}` },
         });

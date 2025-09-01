@@ -47,7 +47,7 @@ function Sales() {
         }
       });
 
-      const resp = await axios.get('/api/diraja/allsales', {
+      const resp = await axios.get('https://kulima.co.ke/api/diraja/allsales', {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -81,7 +81,7 @@ function Sales() {
     if (!window.confirm('Are you sure you want to delete this sale?')) return;
 
     try {
-      await axios.delete(`/api/diraja/sale/${saleId}`, {
+      await axios.delete(`https://kulima.co.ke/api/diraja/sale/${saleId}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

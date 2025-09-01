@@ -24,7 +24,7 @@ const StockTransfer = () => {
         setError("");
 
         try {
-            const response = await axios.post("/api/diraja/transfer-sysytem-stock", formData, {
+            const response = await axios.post("https://kulima.co.ke/api/diraja/transfer-sysytem-stock", formData, {
                 headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
             });
             setMessage(response.data.message);

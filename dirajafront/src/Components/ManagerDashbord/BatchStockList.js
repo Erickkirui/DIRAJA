@@ -14,7 +14,7 @@ const BatchStockList = () => {
   useEffect(() => {
     const fetchBatchStock = async () => {
       try {
-        const response = await axios.get("/api/diraja/batch-stock-level", {
+        const response = await axios.get("https://kulima.co.ke/api/diraja/batch-stock-level", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },

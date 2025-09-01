@@ -134,7 +134,7 @@ from Server.Views.InventoryV2Views import (
     GetInventoryByBatchV2, DistributeInventoryV2, DeleteShopStockV2,
     GetTransferV2, GetTransferByIdV2, UpdateTransferV2, AddInventoryV2,
     GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
-    ManualTransferV2
+    ManualTransferV2, ReceiveTransfer, PendingTransfers
 )
 
 from Server.Views.ShopstockviewsV2 import (
@@ -144,11 +144,16 @@ from Server.Views.ExpenseCategoies import (
     PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
 )
 from Server.Views.Shoptoshoptransferviews import (
-    ShopToShopTransfer, GetAllShopToShopTransfers
+    ShopToShopTransfer,  ConfirmTransfer, GetAllShopToShopTransfers, GetPendingShopToShopTransfers
 )
 from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
 )
+
+from Server.Views.Sasapaycodes import (
+    ProcessCSV
+)
+
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -385,6 +390,8 @@ api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
+api.add_resource(ReceiveTransfer, '/transfers/<int:transfer_id>/receive')
+api.add_resource(PendingTransfers, '/transfers/pending')
 
 
 #stockv2 endpoints
@@ -406,6 +413,15 @@ api.add_resource(StockReturns, "/stockreturns")
 #Shoptoshop transfer
 api.add_resource(ShopToShopTransfer, '/transfer-stock')
 api.add_resource(GetAllShopToShopTransfers, '/allstocktransfers')
+api.add_resource(ConfirmTransfer, '/confirm-transfer/<int:transfer_id>')
+api.add_resource(GetPendingShopToShopTransfers, '/pending-transfers')
+# api.add_resource(TransferNotifications, "/transfer-notifications")
+# api.add_resource(ShopToShopTransferList, "/shoptoshoptransfers")
+# api.add_resource(AcknowledgeNotification, '/acknowledge-notification/<int:transfer_id>')
+
+
+
+
 
 
 #Expensecategories
@@ -420,3 +436,6 @@ api.add_resource(SubmitStockReport, '/report-stock')
 api.add_resource(ResetShopReportStatus, '/reset-report')
 api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
+
+
+api.add_resource(ProcessCSV, '/process-csv')

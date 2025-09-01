@@ -12,7 +12,7 @@ function AddChartOfAccount() {
       const token = localStorage.getItem('access_token')
 
       try {
-        const response = await fetch('/api/diraja/account-types/all', {
+        const response = await fetch('https://kulima.co.ke/api/diraja/account-types/all', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -51,7 +51,7 @@ function AddChartOfAccount() {
     }
 
     try {
-      const response = await fetch('/api/diraja/add-chart-of-accounts', {
+      const response = await fetch('https://kulima.co.ke/api/diraja/add-chart-of-accounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

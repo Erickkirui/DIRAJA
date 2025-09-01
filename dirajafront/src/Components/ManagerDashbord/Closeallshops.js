@@ -14,7 +14,7 @@ const ResetShopReportStatus = () => {
     try {
       const token = localStorage.getItem("token"); // adjust key if different
       const response = await axios.put(
-        "/api/diraja/reset-report",
+        "https://kulima.co.ke/api/diraja/reset-report",
         {},
         {
           headers: {

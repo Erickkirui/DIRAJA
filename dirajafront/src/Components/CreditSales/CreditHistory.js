@@ -23,7 +23,7 @@ const CreditHistory = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/credit-history', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/credit-history', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

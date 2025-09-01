@@ -20,7 +20,7 @@ const AssignMerit = () => {
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
-        const response = await axios.get('/api/diraja/allemployees', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allemployees', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
         setEmployees(response.data);
@@ -37,7 +37,7 @@ const AssignMerit = () => {
   useEffect(() => {
     const fetchMerits = async () => {
       try {
-        const response = await axios.get('/api/diraja/allmeritpoints', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allmeritpoints', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
         setMerits(response.data);
@@ -71,7 +71,7 @@ const AssignMerit = () => {
 
     try {
       const response = await axios.post(
-        `/api/diraja/employee/${formData.employee_id}/assign-merit`,
+        `https://kulima.co.ke/api/diraja/employee/${formData.employee_id}/assign-merit`,
         {
           merit_id: formData.merit_id,
           comment: formData.comment

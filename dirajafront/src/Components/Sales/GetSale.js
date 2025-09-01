@@ -26,7 +26,7 @@ const AllSales = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/sale', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/sale', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -70,7 +70,7 @@ const AllSales = () => {
     try {
       await Promise.all(
         selectedSales.map(async (saleId) => {
-          await axios.delete(`/api/diraja/sales/${saleId}`, {
+          await axios.delete(`https://kulima.co.ke/api/diraja/sales/${saleId}`, {
             headers: { Authorization: `Bearer ${accessToken}` },
           });
         })

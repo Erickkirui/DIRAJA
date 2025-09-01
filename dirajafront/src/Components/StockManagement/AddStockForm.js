@@ -20,7 +20,7 @@ const AddStockForm = ({ onSubmit, onClose }) => {
           return;
         }
 
-        const response = await axios.get(`/api/diraja/get-stock/${shopId}`, {
+        const response = await axios.get(`https://kulima.co.ke/api/diraja/get-stock/${shopId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

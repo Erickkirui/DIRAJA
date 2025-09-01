@@ -8,8 +8,8 @@ const ShopToShopTransfer = () => {
     from_shop_id: shopIdFromStorage || '',
     to_shop_id: '',
     item_name: '',
-    pack_quantity: '',   // new
-    piece_quantity: '',  // new
+    pack_quantity: '',
+    piece_quantity: '',
     BatchNumber: '',
     metric: '',
     remainingStock: 0
@@ -28,7 +28,7 @@ const ShopToShopTransfer = () => {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
         setShops(response.data);
@@ -41,7 +41,7 @@ const ShopToShopTransfer = () => {
 
     const fetchStockItems = async () => {
       try {
-        const response = await axios.get('/api/diraja/stockitems', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -64,7 +64,7 @@ const ShopToShopTransfer = () => {
 
       setIsItemLoading(true);
       try {
-        const response = await axios.get('/api/diraja/batches/available-by-shopv2', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/batches/available-by-shopv2', {
           params: { shop_id: formData.from_shop_id },
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
@@ -128,7 +128,7 @@ const ShopToShopTransfer = () => {
     if (!itemName || !formData.from_shop_id) return;
 
     try {
-      const response = await axios.get('/api/diraja/shop-itemdetailsv2', {
+      const response = await axios.get('https://kulima.co.ke/api/diraja/shop-itemdetailsv2', {
         params: {
           item_name: itemName,
           shop_id: formData.from_shop_id,
@@ -153,6 +153,14 @@ const ShopToShopTransfer = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
+    // Allow decimal values for quantity fields
+    if ((name === 'pack_quantity' || name === 'piece_quantity') && value !== '') {
+      // Validate decimal input
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return; // Don't update if not a valid decimal
+      }
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -176,9 +184,17 @@ const ShopToShopTransfer = () => {
       return;
     }
 
-    let packs = parseInt(formData.pack_quantity || 0);
-    let pieces = parseInt(formData.piece_quantity || 0);
-    let finalQuantity = (packs * (selectedStockItem?.pack_quantity || 0)) + pieces;
+    let finalQuantity;
+    
+    // Calculate final quantity based on whether the item has pack quantity
+    if (selectedStockItem && selectedStockItem.pack_quantity > 0) {
+      let packs = parseFloat(formData.pack_quantity || 0);
+      let pieces = parseFloat(formData.piece_quantity || 0);
+      finalQuantity = (packs * selectedStockItem.pack_quantity) + pieces;
+    } else {
+      // For items without pack quantity, use only piece quantity
+      finalQuantity = parseFloat(formData.piece_quantity || 0);
+    }
 
     if (finalQuantity <= 0) {
       setMessage({ type: 'error', text: 'Quantity must be greater than 0' });
@@ -202,7 +218,7 @@ const ShopToShopTransfer = () => {
         BatchNumber: formData.BatchNumber
       };
 
-      const response = await axios.post('/api/diraja/transfer-stock', payload, {
+      const response = await axios.post('https://kulima.co.ke/api/diraja/transfer-stock', payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -308,32 +324,46 @@ const ShopToShopTransfer = () => {
           </div>
         )}
 
-        {selectedStockItem && selectedStockItem.pack_quantity && (
+        {formData.item_name && (
           <div className="form-group">
             <label>Quantity to Transfer</label>
-            <div style={{ display: "flex", gap: "10px" }}>
-              <input
-                name="pack_quantity"
-                type="number"
-                value={formData.pack_quantity}
-                onChange={handleChange}
-                placeholder={`No. of ${getUnitLabel()}s`}
-                className="input"
-                min="0"
-              />
+            
+            {/* Show pack quantity input only for items with pack quantity */}
+            {selectedStockItem && selectedStockItem.pack_quantity > 0 ? (
+              <>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    name="pack_quantity"
+                    type="text"  // Changed to text to allow decimal input
+                    value={formData.pack_quantity}
+                    onChange={handleChange}
+                    placeholder={`No. of ${getUnitLabel()}s`}
+                    className="input"
+                  />
+                  <input
+                    name="piece_quantity"
+                    type="text"  // Changed to text to allow decimal input
+                    value={formData.piece_quantity}
+                    onChange={handleChange}
+                    placeholder="No. of pieces"
+                    className="input"
+                  />
+                </div>
+                <small className="text-muted">
+                  1 {getUnitLabel()} = {selectedStockItem.pack_quantity} pieces
+                </small>
+              </>
+            ) : (
+              // Show only piece quantity input for items without pack quantity
               <input
                 name="piece_quantity"
-                type="number"
+                type="text"  // Changed to text to allow decimal input
                 value={formData.piece_quantity}
                 onChange={handleChange}
-                placeholder="No. of pieces"
+                placeholder="Quantity"
                 className="input"
-                min="0"
               />
-            </div>
-            <small className="text-muted">
-              1 {getUnitLabel()} = {selectedStockItem.pack_quantity} pieces
-            </small>
+            )}
           </div>
         )}
 
@@ -342,6 +372,12 @@ const ShopToShopTransfer = () => {
             <label>Item Details</label>
             <ul>
               <li><strong>Available Quantity:</strong> {displayQuantity}</li>
+              {/* {selectedStockItem && (
+                <li><strong>Metric:</strong> {formData.metric || "pcs"}</li>
+              )}
+              {formData.BatchNumber && (
+                <li><strong>Batch Number:</strong> {formData.BatchNumber}</li>
+              )} */}
             </ul>
           </div>
         )}

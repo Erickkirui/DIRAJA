@@ -51,7 +51,7 @@ const ManualTransfer = () => {
         }
 
         try {
-            const response = await axios.post('/api/diraja/manualtransfer', formData, {
+            const response = await axios.post('https://kulima.co.ke/api/diraja/manualtransfer', formData, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,

@@ -16,7 +16,7 @@ const ItemStockList = () => {
     const fetchInitialData = async () => {
       try {
         // Fetch shops
-        const shopsResponse = await axios.get("/api/diraja/allshops", {
+        const shopsResponse = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -27,7 +27,7 @@ const ItemStockList = () => {
         setShops(sortedShops);
 
         // Fetch stock items
-        const itemsResponse = await axios.get("/api/diraja/stockitems", {
+        const itemsResponse = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -46,8 +46,8 @@ const ItemStockList = () => {
       setLoading(true);
       try {
         const url = selectedShopId
-          ? `/api/diraja/item-stock-level?shop_id=${selectedShopId}`
-          : `/api/diraja/item-stock-level`;
+          ? `https://kulima.co.ke/api/diraja/item-stock-level?shop_id=${selectedShopId}`
+          : `https://kulima.co.ke/api/diraja/item-stock-level`;
 
         const response = await axios.get(url, {
           headers: {
@@ -55,7 +55,19 @@ const ItemStockList = () => {
           },
         });
 
-        const processedStock = (response.data.item_stocks || []).map((stock) => {
+        const rawStock = response.data.item_stocks || [];
+
+        // ✅ Group by itemname and sum total_remaining
+        const grouped = rawStock.reduce((acc, stock) => {
+          if (!acc[stock.itemname]) {
+            acc[stock.itemname] = { ...stock };
+          } else {
+            acc[stock.itemname].total_remaining += stock.total_remaining;
+          }
+          return acc;
+        }, {});
+
+        const combinedStock = Object.values(grouped).map((stock) => {
           const itemInfo = stockItems.find(
             (item) => item.item_name === stock.itemname
           );
@@ -122,7 +134,7 @@ const ItemStockList = () => {
           };
         });
 
-        setItemStock(processedStock);
+        setItemStock(combinedStock);
       } catch (err) {
         setError("An error occurred while fetching item stock data.");
       } finally {

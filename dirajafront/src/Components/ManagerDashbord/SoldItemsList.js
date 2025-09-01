@@ -11,7 +11,7 @@ const yesterday = dayjs().subtract(1, "day");
 
 const SoldItemsList = () => {
   const [soldItems, setSoldItems] = useState([]);
-  const [stockItems, setStockItems] = useState([]); // Added for item info
+  const [stockItems, setStockItems] = useState([]);
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState("");
   const [dateRange, setDateRange] = useState([yesterday, yesterday]);
@@ -22,8 +22,7 @@ const SoldItemsList = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        // Fetch shops
-        const shopsRes = await axios.get("/api/diraja/allshops", {
+        const shopsRes = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -33,8 +32,7 @@ const SoldItemsList = () => {
         );
         setShops(sortedShops);
 
-        // Fetch stock items
-        const itemsRes = await axios.get("/api/diraja/stockitems", {
+        const itemsRes = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -61,8 +59,8 @@ const SoldItemsList = () => {
         }
 
         const url = selectedShopId
-          ? `/api/diraja/sold-items-summary/${selectedShopId}?${params}`
-          : `/api/diraja/sold-items-summary?${params}`;
+          ? `https://kulima.co.ke/api/diraja/sold-items-summary/${selectedShopId}?${params}`
+          : `https://kulima.co.ke/api/diraja/sold-items-summary?${params}`;
 
         const res = await axios.get(url, {
           headers: {
@@ -70,26 +68,34 @@ const SoldItemsList = () => {
           },
         });
 
-        // Process sold items with display metrics
-        const processedItems = (res.data.items || []).map(item => {
+        const rawItems = res.data.items || [];
+
+        // ✅ Group by item_name and sum total_sold
+        const grouped = rawItems.reduce((acc, item) => {
+          if (!acc[item.item_name]) {
+            acc[item.item_name] = { ...item };
+          } else {
+            acc[item.item_name].total_sold += item.total_sold;
+          }
+          return acc;
+        }, {});
+
+        const combinedItems = Object.values(grouped).map((item) => {
           const itemInfo = stockItems.find(
-            stockItem => stockItem.item_name === item.item_name
+            (stockItem) => stockItem.item_name === item.item_name
           );
 
-          // If no match in stock items, just display quantity + metric
+          // If no stockInfo, fallback
           if (!itemInfo) {
             return { ...item, display: `${item.total_sold} ${item.metric || "pcs"}` };
           }
 
-          // If metric is kgs, display in kgs only
+          // KGs → show in kgs only
           if (item.metric && item.metric.toLowerCase() === "kgs") {
-            return {
-              ...item,
-              display: `${item.total_sold} kgs`
-            };
+            return { ...item, display: `${item.total_sold} kgs` };
           }
 
-          // Eggs: display as trays and pieces
+          // Eggs → trays + pcs
           if (itemInfo.item_name.toLowerCase().includes("egg") && itemInfo.pack_quantity > 0) {
             const trays = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
@@ -97,12 +103,14 @@ const SoldItemsList = () => {
               ...item,
               display:
                 trays > 0
-                  ? `${trays} tray${trays !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
-                  : `${pieces} pcs`
+                  ? `${trays} tray${trays !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
             };
           }
 
-          // Other items with pack quantity: display as packets and pieces
+          // Other items with pack_quantity → pkts + pcs
           if (itemInfo.pack_quantity > 0) {
             const packets = Math.floor(item.total_sold / itemInfo.pack_quantity);
             const pieces = item.total_sold % itemInfo.pack_quantity;
@@ -110,19 +118,18 @@ const SoldItemsList = () => {
               ...item,
               display:
                 packets > 0
-                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
-                  : `${pieces} pcs`
+                  ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+                      pieces > 0 ? `, ${pieces} pcs` : ""
+                    }`
+                  : `${pieces} pcs`,
             };
           }
 
-          // Items without pack quantity: display quantity + metric
-          return {
-            ...item,
-            display: `${item.total_sold} ${item.metric || "pcs"}`
-          };
+          // Fallback
+          return { ...item, display: `${item.total_sold} ${item.metric || "pcs"}` };
         });
 
-        setSoldItems(processedItems);
+        setSoldItems(combinedItems);
       } catch (err) {
         console.error("Failed to fetch sold items", err);
         setError("Failed to fetch sold item data");

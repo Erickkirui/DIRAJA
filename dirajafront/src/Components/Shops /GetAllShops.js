@@ -26,7 +26,7 @@ const Shops = () => {
           return;
         }
 
-        const response = await axios.get(' /api/diraja/allshops', {
+        const response = await axios.get(' https://kulima.co.ke/api/diraja/allshops', {
 
 
           headers: { Authorization: `Bearer ${accessToken}` },
@@ -72,7 +72,7 @@ const Shops = () => {
       try {
         await Promise.all(
           selectedShops.map((shopId) =>
-            axios.delete(`/api/diraja/shop/${shopId}`, {
+            axios.delete(`https://kulima.co.ke/api/diraja/shop/${shopId}`, {
               headers: {
                 Authorization: `Bearer ${accessToken}`,
               },
@@ -104,7 +104,7 @@ const Shops = () => {
   const handleEditSubmit = async () => {
     const accessToken = localStorage.getItem('access_token');
     try {
-      await axios.put(`/api/diraja/shop/${editData.shop_id}`, editData, {
+      await axios.put(`https://kulima.co.ke/api/diraja/shop/${editData.shop_id}`, editData, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${accessToken}`,

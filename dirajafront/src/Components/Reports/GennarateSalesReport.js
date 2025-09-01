@@ -33,7 +33,7 @@ const GenerateSalesReport = () => {
         const token = localStorage.getItem('access_token');
         if (!token) throw new Error('Authentication required');
 
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -70,7 +70,7 @@ const GenerateSalesReport = () => {
         if (filters[key] == null) delete filters[key];
       });
 
-      const response = await axios.post('/api/diraja/generate-sales-report', filters, {
+      const response = await axios.post('https://kulima.co.ke/api/diraja/generate-sales-report', filters, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob',
       });

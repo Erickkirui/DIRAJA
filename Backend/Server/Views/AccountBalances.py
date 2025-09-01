@@ -82,7 +82,7 @@ class PostBankAccount(Resource):
 
 class GetAllBankAccounts(Resource):
     @jwt_required()
-    @check_role('manager')
+    # @check_role('manager')
     def get(self):
         accounts = BankAccount.query.all()
         result = []

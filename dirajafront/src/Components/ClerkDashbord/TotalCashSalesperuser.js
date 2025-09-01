@@ -24,7 +24,7 @@ const CashAtHand = () => {
           return;
         }
 
-        const res = await axios.get(`/api/diraja/cashsaleperuser/${userName}/${shopId}`, {
+        const res = await axios.get(`https://kulima.co.ke/api/diraja/cashsaleperuser/${userName}/${shopId}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`
           }
