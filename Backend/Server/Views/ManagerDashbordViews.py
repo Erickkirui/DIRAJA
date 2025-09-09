@@ -22,6 +22,7 @@ from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from flask import jsonify,request,make_response
 from sqlalchemy.orm import aliased
+from sqlalchemy import extract
 from sqlalchemy import or_
 from datetime import datetime, timedelta
 from sqlalchemy.exc import SQLAlchemyError
@@ -417,6 +418,7 @@ class CountShops(Resource):
         return {"total shops": countShops}, 200      
 
 
+
 class TotalAmountPaidPerShop(Resource):
     @jwt_required()
     @check_role('manager')
@@ -425,7 +427,7 @@ class TotalAmountPaidPerShop(Resource):
         start_date = None
         end_date = None
 
-        # Check if a custom date is provided via the "date" parameter.
+        # Check if a custom date is provided
         date_str = request.args.get('date')
         if date_str:
             try:
@@ -434,7 +436,6 @@ class TotalAmountPaidPerShop(Resource):
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            # No custom date provided; use the period parameter (default to 'today').
             period = request.args.get('period', 'today')
 
             if period == 'today':
@@ -453,40 +454,105 @@ class TotalAmountPaidPerShop(Resource):
                 return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or a custom date."}, 400
 
         try:
-            # Query for all shop IDs
-            shops = Shops.query.all()
-
-            # Calculate total sales for each shop
+            shops = Shops.query.filter_by(shopstatus="active").all()
             results = []
+            overall_total = 0
+            overall_payment_totals = {"sasapay": 0, "cash": 0, "not_payed": 0}
+
             for shop in shops:
                 shop_id = shop.shops_id
 
-                # Query to sum `amount_paid` for each shop
-                query = (
+                # --- Total sales for requested period ---
+                total_sales = (
                     db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
-                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)  # Join Sales to link sales_id
+                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
                     .filter(Sales.shop_id == shop_id)
+                    .filter(Sales.created_at.between(start_date, end_date))
+                    .scalar() or 0
                 )
 
-                # Apply date filter
-                query = query.filter(Sales.created_at.between(start_date, end_date))
+                # --- Totals by payment method ---
+                payment_totals = (
+                    db.session.query(
+                        SalesPaymentMethods.payment_method,
+                        db.func.sum(SalesPaymentMethods.amount_paid).label("total")
+                    )
+                    .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                    .filter(Sales.shop_id == shop_id)
+                    .filter(Sales.created_at.between(start_date, end_date))
+                    .group_by(SalesPaymentMethods.payment_method)
+                    .all()
+                )
 
-                total_sales = query.scalar() or 0  # Default to 0 if no result
+                payment_summary = {"sasapay": 0, "cash": 0, "not_payed": 0}
+                for method, total in payment_totals:
+                    if method == "sasapay":
+                        payment_summary["sasapay"] = float(total or 0)
+                        overall_payment_totals["sasapay"] += float(total or 0)
+                    elif method == "cash":
+                        payment_summary["cash"] = float(total or 0)
+                        overall_payment_totals["cash"] += float(total or 0)
+                    elif method == "not payed":
+                        payment_summary["not_payed"] = float(total or 0)
+                        overall_payment_totals["not_payed"] += float(total or 0)
 
-                # Format total sales with comma separators and 2 decimal places
-                formatted_sales = "Ksh {:,.2f}".format(total_sales)
+                # --- Comparison with previous period ---
+                comparison_start, comparison_end = None, None
+                if period == "today":
+                    # No comparison
+                    comparison_diff = 0
+                elif period == "yesterday":
+                    comparison_start = (start_date - timedelta(days=1))
+                    comparison_end = comparison_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+                elif period == "week":
+                    comparison_start = (start_date - timedelta(days=7))
+                    comparison_end = start_date - timedelta(seconds=1)
+                elif period == "month":
+                    comparison_start = (start_date - timedelta(days=30))
+                    comparison_end = start_date - timedelta(seconds=1)
+
+                if comparison_start and comparison_end:
+                    previous_total = (
+                        db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+                        .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                        .filter(Sales.shop_id == shop_id)
+                        .filter(Sales.created_at.between(comparison_start, comparison_end))
+                        .scalar() or 0
+                    )
+                    comparison_diff = total_sales - previous_total
+                else:
+                    comparison_diff = 0
+
+                overall_total += total_sales
 
                 results.append({
                     "shop_id": shop_id,
                     "shop_name": shop.shopname,
-                    "total_sales_amount_paid": formatted_sales
+                    "total_sales_amount_paid": "Ksh {:,.2f}".format(total_sales),
+                    "payment_breakdown": payment_summary,
+                    "comparison": comparison_diff
                 })
 
-            return {"total_sales_per_shop": results}, 200
+            # --- Overall summary ---
+            overall_avg = overall_total / len(shops) if shops else 0
+            summary = {
+                "overall_total": "Ksh {:,.2f}".format(overall_total),
+                "average_per_shop": "Ksh {:,.2f}".format(overall_avg),
+                "overall_payment_breakdown": {
+                    "sasapay": "Ksh {:,.2f}".format(overall_payment_totals["sasapay"]),
+                    "cash": "Ksh {:,.2f}".format(overall_payment_totals["cash"]),
+                    "not_payed": "Ksh {:,.2f}".format(overall_payment_totals["not_payed"])
+                }
+            }
+
+            return {"total_sales_per_shop": results, "summary": summary}, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching total sales amounts for all shops", "details": str(e)}, 500
+            return {
+                "error": "An error occurred while fetching total sales amounts for all shops",
+                "details": str(e)
+            }, 500
 
 
 
@@ -1299,3 +1365,34 @@ class StockMovement(Resource):
                 "message": "Error retrieving stock movement data",
                 "error": str(e)
             }), 500
+        
+
+
+class MonthlyIncome(Resource):
+    @jwt_required()
+    @check_role('manager')
+    def get(self):
+        try:
+            # Query total per month for the current year
+            results = (
+                db.session.query(
+                    extract('month', Sales.created_at).label("month"),
+                    db.func.sum(SalesPaymentMethods.amount_paid).label("total_income")
+                )
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .group_by(extract('month', Sales.created_at))
+                .order_by(extract('month', Sales.created_at))
+                .all()
+            )
+
+            # Format data
+            data = [
+                {"month": int(month), "total_income": float(total or 0)}
+                for month, total in results
+            ]
+
+            return {"monthly_income": data}, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500

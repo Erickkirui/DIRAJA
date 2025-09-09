@@ -74,7 +74,7 @@ from Server.Views.ManagerDashbordViews import (
     TotalAmountPaidPurchases, StockAlert, TotalSalesByShop,
     TotalUnpaidAmountAllSales, TotalAmountPaidForMabanda,
     TotalAmountPaidPurchasesInventory, SalesSummary, TotalFinancialSummary,
-    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement
+    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement,MonthlyIncome
 )
 
 from Server.Views.Emailnotifications import (
@@ -282,6 +282,7 @@ api.add_resource(SalesSummary,'/Sale-Summery')
 api.add_resource(TotalFinancialSummary,'/summery')
 api.add_resource(TotalUnpaidAmountPerClerk, "/unpaidsales/totalperclerk")
 api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
+api.add_resource(MonthlyIncome, '/monthly-analytics')
 api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
 api.add_resource(StockMovement, '/stock-movement')
 

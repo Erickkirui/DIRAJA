@@ -17,10 +17,12 @@ const ShopStatusList = () => {
           },
         });
 
-        const sorted = response.data.sort((a, b) =>
-          a.shopname.localeCompare(b.shopname)
-        );
-        setShops(sorted);
+        // Filter only active shops
+        const activeShops = response.data
+          .filter((shop) => shop.shopstatus === "active")
+          .sort((a, b) => a.shopname.localeCompare(b.shopname));
+
+        setShops(activeShops);
       } catch (err) {
         setError("Failed to load shop statuses.");
         console.error(err);
@@ -34,7 +36,7 @@ const ShopStatusList = () => {
 
   return (
     <div className="stock-level-container">
-      <p>Shop Statuses</p>
+      <p>Active Shop Statuses</p>
 
       {loading && <LoadingAnimation />}
       {error && <p className="error">{error}</p>}
@@ -66,7 +68,6 @@ const ShopStatusList = () => {
         </table>
       )}
     </div>
-    
   );
 };
 

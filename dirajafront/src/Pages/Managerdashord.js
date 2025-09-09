@@ -44,6 +44,8 @@ function Managerdashord() {
         
         <div className="shortcuts">
           <Link to="/allusers"  >Manage Users</Link>
+
+          <Link to="/dirajaAI"  >DIRJA AI (BETA)</Link>
         </div>
        
       </div>

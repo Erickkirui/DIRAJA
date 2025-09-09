@@ -10,7 +10,7 @@ from flask_mail import Mail
 # LangChain + Gemini
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
-from langchain_experimental.sql import SQLDatabaseChain
+from langchain.chains import create_sql_query_chain
 
 load_dotenv()
 
@@ -58,7 +58,6 @@ def initialize_views(app):
     app.register_blueprint(api_endpoint)
 
 
-# ---------- App Factory ----------
 def create_app(config_name):
     app = Flask(__name__)
     CORS(app)
@@ -104,6 +103,10 @@ def create_app(config_name):
 
     llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
     database = SQLDatabase.from_uri(app.config["SQLALCHEMY_DATABASE_URI"])
-    app.db_chain = SQLDatabaseChain.from_llm(llm, database, verbose=True)
+
+    # Attach objects to app
+    app.llm = llm                              # ✅ now app has llm
+    app.sql_database = database                # raw db for queries
+    app.db_chain = create_sql_query_chain(llm, database)  # chain for SQL generation
 
     return app
