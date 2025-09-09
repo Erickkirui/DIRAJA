@@ -12,30 +12,14 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import create_sql_query_chain
 
+load_dotenv()
+
+# ---------- Extensions ----------
 db = SQLAlchemy()
 jwt = JWTManager()
 mail = Mail()
 
 # ---------- Models Import ----------
-app.config['MAIL_SERVER'] = 'mail.kulima.co.ke'
-app.config['MAIL_PORT'] = '465'
-app.config['MAIL_USERNAME'] = 'kukuzetureports@kulima.co.ke'
-app.config['MAIL_PASSWORD'] = 'XZbZ{9ZSPZeg'
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
-mail = Mail(app)
-
-# Configure the API key
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    raise ValueError("GEMINI_API_KEY is not set. Check your .env file or environment variables.")
-
-
-#LLM set up
-
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
-
 def initialize_models():
     """Import all models so SQLAlchemy can discover them."""
     from Server.Models.Users import Users

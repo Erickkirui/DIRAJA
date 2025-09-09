@@ -1365,7 +1365,6 @@ class StockMovement(Resource):
                 "message": "Error retrieving stock movement data",
                 "error": str(e)
             }), 500
-<<<<<<< HEAD
         
 
 
@@ -1397,7 +1396,6 @@ class MonthlyIncome(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": str(e)}, 500
-=======
             
 class GetInventoryStock(Resource):
     @jwt_required()
@@ -1469,4 +1467,3 @@ class GetInventoryStock(Resource):
                 "error": "An error occurred while fetching inventory stock data",
                 "details": str(e)
             }, 500
->>>>>>> origin/main-backup
