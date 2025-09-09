@@ -22,7 +22,7 @@ const ShopSoldItems = () => {
   useEffect(() => {
     const fetchStockItems = async () => {
       try {
-        const itemsResponse = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
+        const itemsResponse = await axios.get("api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -98,7 +98,7 @@ const ShopSoldItems = () => {
           params.append("end_date", dateRange[1].format("YYYY-MM-DD"));
         }
 
-        const url = `https://kulima.co.ke/api/diraja/sold-items-summary/${shopId}?${params}`;
+        const url = `api/diraja/sold-items-summary/${shopId}?${params}`;
 
         const res = await axios.get(url, {
           headers: {

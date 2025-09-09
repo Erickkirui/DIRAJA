@@ -19,7 +19,7 @@ const UpdateEmployeeShop = ({ selectedEmployees, onUpdate }) => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
+        const response = await axios.get('api/diraja/allshops', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -50,7 +50,7 @@ const UpdateEmployeeShop = ({ selectedEmployees, onUpdate }) => {
     try {
       await Promise.all(
         selectedEmployees.map((employeeId) =>
-          axios.put(`https://kulima.co.ke/api/diraja/update-shop/${employeeId}`,
+          axios.put(`api/diraja/update-shop/${employeeId}`,
             { shop_id: selectedShop },
             {
               headers: {

@@ -24,7 +24,7 @@ const AddSuppliers = () => {
 
     try {
       const response = await axios.post(
-        'https://kulima.co.ke/api/diraja/creat-supplier', // Endpoint must match backend route
+        'api/diraja/creat-supplier', // Endpoint must match backend route
         {
           supplier_name: supplierName,
           supplier_location: supplierLocation,

@@ -20,7 +20,7 @@ const Stock = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/getmabandastock', {
+        const response = await axios.get('api/diraja/getmabandastock', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

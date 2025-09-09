@@ -15,7 +15,7 @@ const AllShopTransfers = () => {
     const fetchTransfers = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allstocktransfers', {
+        const response = await axios.get('api/diraja/allstocktransfers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

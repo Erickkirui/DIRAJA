@@ -29,7 +29,7 @@ const MeritLedger = () => {
           params.employee_id = employeeFilter;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/meritledger', {
+        const response = await axios.get('api/diraja/meritledger', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

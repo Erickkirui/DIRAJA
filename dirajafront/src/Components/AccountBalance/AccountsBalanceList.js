@@ -11,7 +11,7 @@ function AccountsBalanceList() {
   const fetchAccounts = async () => {
     try {
       const accessToken = localStorage.getItem('access_token');
-      const response = await fetch('https://kulima.co.ke/api/diraja/all-acounts', {
+      const response = await fetch('api/diraja/all-acounts', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

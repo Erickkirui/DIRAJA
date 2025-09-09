@@ -20,12 +20,12 @@ const TodaysSales = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allsales', {
+        const response = await axios.get('api/diraja/allsales', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
 
         // Log the response to verify the sales data
-        console.log("API Response:", response.data);
+        console.log("api Response:", response.data);
 
         const salesData = response.data.sales || [];
         const today = new Date().toISOString().split('T')[0];

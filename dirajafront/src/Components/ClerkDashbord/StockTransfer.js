@@ -28,7 +28,7 @@ const ShopToShopTransfer = () => {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
+        const response = await axios.get('api/diraja/allshops', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
         setShops(response.data);
@@ -41,7 +41,7 @@ const ShopToShopTransfer = () => {
 
     const fetchStockItems = async () => {
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+        const response = await axios.get('api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -64,7 +64,7 @@ const ShopToShopTransfer = () => {
 
       setIsItemLoading(true);
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/batches/available-by-shopv2', {
+        const response = await axios.get('api/diraja/batches/available-by-shopv2', {
           params: { shop_id: formData.from_shop_id },
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
@@ -128,7 +128,7 @@ const ShopToShopTransfer = () => {
     if (!itemName || !formData.from_shop_id) return;
 
     try {
-      const response = await axios.get('https://kulima.co.ke/api/diraja/shop-itemdetailsv2', {
+      const response = await axios.get('api/diraja/shop-itemdetailsv2', {
         params: {
           item_name: itemName,
           shop_id: formData.from_shop_id,
@@ -218,7 +218,7 @@ const ShopToShopTransfer = () => {
         BatchNumber: formData.BatchNumber
       };
 
-      const response = await axios.post('https://kulima.co.ke/api/diraja/transfer-stock', payload, {
+      const response = await axios.post('api/diraja/transfer-stock', payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

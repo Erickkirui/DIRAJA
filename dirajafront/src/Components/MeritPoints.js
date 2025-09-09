@@ -17,7 +17,7 @@ const MeritPointsTable = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allmeritpoints', {
+        const response = await axios.get('api/diraja/allmeritpoints', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

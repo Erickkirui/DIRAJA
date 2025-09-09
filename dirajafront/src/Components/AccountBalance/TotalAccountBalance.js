@@ -8,7 +8,7 @@ function TotalAccountBalance() {
   const fetchTotalBalance = async () => {
     try {
       const accessToken = localStorage.getItem('access_token');
-      const response = await fetch('https://kulima.co.ke/api/diraja/total-balance', {
+      const response = await fetch('api/diraja/total-balance', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

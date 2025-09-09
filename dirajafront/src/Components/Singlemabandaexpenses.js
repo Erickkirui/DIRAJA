@@ -29,14 +29,14 @@ const MabandaExpenseDetails = () => {
         const formattedStart = format(dateRange.startDate, "yyyy-MM-dd");
         const formattedEnd = format(dateRange.endDate, "yyyy-MM-dd");
 
-        console.log("Fetching data from:", `https://kulima.co.ke/api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`);
+        console.log("Fetching data from:", `api/diraja/totalmabandaexpenses?start_date=${formattedStart}&end_date=${formattedEnd}`);
 
-        const response = await axios.get(`https://kulima.co.ke/api/diraja/totalmabandaexpenses`, {
+        const response = await axios.get(`api/diraja/totalmabandaexpenses`, {
           params: { start_date: formattedStart, end_date: formattedEnd },
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        console.log("API Response:", response.data);
+        console.log("api Response:", response.data);
 
         if (!response.data || !response.data.expenses) {
           setExpenseData({ total_expense_amount: "Ksh 0.00", expenses: [] });

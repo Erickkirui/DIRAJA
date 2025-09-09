@@ -17,7 +17,7 @@ const UpdateTransfer = ({ transferId }) => {
         }
 
         const response = await axios.get(
-          `https://kulima.co.ke/api/diraja/singletransfer/${transferId}`,
+          `api/diraja/singletransfer/${transferId}`,
           {
             headers: { Authorization: `Bearer ${accessToken}` },
           }
@@ -63,7 +63,7 @@ const UpdateTransfer = ({ transferId }) => {
       const { created_at, ...updatedFormData } = formData; // Exclude created_at field
   
       const response = await axios.put(
-        `https://kulima.co.ke/api/diraja/updatetransfer/${transferId}`,
+        `api/diraja/updatetransfer/${transferId}`,
         updatedFormData, // Send the updated data excluding created_at
         {
           headers: { Authorization: `Bearer ${accessToken}` },

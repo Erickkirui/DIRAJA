@@ -16,7 +16,7 @@ const CountShops = () => {
     const fetchShopCount = async () => {
       setLoading(true); // Start loading
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/totalshops', {
+        const response = await axios.get('api/diraja/totalshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -24,7 +24,7 @@ const CountShops = () => {
 
         // Simulate a 3-second delay
         setTimeout(() => {
-          setTotalShops(response.data['total shops']);
+          setTotalShops(response.data['total active shops']);
           setLoading(false); // Stop loading
         }, 3000);
       } catch (error) {

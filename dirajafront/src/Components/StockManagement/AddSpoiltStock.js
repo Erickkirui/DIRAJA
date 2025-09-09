@@ -21,7 +21,7 @@ const AddSpoiltStock = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/batches/available-by-shopv2', {
+        const response = await axios.get('api/diraja/batches/available-by-shopv2', {
           params: { shop_id: formData.shop_id },
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
         });
@@ -41,7 +41,7 @@ const AddSpoiltStock = () => {
       if (!formData.item || !formData.shop_id) return;
 
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/shop-itemdetailsv2', {
+        const response = await axios.get('api/diraja/shop-itemdetailsv2', {
           params: {
             item_name: formData.item,
             shop_id: formData.shop_id
@@ -80,7 +80,7 @@ const AddSpoiltStock = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('https://kulima.co.ke/api/diraja/newspoilt', 
+      const response = await axios.post('api/diraja/newspoilt', 
         { ...formData, shop_id: localStorage.getItem('shop_id') }, 
         {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }

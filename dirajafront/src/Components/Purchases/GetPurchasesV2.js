@@ -28,7 +28,7 @@ const PurchasesV2 = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/v2/transfers', {
+        const response = await axios.get('api/diraja/v2/transfers', {
           headers: { 
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager'
@@ -74,7 +74,7 @@ const PurchasesV2 = () => {
       purchase.itemname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.shop_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       purchase.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      purchase.batchnumber?.toLowerCase().includes(searchQuery.toLowerCase());
+      purchase.BatchNumber?.toLowerCase().includes(searchQuery.toLowerCase());
   
     const matchesDate = selectedDate
       ? new Date(purchase.created_at).toLocaleDateString() ===
@@ -104,7 +104,7 @@ const PurchasesV2 = () => {
       render: (purchase) => `${purchase.quantity} ${purchase.metric}`
     },
     { header: 'Unit Cost (Ksh)', key: 'unitCost' },
-    { header: 'Total Cost (Ksh)', key: 'total_cost' },
+    { header: 'Status', key: 'status' },
     { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
     {
       header: 'Date',

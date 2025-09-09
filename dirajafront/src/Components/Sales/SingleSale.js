@@ -53,7 +53,7 @@ const SingleSale = () => {
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await fetch(`https://kulima.co.ke/api/diraja/sale/${sale_id}`, {
+        const response = await fetch(`api/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ const SingleSale = () => {
         setPaymentMethods(data.sale.payment_methods || []);
 
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`https://kulima.co.ke/api/diraja/shop/${data.sale.shop_id}`, {
+          const shopResponse = await fetch(`api/diraja/shop/${data.sale.shop_id}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ const SingleSale = () => {
         }))
       };
 
-      const response = await fetch(`https://kulima.co.ke/api/diraja/sale/${sale_id}`, {
+      const response = await fetch(`api/diraja/sale/${sale_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

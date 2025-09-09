@@ -18,7 +18,7 @@ function Items() {
       }
   
       try {
-        const response = await fetch('https://kulima.co.ke/api/diraja/itemaccounts/all', {
+        const response = await fetch('api/diraja/itemaccounts/all', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
