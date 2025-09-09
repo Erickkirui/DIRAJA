@@ -24,7 +24,7 @@ const ProcurementTable = () => {
           const base64Url = token.split('.')[1];
           const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
           const decodedPayload = JSON.parse(atob(base64));
-          console.log('Decoded JWT payload:', decodedPayload); 
+          console.log('Decoded JWT payload:', decodedPayload);
 
           const roleFromToken =
             decodedPayload.role || decodedPayload.user?.role || 'procurement';
@@ -50,7 +50,7 @@ const ProcurementTable = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allinventories', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/v2/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'procurement',
@@ -81,7 +81,7 @@ const ProcurementTable = () => {
     if (isSelected) {
       const currentPageIds = filteredInventory
         .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-        .map((inv) => inv.inventory_id);
+        .map((inv) => inv.inventoryV2_id); // ✅ fixed
       setSelectedInventory(currentPageIds);
     } else {
       setSelectedInventory([]);
@@ -128,17 +128,17 @@ const ProcurementTable = () => {
             selectedInventory.length > 0 &&
             filteredInventory
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .every((item) => selectedInventory.includes(item.inventory_id))
+              .every((item) => selectedInventory.includes(item.inventoryV2_id)) // ✅ fixed
           }
           className="select-all-checkbox"
         />
       ),
-      key: 'inventory_id',
+      key: 'inventoryV2_id', // ✅ fixed
       render: (item) => (
         <input
           type="checkbox"
-          checked={selectedInventory.includes(item.inventory_id)}
-          onChange={() => handleCheckboxChange(item.inventory_id)}
+          checked={selectedInventory.includes(item.inventoryV2_id)} // ✅ fixed
+          onChange={() => handleCheckboxChange(item.inventoryV2_id)} // ✅ fixed
           className="item-checkbox"
         />
       ),

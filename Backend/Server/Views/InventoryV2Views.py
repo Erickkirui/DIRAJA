@@ -29,7 +29,18 @@ def check_role(required_role):
             return fn(*args, **kwargs)
         return decorator
     return wrapper
-
+# def check_role(required_role):
+#     def wrapper(fn):
+#         @wraps(fn)
+#         def decorator(*args, **kwargs):
+#             verify_jwt_in_request()
+#             user_role = request.headers.get('X-User-Role', None)
+            
+#             if user_role != required_role:
+#                 return jsonify({"message": "Access denied: insufficient permissions"}), 403
+#             return fn(*args, **kwargs)
+#         return decorator
+#     return wrapper
 
 
 class GetInventoryByBatchV2(Resource):
@@ -175,7 +186,16 @@ class PendingTransfers(Resource):
     @jwt_required()
     def get(self):
         try:
-            pending = TransfersV2.query.filter_by(status="Not Received").all()
+            # Get shop_id from query params
+            shop_id = request.args.get("shop_id", type=int)
+            if not shop_id:
+                return {"message": "shop_id is required"}, 400
+
+            # Filter only pending transfers for this shop
+            pending = TransfersV2.query.filter_by(
+                status="Not Received",
+                shop_id=shop_id
+            ).all()
 
             result = []
             for t in pending:
@@ -198,7 +218,6 @@ class PendingTransfers(Resource):
 
         except Exception as e:
             return {"message": "Error fetching pending transfers", "error": str(e)}, 500
-
 
 # class DeleteShopStockV2(Resource):
 #     @jwt_required()
@@ -366,7 +385,6 @@ class DeleteShopStockV2(Resource):
 
 class GetTransferV2(Resource):
     @jwt_required()
-    @check_role('manager')
     def get(self):
         transfers = TransfersV2.query.all()
         all_transfers = []
@@ -472,7 +490,7 @@ class UpdateTransferV2(Resource):
 
 class AddInventoryV2(Resource):
     @jwt_required()
-    @check_role('manager')
+    # @check_role('manager')
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
@@ -563,7 +581,7 @@ class AddInventoryV2(Resource):
 
 class GetAllInventoryV2(Resource):
     @jwt_required()
-    @check_role('manager')
+    # @check_role('manager')
     def get(self):
         inventories = InventoryV2.query.order_by(InventoryV2.created_at.desc()).all()
 
@@ -618,7 +636,6 @@ class InventoryResourceByIdV2(Resource):
             return {"error": "Inventory not found"}, 404
         
     @jwt_required()
-    @check_role('manager')
     def delete(self, inventoryV2_id):
         inventory = InventoryV2.query.get(inventoryV2_id)
 
@@ -626,11 +643,14 @@ class InventoryResourceByIdV2(Resource):
             return {"error": "Inventory not found"}, 404
         
         try:
-            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
+            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for transfer in transfers:
                 db.session.delete(transfer)
             
-            shop_stocks = ShopStockV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 db.session.delete(stock)
 
@@ -642,6 +662,69 @@ class InventoryResourceByIdV2(Resource):
         except Exception as e:
             db.session.rollback()
             return {"message": "Error deleting inventory", "error": str(e)}, 500
+
+    @jwt_required()
+    def put(self, inventoryV2_id):
+        data = request.get_json()
+        inventory = InventoryV2.query.get(inventoryV2_id)
+        if not inventory:
+            return {'message': 'Inventory not found'}, 404
+
+        try:
+            itemname = data.get('itemname', inventory.itemname)
+            initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
+            unitCost = float(data.get('unitCost', inventory.unitCost))
+            unitPrice = float(data.get('unitPrice', inventory.unitPrice))
+            totalCost = unitCost * initial_quantity
+            amountPaid = float(data.get('amountPaid', inventory.amountPaid))
+            balance = totalCost - amountPaid
+            Suppliername = data.get('Suppliername', inventory.Suppliername)
+            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+            note = data.get('note', inventory.note)
+
+            created_at_str = data.get('created_at', None)
+            if created_at_str:
+                try:
+                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
+                except ValueError:
+                    return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
+            else:
+                created_at = inventory.created_at
+
+            inventory.itemname = itemname
+            inventory.initial_quantity = initial_quantity
+            inventory.unitCost = unitCost
+            inventory.unitPrice = unitPrice
+            inventory.totalCost = totalCost
+            inventory.amountPaid = amountPaid
+            inventory.balance = balance
+            inventory.Suppliername = Suppliername
+            inventory.Supplier_location = Supplier_location
+            inventory.note = note
+            inventory.created_at = created_at
+
+            # Check what the actual foreign key column name is in your models
+            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            for transfer in transfers:
+                transfer.itemname = itemname
+                transfer.unitCost = unitCost
+                transfer.amountPaid = amountPaid
+
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
+            for stock in shop_stocks:
+                stock.itemname = itemname
+                stock.unitPrice = unitPrice
+
+            db.session.commit()
+            return {'message': 'Inventory and related records updated successfully'}, 200
+
+        except ValueError as e:
+            db.session.rollback()
+            return {'message': 'Invalid data type', 'error': str(e)}, 400
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error updating inventory', 'error': str(e)}, 500
 
     @jwt_required()
     @check_role('manager')

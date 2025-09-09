@@ -36,7 +36,7 @@ const AddEmployee = () => {
     const fetchShops = async () => {
       try {
 
-        const response = await axios.get('/api/diraja/allshops', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
 
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -82,7 +82,7 @@ const AddEmployee = () => {
 
     try {
 
-      const response = await axios.post('/api/diraja/newemployee', employeeData, {
+      const response = await axios.post('https://kulima.co.ke/api/diraja/newemployee', employeeData, {
 
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`

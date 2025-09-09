@@ -25,7 +25,7 @@ const GetAllLiveStock = ({ accessToken }) => {
           return;
         }
 
-        const response = await axios.get(`/api/diraja/all-shop-stocks`, {
+        const response = await axios.get(`https://kulima.co.ke/api/diraja/all-shop-stocks`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

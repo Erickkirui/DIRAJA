@@ -12,13 +12,6 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.utilities import SQLDatabase
 from langchain.chains import create_sql_query_chain
 
-# from langchain_google_genai import ChatGoogleGenerativeAI
-# from langchain_experimental.sql import SQLDatabaseChain
-# from langchain_community.utilities import SQLDatabase
-
-load_dotenv()
-
-# ---------- Extensions ----------
 db = SQLAlchemy()
 jwt = JWTManager()
 mail = Mail()
@@ -40,7 +33,8 @@ if not api_key:
 
 
 #LLM set up
-# llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
 def initialize_models():
     """Import all models so SQLAlchemy can discover them."""

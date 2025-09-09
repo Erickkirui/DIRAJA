@@ -15,7 +15,7 @@ const Liabilities = ({ startDate, endDate, liabilities }) => {
       setLoading(true);
       try {
         const response = await fetch(
-          `/api/diraja/accountspayable?start_date=${startDate}&end_date=${endDate}`,
+          `https://kulima.co.ke/api/diraja/accountspayable?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`

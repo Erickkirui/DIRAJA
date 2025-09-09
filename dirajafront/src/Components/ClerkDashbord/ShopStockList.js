@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import LoadingAnimation from "../LoadingAnimation";
 import { Alert, Stack } from "@mui/material";
@@ -12,102 +12,126 @@ const ShopStockList = () => {
   const [activeTab, setActiveTab] = useState("inStock");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
-  const [stockItems, setStockItems] = useState([]); // ✅ Add this state
-
+  const [stockItems, setStockItems] = useState([]);
   const [messageType, setMessageType] = useState("success");
   const navigate = useNavigate();
 
-  // Fetch stock items
+  // Process stock data into human-readable display
+  const processStockData = useCallback((stockData, items) => {
+    return stockData.map((stock) => {
+      const itemInfo = items.find((item) => item.item_name === stock.itemname);
+
+      if (!itemInfo)
+        return {
+          ...stock,
+          display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
+        };
+
+      // Kgs stay as kgs
+      if (stock.metric && stock.metric.toLowerCase() === "kgs") {
+        return { ...stock, display: `${stock.total_remaining} kgs` };
+      }
+
+      // Eggs → trays + pieces
+      const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
+      if (isEggs && itemInfo.pack_quantity > 0) {
+        const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+        const pieces = stock.total_remaining % itemInfo.pack_quantity;
+        return {
+          ...stock,
+          display:
+            trays > 0
+              ? `${trays} tray${trays !== 1 ? "s" : ""}${
+                  pieces > 0 ? `, ${pieces} pcs` : ""
+                }`
+              : `${pieces} pcs`,
+        };
+      }
+
+      // Other items with pack quantity → pkts + pcs
+      if (itemInfo.pack_quantity > 0) {
+        const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+        const pieces = stock.total_remaining % itemInfo.pack_quantity;
+        return {
+          ...stock,
+          display:
+            packets > 0
+              ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+                  pieces > 0 ? `, ${pieces} pcs` : ""
+                }`
+              : `${pieces} pcs`,
+        };
+      }
+
+      // Fallback
+      return {
+        ...stock,
+        display: `${stock.total_remaining} ${stock.metric || "pcs"}`,
+      };
+    });
+  }, []);
+
+  // Fetch stock items and stock levels
   useEffect(() => {
-    const fetchStockItems = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const itemsResponse = await axios.get("/api/diraja/stockitems", {
+        // Fetch stock items
+        const itemsResponse = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
-        setStockItems(itemsResponse.data.stock_items || []);
-      } catch (err) {
-        console.error("Failed to fetch stock items", err);
-      }
-    };
-    fetchStockItems();
-  }, []);
 
-  // ✅ Fetch stock levels
-  useEffect(() => {
-    const fetchShopStock = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(
-          `/api/diraja/item-stock-level?shop_id=${shopId}`,
+        const items = itemsResponse.data.stock_items || [];
+        setStockItems(items);
+
+        // Fetch shop stock
+        const stockResponse = await axios.get(
+          `https://kulima.co.ke/api/diraja/item-stock-level?shop_id=${shopId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
           }
         );
-        
-        // Process the stock data to include proper display metrics
-        const processedStock = (response.data.item_stocks || []).map(stock => {
-          const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
-          
-          if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
-          
-          // If metric is kgs, don't convert to packets/pieces
-          if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
-            return {
-              ...stock,
-              display: `${stock.total_remaining} kgs`
-            };
+
+        const rawStock = stockResponse.data.item_stocks || [];
+
+        // ✅ Group by itemname and sum total_remaining
+        const grouped = rawStock.reduce((acc, stock) => {
+          if (!acc[stock.itemname]) {
+            acc[stock.itemname] = { ...stock };
+          } else {
+            acc[stock.itemname].total_remaining += stock.total_remaining;
           }
-          
-          // For eggs and kienyeji eggs, display as trays and pieces
-          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
-          if (isEggs && itemInfo.pack_quantity > 0) {
-            const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
-            const pieces = stock.total_remaining % itemInfo.pack_quantity;
-            return {
-              ...stock,
-              display: trays > 0 
-                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
-            };
-          }
-          // For other items with pack quantity, display as packets and pieces
-          else if (itemInfo.pack_quantity > 0) {
-            const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
-            const pieces = stock.total_remaining % itemInfo.pack_quantity;
-            return {
-              ...stock,
-              display: packets > 0
-                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
-                : `${pieces} pcs`
-            };
-          }
-          // For items without pack quantity, just display with their metric
-          else {
-            return {
-              ...stock,
-              display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
-            };
-          }
-        });
-        
+          return acc;
+        }, {});
+
+        const combinedStock = Object.values(grouped);
+
+        // ✅ Format display
+        const processedStock = processStockData(combinedStock, items);
+
+        // ✅ Sort alphabetically
+        processedStock.sort((a, b) => a.itemname.localeCompare(b.itemname));
+
         setItemStock(processedStock);
       } catch (err) {
-        console.error("Error fetching stock data:", err);
+        console.error("Error fetching data:", err);
         setError("Failed to load stock data for this shop.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchShopStock();
-  }, [shopId]);
+    fetchData();
+  }, [shopId, processStockData]);
 
   const filteredStock = itemStock.filter((stock) =>
-    activeTab === "inStock" ? stock.total_remaining > 0 : stock.total_remaining === 0
+    activeTab === "inStock"
+      ? stock.total_remaining > 0
+      : stock.total_remaining === 0
   );
 
   const handleSubmitReport = async () => {
@@ -119,13 +143,10 @@ const ShopStockList = () => {
       reportData[item.itemname] = `${item.total_remaining} ${item.metric}`;
     });
 
-    const payload = {
-      shop_id: shopId,
-      report: reportData,
-    };
+    const payload = { shop_id: shopId, report: reportData };
 
     try {
-      const response = await axios.post("/api/diraja/report-stock", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/report-stock", payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
@@ -150,12 +171,11 @@ const ShopStockList = () => {
   return (
     <div>
       {/* Heading and Transfer Stock Button */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+      >
         <h2 style={{ margin: 0 }}>My Shop Stock</h2>
-        <button
-          className="button"
-          onClick={() => navigate("/transfer")}
-        >
+        <button className="button" onClick={() => navigate("/transfer")}>
           Transfer Stock
         </button>
       </div>
@@ -209,7 +229,7 @@ const ShopStockList = () => {
                   filteredStock.map((stock, index) => (
                     <tr key={index}>
                       <td>{stock.itemname}</td>
-                      <td>{stock.display}</td> {/* ✅ use formatted display */}
+                      <td>{stock.display}</td>
                     </tr>
                   ))
                 ) : (
@@ -222,18 +242,18 @@ const ShopStockList = () => {
           </div>
 
           {/* Submit Report Button */}
-          
           <div style={{ marginTop: "20px" }}>
-              <Alert severity="info" style={{ marginBottom: "10px" }}>
-                Check the stock and press submit report it matches. If not, contact the manager.
-              </Alert>
-              <button
-                onClick={handleSubmitReport}
-                disabled={submitting}
-                className="button"
-              >
-                {submitting ? "Submitting..." : "Submit Stock Report"}
-              </button>
+            <Alert severity="info" style={{ marginBottom: "10px" }}>
+              Check the stock and press submit report if it matches.  
+              If not, contact the manager.
+            </Alert>
+            <button
+              onClick={handleSubmitReport}
+              disabled={submitting}
+              className="button"
+            >
+              {submitting ? "Submitting..." : "Submit Stock Report"}
+            </button>
           </div>
         </>
       )}

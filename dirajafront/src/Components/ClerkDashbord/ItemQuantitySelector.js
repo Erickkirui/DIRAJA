@@ -25,7 +25,7 @@ const ItemQuantitySelector = ({
       }
 
       try {
-        const response = await axios.get('/api/diraja/stockitems', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

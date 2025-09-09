@@ -1365,6 +1365,7 @@ class StockMovement(Resource):
                 "message": "Error retrieving stock movement data",
                 "error": str(e)
             }), 500
+<<<<<<< HEAD
         
 
 
@@ -1396,3 +1397,76 @@ class MonthlyIncome(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+=======
+            
+class GetInventoryStock(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Optional filters
+            supplier_name = request.args.get('supplier_name', type=str)
+            item_name = request.args.get('item_name', type=str)
+            
+            # Query from InventoryV2 - group only by itemname and metric
+            query = db.session.query(
+                InventoryV2.itemname,
+                InventoryV2.metric,
+                func.sum(InventoryV2.quantity).label("total_quantity"),
+                func.avg(InventoryV2.unitCost).label("average_unit_cost"),
+                func.count(InventoryV2.BatchNumber).label("batch_count")
+            ).filter(
+                InventoryV2.quantity > 0  # Only items with stock remaining
+            )
+
+            # Optional filters
+            if supplier_name:
+                query = query.filter(InventoryV2.Suppliername.ilike(f'%{supplier_name}%'))
+            
+            if item_name:
+                query = query.filter(InventoryV2.itemname.ilike(f'%{item_name}%'))
+
+            # Group by item and metric only (not by supplier/location)
+            inventory_stock = query.group_by(
+                InventoryV2.itemname, 
+                InventoryV2.metric
+            ).all()
+
+            # Prepare list with aggregated information
+            inventory_stock_list = [
+                {
+                    "itemname": itemname,
+                    "metric": metric,
+                    "total_remaining": round(total_quantity, 3),
+                    "average_unit_cost": round(average_unit_cost, 2),
+                    "batch_count": batch_count,
+                    "total_value": round(total_quantity * average_unit_cost, 2)
+                }
+                for itemname, metric, total_quantity, average_unit_cost, batch_count in inventory_stock
+            ]
+
+            # Calculate totals
+            total_items = len(inventory_stock_list)
+            total_value = sum(item['total_value'] for item in inventory_stock_list)
+            total_quantity = sum(item['total_remaining'] for item in inventory_stock_list)
+
+            # Response
+            response = {
+                "total_items": total_items,
+                "total_quantity": round(total_quantity, 3),
+                "total_value": round(total_value, 2),
+                "inventory_stocks": inventory_stock_list,
+                "filters": {
+                    "supplier_name": supplier_name,
+                    "item_name": item_name
+                }
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching inventory stock data",
+                "details": str(e)
+            }, 500
+>>>>>>> origin/main-backup

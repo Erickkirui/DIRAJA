@@ -41,7 +41,7 @@ const MabandaProfitLoss = () => {
           params = { start_date: formatDateToISOString(monthAgo), end_date: formatDateToISOString(today) };
         }
 
-        const response = await axios.get('/api/diraja/mabandap&l', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/mabandap&l', {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,

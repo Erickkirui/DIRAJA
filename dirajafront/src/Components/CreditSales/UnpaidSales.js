@@ -30,7 +30,7 @@ function UnpaidSales({ searchQuery = '', selectedDate = '' }) {
         page: currentPage,
       };
 
-      const resp = await axios.get('/api/diraja/unpaidsales', {
+      const resp = await axios.get('https://kulima.co.ke/api/diraja/unpaidsales', {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });

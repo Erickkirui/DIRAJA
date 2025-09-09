@@ -127,6 +127,10 @@ import re
 import os
 
 DEBUG_MODE = os.getenv("DEBUG_MODE", "false").lower() == "true"
+from flask import request, jsonify
+from flask_restful import Resource, Api
+from Server import app, db_chain  # import your app and db_chain
+
 
 class AskAI(Resource):
     def post(self):

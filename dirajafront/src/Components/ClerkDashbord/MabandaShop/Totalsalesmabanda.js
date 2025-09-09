@@ -34,7 +34,7 @@ const TotalMabandaSales = () => {
           params.date = selectedDate; // Add date if "date" period is selected
         }
 
-        const response = await axios.get('/api/diraja/totalsalesmabanda', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/totalsalesmabanda', {
           params,
           headers: { Authorization: `Bearer ${accessToken}` },
         });

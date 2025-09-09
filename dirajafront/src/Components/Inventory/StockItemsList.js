@@ -30,7 +30,7 @@ const StockItemsList = () => {
     }
 
     try {
-      const response = await axios.get('/api/diraja/stockitems', {
+      const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
@@ -92,7 +92,7 @@ const StockItemsList = () => {
 
     // Match the backend endpoint exactly
     const response = await axios.put(
-      `api/diraja/stockitems/${editingItem.id}`,  // Changed to match backend
+      `https://kulima.co.ke/api/diraja/stockitems/${editingItem.id}`,  // Changed to match backend
       requestData,
       {
         headers: {

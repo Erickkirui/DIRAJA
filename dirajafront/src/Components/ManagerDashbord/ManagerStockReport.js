@@ -5,6 +5,7 @@ import { Alert, Stack } from "@mui/material";
 
 const ManagerReportStock = () => {
   const [itemStock, setItemStock] = useState([]);
+  const [stockItems, setStockItems] = useState([]); // Add state for stock items
   const [shops, setShops] = useState([]);
   const [selectedShopId, setSelectedShopId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,10 +23,27 @@ const ManagerReportStock = () => {
   const [expectedQty, setExpectedQty] = useState("");
   const [reason, setReason] = useState("");
 
+  // Fetch stock items
+  useEffect(() => {
+    const fetchStockItems = async () => {
+      try {
+        const itemsResponse = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setStockItems(itemsResponse.data.stock_items || []);
+      } catch (err) {
+        console.error("Failed to fetch stock items", err);
+      }
+    };
+    fetchStockItems();
+  }, []);
+
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get("/api/diraja/allshops", {
+        const response = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -41,20 +59,71 @@ const ManagerReportStock = () => {
     fetchShops();
   }, []);
 
+  // Process stock data to display in appropriate units
+  const processStockData = (stockData, items) => {
+    return stockData.map(stock => {
+      const itemInfo = items.find(item => item.item_name === stock.itemname);
+      
+      if (!itemInfo) return { ...stock, display: `${stock.total_remaining} ${stock.metric || 'pcs'}` };
+      
+      // If metric is kgs, don't convert to packets/pieces
+      if (stock.metric && stock.metric.toLowerCase() === 'kgs') {
+        return {
+          ...stock,
+          display: `${stock.total_remaining} kgs`
+        };
+      }
+      
+      // For eggs and kienyeji eggs, display as trays and pieces
+      const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+      if (isEggs && itemInfo.pack_quantity > 0) {
+        const trays = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+        const pieces = stock.total_remaining % itemInfo.pack_quantity;
+        return {
+          ...stock,
+          display: trays > 0 
+            ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+            : `${pieces} pcs`
+        };
+      }
+      // For other items with pack quantity, display as packets and pieces
+      else if (itemInfo.pack_quantity > 0) {
+        const packets = Math.floor(stock.total_remaining / itemInfo.pack_quantity);
+        const pieces = stock.total_remaining % itemInfo.pack_quantity;
+        return {
+          ...stock,
+          display: packets > 0
+            ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+            : `${pieces} pcs`
+        };
+      }
+      // For items without pack quantity, just display with their metric
+      else {
+        return {
+          ...stock,
+          display: `${stock.total_remaining} ${stock.metric || 'pcs'}`
+        };
+      }
+    });
+  };
+
   useEffect(() => {
     if (!selectedShopId) return;
     const fetchItemStock = async () => {
       setLoading(true);
       try {
         const response = await axios.get(
-          `/api/diraja/item-stock-level?shop_id=${selectedShopId}`,
+          `https://kulima.co.ke/api/diraja/item-stock-level?shop_id=${selectedShopId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("access_token")}`,
             },
           }
         );
-        setItemStock(response.data.item_stocks || []);
+        
+        // Process the stock data to include proper display metrics
+        const processedStock = processStockData(response.data.item_stocks || [], stockItems);
+        setItemStock(processedStock);
         setError("");
       } catch (err) {
         console.error("Fetch stock error:", err);
@@ -65,7 +134,7 @@ const ManagerReportStock = () => {
       }
     };
     fetchItemStock();
-  }, [selectedShopId]);
+  }, [selectedShopId, stockItems]); // Added stockItems as dependency
 
   const filteredStock = itemStock.filter((stock) =>
     activeTab === "inStock"
@@ -110,7 +179,7 @@ const ManagerReportStock = () => {
     };
 
     try {
-      const response = await axios.post("/api/diraja/report-stock", payload, {
+      const response = await axios.post("https://kulima.co.ke/api/diraja/report-stock", payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
@@ -224,9 +293,7 @@ const ManagerReportStock = () => {
                   filteredStock.map((stock, index) => (
                     <tr key={index}>
                       <td>{stock.itemname}</td>
-                      <td>
-                        {stock.total_remaining} {stock.metric}
-                      </td>
+                      <td>{stock.display}</td> {/* Use the formatted display */}
                     </tr>
                   ))
                 ) : (
@@ -307,12 +374,7 @@ const ManagerReportStock = () => {
                 <p>
                   <strong>Actual Stock:</strong>{" "}
                   {
-                    itemStock.find((i) => i.itemname === selectedItemName)
-                      .total_remaining
-                  }{" "}
-                  {
-                    itemStock.find((i) => i.itemname === selectedItemName)
-                      .metric
+                    itemStock.find((i) => i.itemname === selectedItemName).display
                   }
                 </p>
               </>

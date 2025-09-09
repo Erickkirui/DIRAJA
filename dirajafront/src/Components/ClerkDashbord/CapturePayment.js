@@ -31,7 +31,7 @@ const CapturePayment = ({ saleId, onPaymentSuccess }) => {
       }
 
       const response = await axios.post(
-        `/api/diraja/sales/${saleId}/capture-payment`,
+        `https://kulima.co.ke/api/diraja/sales/${saleId}/capture-payment`,
         {
           payment_method: paymentMethod,
           amount_paid: parseFloat(amountPaid),

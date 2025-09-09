@@ -30,7 +30,7 @@ const TotalCreditSales = () => {
           params = { period }; // Use selected period for other options
         }
 
-        const response = await axios.get('/api/diraja/allunpaidtotal', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allunpaidtotal', {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,

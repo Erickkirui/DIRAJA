@@ -31,7 +31,7 @@ const CashSalesByUser = () => {
           params.date = selectedDate;
         }
 
-        const response = await axios.get(`/api/diraja/sales/cash/user/${userId}`, {
+        const response = await axios.get(`https://kulima.co.ke/api/diraja/sales/cash/user/${userId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
           params,
         });

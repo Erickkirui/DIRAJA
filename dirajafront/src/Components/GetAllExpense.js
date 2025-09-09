@@ -29,7 +29,7 @@ const Expenses = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/allexpenses', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allexpenses', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -79,7 +79,7 @@ const Expenses = () => {
       try {
         await Promise.all(
           selectedExpenses.map((expenseId) =>
-            axios.delete(`/api/diraja/expense/${expenseId}`, {
+            axios.delete(`https://kulima.co.ke/api/diraja/expense/${expenseId}`, {
               headers: { Authorization: `Bearer ${accessToken}` },
             })
           )

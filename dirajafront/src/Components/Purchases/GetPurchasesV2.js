@@ -28,7 +28,7 @@ const PurchasesV2 = () => {
           return;
         }
 
-        const response = await axios.get('/api/diraja/v2/transfers', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/v2/transfers', {
           headers: { 
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager'

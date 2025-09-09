@@ -13,8 +13,11 @@ class Shoptoshoptransfer(db.Model):
     users_id = db.Column(db.Integer, db.ForeignKey('users.users_id'), nullable=False)
     stockv2_id = db.Column(db.Integer, db.ForeignKey('shop_stock_v2.stockv2_id'), nullable=False)
     itemname = db.Column(db.String(50), nullable=False)
+    metric = db.Column(db.String(20), nullable=False)   # ✅ added metric column
     quantity = db.Column(db.Float, nullable=False)
     transfer_date = db.Column(db.DateTime, default=func.now())
+    status = db.Column(db.String(20), default="pending")   # pending | accepted | declined
+
     
     # Relationships 
     shop = db.relationship('Shops', backref=db.backref('shoptoshop_transfers', lazy=True))

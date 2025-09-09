@@ -14,7 +14,7 @@ const PromotionSales = () => {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('Authentication token not found');
 
-      const response = await axios.get('/api/diraja/allsalesdepartmentsales', {
+      const response = await axios.get('https://kulima.co.ke/api/diraja/allsalesdepartmentsales', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

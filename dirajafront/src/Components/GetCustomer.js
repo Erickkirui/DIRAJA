@@ -26,7 +26,7 @@ const Customers = () => {
           setError('No access token found, please log in.');
           return;
         }
-        const response = await axios.get('/api/diraja/allcustomers', {
+        const response = await axios.get('https://kulima.co.ke/api/diraja/allcustomers', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setCustomers(response.data);

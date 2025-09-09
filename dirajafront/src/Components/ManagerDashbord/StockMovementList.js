@@ -22,12 +22,14 @@ const StockMovement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("transfers");
+  const [stockItems, setStockItems] = useState([]);
 
-  // Fetch shops
+  // Fetch shops and stock items
   useEffect(() => {
-    const fetchShops = async () => {
+    const fetchData = async () => {
       try {
-        const shopsRes = await axios.get("/api/diraja/allshops", {
+        // Fetch shops
+        const shopsRes = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -36,12 +38,20 @@ const StockMovement = () => {
           a.shopname.localeCompare(b.shopname)
         );
         setShops(sortedShops);
+
+        // Fetch stock items metadata
+        const itemsRes = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+        setStockItems(itemsRes.data.stock_items || []);
       } catch (err) {
-        console.error("Failed to load shops", err);
-        setError("Failed to load shop data");
+        console.error("Failed to load data", err);
+        setError("Failed to load data");
       }
     };
-    fetchShops();
+    fetchData();
   }, []);
 
   // Fetch stock movement data
@@ -65,14 +75,195 @@ const StockMovement = () => {
           params.days = daysBack;
         }
 
-        const res = await axios.get("/api/diraja/stock-movement", {
+        const res = await axios.get("https://kulima.co.ke/api/diraja/stock-movement", {
           params: params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
 
-        setMovementData(res.data);
+        // Process the data to include proper display metrics
+        const processedTransfers = (res.data.transfers || []).map(item => {
+          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+          
+          if (!itemInfo) return { ...item, display: `${item.quantity} ${item.metric || 'pcs'}` };
+          
+          // If metric is kgs, don't convert to packets/pieces
+          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+            return {
+              ...item,
+              display: `${item.quantity} kgs`
+            };
+          }
+          
+          // For eggs and kienyeji eggs, display as trays and pieces
+          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+          if (isEggs && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For other items with pack quantity, display as packets and pieces
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          // For items without pack quantity, just display with their metric
+          else {
+            return {
+              ...item,
+              display: `${item.quantity} ${item.metric || 'pcs'}`
+            };
+          }
+        });
+
+        // Process spoilt items
+        const processedSpoiltItems = (res.data.spoilt_items || []).map(item => {
+          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+          
+          if (!itemInfo) return { ...item, display: `${item.quantity} ${item.metric || 'pcs'}` };
+          
+          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+            return {
+              ...item,
+              display: `${item.quantity} kgs`
+            };
+          }
+          
+          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+          if (isEggs && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else {
+            return {
+              ...item,
+              display: `${item.quantity} ${item.metric || 'pcs'}`
+            };
+          }
+        });
+
+        // Process returns
+        const processedReturns = (res.data.returns || []).map(item => {
+          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+          
+          if (!itemInfo) return { ...item, display: `${item.quantity} ${item.metric || 'pcs'}` };
+          
+          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+            return {
+              ...item,
+              display: `${item.quantity} kgs`
+            };
+          }
+          
+          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+          if (isEggs && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else {
+            return {
+              ...item,
+              display: `${item.quantity} ${item.metric || 'pcs'}`
+            };
+          }
+        });
+
+        // Process shop transfers
+        const processedShopTransfers = (res.data.shop_transfers || []).map(item => {
+          const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+          
+          if (!itemInfo) return { ...item, display: `${item.quantity} ${item.metric || 'pcs'}` };
+          
+          if (item.metric && item.metric.toLowerCase() === 'kgs') {
+            return {
+              ...item,
+              display: `${item.quantity} kgs`
+            };
+          }
+          
+          const isEggs = itemInfo.item_name.toLowerCase().includes("eggs");
+          if (isEggs && itemInfo.pack_quantity > 0) {
+            const trays = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: trays > 0 
+                ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else if (itemInfo.pack_quantity > 0) {
+            const packets = Math.floor(item.quantity / itemInfo.pack_quantity);
+            const pieces = item.quantity % itemInfo.pack_quantity;
+            return {
+              ...item,
+              display: packets > 0
+                ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
+                : `${pieces} pcs`
+            };
+          }
+          else {
+            return {
+              ...item,
+              display: `${item.quantity} ${item.metric || 'pcs'}`
+            };
+          }
+        });
+
+        // Sort all data in descending order by date
+        const formattedData = {
+          transfers: processedTransfers.sort((a, b) => new Date(b.date) - new Date(a.date)),
+          spoilt_items: processedSpoiltItems.sort((a, b) => new Date(b.date) - new Date(a.date)),
+          returns: processedReturns.sort((a, b) => new Date(b.date) - new Date(a.date)),
+          shop_transfers: processedShopTransfers.sort((a, b) => new Date(b.date) - new Date(a.date)),
+          time_period: res.data.time_period
+        };
+
+        setMovementData(formattedData);
       } catch (err) {
         console.error("Failed to fetch stock movement data", err);
         if (err.response && err.response.data) {
@@ -86,7 +277,7 @@ const StockMovement = () => {
     };
 
     fetchStockMovement();
-  }, [selectedShopId, dateRange, daysBack]);
+  }, [selectedShopId, dateRange, daysBack, stockItems]);
 
   const formatDate = (dateString) => {
     return dayjs(dateString).format("YYYY-MM-DD HH:mm");
@@ -131,9 +322,8 @@ const StockMovement = () => {
     },
     {
       title: "Quantity",
-      dataIndex: "quantity",
+      dataIndex: "display",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
     {
       title: "Batch Number",
@@ -161,9 +351,8 @@ const StockMovement = () => {
     },
     {
       title: "Quantity",
-      dataIndex: "quantity",
+      dataIndex: "display",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
     {
       title: "Disposal Method",
@@ -206,7 +395,7 @@ const StockMovement = () => {
     },
     {
       title: "Quantity",
-      dataIndex: "quantity",
+      dataIndex: "display",
       key: "quantity",
     },
     {
@@ -240,9 +429,8 @@ const StockMovement = () => {
     },
     {
       title: "Quantity",
-      dataIndex: "quantity",
+      dataIndex: "display",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
     },
     {
       title: "Date",

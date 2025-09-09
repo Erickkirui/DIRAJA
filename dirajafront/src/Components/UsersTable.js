@@ -15,7 +15,7 @@ const UsersTable = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch('/api/diraja/allusers', {
+        const response = await fetch('https://kulima.co.ke/api/diraja/allusers', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ const UsersTable = () => {
     }
 
     try {
-      const response = await fetch(`/api/diraja/user/${userId}`, {
+      const response = await fetch(`https://kulima.co.ke/api/diraja/user/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +87,7 @@ const UsersTable = () => {
     if (!confirmDelete) return;
 
     try {
-      const response = await fetch(`/api/diraja/user/${userId}`, {
+      const response = await fetch(`https://kulima.co.ke/api/diraja/user/${userId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

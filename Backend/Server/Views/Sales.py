@@ -93,6 +93,8 @@ class AddSale(Resource):
             payment_methods = data['payment_methods']
             promocode = data.get('promocode', '')
             status = data['status'].lower()
+            # Get balance from request or default to 0 if not provided
+            balance = float(data.get('balance', 0))
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
             if not isinstance(data['items'], list) or not data['items']:
@@ -145,16 +147,11 @@ class AddSale(Resource):
                     return {'message': f'Invalid amount for payment method {pm["method"]}'}, 400
 
         # ===== BANK MAPPING =====
-        # Specific shop to account mappings
-        #Left => shop id
-        #Right => account id
         shop_to_bank_mapping = {
             1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
             7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
             14: 14, 16: 13, 19: 22
         }
-        
-        # Default all other shops to account ID 11
         bank_id = shop_to_bank_mapping.get(shop_id, 11)
 
         # ===== STOCK PROCESSING =====
@@ -253,7 +250,6 @@ class AddSale(Resource):
 
         # ===== PAYMENT PROCESSING =====
         total_amount_paid = sum(float(pm['amount']) for pm in payment_methods) if status != "unpaid" else 0
-        balance = total_price - total_amount_paid
         sasapay_deposits = []
 
         try:
@@ -264,7 +260,7 @@ class AddSale(Resource):
                 customer_number=data['customer_number'],
                 status=status,
                 created_at=created_at,
-                balance=balance,
+                balance=balance,  # Use the balance provided or default to 0
                 promocode=promocode
             )
             db.session.add(new_sale)
@@ -345,7 +341,7 @@ class AddSale(Resource):
                 'financial': {
                     'total': total_price,
                     'paid': total_amount_paid,
-                    'balance': balance,
+                    'balance': balance,  # Return the balance that was provided or 0
                     'purchase_cost': purchase_account
                 },
                 'items': {
@@ -373,6 +369,7 @@ class AddSale(Resource):
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
+
 
 
 class GetSale(Resource):
@@ -2084,7 +2081,18 @@ class GenerateSalesReport(Resource):
             for sale in sales:
                 user = Users.query.get(sale.user_id)
                 shop = Shops.query.get(sale.shop_id)
-                total_amount = sum(p.amount_paid for p in sale.payment)
+                
+                # Get payment information including transaction codes
+                payment_methods = []
+                transaction_codes = []
+                total_amount = 0
+                
+                for payment in sale.payment:
+                    total_amount += payment.amount_paid
+                    payment_methods.append(payment.payment_method)
+                    if payment.transaction_code:
+                        transaction_codes.append(payment.transaction_code)
+                
                 for item in sale.items:
                     all_shops_data.append({
                         "Sale ID": sale.sales_id,
@@ -2099,11 +2107,36 @@ class GenerateSalesReport(Resource):
                         "Unit Price": item.unit_price,
                         "Total Price": item.total_price,
                         "Batch Number": item.BatchNumber,
-                        "Amount Paid": total_amount,
+                        "Amount Paid": total_amount, 
                         "Balance": sale.balance,
-                        "Payment Methods": ", ".join(set(p.payment_method for p in sale.payment)),
+                        "Payment Methods": ", ".join(set(payment_methods)),
+                        "Transaction Codes": ", ".join(transaction_codes) if transaction_codes else "N/A",
                         "Note": sale.note or ""
                     })
+
+            # Create DataFrame and write to Excel
+            if all_shops_data:
+                df_all_shops = pd.DataFrame(all_shops_data)
+                df_all_shops.to_excel(writer, sheet_name='All Sales', index=False)
+                
+                # Auto-adjust columns' width
+                worksheet = writer.sheets['All Sales']
+                for idx, col in enumerate(df_all_shops.columns):
+                    max_len = max(df_all_shops[col].astype(str).map(len).max(), len(col)) + 2
+                    worksheet.set_column(idx, idx, max_len)
+            
+            writer.close()
+            output.seek(0)
+            
+            return send_file(
+                output,
+                as_attachment=True,
+                download_name=f"sales_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            
+        except Exception as e:
+            return {"error": f"Failed to generate report: {str(e)}"}, 500
 
             if all_shops_data:
                 df_all_shops = pd.DataFrame(all_shops_data)

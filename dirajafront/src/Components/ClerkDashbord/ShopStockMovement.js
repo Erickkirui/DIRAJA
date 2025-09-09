@@ -15,23 +15,33 @@ const ShopStockMovement = () => {
     shop_transfers: [],
   });
   const [dateRange, setDateRange] = useState([
-    dayjs().subtract(30, "day"),
-    dayjs(),
+    dayjs().subtract(1, "day"), // Yesterday as start date
+    dayjs().subtract(1, "day"), // Yesterday as end date
   ]);
-  const [daysBack, setDaysBack] = useState(30);
+  const [daysBack, setDaysBack] = useState(1); // Set to 1 day back
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("transfers");
+  const [stockItems, setStockItems] = useState([]); // Added for stock items metadata
 
   const shopId = localStorage.getItem("shop_id");
 
   useEffect(() => {
-    const fetchStockMovement = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError("");
 
       try {
         if (!shopId) throw new Error("Shop ID not found in localStorage");
+
+        // Fetch stock items metadata
+        const itemsRes = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+        const stockItemsData = itemsRes.data.stock_items || [];
+        setStockItems(stockItemsData);
 
         const params = { shop_id: shopId };
 
@@ -42,14 +52,22 @@ const ShopStockMovement = () => {
           params.days = daysBack;
         }
 
-        const res = await axios.get("/api/diraja/stock-movement", {
+        const res = await axios.get("https://kulima.co.ke/api/diraja/stock-movement", {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
         });
 
-        setMovementData(res.data);
+        // Apply display formatting to all movement data
+        const formattedData = {
+          transfers: formatMovementData(res.data.transfers, stockItemsData),
+          spoilt_items: formatMovementData(res.data.spoilt_items, stockItemsData),
+          returns: formatMovementData(res.data.returns, stockItemsData),
+          shop_transfers: formatMovementData(res.data.shop_transfers, stockItemsData),
+        };
+
+        setMovementData(formattedData);
       } catch (err) {
         console.error("Failed to fetch stock movement data", err);
         setError(
@@ -62,8 +80,74 @@ const ShopStockMovement = () => {
       }
     };
 
-    fetchStockMovement();
+    fetchData();
   }, [dateRange, daysBack, shopId]);
+
+  // Helper function to format quantity display
+  const formatQuantityDisplay = (quantity, metric, itemInfo) => {
+    // If metric is kgs, display directly
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${quantity} kgs`;
+    }
+
+    // Eggs logic → trays and pieces
+    if (
+      itemInfo.item_name.toLowerCase().includes("eggs") &&
+      (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
+    ) {
+      const packQty =
+        itemInfo.pack_quantity && itemInfo.pack_quantity > 0
+          ? itemInfo.pack_quantity
+          : 30; // default tray size
+      const trays = Math.floor(quantity / packQty);
+      const pieces = quantity % packQty;
+      return trays > 0
+        ? `${trays} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${pieces} pcs` : ""
+          }`
+        : `${pieces} pcs`;
+    }
+
+    // Other items with pack_quantity → pkts and pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return packets > 0
+        ? `${packets} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${pieces} pcs` : ""
+          }`
+        : `${pieces} pcs`;
+    }
+
+    // Default
+    return `${quantity} ${metric || "pcs"}`;
+  };
+
+  // Format movement data with display properties
+  const formatMovementData = (data, stockItemsData) => {
+    if (!data || !Array.isArray(data)) return [];
+    
+    return data.map((item) => {
+      const itemInfo = stockItemsData.find(
+        (stockItem) => stockItem.item_name === item.item_name
+      );
+
+      if (!itemInfo) {
+        return {
+          ...item,
+          display: `${item.quantity} ${item.metric || "pcs"}`,
+        };
+      }
+
+      // Format display for quantity
+      const display = formatQuantityDisplay(item.quantity, item.metric, itemInfo);
+
+      return {
+        ...item,
+        display: display,
+      };
+    });
+  };
 
   const renderTable = (data, columns) => {
     if (!data || data.length === 0) {
@@ -98,14 +182,14 @@ const ShopStockMovement = () => {
     );
   };
 
-  // Column definitions (same as before)
+  // Column definitions with updated render functions
   const transferColumns = [
     { title: "Item Name", dataIndex: "item_name", key: "item_name" },
     {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
+      render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
     },
    
   ];
@@ -116,7 +200,7 @@ const ShopStockMovement = () => {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
+      render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
     },
     { title: "Disposal Method", dataIndex: "disposal_method", key: "disposal_method" },
     { title: "Collector", dataIndex: "collector_name", key: "collector_name" },
@@ -126,7 +210,12 @@ const ShopStockMovement = () => {
 
   const returnsColumns = [
     { title: "Item Name", dataIndex: "item_name", key: "item_name" },
-    { title: "Quantity", dataIndex: "quantity", key: "quantity" },
+    {
+      title: "Quantity",
+      dataIndex: "quantity",
+      key: "quantity",
+      render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
+    },
     { title: "Reason", dataIndex: "reason", key: "reason" },
     { title: "Source", dataIndex: "source", key: "source" },
   ];
@@ -137,7 +226,7 @@ const ShopStockMovement = () => {
       title: "Quantity",
       dataIndex: "quantity",
       key: "quantity",
-      render: (quantity, record) => `${quantity} ${record.metric || "pcs"}`,
+      render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
     },
     { title: "Source", dataIndex: "source", key: "source" },
     { title: "Destination", dataIndex: "destination", key: "destination" },

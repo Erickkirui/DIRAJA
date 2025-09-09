@@ -64,7 +64,7 @@ class ResetShopReportStatus(Resource):
         # Reset all report_status to False
         Shops.query.update({Shops.report_status: False})
         db.session.commit()
-        return {'message': 'All shop report statuses have been reset to False'}, 200
+        return {'message': 'All shops have been closed'}, 200
 
 class GetStockReports(Resource):
     @jwt_required()
