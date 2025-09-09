@@ -42,6 +42,7 @@ def check_role(required_role):
 #         return decorator
 #     return wrapper
 
+
 class GetInventoryByBatchV2(Resource):
     @jwt_required()
     @check_role('manager')
@@ -615,6 +616,7 @@ class GetAllInventoryV2(Resource):
 
 class InventoryResourceByIdV2(Resource):
     @jwt_required()
+    # @check_role('manager')
     def get(self, inventoryV2_id):
         inventory = InventoryV2.query.get(inventoryV2_id)
    

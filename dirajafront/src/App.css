@@ -112,6 +112,9 @@ a{
   .body-area{
     width: 100%;
   }
+  .clerk-body-area{
+    padding: 10px;
+  }
   .clerk-navigation{
     display: none;
   }
@@ -341,3 +344,5 @@ select:focus{
 .ant-input-affix-wrapper .ant-input {
   padding: 15px !important;
 }
+
+

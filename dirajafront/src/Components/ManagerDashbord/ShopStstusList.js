@@ -111,7 +111,6 @@ const ShopStatusList = () => {
         </table>
       )}
     </div>
-    
   );
 };
 
