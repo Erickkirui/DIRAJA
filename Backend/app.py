@@ -4,8 +4,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from dotenv import load_dotenv
 from flask_mail import Mail
 
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_experimental.sql import SQLDatabaseChain
+from langchain_community.utilities import SQLDatabase
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +28,14 @@ app.config['MAIL_USE_TLS'] = False
 app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
 mail = Mail(app)
 
+# Configure the API key
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("GEMINI_API_KEY is not set. Check your .env file or environment variables.")
+
+
+#LLM set up
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
 
 def initialize_models():
     from Server.Models.Users import Users
