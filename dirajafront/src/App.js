@@ -109,6 +109,7 @@ import Layout from './Components/Layout';
 import PendingTransfers from './Components/ClerkDashbord/PendingTransfers';
 import Newslaeformat from './Components/ClerkDashbord/Newslaeformat';
 import ChatAI from './Components/Analytics/ChatAI';
+import PendingTransfers from './Components/ClerkDashbord/PendingTransfers';
 
 
 
@@ -220,6 +221,7 @@ function App() {
             <Route path='/recieve-stock'  element={<ClerkLayout><PendingTransfers /></ClerkLayout>} ></Route>
             <Route path='/custom-sale' element={<ClerkLayout><Newslaeformat /></ClerkLayout>}></Route>
             <Route path='/dirajaAI' element={<Layout><ChatAI /></Layout>} ></Route>
+            <Route path='/recieve-stock'  element={<ClerkLayout><PendingTransfers /></ClerkLayout>} ></Route>
            </Routes> 
        
       </Router>
