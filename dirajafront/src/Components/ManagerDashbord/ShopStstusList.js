@@ -31,6 +31,27 @@ const ShopStatusList = () => {
   };
 
   useEffect(() => {
+    const fetchShopStatuses = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        });
+
+        const sorted = response.data.sort((a, b) =>
+          a.shopname.localeCompare(b.shopname)
+        );
+        setShops(sorted);
+      } catch (err) {
+        setError("Failed to load shop statuses.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchShopStatuses();
   }, []);
 

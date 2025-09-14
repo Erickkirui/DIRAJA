@@ -46,7 +46,7 @@ const ShopSalesDetails = () => {
         ? format(dateRange.endDate, "yyyy-MM-dd")
         : formattedStart;
 
-      const url = `/api/diraja/totalsalesbyshop/${shop_id}?start_date=${formattedStart}&end_date=${formattedEnd}&limit=${itemsPerPage}&page=${currentPage}`;
+      const url = `https://kulima.co.ke/api/diraja/totalsalesbyshop/${shop_id}?start_date=${formattedStart}&end_date=${formattedEnd}&limit=${itemsPerPage}&page=${currentPage}`;
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${accessToken}` },

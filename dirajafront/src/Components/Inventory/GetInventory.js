@@ -35,7 +35,6 @@ const Inventory = () => {
         const inventoryResponse = await axios.get('api/diraja/v2/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            'X-User-Role': 'manager',
           },
         });
 
@@ -50,7 +49,8 @@ const Inventory = () => {
         setStockItems(stockItemsData);
 
         // Apply display formatting to inventory
-        const processedInventory = inventoryResponse.data.map((item) => {
+        // FIXED: Changed inventoryResponse.data to response.data
+        const processedInventory = response.data.map((item) => {
           const itemInfo = stockItemsData.find(
             (stockItem) => stockItem.item_name === item.itemname
           );
@@ -169,7 +169,6 @@ const Inventory = () => {
           axios.delete(`api/diraja/v2/inventory/${inventoryId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
-              'X-User-Role': 'manager',
             },
           })
         )
