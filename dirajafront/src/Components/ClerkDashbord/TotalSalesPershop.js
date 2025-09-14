@@ -26,7 +26,7 @@ const TotalShopSales = () => {
           params.date = selectedDate; // Include date if "date" is selected
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/totalsales', {
+        const response = await axios.get('api/diraja/totalsales', {
           params,
           headers: { Authorization: `Bearer ${accessToken}` },
         });

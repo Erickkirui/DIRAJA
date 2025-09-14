@@ -40,7 +40,7 @@ const ProcurementItems = () => {
 
     try {
       const response = await axios.post(
-        'https://kulima.co.ke/api/diraja/add-stock-items',
+        'api/diraja/add-stock-items',
         {
           item_name: formData.item_name,
           item_code: formData.item_code || null,

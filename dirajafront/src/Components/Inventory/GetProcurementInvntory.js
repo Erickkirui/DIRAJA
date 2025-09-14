@@ -32,7 +32,7 @@ const GetProcurementInventory = () => {
         }
 
         // Fetch inventory
-        const inventoryResponse = await axios.get('https://kulima.co.ke/api/diraja/v2/allinventories', {
+        const inventoryResponse = await axios.get('api/diraja/v2/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager',
@@ -40,7 +40,7 @@ const GetProcurementInventory = () => {
         });
 
         // Fetch stock items metadata
-        const itemsRes = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+        const itemsRes = await axios.get('api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -166,7 +166,7 @@ const GetProcurementInventory = () => {
     try {
       await Promise.all(
         selectedInventory.map((inventoryId) =>
-          axios.delete(`https://kulima.co.ke/api/diraja/v2/inventory/${inventoryId}`, {
+          axios.delete(`api/diraja/v2/inventory/${inventoryId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-User-Role': 'manager',

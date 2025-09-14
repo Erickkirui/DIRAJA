@@ -19,7 +19,7 @@ const PendingTransferPopup = ({ shopId }) => {
         const token = localStorage.getItem("access_token");
         if (!token) throw new Error("Authentication required");
 
-        const response = await axios.get("/https://kulima.co.ke/api/diraja/stockitems", {
+        const response = await axios.get("/api/diraja/stockitems", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -87,7 +87,7 @@ const formatQuantityDisplay = (transfer) => {
         const token = localStorage.getItem("access_token");
         if (!token) throw new Error("Authentication required");
 
-        const response = await axios.get("/https://kulima.co.ke/api/diraja/shoptoshoptransfers", {
+        const response = await axios.get("/api/diraja/shoptoshoptransfers", {
           headers: { Authorization: `Bearer ${token}` },
           params: { status: "pending", to_shop_id: shopId },
         });
@@ -118,7 +118,7 @@ const formatQuantityDisplay = (transfer) => {
       if (!token) throw new Error("Authentication required");
 
       await axios.post(
-        `/https://kulima.co.ke/api/diraja/confirm-transfer/${currentTransfer.id}`,
+        `/api/diraja/confirm-transfer/${currentTransfer.id}`,
         {
           action,
           note: action === "decline" ? note : null,

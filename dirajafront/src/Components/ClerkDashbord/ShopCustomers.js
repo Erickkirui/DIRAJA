@@ -20,7 +20,7 @@ const ShopCustomers = () => {
       return;
     }
 
-    const response = await axios.get(`https://kulima.co.ke/api/diraja/customers/${shopId}`, {
+    const response = await axios.get(`api/diraja/customers/${shopId}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 

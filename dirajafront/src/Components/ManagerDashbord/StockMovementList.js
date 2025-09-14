@@ -29,7 +29,7 @@ const StockMovement = () => {
     const fetchData = async () => {
       try {
         // Fetch shops
-        const shopsRes = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
+        const shopsRes = await axios.get("api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -40,7 +40,7 @@ const StockMovement = () => {
         setShops(sortedShops);
 
         // Fetch stock items metadata
-        const itemsRes = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
+        const itemsRes = await axios.get("api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -75,7 +75,7 @@ const StockMovement = () => {
           params.days = daysBack;
         }
 
-        const res = await axios.get("https://kulima.co.ke/api/diraja/stock-movement", {
+        const res = await axios.get("api/diraja/stock-movement", {
           params: params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,

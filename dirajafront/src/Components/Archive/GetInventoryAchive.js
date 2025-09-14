@@ -30,7 +30,7 @@ const InventoryAchive = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/allinventories', {
+        const response = await axios.get('api/diraja/allinventories', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager',
@@ -87,7 +87,7 @@ const InventoryAchive = () => {
     try {
       await Promise.all(
         selectedInventory.map((inventoryId) =>
-          axios.delete(`https://kulima.co.ke/api/diraja/v2/inventory/${inventoryId}`, {
+          axios.delete(`api/diraja/v2/inventory/${inventoryId}`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
               'X-User-Role': 'manager',

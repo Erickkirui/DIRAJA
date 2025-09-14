@@ -90,7 +90,10 @@ class DistributeInventoryV2(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        required_fields = ['shop_id', 'inventoryV2_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric']
+        required_fields = [
+            'shop_id', 'inventoryV2_id', 'quantity', 'itemname',
+            'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric'
+        ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
@@ -98,7 +101,7 @@ class DistributeInventoryV2(Resource):
         inventoryV2_id = data['inventoryV2_id']
         quantity = data['quantity']
         metric = data['metric']
-        itemname = data['itemname']  
+        itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
@@ -108,26 +111,42 @@ class DistributeInventoryV2(Resource):
         except ValueError:
             return {'message': 'Invalid date format'}, 400
 
-        # ✅ Create transfer record with default "Not Received"
-        new_transfer = TransfersV2(
-            shop_id=shop_id,
-            inventoryV2_id=inventoryV2_id,
-            quantity=quantity,
-            metric=metric,
-            total_cost=unitCost * quantity,
-            BatchNumber=BatchNumber,
-            user_id=current_user_id,
-            itemname=itemname,
-            amountPaid=amountPaid,
-            unitCost=unitCost,
-            created_at=distribution_date,
-            status="Not Received"
-        )
+        # ✅ Fetch inventory item
+        inventory_item = InventoryV2.query.get(inventoryV2_id)
+        if not inventory_item:
+            return {'message': 'Inventory item not found'}, 404
+
+        # ✅ Ensure enough stock is available
+        if inventory_item.quantity < quantity:
+            return {'message': 'Insufficient inventory quantity'}, 400
 
         try:
+            # ✅ Deduct immediately from inventory
+            inventory_item.quantity -= quantity
+
+            # ✅ Create transfer record with "Not Received"
+            new_transfer = TransfersV2(
+                shop_id=shop_id,
+                inventoryV2_id=inventoryV2_id,
+                quantity=quantity,
+                metric=metric,
+                total_cost=unitCost * quantity,
+                BatchNumber=BatchNumber,
+                user_id=current_user_id,
+                itemname=itemname,
+                amountPaid=amountPaid,
+                unitCost=unitCost,
+                created_at=distribution_date,
+                status="Not Received"
+            )
+
             db.session.add(new_transfer)
             db.session.commit()
-            return {'message': 'Transfer created successfully. Awaiting receipt confirmation.', 'transfer_id': new_transfer.transferv2_id}, 201
+
+            return {
+                'message': 'Transfer created successfully. Stock deducted from inventory, awaiting receipt.',
+                'transfer_id': new_transfer.transferv2_id
+            }, 201
 
         except Exception as e:
             db.session.rollback()
@@ -144,19 +163,8 @@ class ReceiveTransfer(Resource):
         if transfer.status == "Received":
             return {'message': 'Transfer already received'}, 400
 
-        inventory_item = InventoryV2.query.get(transfer.inventoryV2_id)
-        if not inventory_item:
-            return {'message': 'Inventory item not found'}, 404
-
-        # ✅ Check if enough stock is available
-        if inventory_item.quantity < transfer.quantity:
-            return {'message': 'Insufficient inventory quantity'}, 400
-
         try:
-            # Deduct from central inventory
-            inventory_item.quantity -= transfer.quantity
-
-            # Add to shop stock
+            # ✅ Add to shop stock (inventory already deducted earlier)
             new_shop_stock = ShopStockV2(
                 shop_id=transfer.shop_id,
                 transferv2_id=transfer.transferv2_id,
@@ -175,11 +183,12 @@ class ReceiveTransfer(Resource):
             db.session.add(new_shop_stock)
             db.session.commit()
 
-            return {'message': 'Transfer received successfully and stock updated.'}, 200
+            return {'message': 'Transfer received successfully and stock added to shop.'}, 200
 
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error receiving transfer', 'error': str(e)}, 500
+
 
 
 class PendingTransfers(Resource):
@@ -408,6 +417,7 @@ class GetTransferV2(Resource):
                 "username": username,
                 "shop_name": shopname,
                 "itemname": transfer.itemname,
+                "status": transfer.status,
                 "amountPaid": transfer.amountPaid,
                 "unitCost": transfer.unitCost,
                 "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,

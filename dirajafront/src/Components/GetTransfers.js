@@ -27,7 +27,7 @@ const Transfers = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/alltransfers', {
+        const response = await axios.get('api/diraja/alltransfers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager', // Added user role header

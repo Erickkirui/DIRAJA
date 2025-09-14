@@ -14,7 +14,7 @@ const SingleStockReport = () => {
       try {
         const accessToken = localStorage.getItem('access_token');
 
-        const response = await axios.get(`https://kulima.co.ke/api/diraja/stock-reports/${id}`, {
+        const response = await axios.get(`api/diraja/stock-reports/${id}`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

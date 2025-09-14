@@ -20,7 +20,7 @@ const Sales = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/getmabandasale', {
+        const response = await axios.get('api/diraja/getmabandasale', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

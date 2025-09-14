@@ -29,10 +29,10 @@ const Employees = () => {
         }
 
         const [employeesRes, meritRes] = await Promise.all([
-          axios.get('https://kulima.co.ke/api/diraja/allemployees', {
+          axios.get('api/diraja/allemployees', {
             headers: { Authorization: `Bearer ${accessToken}` }
           }),
-          axios.get('https://kulima.co.ke/api/diraja/allmeritpoints', {
+          axios.get('api/diraja/allmeritpoints', {
             headers: { Authorization: `Bearer ${accessToken}` }
           })
         ]);
@@ -77,7 +77,7 @@ const Employees = () => {
       try {
         await Promise.all(
           selectedEmployees.map((id) =>
-            axios.delete(`https://kulima.co.ke/api/diraja/employee/${id}`, {
+            axios.delete(`api/diraja/employee/${id}`, {
               headers: { Authorization: `Bearer ${accessToken}` }
             })
           )

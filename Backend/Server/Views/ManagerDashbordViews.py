@@ -638,7 +638,6 @@ class TotalSalesByShop(Resource):
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
             period = request.args.get('period', 'today')
-
             if period == 'today':
                 start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
                 end_date = today
@@ -659,19 +658,65 @@ class TotalSalesByShop(Resource):
             if not shop:
                 return {"message": "Shop not found."}, 404
 
-            # Calculate total sales amount
-            query = (
-                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+            # --------- Helpers: case-insensitive aliases ----------
+            sasapay_aliases = ['sasapay', 'sasa pay', 'sasa-pay', 'sasa_pay']
+            cash_aliases = ['cash', 'cash payment', 'cash-pay', 'cash_pay']
+
+            # Lower-cased alias lists once
+            sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
+            cash_aliases_l = [s.lower() for s in cash_aliases]
+
+            # --------- Totals by method (paid amounts) ----------
+            # Sasapay total
+            sasapay_total = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
-                .filter(Sales.shop_id == shop_id, Sales.created_at.between(start_date, end_date))
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    db.func.lower(SalesPaymentMethods.payment_method).in_(sasapay_aliases_l)
+                )
+                .scalar() or 0.0
             )
 
-            total_sales = query.scalar() or 0
-            formatted_sales = "Ksh {:,.2f}".format(total_sales)
+            # Cash total
+            cash_total = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    db.func.lower(SalesPaymentMethods.payment_method).in_(cash_aliases_l)
+                )
+                .scalar() or 0.0
+            )
 
-            # Get sales records
+            # Grand total actually paid (all methods)
+            grand_total_paid = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                )
+                .scalar() or 0.0
+            )
+
+            # --------- Credit total (outstanding balances) ----------
+            # If "credit" is tracked as sale balances for sales in the period:
+            credit_total = (
+                db.session.query(db.func.coalesce(db.func.sum(Sales.balance), 0.0))
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    Sales.balance > 0
+                )
+                .scalar() or 0.0
+            )
+
+            # --------- Sales records (unchanged logic) ----------
             sales_records = Sales.query.filter(
-                Sales.shop_id == shop_id, 
+                Sales.shop_id == shop_id,
                 Sales.created_at.between(start_date, end_date)
             ).all()
 
@@ -680,31 +725,30 @@ class TotalSalesByShop(Resource):
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 username = user.username if user else "Unknown User"
 
-                # Get payment data
                 payment_data = [
                     {
-                        "payment_method": payment.payment_method,
-                        "amount_paid": payment.amount_paid,
-                        "balance": payment.balance,
+                        "payment_method": p.payment_method,
+                        "amount_paid": p.amount_paid,
+                        "balance": p.balance,
+                        "transaction_code": p.transaction_code,
                     }
-                    for payment in sale.payment
+                    for p in sale.payment
                 ]
-                total_amount_paid = sum(payment["amount_paid"] for payment in payment_data)
+                total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
 
-                # Get all sold items for this sale
                 sold_items = [
                     {
-                        "item_name": item.item_name,
-                        "quantity": item.quantity,
-                        "metric": item.metric,
-                        "unit_price": item.unit_price,
-                        "total_price": item.total_price,
-                        "batch_number": item.BatchNumber,
-                        "stockv2_id": item.stockv2_id,
-                        "cost_of_sale": item.Cost_of_sale,
-                        "purchase_account": item.Purchase_account
+                        "item_name": it.item_name,
+                        "quantity": it.quantity,
+                        "metric": it.metric,
+                        "unit_price": it.unit_price,
+                        "total_price": it.total_price,
+                        "batch_number": it.BatchNumber,
+                        "stockv2_id": it.stockv2_id,
+                        "cost_of_sale": it.Cost_of_sale,
+                        "purchase_account": it.Purchase_account
                     }
-                    for item in sale.items
+                    for it in sale.items
                 ]
 
                 sales_list.append({
@@ -726,7 +770,22 @@ class TotalSalesByShop(Resource):
             return {
                 "shop_id": shop_id,
                 "shop_name": shop.shopname,
-                "total_sales_amount_paid": formatted_sales,
+
+                # Paid totals
+                "total_sales_amount_paid": f"Ksh {grand_total_paid:,.2f}",
+                "total_sasapay": sasapay_total,
+                "total_cash": cash_total,
+
+                # Credit as outstanding balances for the period
+                "total_credit": credit_total,
+
+                # Optional pretty strings
+                "formatted": {
+                    "sasapay": f"Ksh {sasapay_total:,.2f}",
+                    "cash": f"Ksh {cash_total:,.2f}",
+                    "credit": f"Ksh {credit_total:,.2f}",
+                },
+
                 "sales_records": sales_list,
                 "start_date": start_date.strftime('%Y-%m-%d %H:%M:%S'),
                 "end_date": end_date.strftime('%Y-%m-%d %H:%M:%S')
@@ -734,7 +793,10 @@ class TotalSalesByShop(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {"error": "An error occurred while fetching total sales for the shop", "details": str(e)}, 500
+            return {
+                "error": "An error occurred while fetching total sales for the shop",
+                "details": str(e)
+            }, 500
  
 
 

@@ -25,7 +25,7 @@ const CashDeposits = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/cashdeposits', {
+        const response = await axios.get('api/diraja/cashdeposits', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -65,7 +65,7 @@ const CashDeposits = () => {
       try {
         await Promise.all(
           selectedDeposits.map((depositId) =>
-            axios.delete(`https://kulima.co.ke/api/cashdeposits/${depositId}`, {
+            axios.delete(`api/cashdeposits/${depositId}`, {
               headers: { Authorization: `Bearer ${accessToken}` },
             })
           )

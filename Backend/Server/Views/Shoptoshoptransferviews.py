@@ -320,20 +320,15 @@ class GetPendingShopToShopTransfers(Resource):
         except ValueError:
             return make_response(jsonify({"error": "shop_id must be a valid integer"}), 400)
         
-        # Query for pending transfers where the shop is either the sender or receiver
+        # Query for pending transfers where the shop is the RECEIVER (to_shop_id)
         pending_transfers = Shoptoshoptransfer.query.options(
             db.joinedload(Shoptoshoptransfer.user),
             db.joinedload(Shoptoshoptransfer.shop),
             db.joinedload(Shoptoshoptransfer.stockv2)
         ).filter(
             Shoptoshoptransfer.status == "pending",
-            or_(
-                Shoptoshoptransfer.from_shop_id == shop_id,
-                Shoptoshoptransfer.to_shop_id == shop_id
-            )
+            Shoptoshoptransfer.to_shop_id == shop_id  # Only transfers TO this shop
         ).order_by(Shoptoshoptransfer.transfer_date.desc()).all()
-        
-        
         
         transfers_data = []
         for transfer in pending_transfers:
@@ -353,7 +348,7 @@ class GetPendingShopToShopTransfers(Resource):
                 "username": transfer.user.username if transfer.user else "Unknown User",
                 "stockv2_id": transfer.stockv2_id,
                 "itemname": transfer.itemname,
-                "metric": transfer.metric,  # ✅ included metric column
+                "metric": transfer.metric,
                 "quantity": transfer.quantity,
                 "status": transfer.status,
                 "batch_number": transfer.stockv2.BatchNumber if transfer.stockv2 else "Unknown",

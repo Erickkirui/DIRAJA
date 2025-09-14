@@ -106,7 +106,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
   // Fetch stock items for proper metric conversion
   const fetchStockItems = async () => {
     try {
-      const response = await axios.get("https://kulima.co.ke/api/diraja/stockitems", {
+      const response = await axios.get("api/diraja/stockitems", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
@@ -141,7 +141,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
       const [items, transfersResponse] = await Promise.all([
         fetchStockItems(),
         axios.get(
-          `https://kulima.co.ke/api/diraja/pending-transfers?shop_id=${shopId}`,
+          `api/diraja/pending-transfers?shop_id=${shopId}`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -174,7 +174,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
       
       // First, get all transfers for this item to accept them all
       const response = await axios.get(
-        `https://kulima.co.ke/api/diraja/pending-transfers?shop_id=${localStorage.getItem("shop_id")}`,
+        `api/diraja/pending-transfers?shop_id=${localStorage.getItem("shop_id")}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -190,7 +190,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
       // Accept all transfers for this item
       for (const transfer of itemTransfers) {
         await axios.post(
-          `https://kulima.co.ke/api/diraja/confirm-transfer/${transfer.transfer_id}`,
+          `api/diraja/confirm-transfer/${transfer.transfer_id}`,
           {
             action: "accept"
           },

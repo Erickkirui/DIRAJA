@@ -26,7 +26,7 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
             }
 
             try {
-                const response = await axios.get('https://kulima.co.ke/api/diraja/allshops', {
+                const response = await axios.get('api/diraja/allshops', {
                     headers: { Authorization: `Bearer ${accessToken}` }
                 });
                 setAllShops(response.data);
@@ -58,7 +58,7 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
         try {
             const responses = await Promise.allSettled(
                 selectedStocks.map((stockId) =>
-                    axios.delete(`https://kulima.co.ke/api/diraja/v2/deleteshopstock/${stockId}`, {
+                    axios.delete(`api/diraja/v2/deleteshopstock/${stockId}`, {
                         headers: { 
                             'Authorization': `Bearer ${accessToken}`,
                             'Content-Type': 'application/json'
@@ -112,7 +112,7 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
 
         try {
             await axios.put(
-                `https://kulima.co.ke/api/diraja/shopstock/${editingStockId}/update-unitprice`, 
+                `api/diraja/shopstock/${editingStockId}/update-unitprice`, 
                 { unitPrice: parseFloat(newUnitPrice) },
                 { headers: { Authorization: `Bearer ${accessToken}` } }
             );
@@ -160,7 +160,7 @@ const ActionsDropdown = ({ shopStocks, setShopStocks, selectedStocks, setSelecte
 
         try {
             await axios.post(
-                'https://kulima.co.ke/api/diraja/transfer-system-stock', 
+                'api/diraja/transfer-system-stock', 
                 {
                     from_shop_id: stock.shop_id,
                     to_shop_id: toShopId,

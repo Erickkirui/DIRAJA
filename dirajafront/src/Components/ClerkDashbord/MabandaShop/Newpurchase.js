@@ -23,7 +23,7 @@ const AddPurchase = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('https://kulima.co.ke/api/diraja/newmabandapurchase', formData, {
+            const response = await axios.post('api/diraja/newmabandapurchase', formData, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
             });
 

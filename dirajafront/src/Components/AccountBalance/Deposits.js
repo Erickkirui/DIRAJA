@@ -15,7 +15,7 @@
 //   useEffect(() => {
 //     const fetchAccounts = async () => {
 //       try {
-//         const res = await axios.get('https://kulima.co.ke/api/diraja/all-acounts', {
+//         const res = await axios.get('api/diraja/all-acounts', {
 //           headers: {
 //             Authorization: `Bearer ${accessToken}`,
 //           },
@@ -42,7 +42,7 @@
 
 //     try {
 //       const res = await axios.put(
-//         `https://kulima.co.ke/api/diraja/bankaccount/${selectedAccount}/deposit`,
+//         `api/diraja/bankaccount/${selectedAccount}/deposit`,
 //         {
 //           amount: parseFloat(amount),
 //           from_account: fromAccount,
@@ -140,7 +140,7 @@ function Deposits() {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const res = await axios.get('https://kulima.co.ke/api/diraja/all-acounts', {
+        const res = await axios.get('api/diraja/all-acounts', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
@@ -167,7 +167,7 @@ function Deposits() {
 
     try {
       const res = await axios.put(
-        `https://kulima.co.ke/api/diraja/bankaccount/${selectedAccount}/deposit`,
+        `api/diraja/bankaccount/${selectedAccount}/deposit`,
         {
           amount: parseFloat(amount),
           from_account: fromAccount,

@@ -13,7 +13,7 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://kulima.co.ke/api/diraja/login', { email, password });
+      const response = await axios.post('api/diraja/login', { email, password });
 
       const { access_token, refresh_token, username, users_id, role, shop_id, report_status,designation } = response.data;
 

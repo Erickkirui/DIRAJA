@@ -9,7 +9,7 @@ function GetSuppliers() {
   const fetchSuppliers = async () => {
     const accessToken = localStorage.getItem('access_token');
     try {
-      const response = await axios.get('https://kulima.co.ke/api/diraja/all-suppliers', {
+      const response = await axios.get('api/diraja/all-suppliers', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

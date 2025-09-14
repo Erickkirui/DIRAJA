@@ -13,7 +13,7 @@ const PromoSalesRank = () => {
       const token = localStorage.getItem('access_token');
       if (!token) throw new Error('Authentication token not found');
 
-      const response = await axios.get('https://kulima.co.ke/api/diraja/promo-sales-rank', {
+      const response = await axios.get('api/diraja/promo-sales-rank', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

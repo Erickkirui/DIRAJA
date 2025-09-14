@@ -19,7 +19,7 @@ const CSVUploader = () => {
       setLoading(true);
       setError(null);
 
-      const response = await axios.post("https://kulima.co.ke/api/diraja/process-csv", formData, {
+      const response = await axios.post("api/diraja/process-csv", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

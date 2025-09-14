@@ -13,7 +13,7 @@ const TransferNotificationPopup = ({ shopId }) => {
         const token = localStorage.getItem("access_token");
         if (!token) throw new Error("Authentication required");
 
-        const response = await axios.get("/https://kulima.co.ke/api/diraja/transfer-notifications", {
+        const response = await axios.get("/api/diraja/transfer-notifications", {
           headers: { Authorization: `Bearer ${token}` },
           params: { shop_id: shopId },
         });
@@ -52,7 +52,7 @@ const TransferNotificationPopup = ({ shopId }) => {
     try {
       const token = localStorage.getItem("access_token");
       await axios.post(
-        `/https://kulima.co.ke/api/diraja/acknowledge-notification/${current.transfer_id}`,
+        `/api/diraja/acknowledge-notification/${current.transfer_id}`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

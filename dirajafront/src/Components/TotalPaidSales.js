@@ -13,7 +13,7 @@ const TotalPaidSales = () => {
     try {
       const params = period === 'custom' ? { date: customDate } : { period };
 
-      const response = await axios.get('https://kulima.co.ke/api/diraja/totalsalespershop', {
+      const response = await axios.get('api/diraja/totalsalespershop', {
         params,
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,

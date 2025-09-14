@@ -21,9 +21,9 @@ const ProfitAndLoss = () => {
 
       // Fetch sales, transfers (purchases), and expenses data
       const [salesResponse, purchasesResponse, expensesResponse] = await Promise.all([
-        fetch(`https://kulima.co.ke/api/diraja/allsales?start_date=${startDate}&end_date=${endDate}`, { headers }),
-        fetch(`https://kulima.co.ke/api/diraja/alltransfers?start_date=${startDate}&end_date=${endDate}`, { headers }),
-        fetch(`https://kulima.co.ke/api/diraja/allexpenses?start_date=${startDate}&end_date=${endDate}`, { headers }),
+        fetch(`api/diraja/allsales?start_date=${startDate}&end_date=${endDate}`, { headers }),
+        fetch(`api/diraja/alltransfers?start_date=${startDate}&end_date=${endDate}`, { headers }),
+        fetch(`api/diraja/allexpenses?start_date=${startDate}&end_date=${endDate}`, { headers }),
       ]);
 
       if (!salesResponse.ok || !purchasesResponse.ok || !expensesResponse.ok) {

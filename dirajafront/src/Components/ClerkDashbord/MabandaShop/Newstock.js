@@ -23,7 +23,7 @@
 //         setIsLoading(true);
 
 //         try {
-//             const response = await axios.post('https://kulima.co.ke/api/diraja/mabandastock', formData, {
+//             const response = await axios.post('api/diraja/mabandastock', formData, {
 //                 headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
 //             });
 
@@ -56,7 +56,7 @@ const AddStock = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('https://kulima.co.ke/api/diraja/newmabandastock', formData, {
+            const response = await axios.post('api/diraja/newmabandastock', formData, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
             });
 
