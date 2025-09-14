@@ -177,7 +177,7 @@ const PurchasesV2 = () => {
     },
     { header: 'Shop', key: 'shop_name' },
     { header: 'Item', key: 'itemname' },
-    { header: 'Batch', key: 'batchnumber' },
+    { header: 'Batch', key: 'BatchNumber' },
     {
       header: 'Quantity',
       key: 'quantity',
