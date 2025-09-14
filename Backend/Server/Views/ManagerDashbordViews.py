@@ -670,7 +670,63 @@ class TotalSalesByShop(Resource):
             # Sasapay total
             sasapay_total = (
                 db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
+            # --------- Helpers: case-insensitive aliases ----------
+            sasapay_aliases = ['sasapay', 'sasa pay', 'sasa-pay', 'sasa_pay']
+            cash_aliases = ['cash', 'cash payment', 'cash-pay', 'cash_pay']
+
+            # Lower-cased alias lists once
+            sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
+            cash_aliases_l = [s.lower() for s in cash_aliases]
+
+            # --------- Totals by method (paid amounts) ----------
+            # Sasapay total
+            sasapay_total = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    db.func.lower(SalesPaymentMethods.payment_method).in_(sasapay_aliases_l)
+                )
+                .scalar() or 0.0
+            )
+
+            # Cash total
+            cash_total = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    db.func.lower(SalesPaymentMethods.payment_method).in_(cash_aliases_l)
+                )
+                .scalar() or 0.0
+            )
+
+            # Grand total actually paid (all methods)
+            grand_total_paid = (
+                db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
+                .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                )
+                .scalar() or 0.0
+            )
+
+            # --------- Credit total (outstanding balances) ----------
+            # If "credit" is tracked as sale balances for sales in the period:
+            credit_total = (
+                db.session.query(db.func.coalesce(db.func.sum(Sales.balance), 0.0))
+                .filter(
+                    Sales.shop_id == shop_id,
+                    Sales.created_at.between(start_date, end_date),
+                    Sales.balance > 0
+                )
+                .scalar() or 0.0
+            )
+
+            # --------- Sales records (unchanged logic) ----------
                 .filter(
                     Sales.shop_id == shop_id,
                     Sales.created_at.between(start_date, end_date),
@@ -717,6 +773,7 @@ class TotalSalesByShop(Resource):
             # --------- Sales records (unchanged logic) ----------
             sales_records = Sales.query.filter(
                 Sales.shop_id == shop_id,
+                Sales.shop_id == shop_id,
                 Sales.created_at.between(start_date, end_date)
             ).all()
 
@@ -731,9 +788,15 @@ class TotalSalesByShop(Resource):
                         "amount_paid": p.amount_paid,
                         "balance": p.balance,
                         "transaction_code": p.transaction_code,
+                        "payment_method": p.payment_method,
+                        "amount_paid": p.amount_paid,
+                        "balance": p.balance,
+                        "transaction_code": p.transaction_code,
                     }
                     for p in sale.payment
+                    for p in sale.payment
                 ]
+                total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
                 total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
 
                 sold_items = [
@@ -747,7 +810,17 @@ class TotalSalesByShop(Resource):
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
                         "purchase_account": it.Purchase_account
+                        "item_name": it.item_name,
+                        "quantity": it.quantity,
+                        "metric": it.metric,
+                        "unit_price": it.unit_price,
+                        "total_price": it.total_price,
+                        "batch_number": it.BatchNumber,
+                        "stockv2_id": it.stockv2_id,
+                        "cost_of_sale": it.Cost_of_sale,
+                        "purchase_account": it.Purchase_account
                     }
+                    for it in sale.items
                     for it in sale.items
                 ]
 
@@ -770,6 +843,22 @@ class TotalSalesByShop(Resource):
             return {
                 "shop_id": shop_id,
                 "shop_name": shop.shopname,
+
+                # Paid totals
+                "total_sales_amount_paid": f"Ksh {grand_total_paid:,.2f}",
+                "total_sasapay": sasapay_total,
+                "total_cash": cash_total,
+
+                # Credit as outstanding balances for the period
+                "total_credit": credit_total,
+
+                # Optional pretty strings
+                "formatted": {
+                    "sasapay": f"Ksh {sasapay_total:,.2f}",
+                    "cash": f"Ksh {cash_total:,.2f}",
+                    "credit": f"Ksh {credit_total:,.2f}",
+                },
+
 
                 # Paid totals
                 "total_sales_amount_paid": f"Ksh {grand_total_paid:,.2f}",

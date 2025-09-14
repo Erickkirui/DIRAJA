@@ -106,6 +106,7 @@ class DistributeInventoryV2(Resource):
         quantity = data['quantity']
         metric = data['metric']
         itemname = data['itemname']
+        itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
@@ -157,6 +158,7 @@ class DistributeInventoryV2(Resource):
             return {'message': 'Error creating transfer', 'error': str(e)}, 500
 
 
+
 class ReceiveTransfer(Resource):
     @jwt_required()
     def patch(self, transfer_id):
@@ -181,7 +183,6 @@ class ReceiveTransfer(Resource):
                 unitPrice=transfer.unitCost
             )
 
-            # ✅ Update status
             transfer.status = "Received"
 
             db.session.add(new_shop_stock)
@@ -192,6 +193,7 @@ class ReceiveTransfer(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error receiving transfer', 'error': str(e)}, 500
+
 
 
 
@@ -423,6 +425,7 @@ class GetTransferV2(Resource):
                 "itemname": transfer.itemname,
                 "status": transfer.status,
                 "amountPaid": transfer.amountPaid,
+                "status":transfer.status,
                 "unitCost": transfer.unitCost,
                 "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
             })
@@ -696,6 +699,7 @@ class InventoryResourceByIdV2(Resource):
             totalCost = unitCost * initial_quantity
             amountPaid = float(data.get('amountPaid', inventory.amountPaid))
             balance = totalCost - amountPaid
+            paymentRef = data.get('paymentRef', inventory.paymentRef)  # Added paymentRef
             Suppliername = data.get('Suppliername', inventory.Suppliername)
             Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
             note = data.get('note', inventory.note)
@@ -716,6 +720,7 @@ class InventoryResourceByIdV2(Resource):
             inventory.totalCost = totalCost
             inventory.amountPaid = amountPaid
             inventory.balance = balance
+            inventory.paymentRef = paymentRef  # Added paymentRef assignment
             inventory.Suppliername = Suppliername
             inventory.Supplier_location = Supplier_location
             inventory.note = note
@@ -727,6 +732,7 @@ class InventoryResourceByIdV2(Resource):
                 transfer.itemname = itemname
                 transfer.unitCost = unitCost
                 transfer.amountPaid = amountPaid
+                transfer.paymentRef = paymentRef  # Added paymentRef update for transfers
 
             # Check what the actual foreign key column name is in your models
             shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
@@ -752,17 +758,17 @@ class InventoryResourceByIdV2(Resource):
         if not inventory:
             return {'message': 'Inventory not found'}, 404
 
-        try:
-            itemname = data.get('itemname', inventory.itemname)
-            initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
-            unitCost = float(data.get('unitCost', inventory.unitCost))
-            unitPrice = float(data.get('unitPrice', inventory.unitPrice))
-            totalCost = unitCost * initial_quantity
-            amountPaid = float(data.get('amountPaid', inventory.amountPaid))
-            balance = totalCost - amountPaid
-            Suppliername = data.get('Suppliername', inventory.Suppliername)
-            Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
-            note = data.get('note', inventory.note)
+    #     try:
+    #         itemname = data.get('itemname', inventory.itemname)
+    #         initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
+    #         unitCost = float(data.get('unitCost', inventory.unitCost))
+    #         unitPrice = float(data.get('unitPrice', inventory.unitPrice))
+    #         totalCost = unitCost * initial_quantity
+    #         amountPaid = float(data.get('amountPaid', inventory.amountPaid))
+    #         balance = totalCost - amountPaid
+    #         Suppliername = data.get('Suppliername', inventory.Suppliername)
+    #         Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+    #         note = data.get('note', inventory.note)
 
             created_at_str = data.get('created_at', None)
             if created_at_str:
@@ -773,17 +779,17 @@ class InventoryResourceByIdV2(Resource):
             else:
                 created_at = inventory.created_at
 
-            inventory.itemname = itemname
-            inventory.initial_quantity = initial_quantity
-            inventory.unitCost = unitCost
-            inventory.unitPrice = unitPrice
-            inventory.totalCost = totalCost
-            inventory.amountPaid = amountPaid
-            inventory.balance = balance
-            inventory.Suppliername = Suppliername
-            inventory.Supplier_location = Supplier_location
-            inventory.note = note
-            inventory.created_at = created_at
+    #         inventory.itemname = itemname
+    #         inventory.initial_quantity = initial_quantity
+    #         inventory.unitCost = unitCost
+    #         inventory.unitPrice = unitPrice
+    #         inventory.totalCost = totalCost
+    #         inventory.amountPaid = amountPaid
+    #         inventory.balance = balance
+    #         inventory.Suppliername = Suppliername
+    #         inventory.Supplier_location = Supplier_location
+    #         inventory.note = note
+    #         inventory.created_at = created_at
 
             # Check what the actual foreign key column name is in your models
             transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
@@ -798,15 +804,15 @@ class InventoryResourceByIdV2(Resource):
                 stock.itemname = itemname
                 stock.unitPrice = unitPrice
 
-            db.session.commit()
-            return {'message': 'Inventory and related records updated successfully'}, 200
+    #         db.session.commit()
+    #         return {'message': 'Inventory and related records updated successfully'}, 200
 
-        except ValueError as e:
-            db.session.rollback()
-            return {'message': 'Invalid data type', 'error': str(e)}, 400
-        except Exception as e:
-            db.session.rollback()
-            return {'message': 'Error updating inventory', 'error': str(e)}, 500
+    #     except ValueError as e:
+    #         db.session.rollback()
+    #         return {'message': 'Invalid data type', 'error': str(e)}, 400
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         return {'message': 'Error updating inventory', 'error': str(e)}, 500
 
 
 class StockDeletionResourceV2(Resource):     

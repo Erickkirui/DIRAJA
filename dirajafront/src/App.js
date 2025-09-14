@@ -119,6 +119,7 @@ import AllProcShopTransfers from './Components/ClerkDashbord/Proctransfers';
 import CSVUploader from './Components/Reports/CSVUploader';
 
 import TransferManagement from './Pages/Transfersmanagement';
+import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
 
 
 
@@ -239,6 +240,7 @@ function App() {
             <Route path='/proctransfers' element={<ClerkLayout><AllProcShopTransfers /></ClerkLayout>} ></Route>
             <Route path='/transaction-analyse' element={<Layout><CSVUploader /></Layout>} ></Route>
             <Route path='/recieve-stock'  element={<ClerkLayout><TransferManagement /></ClerkLayout>} ></Route>
+            <Route path='/custom-sale' element={<ClerkLayout><NewsaleFormat/></ClerkLayout>}></Route>
 
            </Routes> 
        

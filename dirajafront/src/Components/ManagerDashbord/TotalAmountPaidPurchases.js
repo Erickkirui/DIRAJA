@@ -18,7 +18,7 @@ const TotalAmountPaidPurchases = () => {
     try {
       let url = `api/diraja/totalpurchases`;
       
-      // Prepare the parameters for the API request
+      // Prepare the parameters for the api request
       const params =
         selectedPeriod === 'custom' && dateRange.startDate && dateRange.endDate
           ? {

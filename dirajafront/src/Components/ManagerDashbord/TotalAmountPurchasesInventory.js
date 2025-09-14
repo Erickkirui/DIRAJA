@@ -18,7 +18,7 @@ const TotalAmountPurchasesInventory = () => {
     try {
       let url = `api/diraja/Invetory-purchase`;
       
-      // Prepare the parameters for the API request
+      // Prepare the parameters for the api request
       const params =
         selectedPeriod === 'custom' && dateRange.startDate && dateRange.endDate
           ? {

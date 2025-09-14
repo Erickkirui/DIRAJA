@@ -59,6 +59,7 @@ const Transfers = () => {
       const matchesSearch =
         transfer.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transfer.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.username.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesDate = selectedDate

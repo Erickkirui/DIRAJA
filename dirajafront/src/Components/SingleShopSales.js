@@ -14,6 +14,9 @@ const ShopSalesDetails = () => {
   const [data, setData] = useState([]);
   const [shopName, setShopName] = useState("");
   const [totalSalesAmount, setTotalSalesAmount] = useState("Ksh 0.00");
+  const [totalSasapay, setTotalSasapay] = useState(0);
+  const [totalCash, setTotalCash] = useState(0);
+  const [totalCredit, setTotalCredit] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +49,7 @@ const ShopSalesDetails = () => {
         ? format(dateRange.endDate, "yyyy-MM-dd")
         : formattedStart;
 
-      const url = `https://kulima.co.ke/api/diraja/totalsalesbyshop/${shop_id}?start_date=${formattedStart}&end_date=${formattedEnd}&limit=${itemsPerPage}&page=${currentPage}`;
+      const url = `/api/diraja/totalsalesbyshop/${shop_id}?start_date=${formattedStart}&end_date=${formattedEnd}&limit=${itemsPerPage}&page=${currentPage}`;
 
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -59,6 +62,12 @@ const ShopSalesDetails = () => {
       setData(sales);
       setShopName(response.data.shop_name || "");
       setTotalSalesAmount(response.data.total_sales_amount_paid || "Ksh 0.00");
+
+      // 🆕 set totals by method
+      setTotalSasapay(response.data.total_sasapay || 0);
+      setTotalCash(response.data.total_cash || 0);
+      setTotalCredit(response.data.total_credit || 0);
+
       setTotalCount(response.data.total_count || sales.length);
       setTotalPages(response.data.total_pages || 1);
 
@@ -137,16 +146,19 @@ const ShopSalesDetails = () => {
           : "N/A",
     },
     {
-      header: "Customer",
-      key: "customer_name",
-      render: (item) => item.customer_name || "N/A",
+      header: "PaymentRef",
+      key: "payment_methods",
+      render: (item) =>
+        Array.isArray(item.payment_methods)
+          ? item.payment_methods.map((pm, idx) => (
+              <div key={idx}>{pm.transaction_code}</div>
+            ))
+          : "N/A",
     },
   ];
 
   return (
     <>
-     
-
       {error && <p className="error">{error}</p>}
       {loading && <p>Loading sales data...</p>}
 
@@ -156,9 +168,19 @@ const ShopSalesDetails = () => {
           <p>
             <strong>Sales total:</strong> {totalSalesAmount}
           </p>
-    <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+          <p>
+            <strong>Total Sasapay:</strong> Ksh {totalSasapay.toLocaleString()}
+          </p>
+          <p>
+            <strong>Total Cash:</strong> Ksh {totalCash.toLocaleString()}
+          </p>
+          <p>
+            <strong>Total Credit:</strong> Ksh {totalCredit.toLocaleString()}
+          </p>
+
+          <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+
           <div className="actions-container">
-            
             <ExportExcel data={data} fileName="ShopSalesData" />
             <DownloadPDF
               tableId="singleshopstock-table"

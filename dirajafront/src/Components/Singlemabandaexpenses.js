@@ -36,7 +36,7 @@ const MabandaExpenseDetails = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        console.log("API Response:", response.data);
+        console.log("api Response:", response.data);
 
         if (!response.data || !response.data.expenses) {
           setExpenseData({ total_expense_amount: "Ksh 0.00", expenses: [] });

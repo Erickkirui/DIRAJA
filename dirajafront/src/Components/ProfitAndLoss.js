@@ -27,7 +27,7 @@ const ProfitAndLoss = () => {
       ]);
 
       if (!salesResponse.ok || !purchasesResponse.ok || !expensesResponse.ok) {
-        throw new Error("Failed to fetch data. Please check your API.");
+        throw new Error("Failed to fetch data. Please check your api.");
       }
 
       const [sales, purchases, expenses] = await Promise.all([

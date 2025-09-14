@@ -24,7 +24,7 @@ const CountShops = () => {
 
         // Simulate a 3-second delay
         setTimeout(() => {
-          setTotalShops(response.data['total shops']);
+          setTotalShops(response.data['total active shops']);
           setLoading(false); // Stop loading
         }, 3000);
       } catch (error) {
