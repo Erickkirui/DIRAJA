@@ -21,14 +21,17 @@ import {
   FaFileInvoiceDollar,
   FaTruck,
   FaTools,
-  FaBoxes
+  FaBoxes,
+  FaExchangeAlt
 } from 'react-icons/fa';
 import ShopStockList from '../Components/ClerkDashbord/ShopStockList';
+import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
 
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation');
   const shopId = localStorage.getItem('shop_id');
   const isReliever = designation === "reliever";
+  const isProcurement = designation === "procurement";
 
   return (
     <div >
@@ -53,13 +56,16 @@ function ClerkDashbord() {
                 New Sale
               </Link>
             )}
+            <Link className='clerk-button' to="/recieve-stock">
+            Receive Stock
+            </Link>
 
             <div className='icon-container'>
 
               {/* Procurement Group */}
-              {designation === "procurement" && (
+              {isProcurement && (
                 <div className='icon-group'>
-                  <Link className='clerk-icon-button' to='/distribute-stock'>
+                  <Link className='clerk-icon-button' to='/procurementinventory'>
                     <FaTruck className="icon" />
                     <span>Distribute Stock</span>
                   </Link>
@@ -69,21 +75,23 @@ function ClerkDashbord() {
               
               {shopId !== '12' && shopId !== '18' && (
                 <div className='icon-group'>
-                  <Link className='clerk-icon-button' to='/shop-stock-level'>
+                  {/* Use /inventorycount for procurement, /shop-stock-level for others */}
+                  <Link className='clerk-icon-button' to={isProcurement ? '/inventorycount' : '/shop-stock-level'}>
                     <FaBoxes className="icon" />
                     <span>Stock</span>
                   </Link>
-                      <Link className='clerk-icon-button' to='/sold-items'>
-                    <FaTools className="icon" />
-                    <span>Sold Items</span>
-                  </Link>
-                
-
-
-                  {/* <Link className='clerk-icon-button' to='/managestock'>
-                    <FaTools className="icon" />
-                    <span>Manage Stock</span>
-                  </Link> */}
+                  {/* Use Shop to Shop button for procurement, Sold Items for others */}
+                  {isProcurement ? (
+                    <Link className='clerk-icon-button' to='/proctransfers'>
+                      <FaExchangeAlt className="icon" />
+                      <span>Shop to Shop</span>
+                    </Link>
+                  ) : (
+                    <Link className='clerk-icon-button' to='/sold-items'>
+                      <FaTools className="icon" />
+                      <span>Sold Items</span>
+                    </Link>
+                  )}
                 </div>
               )}
 
@@ -113,16 +121,6 @@ function ClerkDashbord() {
                 </>
               )}
 
-              {/* Reliever Group */}
-              {/* {isReliever && (
-                <div className='icon-group'>
-                  <Link className='clerk-icon-button' to='/reliever'>
-                    <FaCashRegister className="icon" />
-                    <span>Reliever Sales</span>
-                  </Link>
-                </div>
-              )} */}
-
               {/* Regular Shop Clerk Group */}
               {shopId !== '12' && shopId !== '18' && (
                 <>
@@ -142,7 +140,8 @@ function ClerkDashbord() {
                       <FaTrashAlt className="icon" />
                       <span>Spoilt Stock</span>
                     </Link>
-                    <Link className="clerk-icon-button" to="/stock-shop-move">
+                    {/* Use /procpurchases for procurement, /stock-shop-move for others */}
+                    <Link className="clerk-icon-button" to={isProcurement ? "/procpurchases" : "/stock-shop-move"}>
                       <FaTruck className="icon" />
                       <span>Stock Transfers</span>
                     </Link>
@@ -169,6 +168,13 @@ function ClerkDashbord() {
               <TotalCashSalesByUser />
             </div>
           </div>
+
+          {/* Show ShopStockList for procurement users */}
+          {isProcurement && (
+            <div className="shop-stock-list-section">
+              <ItemStockList />
+            </div>
+          )}
         </div>
       </div>
     

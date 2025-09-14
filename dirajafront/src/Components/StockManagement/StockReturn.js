@@ -24,7 +24,7 @@ const StockReturns = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/stockreturns', {
+        const response = await axios.get('api/diraja/stockreturns', {
           headers: { 
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager'

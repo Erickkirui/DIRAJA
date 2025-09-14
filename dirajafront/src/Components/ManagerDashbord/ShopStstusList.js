@@ -12,7 +12,7 @@ const ShopStatusList = () => {
   const fetchShopStatuses = async () => {
     setLoading(true);
     try {
-      const response = await axios.get("/api/diraja/allshops", {
+      const response = await axios.get("api/diraja/allshops", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
@@ -62,7 +62,7 @@ const ShopStatusList = () => {
     try {
       const token = localStorage.getItem("access_token");
       const response = await axios.put(
-        "/api/diraja/reset-report",
+        "api/diraja/reset-report",
         {},
         {
           headers: {
@@ -132,7 +132,6 @@ const ShopStatusList = () => {
         </table>
       )}
     </div>
-    
   );
 };
 

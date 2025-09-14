@@ -28,7 +28,7 @@ const AddInventory = () => {
   useEffect(() => {
     const fetchAccounts = async () => {
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/all-acounts', {
+        const response = await axios.get('api/diraja/all-acounts', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
             'X-User-Role': 'manager',
@@ -48,7 +48,7 @@ const AddInventory = () => {
 
     const fetchStockItems = async () => {
       try {
-        const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+        const response = await axios.get('api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
             'X-User-Role': 'manager',
@@ -140,7 +140,7 @@ const AddInventory = () => {
     };
 
     try {
-      const response = await axios.post('https://kulima.co.ke/api/diraja//v2/newinventory', numericFormData, {
+      const response = await axios.post('api/diraja/v2/newinventory', numericFormData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           'X-User-Role': 'manager',

@@ -10,6 +10,7 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
     unitPrice: '',
     totalCost: '',
     amountPaid: '',
+    paymentRef: '', // Added paymentRef to initial state
     Suppliername: '',
     Supplier_location: '',
     note: '',
@@ -26,7 +27,7 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
     const fetchInventoryDetails = async () => {
       try {
         const accessToken = localStorage.getItem('access_token');
-        const response = await axios.get(`https://kulima.co.ke/api/diraja/v2/inventory/${inventoryId}`, {
+        const response = await axios.get(`api/diraja/v2/inventory/${inventoryId}`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
@@ -79,7 +80,7 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
         return;
       }
 
-      const response = await axios.put(`https://kulima.co.ke/api/diraja/v2/inventory/${inventoryId}`, updatedData, {
+      const response = await axios.put(`api/diraja/v2/inventory/${inventoryId}`, updatedData, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -130,6 +131,10 @@ const UpdateInventory = ({ inventoryId, onClose, onUpdateSuccess }) => {
           <div>
             <label>Amount Paid (Ksh):</label>
             <input type="number" name="amountPaid" value={updatedData.amountPaid} onChange={handleChange} />
+          </div>
+          <div>
+            <label>Payment Reference:</label>
+            <input type="text" name="paymentRef" value={updatedData.paymentRef} onChange={handleChange} />
           </div>
           <div>
             <label>Supplier Name:</label>

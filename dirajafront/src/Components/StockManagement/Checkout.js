@@ -21,7 +21,7 @@ const Checkout = ({ shopId, stockData }) => {
 
       const payload = { shop_id: shopId, stock_data: stockData };
 
-      const response = await axios.post("https://kulima.co.ke/api/diraja/checkout", payload, {
+      const response = await axios.post("api/diraja/checkout", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

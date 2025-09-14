@@ -11,7 +11,7 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
       setLoading(true);
       try {
         const response = await fetch(
-          `https://kulima.co.ke/api/diraja/get_payment_totals?start_date=${startDate}&end_date=${endDate}`,
+          `api/diraja/get_payment_totals?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -47,7 +47,7 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
     const fetchShopStockData = async () => {
       try {
         const response = await fetch(
-          `https://kulima.co.ke/api/diraja/shopstock/bydate?start_date=${startDate}&end_date=${endDate}`,
+          `api/diraja/shopstock/bydate?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -79,7 +79,7 @@ const Assets = ({ setLoading, addedItems, startDate, endDate }) => {
     const fetchAccountsReceivableData = async () => {
       try {
         const response = await fetch(
-          `https://kulima.co.ke/api/diraja/accountsreceivable?start_date=${startDate}&end_date=${endDate}`,
+          `api/diraja/accountsreceivable?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`

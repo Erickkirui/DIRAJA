@@ -22,7 +22,7 @@ const StockReports = () => {
           params.date = selectedDate;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/stock-reports', {
+        const response = await axios.get('api/diraja/stock-reports', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },

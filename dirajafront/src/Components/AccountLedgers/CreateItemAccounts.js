@@ -18,7 +18,7 @@ function CreateItemAccount() {
       }
 
       try {
-        const response = await fetch('https://kulima.co.ke/api/diraja/chart-of-accounts', {
+        const response = await fetch('api/diraja/chart-of-accounts', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -56,7 +56,7 @@ function CreateItemAccount() {
     }
 
     try {
-      const response = await fetch('https://kulima.co.ke/api/diraja/itemaccounts', {
+      const response = await fetch('api/diraja/itemaccounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

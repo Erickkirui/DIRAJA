@@ -13,35 +13,53 @@ const DeleteConfirmationModal = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleQuantityChange = (e) => {
-    const value = parseFloat(e.target.value);
-    if (isNaN(value)) {
+    const value = e.target.value;
+    
+    // Allow empty input or decimal numbers
+    if (value === '') {
       setQuantity('');
+      setError('');
       return;
     }
     
-    if (value > maxQuantity) {
+    // Validate it's a valid decimal number
+    if (!/^\d*\.?\d*$/.test(value)) {
+      return; // Don't update if not a valid decimal
+    }
+    
+    // Convert to number for validation
+    const numericValue = parseFloat(value);
+    
+    if (numericValue > maxQuantity) {
       setError(`Cannot return more than ${maxQuantity}`);
-    } else if (value <= 0) {
+    } else if (numericValue <= 0) {
       setError('Quantity must be greater than 0');
     } else {
       setError('');
     }
     
-    setQuantity(value);
+    setQuantity(value); // Store as string to allow decimal input
   };
 
   const handleConfirm = async () => {
-    if (quantity > maxQuantity || quantity <= 0 || !quantity) {
+    if (!quantity) {
+      setError('Please enter a quantity');
+      return;
+    }
+    
+    const numericQuantity = parseFloat(quantity);
+    
+    if (numericQuantity > maxQuantity || numericQuantity <= 0 || isNaN(numericQuantity)) {
       setError('Please enter a valid quantity');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onConfirm(quantity);
+      await onConfirm(numericQuantity);
       onClose();
     } catch (error) {
-      setError(error.message);
+      setError(error.message || 'An error occurred during the return process');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,13 +82,11 @@ const DeleteConfirmationModal = ({
           <label htmlFor="return-quantity">Quantity per item:</label>
           <input
             id="return-quantity"
-            type="number"
-            min="0.01"
-            step="0.01"
-            max={maxQuantity}
+            type="text" // Changed to text to allow decimal input
             value={quantity}
             onChange={handleQuantityChange}
             disabled={isSubmitting}
+            placeholder="Enter quantity"
           />
           <span className="max-quantity-hint">(Max: {maxQuantity})</span>
         </div>

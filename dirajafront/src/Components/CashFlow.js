@@ -52,9 +52,9 @@ const CashFlowStatement = () => {
 
     try {
       const [payableRes, receivableRes, stockRes] = await Promise.all([
-        axios.get("https://kulima.co.ke/api/diraja/accountspayable", config),
-        axios.get("https://kulima.co.ke/api/diraja/accountsreceivable", config),
-        axios.get("https://kulima.co.ke/api/diraja/shopstock/bydate", config),
+        axios.get("api/diraja/accountspayable", config),
+        axios.get("api/diraja/accountsreceivable", config),
+        axios.get("api/diraja/shopstock/bydate", config),
       ]);
 
       const operatingData = [

@@ -35,7 +35,7 @@ const ShopStockMovement = () => {
         if (!shopId) throw new Error("Shop ID not found in localStorage");
 
         // Fetch stock items metadata
-        const itemsRes = await axios.get('/api/diraja/stockitems', {
+        const itemsRes = await axios.get('api/diraja/stockitems', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -52,7 +52,7 @@ const ShopStockMovement = () => {
           params.days = daysBack;
         }
 
-        const res = await axios.get("https://kulima.co.ke/api/diraja/stock-movement", {
+        const res = await axios.get("api/diraja/stock-movement", {
           params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,

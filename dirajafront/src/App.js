@@ -106,8 +106,20 @@ import StockReportPage from './Pages/Stockreportspage';
 import AllShopTransfers from './Components/ManagerDashbord/ShopTransfers';
 import ShopStockMovement from './Components/ClerkDashbord/ShopStockMovement';
 import Layout from './Components/Layout';
+import PendingTransfers from './Components/ClerkDashbord/PendingTransfers';
+import Newslaeformat from './Components/ClerkDashbord/Newslaeformat';
+import ChatAI from './Components/Analytics/ChatAI';
+
+import ProcurementTablePage from './Pages/Procurementtablepage';
+import ProcurementStock from './Components/Inventory/ProcurementStock';
+import ProcurementItems from './Components/Inventory/ProcurementItems';
+import InventoryCount from './Components/SystemStock/InventoryCount';
+import ProcPurchases from './Components/Purchases/ProcurementPurchases';
+import AllProcShopTransfers from './Components/ClerkDashbord/Proctransfers';
 import CSVUploader from './Components/Reports/CSVUploader';
-import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
+
+import TransferManagement from './Pages/Transfersmanagement';
+import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
 
 
 
@@ -196,7 +208,7 @@ function App() {
             <Route path='/meritpoints' element={<Layout><MeritPointsTable/></Layout>} ></Route>
             <Route path='/promo-sales-table' element={<Layout><PromoPage /></Layout>} ></Route>
             <Route path='/addshopstock' element={<Layout><AddShopStock/></Layout>} ></Route>
-            <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTable /></ClerkLayout>} ></Route>
+            <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTablePage /></ClerkLayout>} ></Route>
             <Route path="/add-suplier" element={<Layout><AddSuppliers /></Layout>}></Route>
             <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
             <Route path='/addexpensecategory' element={<Layout><AddExpenseCategory/></Layout>} ></Route>
@@ -216,7 +228,20 @@ function App() {
             <Route path='/transfer' element={<ClerkLayout><ShopToShopTransfer /></ClerkLayout>} ></Route>
             <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>} ></Route>
             <Route path='/stock-shop-move' element={<ClerkLayout><ShopStockMovement /></ClerkLayout>} ></Route>
+           
+            <Route path='/custom-sale' element={<ClerkLayout><Newslaeformat /></ClerkLayout>}></Route>
+            <Route path='/dirajaAI' element={<Layout><ChatAI /></Layout>} ></Route>
+            {/* <Route path='/recieve-stock'  element={<ClerkLayout><PendingTransfers /></ClerkLayout>} ></Route> */}
+            <Route path='/procurementinventory' element={<ClerkLayout><ProcurementTablePage /></ClerkLayout>} ></Route>
+            <Route path='/addprocurementinventory' element={<ClerkLayout><ProcurementStock /></ClerkLayout>} ></Route>
+            <Route path='/addprocurementitems' element={<ClerkLayout><ProcurementItems /></ClerkLayout>} ></Route>
+            <Route path='/inventorycount' element={<ClerkLayout><InventoryCount /></ClerkLayout>} ></Route>
+            <Route path='/procpurchases' element={<ClerkLayout><ProcPurchases /></ClerkLayout>} ></Route>
+            <Route path='/proctransfers' element={<ClerkLayout><AllProcShopTransfers /></ClerkLayout>} ></Route>
             <Route path='/transaction-analyse' element={<Layout><CSVUploader /></Layout>} ></Route>
+            <Route path='/recieve-stock'  element={<ClerkLayout><TransferManagement /></ClerkLayout>} ></Route>
+            <Route path='/custom-sale' element={<ClerkLayout><NewsaleFormat/></ClerkLayout>}></Route>
+
            </Routes> 
        
       </Router>

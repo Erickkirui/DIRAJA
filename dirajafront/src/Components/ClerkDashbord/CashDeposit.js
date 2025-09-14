@@ -43,7 +43,7 @@ const AddCashDeposit = () => {
     setMessage('');
 
     try {
-      const response = await axios.post('https://kulima.co.ke/api/diraja/cashdeposits/add', 
+      const response = await axios.post('api/diraja/cashdeposits/add', 
         { 
           ...formData, 
           shop_id: localStorage.getItem('shop_id') 

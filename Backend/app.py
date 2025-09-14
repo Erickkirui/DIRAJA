@@ -4,48 +4,44 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from dotenv import load_dotenv
 from flask_mail import Mail
 
+# LangChain + Gemini
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_community.utilities import SQLDatabase
+from langchain.chains import create_sql_query_chain
 
-app = Flask(__name__)
-CORS(app)
+load_dotenv()
+
+# ---------- Extensions ----------
 db = SQLAlchemy()
 jwt = JWTManager()
+mail = Mail()
 
-app.config['MAIL_SERVER'] = 'mail.kulima.co.ke'
-app.config['MAIL_PORT'] = '465'
-app.config['MAIL_USERNAME'] = 'kukuzetureports@kulima.co.ke'
-app.config['MAIL_PASSWORD'] = 'XZbZ{9ZSPZeg'
-app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
-mail = Mail(app)
-
-
+# ---------- Models Import ----------
 def initialize_models():
+    """Import all models so SQLAlchemy can discover them."""
     from Server.Models.Users import Users
-    
     from Server.Models.Shops import Shops
     from Server.Models.Sales import Sales
     from Server.Models.Bank import Bank
     from Server.Models.Customers import Customers
     from Server.Models.Employees import Employees
-    from Server.Models.EmployeeLoan import  EmployeeLoan
+    from Server.Models.EmployeeLoan import EmployeeLoan
     from Server.Models.Stock import Stock
-    from Server.Models.Expenses import Expenses 
+    from Server.Models.Expenses import Expenses
     from Server.Models.Inventory import Inventory
     from Server.Models.Shopstock import ShopStock
     from Server.Models.Paymnetmethods import SalesPaymentMethods
     from Server.Models.SoldItems import SoldItem
-    # from Server.Models.Distribution import Distribution
     from Server.Models.Transfer import Transfer
     from Server.Models.LiveStock import LiveStock
     from Server.Models.ShopTransfers import ShopTransfer
-    from Server.Models.SystemStockTransfer import  SystemStockTransfer
+    from Server.Models.SystemStockTransfer import SystemStockTransfer
     from Server.Models.AccountTypes import AccountTypes
     from Server.Models.ChartOfAccounts import ChartOfAccounts
-    from Server.Models.BankAccounts import BankAccount
-    from Server.Models.BankAccounts import BankingTransaction
+    from Server.Models.BankAccounts import BankAccount, BankingTransaction
     from Server.Models.ItemAccountsTable import ItemAccounts
     from Server.Models.SalesDepartment import SalesDepartment
     from Server.Models.Supplier import Suppliers, SupplierHistory
@@ -53,50 +49,64 @@ def initialize_models():
     from Server.Models.ShopstockV2 import ShopStockV2
     from Server.Models.ExpenseCategory import ExpenseCategory
     from Server.Models.StockReport import StockReport
-    
-    # from Server.Models.Purchases import Purchases
 
-def initialize_views():
-    from  Server.Views import api_endpoint
+
+# ---------- Views Import ----------
+def initialize_views(app):
+    """Register Flask blueprints/resources."""
+    from Server.Views import api_endpoint
     app.register_blueprint(api_endpoint)
 
 
 def create_app(config_name):
+    app = Flask(__name__)
+    CORS(app)
+
+    # Load config
     app.config.from_object(config_name)
-    # app.config["SQLALCHEMY_DATABASE_URI"] = 'sqlite:///app.db'
-    app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:@localhost/Diraja'
 
+    # Database config
+    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost/Diraja"
 
-
-    # MySQL database configuration      
-    
-#     app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@148.251.133.221/kulimaco_dirajaapp'
-
-#     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-#     'pool_recycle': 280,  # Recycle connections after 280 seconds of inactivity
-#     'pool_timeout': 30,   # Wait 30 seconds for a connection from the pool
-#     'pool_pre_ping': True  # Check connection health before using it
-# }   
-
-
-    
-    #JWT SETUP KEY
+    # JWT config
     app.config['JWT_SECRET_KEY'] = "Soweto@2024"
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 2592000))
-    
-    #Initialize DB with app
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = int(
+        os.getenv('JWT_ACCESS_TOKEN_EXPIRES', 2592000)
+    )
+
+    # Mail config
+    app.config['MAIL_SERVER'] = 'mail.kulima.co.ke'
+    app.config['MAIL_PORT'] = 465
+    app.config['MAIL_USERNAME'] = 'kukuzetureports@kulima.co.ke'
+    app.config['MAIL_PASSWORD'] = 'XZbZ{9ZSPZeg'
+    app.config['MAIL_USE_SSL'] = True
+    app.config['MAIL_USE_TLS'] = False
+    app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
+
+    # Init extensions
     db.init_app(app)
-    migrate = Migrate(app, db)
+    Migrate(app, db)
     jwt.init_app(app)
-   
-    # Create database schemas
+    mail.init_app(app)
+
+    # Import models
     with app.app_context():
         initialize_models()
 
-    initialize_views()
+    # Register views
+    initialize_views(app)
 
+    # ---------- LangChain SQL Connection ----------
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY is not set. Check your .env file or environment variables.")
 
-        
+    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
+    database = SQLDatabase.from_uri(app.config["SQLALCHEMY_DATABASE_URI"])
 
+    # Attach objects to app
+    app.llm = llm                              # ✅ now app has llm
+    app.sql_database = database                # raw db for queries
+    app.db_chain = create_sql_query_chain(llm, database)  # chain for SQL generation
 
     return app

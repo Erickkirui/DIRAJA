@@ -13,7 +13,7 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
+        const response = await axios.get("api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -66,7 +66,7 @@ const TransferStockForm = ({ stockData, isVisible, onClose, onTransferSuccess })
         transfer_quantity: parseFloat(transferQuantity),
       };
 
-      await axios.post("https://kulima.co.ke/api/diraja/transfer-shop-stock", payload, {
+      await axios.post("api/diraja/transfer-shop-stock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

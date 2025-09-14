@@ -30,7 +30,7 @@ const AddPromoSales = () => {
     const token = localStorage.getItem('access_token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    axios.get('https://kulima.co.ke/api/diraja/allshops', { headers })
+    axios.get('api/diraja/allshops', { headers })
       .then((res) => {
         setShops(Array.isArray(res.data) ? res.data : []);
       })
@@ -39,7 +39,7 @@ const AddPromoSales = () => {
       });
 
     setItemsLoading(true);
-    axios.get('https://kulima.co.ke/api/diraja/stockitems', { headers })
+    axios.get('api/diraja/stockitems', { headers })
       .then((res) => {
         const items = Array.isArray(res.data.stock_items) ? res.data.stock_items : [];
         setStockItems(items);
@@ -95,7 +95,7 @@ const AddPromoSales = () => {
     const submissionData = { ...formData };
 
     try {
-      const response = await axios.post('https://kulima.co.ke/api/diraja/salesdepartmentnew', submissionData, {
+      const response = await axios.post('api/diraja/salesdepartmentnew', submissionData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('access_token')}`
         }

@@ -76,6 +76,13 @@ function Navbar({ onMenuItemClick }) {
                   <span>System Stocks</span>
                 </NavLink>
                 <NavLink
+                  to="/shoptransfers"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>Stock Transfers</span>
+                </NavLink>
+                <NavLink
                   to="/stockstatus"
                   className="menu-item sub-item"
                   onClick={onMenuItemClick}
@@ -141,6 +148,10 @@ function Navbar({ onMenuItemClick }) {
               <span>Account Balances</span>
             </NavLink>
           )}
+          <NavLink to="/transaction-analyse" className="menu-item" onClick={onMenuItemClick}>
+            <FaTags className="menu-icon" />
+            <span>Compare statement</span>
+          </NavLink>
         </ul>
       </div>
 

@@ -22,7 +22,7 @@ const AddExpense = () => {
         setIsLoading(true);
 
         try {
-            const response = await axios.post('https://kulima.co.ke/api/diraja/newmabandaexpense', formData, {
+            const response = await axios.post('api/diraja/newmabandaexpense', formData, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
             });
 

@@ -28,16 +28,16 @@ const UpdateExpense = ({ expenseId, onClose }) => {
     const fetchData = async () => {
       try {
         const [shopResponse, expenseResponse, accountResponse, expenseDetails] = await Promise.all([
-          axios.get('https://kulima.co.ke/api/diraja/allshops', {
+          axios.get('api/diraja/allshops', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get('https://kulima.co.ke/api/diraja/allexpenses', {
+          axios.get('api/diraja/allexpenses', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get('https://kulima.co.ke/api/diraja/all-acounts', {
+          axios.get('api/diraja/all-acounts', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
-          axios.get(`https://kulima.co.ke/api/diraja/expense/${expenseId}`, {
+          axios.get(`api/diraja/expense/${expenseId}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           })
         ]);
@@ -125,7 +125,7 @@ const UpdateExpense = ({ expenseId, onClose }) => {
     };
   
     try {
-      const response = await axios.put(`https://kulima.co.ke/api/diraja/expense/${expenseId}`, formattedData, {
+      const response = await axios.put(`api/diraja/expense/${expenseId}`, formattedData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
       });
   

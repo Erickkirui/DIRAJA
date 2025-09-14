@@ -19,7 +19,7 @@
 .dashord-top-part{
     display: flex;
     justify-content: space-between;
-    
+    flex-wrap: wrap;
     align-items: center;
 }
 
@@ -85,6 +85,9 @@
 .shortcuts{
     margin-top: 10px;
     margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .shortcuts a{

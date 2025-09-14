@@ -18,7 +18,21 @@ import logging
 from flask import current_app
 import re
 
-
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 # def check_role(required_role):
 #     def wrapper(fn):
 #         @wraps(fn)
@@ -31,18 +45,6 @@ import re
 #             return fn(*args, **kwargs)
 #         return decorator
 #     return wrapper
-
-def check_role(required_role):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = Users.query.get(current_user_id)
-            if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
 
 
 class GetInventoryByBatchV2(Resource):
@@ -88,12 +90,14 @@ class GetInventoryByBatchV2(Resource):
 
 class DistributeInventoryV2(Resource):
     @jwt_required()
-    @check_role('manager')
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        required_fields = ['shop_id', 'inventoryV2_id', 'quantity', 'itemname', 'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric']
+        required_fields = [
+            'shop_id', 'inventoryV2_id', 'quantity', 'itemname',
+            'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric'
+        ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
@@ -101,68 +105,134 @@ class DistributeInventoryV2(Resource):
         inventoryV2_id = data['inventoryV2_id']
         quantity = data['quantity']
         metric = data['metric']
-        itemname = data['itemname']  
+        itemname = data['itemname']
+        itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
-        unitPrice = data['unitPrice']
 
         try:
             distribution_date = parser.isoparse(data['created_at'])
         except ValueError:
             return {'message': 'Invalid date format'}, 400
 
+        # ✅ Fetch inventory item
         inventory_item = InventoryV2.query.get(inventoryV2_id)
         if not inventory_item:
             return {'message': 'Inventory item not found'}, 404
 
+        # ✅ Ensure enough stock is available
         if inventory_item.quantity < quantity:
             return {'message': 'Insufficient inventory quantity'}, 400
 
-        # Create transfer record
-        new_transfer = TransfersV2(
-            shop_id=shop_id,
-            inventoryV2_id=inventoryV2_id,
-            quantity=quantity,
-            metric=metric,
-            total_cost=unitCost * quantity,
-            BatchNumber=BatchNumber,
-            user_id=current_user_id,
-            itemname=itemname,
-            amountPaid=amountPaid,
-            unitCost=unitCost,
-            created_at=distribution_date
-        )
+        try:
+            # ✅ Deduct immediately from inventory
+            inventory_item.quantity -= quantity
 
-        # Update inventory quantity
-        inventory_item.quantity -= quantity
+            # ✅ Create transfer record with "Not Received"
+            new_transfer = TransfersV2(
+                shop_id=shop_id,
+                inventoryV2_id=inventoryV2_id,
+                quantity=quantity,
+                metric=metric,
+                total_cost=unitCost * quantity,
+                BatchNumber=BatchNumber,
+                user_id=current_user_id,
+                itemname=itemname,
+                amountPaid=amountPaid,
+                unitCost=unitCost,
+                created_at=distribution_date,
+                status="Not Received"
+            )
+
+            db.session.add(new_transfer)
+            db.session.commit()
+
+            return {
+                'message': 'Transfer created successfully. Stock deducted from inventory, awaiting receipt.',
+                'transfer_id': new_transfer.transferv2_id
+            }, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error creating transfer', 'error': str(e)}, 500
+
+
+
+class ReceiveTransfer(Resource):
+    @jwt_required()
+    def patch(self, transfer_id):
+        transfer = TransfersV2.query.get(transfer_id)
+        if not transfer:
+            return {'message': 'Transfer not found'}, 404
+
+        if transfer.status == "Received":
+            return {'message': 'Transfer already received'}, 400
 
         try:
-            db.session.add(new_transfer)
-            db.session.flush()
-            
-            # Create shop stock record
+            # ✅ Add to shop stock (inventory already deducted earlier)
             new_shop_stock = ShopStockV2(
-                shop_id=shop_id,
-                transferv2_id=new_transfer.transferv2_id,
-                inventoryv2_id=inventoryV2_id,
-                quantity=quantity,
-                total_cost=unitCost * quantity,
-                itemname=itemname,
-                metric=metric,
-                BatchNumber=BatchNumber,
-                unitPrice=unitPrice # Use the provided unitCost instead of inventory_item.unitPrice
+                shop_id=transfer.shop_id,
+                transferv2_id=transfer.transferv2_id,
+                inventoryv2_id=transfer.inventoryV2_id,
+                quantity=transfer.quantity,
+                total_cost=transfer.unitCost * transfer.quantity,
+                itemname=transfer.itemname,
+                metric=transfer.metric,
+                BatchNumber=transfer.BatchNumber,
+                unitPrice=transfer.unitCost
             )
+
+            transfer.status = "Received"
 
             db.session.add(new_shop_stock)
             db.session.commit()
-            
-            return {'message': 'Inventory distributed successfully'}, 201
-            
+
+            return {'message': 'Transfer received successfully and stock added to shop.'}, 200
+
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error creating transfer or shop stock', 'error': str(e)}, 500
+            return {'message': 'Error receiving transfer', 'error': str(e)}, 500
 
+
+
+
+class PendingTransfers(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Get shop_id from query params
+            shop_id = request.args.get("shop_id", type=int)
+            if not shop_id:
+                return {"message": "shop_id is required"}, 400
+
+            # Filter only pending transfers for this shop
+            pending = TransfersV2.query.filter_by(
+                status="Not Received",
+                shop_id=shop_id
+            ).all()
+
+            result = []
+            for t in pending:
+                result.append({
+                    "transferv2_id": t.transferv2_id,
+                    "shop_id": t.shop_id,
+                    "inventoryV2_id": t.inventoryV2_id,
+                    "itemname": t.itemname,
+                    "quantity": t.quantity,
+                    "metric": t.metric,
+                    "unitCost": t.unitCost,
+                    "amountPaid": t.amountPaid,
+                    "total_cost": t.total_cost,
+                    "BatchNumber": t.BatchNumber,
+                    "created_at": t.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    "status": t.status
+                })
+
+            return {"pending_transfers": result}, 200
+
+        except Exception as e:
+            return {"message": "Error fetching pending transfers", "error": str(e)}, 500
 
 # class DeleteShopStockV2(Resource):
 #     @jwt_required()
@@ -330,7 +400,6 @@ class DeleteShopStockV2(Resource):
 
 class GetTransferV2(Resource):
     @jwt_required()
-    @check_role('manager')
     def get(self):
         transfers = TransfersV2.query.all()
         all_transfers = []
@@ -354,7 +423,9 @@ class GetTransferV2(Resource):
                 "username": username,
                 "shop_name": shopname,
                 "itemname": transfer.itemname,
+                "status": transfer.status,
                 "amountPaid": transfer.amountPaid,
+                "status":transfer.status,
                 "unitCost": transfer.unitCost,
                 "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
             })
@@ -436,7 +507,7 @@ class UpdateTransferV2(Resource):
 
 class AddInventoryV2(Resource):
     @jwt_required()
-    @check_role('manager')
+    # @check_role('manager')
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
@@ -553,6 +624,7 @@ class GetAllInventoryV2(Resource):
 
 class InventoryResourceByIdV2(Resource):
     @jwt_required()
+    # @check_role('manager')
     def get(self, inventoryV2_id):
         inventory = InventoryV2.query.get(inventoryV2_id)
    
@@ -590,9 +662,14 @@ class InventoryResourceByIdV2(Resource):
             # Check what the actual foreign key column name is in your models
             # Common options: inventory_id, inventoryv2_id, inventory_V2_id
             transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
+            # Check what the actual foreign key column name is in your models
+            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
+            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for transfer in transfers:
                 db.session.delete(transfer)
             
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
             # Check what the actual foreign key column name is in your models
             shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
             for stock in shop_stocks:
@@ -622,6 +699,7 @@ class InventoryResourceByIdV2(Resource):
             totalCost = unitCost * initial_quantity
             amountPaid = float(data.get('amountPaid', inventory.amountPaid))
             balance = totalCost - amountPaid
+            paymentRef = data.get('paymentRef', inventory.paymentRef)  # Added paymentRef
             Suppliername = data.get('Suppliername', inventory.Suppliername)
             Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
             note = data.get('note', inventory.note)
@@ -642,6 +720,7 @@ class InventoryResourceByIdV2(Resource):
             inventory.totalCost = totalCost
             inventory.amountPaid = amountPaid
             inventory.balance = balance
+            inventory.paymentRef = paymentRef  # Added paymentRef assignment
             inventory.Suppliername = Suppliername
             inventory.Supplier_location = Supplier_location
             inventory.note = note
@@ -653,6 +732,7 @@ class InventoryResourceByIdV2(Resource):
                 transfer.itemname = itemname
                 transfer.unitCost = unitCost
                 transfer.amountPaid = amountPaid
+                transfer.paymentRef = paymentRef  # Added paymentRef update for transfers
 
             # Check what the actual foreign key column name is in your models
             shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
@@ -669,6 +749,70 @@ class InventoryResourceByIdV2(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
+
+    @jwt_required()
+    @check_role('manager')
+    def put(self, inventoryV2_id):
+        data = request.get_json()
+        inventory = InventoryV2.query.get(inventoryV2_id)
+        if not inventory:
+            return {'message': 'Inventory not found'}, 404
+
+    #     try:
+    #         itemname = data.get('itemname', inventory.itemname)
+    #         initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
+    #         unitCost = float(data.get('unitCost', inventory.unitCost))
+    #         unitPrice = float(data.get('unitPrice', inventory.unitPrice))
+    #         totalCost = unitCost * initial_quantity
+    #         amountPaid = float(data.get('amountPaid', inventory.amountPaid))
+    #         balance = totalCost - amountPaid
+    #         Suppliername = data.get('Suppliername', inventory.Suppliername)
+    #         Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
+    #         note = data.get('note', inventory.note)
+
+            created_at_str = data.get('created_at', None)
+            if created_at_str:
+                try:
+                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
+                except ValueError:
+                    return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
+            else:
+                created_at = inventory.created_at
+
+    #         inventory.itemname = itemname
+    #         inventory.initial_quantity = initial_quantity
+    #         inventory.unitCost = unitCost
+    #         inventory.unitPrice = unitPrice
+    #         inventory.totalCost = totalCost
+    #         inventory.amountPaid = amountPaid
+    #         inventory.balance = balance
+    #         inventory.Suppliername = Suppliername
+    #         inventory.Supplier_location = Supplier_location
+    #         inventory.note = note
+    #         inventory.created_at = created_at
+
+            # Check what the actual foreign key column name is in your models
+            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            for transfer in transfers:
+                transfer.itemname = itemname
+                transfer.unitCost = unitCost
+                transfer.amountPaid = amountPaid
+
+            # Check what the actual foreign key column name is in your models
+            shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
+            for stock in shop_stocks:
+                stock.itemname = itemname
+                stock.unitPrice = unitPrice
+
+    #         db.session.commit()
+    #         return {'message': 'Inventory and related records updated successfully'}, 200
+
+    #     except ValueError as e:
+    #         db.session.rollback()
+    #         return {'message': 'Invalid data type', 'error': str(e)}, 400
+    #     except Exception as e:
+    #         db.session.rollback()
+    #         return {'message': 'Error updating inventory', 'error': str(e)}, 500
 
 
 class StockDeletionResourceV2(Resource):     

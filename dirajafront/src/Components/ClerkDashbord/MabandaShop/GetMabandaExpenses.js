@@ -20,7 +20,7 @@ const Expenses = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/getmabandaexpense', {
+        const response = await axios.get('api/diraja/getmabandaexpense', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

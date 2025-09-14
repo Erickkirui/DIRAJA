@@ -15,7 +15,7 @@ const Liabilities = ({ startDate, endDate, liabilities }) => {
       setLoading(true);
       try {
         const response = await fetch(
-          `https://kulima.co.ke/api/diraja/accountspayable?start_date=${startDate}&end_date=${endDate}`,
+          `api/diraja/accountspayable?start_date=${startDate}&end_date=${endDate}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('access_token')}`
@@ -48,7 +48,7 @@ const Liabilities = ({ startDate, endDate, liabilities }) => {
     fetchLiabilities();
   }, [startDate, endDate]);
 
-  // Function to calculate the total from all liability items, including the API and manually added items
+  // Function to calculate the total from all liability items, including the api and manually added items
   const calculateTotalLiabilities = () => {
     const addedTotal = liabilities.reduce((total, item) => total + item.value, 0);
     return totalBalance + addedTotal;

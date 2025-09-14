@@ -30,7 +30,7 @@ const StockItemsList = () => {
     }
 
     try {
-      const response = await axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+      const response = await axios.get('api/diraja/stockitems', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

@@ -22,7 +22,9 @@ const ShopStockV2 = () => {
                     setLoading(false);
                     return;
                 }
-                const response = await fetch('https://kulima.co.ke/api/diraja/shopstockv2', {
+                
+                // Fetch shop stock data
+                const response = await fetch('api/diraja/shopstockv2', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
@@ -33,7 +35,7 @@ const ShopStockV2 = () => {
                 const data = await response.json();
 
                 // Fetch stock items metadata
-                const itemsResponse = await fetch('/api/diraja/stockitems', {
+                const itemsResponse = await fetch('api/diraja/stockitems', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                     },

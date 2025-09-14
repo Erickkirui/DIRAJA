@@ -1,12 +1,14 @@
 import React from 'react'
-import TotalPaidSales from '../Components/TotalPaidSales'
+import TotalPaidSales from '../Components/Analytics/TotalPaidSales'
+import MonthlyIncomeChart from '../Components/Analytics/MonthlyIncomeChart'
 
 function AnalyticsPage() {
   return (
-    <div>
-        <h1>Shop Sales Analytics</h1>
+    <>
+        
       <TotalPaidSales />
-    </div>
+      <MonthlyIncomeChart />
+    </>
   )
 }
 

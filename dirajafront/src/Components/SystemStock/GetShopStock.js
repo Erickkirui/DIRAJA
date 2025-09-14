@@ -21,7 +21,7 @@ const ShopStock = () => {
                     setLoading(false);
                     return;
                 }
-                const response = await fetch('https://kulima.co.ke/api/diraja/shopstock', {
+                const response = await fetch('api/diraja/shopstock', {
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',

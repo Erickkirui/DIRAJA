@@ -24,7 +24,7 @@ const GetUnpaidSalesByClerk = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/unpaidsales/clerk', {
+        const response = await axios.get('api/diraja/unpaidsales/clerk', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 

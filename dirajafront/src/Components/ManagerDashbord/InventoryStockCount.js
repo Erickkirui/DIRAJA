@@ -16,7 +16,7 @@ const InventoryStockCount = () => {
   useEffect(() => {
     const fetchStockItems = async () => {
       try {
-        const itemsResponse = await axios.get("/api/diraja/stockitems", {
+        const itemsResponse = await axios.get("api/diraja/stockitems", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },
@@ -39,7 +39,7 @@ const InventoryStockCount = () => {
         if (filters.item_name) params.append('item_name', filters.item_name);
         if (filters.supplier_name) params.append('supplier_name', filters.supplier_name);
 
-        const url = `/api/diraja/inventory-stock-level${params.toString() ? `?${params.toString()}` : ''}`;
+        const url = `api/diraja/inventory-stock-level${params.toString() ? `?${params.toString()}` : ''}`;
 
         const response = await axios.get(url, {
           headers: {

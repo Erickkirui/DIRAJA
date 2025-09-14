@@ -36,7 +36,7 @@ const RegisterStockForm = ({ onSubmit, onClose }) => {
       };
 
       // Make the request to the RegisterStock endpoint
-      await axios.post("https://kulima.co.ke/api/diraja/registerstock", payload, {
+      await axios.post("api/diraja/registerstock", payload, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 

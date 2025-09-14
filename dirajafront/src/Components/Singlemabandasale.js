@@ -55,7 +55,7 @@ const MabandaSalesDetails = () => {
           formattedEnd = format(today, "yyyy-MM-dd");
         }
 
-        const url = `https://kulima.co.ke/api/diraja/totalmabandasales?start_date=${formattedStart}&end_date=${formattedEnd}`;
+        const url = `api/diraja/totalmabandasales?start_date=${formattedStart}&end_date=${formattedEnd}`;
 
         const response = await axios.get(url, {
           headers: { Authorization: `Bearer ${accessToken}` },

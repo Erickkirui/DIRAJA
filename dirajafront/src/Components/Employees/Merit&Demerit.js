@@ -31,7 +31,7 @@ const AddMeritPoints = () => {
 
     try {
       const response = await axios.post(
-        'https://kulima.co.ke/api/diraja/newmeritpoint',
+        'api/diraja/newmeritpoint',
         {
           reason: trimmedReason,
           point: numericPoint

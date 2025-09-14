@@ -27,7 +27,7 @@ const Transfers = () => {
           return;
         }
 
-        const response = await axios.get('https://kulima.co.ke/api/diraja/alltransfers', {
+        const response = await axios.get('api/diraja/alltransfers', {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             'X-User-Role': 'manager', // Added user role header
@@ -59,6 +59,7 @@ const Transfers = () => {
       const matchesSearch =
         transfer.itemname.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.shop_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transfer.batchnumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.username.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesDate = selectedDate

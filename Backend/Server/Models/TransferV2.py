@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from app import db
 from sqlalchemy.orm import validates
-from sqlalchemy import func
+from sqlalchemy import func, Enum
 
 
 class TransfersV2(db.Model):
@@ -20,11 +20,17 @@ class TransfersV2(db.Model):
     unitCost = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, server_default=func.now())
 
+    # ✅ Status field (Received / Not Received)
+    status = db.Column(
+        Enum('Received', 'Not Received', name='transfer_status'),
+        default='Not Received',
+        nullable=False
+    )
+
     # Relationships
     shop = db.relationship('Shops', backref=db.backref('transfers_v2', lazy=True))
     users = db.relationship('Users', backref='transfers_v2', lazy=True)
     
-    # ✅ Explicit primaryjoin for non-standard FK name
     inventory = db.relationship(
         'InventoryV2',
         primaryjoin="TransfersV2.inventoryV2_id == InventoryV2.inventoryV2_id",
@@ -33,4 +39,4 @@ class TransfersV2(db.Model):
     )
 
     def __repr__(self):
-        return f"<TransfersV2 Shop ID: {self.shop_id}, Quantity: {self.quantity}kg>"
+        return f"<TransfersV2 Shop ID: {self.shop_id}, Quantity: {self.quantity}{self.metric}, Status: {self.status}>"
