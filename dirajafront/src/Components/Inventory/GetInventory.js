@@ -18,7 +18,7 @@ const Inventory = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingInventoryId, setEditingInventoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
-  const [stockItems, setStockItems] = useState([]); // Added for stock items metadata
+  const [stockItems, setStockItems] = useState([]);
 
   const editInventoryRef = useRef(null);
 
@@ -44,13 +44,12 @@ const Inventory = () => {
             Authorization: `Bearer ${accessToken}`,
           },
         });
-        
+
         const stockItemsData = itemsRes.data.stock_items || [];
         setStockItems(stockItemsData);
 
         // Apply display formatting to inventory
-        // FIXED: Changed inventoryResponse.data to response.data
-        const processedInventory = response.data.map((item) => {
+        const processedInventory = inventoryResponse.data.map((item) => {
           const itemInfo = stockItemsData.find(
             (stockItem) => stockItem.item_name === item.itemname
           );
@@ -58,12 +57,11 @@ const Inventory = () => {
           if (!itemInfo) {
             return {
               ...item,
-              initial_display: `${item.initial_quantity} ${item.metric || "pcs"}`,
-              remaining_display: `${item.remaining_quantity} ${item.metric || "pcs"}`,
+              initial_display: `${item.initial_quantity} ${item.metric || 'pcs'}`,
+              remaining_display: `${item.remaining_quantity} ${item.metric || 'pcs'}`,
             };
           }
 
-          // Format display for initial quantity
           const initialDisplay = formatQuantityDisplay(item.initial_quantity, item.metric, itemInfo);
           const remainingDisplay = formatQuantityDisplay(item.remaining_quantity, item.metric, itemInfo);
 
@@ -79,20 +77,19 @@ const Inventory = () => {
         setError('Error fetching data. Please try again.');
       }
     };
-    
+
     fetchData();
   }, []);
 
   // Helper function to format quantity display
   const formatQuantityDisplay = (quantity, metric, itemInfo) => {
-    // If metric is kgs, display directly
-    if (metric && metric.toLowerCase() === "kgs") {
+    if (metric && metric.toLowerCase() === 'kgs') {
       return `${quantity} kgs`;
     }
 
     // Eggs logic → trays and pieces
     if (
-      itemInfo.item_name.toLowerCase().includes("eggs") &&
+      itemInfo.item_name.toLowerCase().includes('eggs') &&
       (itemInfo.pack_quantity > 0 || !itemInfo.pack_quantity)
     ) {
       const packQty =
@@ -102,9 +99,7 @@ const Inventory = () => {
       const trays = Math.floor(quantity / packQty);
       const pieces = quantity % packQty;
       return trays > 0
-        ? `${trays} tray${trays !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${pieces} pcs` : ""
-          }`
+        ? `${trays} tray${trays !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
         : `${pieces} pcs`;
     }
 
@@ -113,14 +108,11 @@ const Inventory = () => {
       const packets = Math.floor(quantity / itemInfo.pack_quantity);
       const pieces = quantity % itemInfo.pack_quantity;
       return packets > 0
-        ? `${packets} pkt${packets !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${pieces} pcs` : ""
-          }`
+        ? `${packets} pkt${packets !== 1 ? 's' : ''}${pieces > 0 ? `, ${pieces} pcs` : ''}`
         : `${pieces} pcs`;
     }
 
-    // Default
-    return `${quantity} ${metric || "pcs"}`;
+    return `${quantity} ${metric || 'pcs'}`;
   };
 
   useEffect(() => {
@@ -158,7 +150,7 @@ const Inventory = () => {
 
   const handleDelete = async () => {
     const confirmDelete = window.confirm(
-      "Are you sure you want to delete the selected inventory items? This action cannot be undone."
+      'Are you sure you want to delete the selected inventory items? This action cannot be undone.'
     );
     if (!confirmDelete) return;
 
@@ -195,7 +187,8 @@ const Inventory = () => {
         (inventoryItem.note && inventoryItem.note.toLowerCase().includes(searchString));
 
       const matchesDateRange =
-        selectedDate === '' || new Date(inventoryItem.created_at).toISOString().split('T')[0] === selectedDate;
+        selectedDate === '' ||
+        new Date(inventoryItem.created_at).toISOString().split('T')[0] === selectedDate;
 
       return matchesSearch && matchesDateRange;
     })
@@ -215,19 +208,10 @@ const Inventory = () => {
             selectedInventory.length > 0 &&
             filteredInventory
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .every(item => selectedInventory.includes(item.inventoryV2_id)) &&
+              .every((item) => selectedInventory.includes(item.inventoryV2_id)) &&
             filteredInventory
               .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
               .length > 0
-          }
-          indeterminate={
-            selectedInventory.length > 0 &&
-            !filteredInventory
-              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .every(item => selectedInventory.includes(item.inventoryV2_id)) &&
-            filteredInventory
-              .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-              .some(item => selectedInventory.includes(item.inventoryV2_id))
           }
         />
       ),
@@ -238,7 +222,7 @@ const Inventory = () => {
           checked={selectedInventory.includes(item.inventoryV2_id)}
           onChange={() => handleCheckboxChange(item.inventoryV2_id)}
         />
-      )
+      ),
     },
     {
       header: 'Date',
@@ -248,53 +232,42 @@ const Inventory = () => {
         return date.toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
-          day: 'numeric'
+          day: 'numeric',
         });
-      }
+      },
     },
     { header: 'Item', key: 'itemname' },
     {
       header: 'Batch No',
       key: 'batchnumber',
-      render: (item) => (
-        <span style={{ fontSize: '12px' }}>
-          {item.batchnumber}
-        </span>
-      )
+      render: (item) => <span style={{ fontSize: '12px' }}>{item.batchnumber}</span>,
     },
     {
       header: 'Initial Quantity',
       key: 'initial_quantity',
-      render: (item) => item.initial_display || `${item.initial_quantity} ${item.metric}`
+      render: (item) => item.initial_display || `${item.initial_quantity} ${item.metric}`,
     },
     {
       header: 'Remaining Quantity',
       key: 'remaining_quantity',
-      render: (item) => item.remaining_display || `${item.remaining_quantity} ${item.metric}`
+      render: (item) => item.remaining_display || `${item.remaining_quantity} ${item.metric}`,
     },
     { header: 'Unit Cost (Ksh)', key: 'unitCost' },
     { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
     {
       header: 'Payment Ref',
       key: 'paymentRef',
-      render: (item) => (
-        <span style={{ fontSize: '12px' }}>
-          {item.paymentRef}
-        </span>
-      )
+      render: (item) => <span style={{ fontSize: '12px' }}>{item.paymentRef}</span>,
     },
     { header: 'Source', key: 'source' },
     {
       header: 'Actions',
       key: 'actions',
       render: (item) => (
-        <button
-          className='editeInventory'
-          onClick={() => handleEditClick(item.inventoryV2_id)}
-        >
+        <button className="editeInventory" onClick={() => handleEditClick(item.inventoryV2_id)}>
           Edit
         </button>
-      )
+      ),
     },
     { header: 'Comments', key: 'note' },
   ];
@@ -333,7 +306,9 @@ const Inventory = () => {
               <option value="distribute">Distribute</option>
               <option value="delete">Delete</option>
             </select>
-            <button onClick={handleAction} className="action-button">Apply</button>
+            <button onClick={handleAction} className="action-button">
+              Apply
+            </button>
           </div>
 
           <ExportExcel data={inventory} fileName="InventoryData" />

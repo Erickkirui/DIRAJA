@@ -155,7 +155,7 @@ from Server.Views.Sasapaycodes import (
 )
 
 
-api_endpoint = Blueprint('auth',__name__,url_prefix='/diraja')
+api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
 # add all endpoints 
