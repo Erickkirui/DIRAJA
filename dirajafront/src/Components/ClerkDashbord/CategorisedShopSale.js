@@ -61,11 +61,11 @@ const CategorizedShopSale = () => {
         const fetchItems = async () => {
             try {
                 const [batchesResponse, stockItemsResponse] = await Promise.all([
-                    axios.get('https://kulima.co.ke/api/diraja/batches/available-by-shopv2', {
+                    axios.get('api/diraja/batches/available-by-shopv2', {
                         params: { shop_id: formData.shop_id },
                         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
                     }),
-                    axios.get('https://kulima.co.ke/api/diraja/stockitems', {
+                    axios.get('api/diraja/stockitems', {
                         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
                     })
                 ]);
@@ -123,7 +123,7 @@ const CategorizedShopSale = () => {
         if (!itemName || !formData.shop_id) return;
 
         try {
-            const response = await axios.get('https://kulima.co.ke/api/diraja/shop-itemdetailsv2', {
+            const response = await axios.get('api/diraja/shop-itemdetailsv2', {
                 params: {
                     item_name: itemName,
                     shop_id: formData.shop_id,
@@ -325,7 +325,7 @@ const CategorizedShopSale = () => {
         };
     
         try {
-            const response = await axios.post('https://kulima.co.ke/api/diraja/newsale', formDataToSubmit, {
+            const response = await axios.post('api/diraja/newsale', formDataToSubmit, {
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,

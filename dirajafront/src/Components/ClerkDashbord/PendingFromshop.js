@@ -18,61 +18,61 @@ const PendingFromShop = () => {
   ];
 
   // Process quantity display like ShopStockList
-const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
-  const itemInfo = items.find((item) => item.item_name === itemname);
+  const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
+    const itemInfo = items.find((item) => item.item_name === itemname);
 
-  // Always use kg for specific items regardless of incoming metric
-  const shouldUseKg = kgItems.some(kgItem => 
-    itemname.toLowerCase().includes(kgItem.toLowerCase())
-  );
+    // Always use kg for specific items regardless of incoming metric
+    const shouldUseKg = kgItems.some(kgItem => 
+      itemname.toLowerCase().includes(kgItem.toLowerCase())
+    );
 
-  if (shouldUseKg) {
-    return `${Number(quantity).toFixed(3)} kg`;
-  }
+    if (shouldUseKg) {
+      return `${Number(quantity).toFixed(3)} kg`;
+    }
 
-  if (!itemInfo) {
+    if (!itemInfo) {
+      return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
+    }
+
+    // Kgs stay as kgs
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${Number(quantity).toFixed(3)} kgs`;
+    }
+
+    // Eggs → trays + pieces
+    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
+    if (isEggs && itemInfo.pack_quantity > 0) {
+      const trays = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return trays > 0
+        ? `${Number(trays).toFixed(3)} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
+          }`
+        : `${Number(pieces).toFixed(3)} pcs`;
+    }
+
+    // Other items with pack quantity → pkts + pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return packets > 0
+        ? `${Number(packets).toFixed(3)} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
+          }`
+        : `${Number(pieces).toFixed(3)} pcs`;
+    }
+
+    // Fallback
     return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
-  }
+  }, []);
 
-  // Kgs stay as kgs
-  if (metric && metric.toLowerCase() === "kgs") {
-    return `${Number(quantity).toFixed(3)} kgs`;
-  }
-
-  // Eggs → trays + pieces
-  const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
-  if (isEggs && itemInfo.pack_quantity > 0) {
-    const trays = Math.floor(quantity / itemInfo.pack_quantity);
-    const pieces = quantity % itemInfo.pack_quantity;
-    return trays > 0
-      ? `${Number(trays).toFixed(3)} tray${trays !== 1 ? "s" : ""}${
-          pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
-        }`
-      : `${Number(pieces).toFixed(3)} pcs`;
-  }
-
-  // Other items with pack quantity → pkts + pcs
-  if (itemInfo.pack_quantity > 0) {
-    const packets = Math.floor(quantity / itemInfo.pack_quantity);
-    const pieces = quantity % itemInfo.pack_quantity;
-    return packets > 0
-      ? `${Number(packets).toFixed(3)} pkt${packets !== 1 ? "s" : ""}${
-          pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
-        }`
-      : `${Number(pieces).toFixed(3)} pcs`;
-  }
-
-  // Fallback
-  return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
-}, []);
-
-
-  // Process transfers to combine quantities for the same item
+  // Process transfers to combine quantities for the same item from the same shop
   const processTransfers = useCallback((transfers, items) => {
     const combinedItems = {};
     
     transfers.forEach(transfer => {
-      const key = transfer.itemname;
+      // Create a unique key by combining item name and shop ID
+      const key = `${transfer.itemname}_${transfer.from_shop_id}`;
       
       if (!combinedItems[key]) {
         combinedItems[key] = {
@@ -80,7 +80,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
           quantity: transfer.quantity,
           metric: transfer.metric,
           from_shop_name: transfer.from_shop_name,
-          transfer_id: transfer.transfer_id, // Keep the first transfer ID for action
+          transfer_ids: [transfer.transfer_id], // Store all transfer IDs for this item/shop combo
           display: processQuantityDisplay(
             transfer.itemname, 
             transfer.quantity, 
@@ -89,7 +89,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
           )
         };
       } else {
-        // Combine quantities for the same item
+        // Combine quantities for the same item from the same shop
         combinedItems[key].quantity += transfer.quantity;
         combinedItems[key].display = processQuantityDisplay(
           transfer.itemname, 
@@ -97,6 +97,8 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
           transfer.metric,
           items
         );
+        // Add this transfer ID to the list
+        combinedItems[key].transfer_ids.push(transfer.transfer_id);
       }
     });
     
@@ -152,7 +154,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
 
       setStockItems(items);
 
-      // Process transfers to combine quantities for the same item with proper metric conversion
+      // Process transfers to combine quantities for the same item from the same shop
       const processedTransfers = processTransfers(transfersResponse.data || [], items);
       setPendingTransfers(processedTransfers);
     } catch (err) {
@@ -167,30 +169,15 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
     fetchPendingTransfers();
   }, []);
 
-  // Handle "Accept Transfer" for all batches of the same item
-  const handleAccept = async (transferId, itemname) => {
+  // Handle "Accept Transfer" for all batches of the same item from the same shop
+  const handleAccept = async (transferIds, itemname, fromShopName) => {
     try {
       const accessToken = localStorage.getItem("access_token");
       
-      // First, get all transfers for this item to accept them all
-      const response = await axios.get(
-        `api/diraja/pending-transfers?shop_id=${localStorage.getItem("shop_id")}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      
-      // Find all transfer IDs for this item
-      const itemTransfers = (response.data || []).filter(
-        transfer => transfer.itemname === itemname
-      );
-      
-      // Accept all transfers for this item
-      for (const transfer of itemTransfers) {
+      // Accept all transfers for this item from this specific shop
+      for (const transferId of transferIds) {
         await axios.post(
-          `api/diraja/confirm-transfer/${transfer.transfer_id}`,
+          `api/diraja/confirm-transfer/${transferId}`,
           {
             action: "accept"
           },
@@ -205,7 +192,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
 
       // Refresh list after accepting
       fetchPendingTransfers();
-      alert(`All ${itemname} transfers accepted successfully!`);
+      alert(`All ${itemname} transfers from ${fromShopName} accepted successfully!`);
     } catch (err) {
       alert("Error accepting transfer. Please try again.");
       console.error("Accept transfer error:", err);
@@ -233,7 +220,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
             borderRadius: "6px",
             cursor: "pointer",
           }}
-          onClick={() => handleAccept(transfer.transfer_id, transfer.itemname)}
+          onClick={() => handleAccept(transfer.transfer_ids, transfer.itemname, transfer.from_shop_name)}
         >
           Accept Transfer
         </button>

@@ -34,7 +34,7 @@ const ShopStatusList = () => {
     const fetchShopStatuses = async () => {
       setLoading(true);
       try {
-        const response = await axios.get("https://kulima.co.ke/api/diraja/allshops", {
+        const response = await axios.get("api/diraja/allshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },

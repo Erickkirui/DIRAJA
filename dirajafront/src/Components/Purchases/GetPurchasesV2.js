@@ -152,7 +152,7 @@ const PurchasesV2 = () => {
         purchase.itemname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         purchase.shop_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         purchase.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        purchase.batchnumber?.toLowerCase().includes(searchQuery.toLowerCase());
+        purchase.BatchNumber?.toLowerCase().includes(searchQuery.toLowerCase());
     
       const matchesDate = selectedDate
         ? new Date(purchase.created_at).toLocaleDateString() ===

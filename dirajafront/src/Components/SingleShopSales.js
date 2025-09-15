@@ -7,6 +7,7 @@ import DownloadPDF from "../Components/Download/DownloadPDF";
 import DateRangePicker from "../Components/DateRangePicker";
 import { format } from "date-fns";
 import PaginationTable from "../PaginationTable";
+import { Row, Col, Tag } from "antd";
 
 const ShopSalesDetails = () => {
   const { shop_id } = useParams();
@@ -86,6 +87,9 @@ const ShopSalesDetails = () => {
     fetchSales();
   }, [shop_id, dateRange, currentPage, itemsPerPage]);
 
+  const formatCurrency = (value) =>
+    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 2 }).format(value);
+
   const columns = [
     {
       header: "Sale Date",
@@ -158,25 +162,37 @@ const ShopSalesDetails = () => {
   ];
 
   return (
-    <>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: 20 }}>
       {error && <p className="error">{error}</p>}
       {loading && <p>Loading sales data...</p>}
 
       {!loading && !error && (
         <>
           <h2>Sales for {shopName}</h2>
+          
+          {/* Total Sales Amount */}
           <p>
             <strong>Sales total:</strong> {totalSalesAmount}
           </p>
-          <p>
-            <strong>Total Sasapay:</strong> Ksh {totalSasapay.toLocaleString()}
-          </p>
-          <p>
-            <strong>Total Cash:</strong> Ksh {totalCash.toLocaleString()}
-          </p>
-          <p>
-            <strong>Total Credit:</strong> Ksh {totalCredit.toLocaleString()}
-          </p>
+          
+          {/* Payment Summary - Added similar to the first component */}
+          <Row gutter={16} style={{ marginBottom: 20 }}>
+            <Col>
+              <Tag color="green" style={{ fontSize: 14 }}>
+                Sasapay: {formatCurrency(totalSasapay)}
+              </Tag>
+            </Col>
+            <Col>
+              <Tag color="blue" style={{ fontSize: 14 }}>
+                Cash: {formatCurrency(totalCash)}
+              </Tag>
+            </Col>
+            <Col>
+              <Tag color="orange" style={{ fontSize: 14 }}>
+                Credit: {formatCurrency(totalCredit)}
+              </Tag>
+            </Col>
+          </Row>
 
           <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
 
@@ -206,7 +222,7 @@ const ShopSalesDetails = () => {
           )}
         </>
       )}
-    </>
+    </div>
   );
 };
 
