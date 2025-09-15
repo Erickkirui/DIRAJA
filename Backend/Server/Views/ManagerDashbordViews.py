@@ -414,8 +414,9 @@ class CountShops(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        countShops = Shops.query.count()
-        return {"total shops": countShops}, 200      
+        countShops = Shops.query.filter(Shops.shopstatus == "Active").count()
+        return {"total active shops": countShops}, 200
+     
 
 
 
@@ -675,6 +676,13 @@ class TotalSalesByShop(Resource):
             sasapay_aliases = ['sasapay', 'sasa pay', 'sasa-pay', 'sasa_pay']
             cash_aliases = ['cash', 'cash payment', 'cash-pay', 'cash_pay']
 
+
+            # Lower-cased alias lists once
+            sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
+            cash_aliases_l = [s.lower() for s in cash_aliases]
+
+            # --------- Totals by method (paid amounts) ----------
+            # Sasapay total
             sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
             cash_aliases_l = [s.lower() for s in cash_aliases]
 
@@ -690,6 +698,7 @@ class TotalSalesByShop(Resource):
                 .scalar() or 0.0
             )
 
+            # Cash total
             cash_total = (
                 db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -742,6 +751,9 @@ class TotalSalesByShop(Resource):
                     for p in sale.payment
                 ]
 
+
+
+
                 total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
 
                 sold_items = [
@@ -754,7 +766,11 @@ class TotalSalesByShop(Resource):
                         "batch_number": it.BatchNumber,
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
+
+                        "purchase_account": it.Purchase_account
+
                         "purchase_account": it.Purchase_account,
+
                     }
                     for it in sale.items
                 ]
@@ -782,7 +798,15 @@ class TotalSalesByShop(Resource):
                 "total_sales_amount_paid": f"Ksh {grand_total_paid:,.2f}",
                 "total_sasapay": sasapay_total,
                 "total_cash": cash_total,
+
+
+                # Credit as outstanding balances for the period
                 "total_credit": credit_total,
+
+                # Optional pretty strings
+
+                "total_credit": credit_total,
+
 
                 "formatted": {
                     "sasapay": f"Ksh {sasapay_total:,.2f}",

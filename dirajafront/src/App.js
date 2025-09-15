@@ -120,6 +120,7 @@ import CSVUploader from './Components/Reports/CSVUploader';
 
 import TransferManagement from './Pages/Transfersmanagement';
 import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
+import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
 
 
 

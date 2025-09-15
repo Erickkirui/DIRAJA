@@ -49,6 +49,9 @@ const Inventory = () => {
         setStockItems(stockItemsData);
 
         // Apply display formatting to inventory
+
+        // FIXED: Changed inventoryResponse.data to response.data
+
         const processedInventory = inventoryResponse.data.map((item) => {
           const itemInfo = stockItemsData.find(
             (stockItem) => stockItem.item_name === item.itemname

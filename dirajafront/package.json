@@ -2,7 +2,7 @@
   "name": "dirajafront",
   "version": "0.1.0",
   "homepage": "https://app.kulima.co.ke/",
-  "proxy": "http://127.0.0.1:5000/",
+  "proxy": "http://localhost:5000",
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^6.0.0",
