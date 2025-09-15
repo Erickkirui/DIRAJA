@@ -633,8 +633,12 @@ class TotalSalesByShop(Resource):
 
         if start_date_str and end_date_str:
             try:
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, microsecond=999999)
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(
+                    hour=23, minute=59, second=59, microsecond=999999
+                )
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
@@ -643,16 +647,25 @@ class TotalSalesByShop(Resource):
                 start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
                 end_date = today
             elif period == 'yesterday':
-                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                start_date = (today - timedelta(days=1)).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
             elif period == 'week':
-                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                start_date = (today - timedelta(days=7)).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 end_date = today
             elif period == 'month':
-                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                start_date = (today - timedelta(days=30)).replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 end_date = today
             else:
-                return {"message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or provide start_date and end_date."}, 400
+                return {
+                    "message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', "
+                               "or provide start_date and end_date."
+                }, 400
 
         try:
             shop = Shops.query.filter_by(shops_id=shop_id).first()
@@ -663,12 +676,17 @@ class TotalSalesByShop(Resource):
             sasapay_aliases = ['sasapay', 'sasa pay', 'sasa-pay', 'sasa_pay']
             cash_aliases = ['cash', 'cash payment', 'cash-pay', 'cash_pay']
 
+
             # Lower-cased alias lists once
             sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
             cash_aliases_l = [s.lower() for s in cash_aliases]
 
             # --------- Totals by method (paid amounts) ----------
             # Sasapay total
+            sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
+            cash_aliases_l = [s.lower() for s in cash_aliases]
+
+            # --------- Totals by method ----------
             sasapay_total = (
                 db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -692,7 +710,6 @@ class TotalSalesByShop(Resource):
                 .scalar() or 0.0
             )
 
-            # Grand total actually paid (all methods)
             grand_total_paid = (
                 db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -703,8 +720,6 @@ class TotalSalesByShop(Resource):
                 .scalar() or 0.0
             )
 
-            # --------- Credit total (outstanding balances) ----------
-            # If "credit" is tracked as sale balances for sales in the period:
             credit_total = (
                 db.session.query(db.func.coalesce(db.func.sum(Sales.balance), 0.0))
                 .filter(
@@ -735,6 +750,10 @@ class TotalSalesByShop(Resource):
                     }
                     for p in sale.payment
                 ]
+
+
+
+
                 total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
 
                 sold_items = [
@@ -747,7 +766,11 @@ class TotalSalesByShop(Resource):
                         "batch_number": it.BatchNumber,
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
+
                         "purchase_account": it.Purchase_account
+
+                        "purchase_account": it.Purchase_account,
+
                     }
                     for it in sale.items
                 ]
@@ -772,15 +795,19 @@ class TotalSalesByShop(Resource):
                 "shop_id": shop_id,
                 "shop_name": shop.shopname,
 
-                # Paid totals
                 "total_sales_amount_paid": f"Ksh {grand_total_paid:,.2f}",
                 "total_sasapay": sasapay_total,
                 "total_cash": cash_total,
+
 
                 # Credit as outstanding balances for the period
                 "total_credit": credit_total,
 
                 # Optional pretty strings
+
+                "total_credit": credit_total,
+
+
                 "formatted": {
                     "sasapay": f"Ksh {sasapay_total:,.2f}",
                     "cash": f"Ksh {cash_total:,.2f}",
@@ -798,7 +825,6 @@ class TotalSalesByShop(Resource):
                 "error": "An error occurred while fetching total sales for the shop",
                 "details": str(e)
             }, 500
- 
 
 
 class TotalUnpaidAmountAllSales(Resource):

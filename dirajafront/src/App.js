@@ -217,7 +217,7 @@ function App() {
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
 
             <Route path='/deposit' element={<Layout><CashDeposit/></Layout>} ></Route>
-            <Route path='/custom-sale' element={<ClerkLayout><CategorizedShopSale /></ClerkLayout>} ></Route>
+            {/* <Route path='/custom-sale' element={<ClerkLayout><CategorizedShopSale /></ClerkLayout>} ></Route> */}
            
             <Route path='/archive' element={<Layout><Achive /></Layout>} ></Route>
             <Route path="/stockreport" element={<Layout><StockReportPage /></Layout>}></Route>
