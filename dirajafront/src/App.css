@@ -266,13 +266,13 @@ a{
 
 .tab-button {
   position: relative;
-  text-align: left;
-  padding: 10px 20px;
-  background: none;
-  border: none;
-  font-size: 18px;
-  cursor: pointer;
-  background-color: transparent;
+    text-align: left;
+    padding: 7px 16px;
+    background: none;
+    border: none;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: transparent;
 
 }
 select{
@@ -337,7 +337,7 @@ select:focus{
 
 /* In your CSS file */
 .ant-input {
-  padding: 15px !important;
+  padding: 10px !important;
 }
 
 /* For input with prefixes */

@@ -129,23 +129,18 @@ class CreateChartOfAccounts(Resource):
     def post(self):
         data = request.get_json()
 
-        # Extract fields from the request data
-        account_name = data.get('Account')
-        account_type_id = data.get('account_type_id')
+        # Extract fields
+        code = data.get('code')
+        name = data.get('name')
+        acc_type = data.get('type')
 
-        # Check if account_name and account_type_id are provided
-        if not account_name or not account_type_id:
-            return make_response(jsonify({"message": "Account name and account type ID are required."}), 400)
+        if not code or not name or not acc_type:
+            return make_response(jsonify({"message": "Code, name, and type are required."}), 400)
 
-        # Check if the account type exists
-        account_type = AccountTypes.query.get(account_type_id)
-        if not account_type:
-            return make_response(jsonify({"message": "Invalid account type ID."}), 400)
-
-        # Create a new ChartOfAccounts entry
         new_chart_of_account = ChartOfAccounts(
-            Account=account_name,
-            account_type_id=account_type_id
+            code=code,
+            name=name,
+            type=acc_type
         )
 
         try:
@@ -156,42 +151,40 @@ class CreateChartOfAccounts(Resource):
                 "message": "Chart of account created successfully.",
                 "chart_of_account": {
                     "id": new_chart_of_account.id,
-                    "Account": new_chart_of_account.Account,
-                    "account_type_id": new_chart_of_account.account_type_id,
-                    "account_type": new_chart_of_account.account_type.type
+                    "code": new_chart_of_account.code,
+                    "name": new_chart_of_account.name,
+                    "type": new_chart_of_account.type
                 }
             }), 201)
         except Exception as e:
             db.session.rollback()
             return make_response(jsonify({"message": "Error creating chart of account.", "error": str(e)}), 500)
-        
+
 
 class ChartOfAccountsList(Resource):
     # GET all chart of account entries
     @jwt_required()
     def get(self):
         try:
-            # Retrieve all chart of account records from the database
             chart_of_accounts = ChartOfAccounts.query.all()
 
-            # If no records exist
             if not chart_of_accounts:
                 return make_response(jsonify({"message": "No chart of accounts found."}), 404)
 
-            # Prepare the list of chart of accounts
             result = []
             for account in chart_of_accounts:
                 result.append({
                     "id": account.id,
-                    "account": account.Account,
-                    "account_type": account.account_type.name
+                    "code": account.code,
+                    "name": account.name,
+                    "type": account.type
                 })
 
             return make_response(jsonify({"chart_of_accounts": result}), 200)
 
         except Exception as e:
             return make_response(jsonify({"message": "Error fetching chart of accounts.", "error": str(e)}), 500)
-        
+
 
 class ChartOfAccountResource(Resource):
     @jwt_required()
@@ -202,29 +195,26 @@ class ChartOfAccountResource(Resource):
 
         return make_response(jsonify({
             "id": account.id,
-            "Account": account.Account,
-            "account_type_id": account.account_type_id,
-            "account_type": account.account_type.type
+            "code": account.code,
+            "name": account.name,
+            "type": account.type
         }), 200)
 
     @jwt_required()
     def put(self, id):
         parser = reqparse.RequestParser()
-        parser.add_argument('Account', type=str, required=True, help='Account name is required')
-        parser.add_argument('account_type_id', type=int, required=True, help='Account type ID is required')
+        parser.add_argument('code', type=str, required=True, help='Code is required')
+        parser.add_argument('name', type=str, required=True, help='Name is required')
+        parser.add_argument('type', type=str, required=True, help='Type is required')
         data = parser.parse_args()
 
         account = ChartOfAccounts.query.get(id)
         if not account:
             return make_response(jsonify({"message": "Chart of Account not found"}), 404)
 
-        # Check if provided account_type_id exists
-        account_type = AccountTypes.query.get(data['account_type_id'])
-        if not account_type:
-            return make_response(jsonify({"message": "Invalid account_type_id"}), 400)
-
-        account.Account = data['Account']
-        account.account_type_id = data['account_type_id']
+        account.code = data['code']
+        account.name = data['name']
+        account.type = data['type']
         db.session.commit()
 
         return make_response(jsonify({"message": "Chart of Account updated successfully"}), 200)
@@ -238,7 +228,8 @@ class ChartOfAccountResource(Resource):
         db.session.delete(account)
         db.session.commit()
         return make_response(jsonify({"message": "Chart of Account deleted successfully"}), 200)
-    
+
+
 class CreateItemAccount(Resource):
     @jwt_required()
     def post(self):
