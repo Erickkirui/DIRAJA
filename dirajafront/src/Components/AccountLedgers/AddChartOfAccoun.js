@@ -1,129 +1,123 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react';
+import { Form, Input, Button, Alert } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 
-function AddChartOfAccount() {
-  const [accountName, setAccountName] = useState('')
-  const [accountTypeId, setAccountTypeId] = useState('')
-  const [accountTypes, setAccountTypes] = useState([])
-  const [message, setMessage] = useState('')
-  const [messageType, setMessageType] = useState('success')
+const AddChartOfAccount = ({ onSuccess }) => {
+  const [form] = Form.useForm();
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('success');
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchAccountTypes = async () => {
-      const token = localStorage.getItem('access_token')
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    setMessage('');
 
-      try {
-        const response = await fetch('api/diraja/account-types/all', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        const data = await response.json()
-        if (response.ok) {
-          setAccountTypes(data)
-        } else {
-          setMessage('Failed to load account types')
-          setMessageType('error')
-        }
-      } catch (error) {
-        console.error(error)
-        setMessage('Error fetching account types')
-        setMessageType('error')
-      }
-    }
-
-    fetchAccountTypes()
-  }, [])
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     if (!token) {
-      setMessage('Access token not found.')
-      setMessageType('error')
-      return
+      setMessage('Access token not found.');
+      setMessageType('error');
+      setLoading(false);
+      return;
     }
 
     const payload = {
-      Account: accountName,
-      account_type_id: accountTypeId,
-    }
+      code: values.code,
+      name: values.name,
+      type: values.type,
+    };
 
     try {
-      const response = await fetch('api/diraja/add-chart-of-accounts', {
+      const response = await fetch('/api/diraja/add-chart-of-accounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(payload),
-      })
+      });
 
-      const result = await response.json()
+      const result = await response.json();
       if (response.ok) {
-        setMessage('Chart of account added successfully.')
-        setMessageType('success')
-        setAccountName('')
-        setAccountTypeId('')
+        setMessage('Chart of account added successfully.');
+        setMessageType('success');
+        form.resetFields();
+
+        if (onSuccess) {
+          onSuccess(result);
+        }
       } else {
-        setMessage(result.message || 'Failed to add chart of account')
-        setMessageType('error')
+        setMessage(result.message || 'Failed to add chart of account');
+        setMessageType('error');
       }
     } catch (error) {
-      console.error(error)
-      setMessage('An unexpected error occurred.')
-      setMessageType('error')
+      console.error(error);
+      setMessage('An unexpected error occurred.');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div>
+    <Form
+      form={form}
+      layout="vertical"
+      onFinish={handleSubmit}
+      style={{ display: 'flex', flexDirection: 'column', gap: '0px', maxWidth: 400 }}
+    >
       {message && (
-        <div>
-          {messageType === 'success' ? 'Success: ' : 'Error: '}
-          {message}
-        </div>
+        <Alert
+          message={messageType === 'success' ? 'Success' : 'Error'}
+          description={message}
+          type={messageType}
+          showIcon
+          closable
+          onClose={() => setMessage('')}
+          style={{ marginBottom: 16 }}
+        />
       )}
 
-      <h2>Add Chart of Account</h2>
+      <h3>Add Chart of Account</h3>
 
-      <div className='add-shop-container'>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <input
-            type="text"
-            value={accountName}
-            onChange={(e) => setAccountName(e.target.value)}
-            required
-            placeholder='Account Name'
-          />
-        </div>
+      <Form.Item
+        name="code"
+        label="Account Code"
+        rules={[{ required: true, message: 'Please enter account code' }]}
+      >
+        <Input placeholder="Account Code (e.g., 1001)" />
+      </Form.Item>
 
-        <div>
-          
-         
-          <select
-            value={accountTypeId}
-            onChange={(e) => setAccountTypeId(e.target.value)}
-            required
-          >
-            <option value="">Select account type</option>
-            {accountTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name} - {type.type}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Form.Item
+        name="name"
+        label="Account Name"
+        rules={[{ required: true, message: 'Please enter account name' }]}
+      >
+        <Input placeholder="Account Name (e.g., Cash)" />
+      </Form.Item>
 
-        <div>
-          <button type="submit">Add Chart of Account</button>
-        </div>
-      </form>
-      </div>
-    </div>
-  )
-}
+      <Form.Item
+        name="type"
+        label="Account Type"
+        rules={[{ required: true, message: 'Please enter account type' }]}
+      >
+        <Input placeholder="Account Type (e.g., Asset, Liability, etc.)" />
+      </Form.Item>
 
-export default AddChartOfAccount
+      <Form.Item>
+        <Button
+          type="primary"
+          htmlType="submit"
+          icon={<PlusOutlined />}
+          loading={loading}
+          disabled={loading}
+          size="large"
+          style={{ width: '100%' }}
+        >
+          Add Account
+        </Button>
+      </Form.Item>
+    </Form>
+  );
+};
+
+export default AddChartOfAccount;
