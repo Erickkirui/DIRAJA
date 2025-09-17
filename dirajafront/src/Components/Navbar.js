@@ -159,30 +159,13 @@ function Navbar({ onMenuItemClick }) {
       <div className="accounting-menu">
         <h4 className="section-label">ACCOUNTING</h4>
         <div className="menu-group">
-          <button
-            className="menu-item group-toggle"
-            onClick={() => toggleGroup("accounting")}
-          >
-            {openGroups.accounting ? (
-              <FaChevronDown className="chevron" />
-            ) : (
-              <FaChevronRight className="chevron" />
-            )}
+          <NavLink to="/accounting" className="menu-item" onClick={onMenuItemClick}>
             <FaBook className="menu-icon" />
             <span>Accounting</span>
-          </button>
-          {openGroups.accounting && (
-            <div className="submenu">
-              <NavLink to="/ledgers" className="menu-item sub-item" onClick={onMenuItemClick}>
-                <span>Ledgers Accounts</span>
-              </NavLink>
-              <NavLink to="/all-ledgers" className="menu-item sub-item" onClick={onMenuItemClick}>
-                <span>Ledgers</span>
-              </NavLink>
-            </div>
-          )}
+          </NavLink>
         </div>
       </div>
+
     </div>
   );
 }

@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Form, Input, Select, Button, Alert } from 'antd';
+import { Form, Input, Button, Alert } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 
-const { Option } = Select;
-
-const AddChartOfAccount = ({ onSuccess }) => {   // ✅ added prop
+const AddChartOfAccount = ({ onSuccess }) => {
   const [form] = Form.useForm();
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
@@ -45,7 +43,7 @@ const AddChartOfAccount = ({ onSuccess }) => {   // ✅ added prop
         form.resetFields();
 
         if (onSuccess) {
-          onSuccess(result); // ✅ trigger parent action
+          onSuccess(result);
         }
       } else {
         setMessage(result.message || 'Failed to add chart of account');
@@ -100,15 +98,9 @@ const AddChartOfAccount = ({ onSuccess }) => {   // ✅ added prop
       <Form.Item
         name="type"
         label="Account Type"
-        rules={[{ required: true, message: 'Please select account type' }]}
+        rules={[{ required: true, message: 'Please enter account type' }]}
       >
-        <Select placeholder="Select account type">
-          <Option value="Asset">Asset</Option>
-          <Option value="Liability">Liability</Option>
-          <Option value="Equity">Equity</Option>
-          <Option value="Revenue">Revenue</Option>
-          <Option value="Expense">Expense</Option>
-        </Select>
+        <Input placeholder="Account Type (e.g., Asset, Liability, etc.)" />
       </Form.Item>
 
       <Form.Item>

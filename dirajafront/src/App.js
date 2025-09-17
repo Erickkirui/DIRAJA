@@ -193,7 +193,7 @@ function App() {
             <Route path='/sale/:shopId/:salesId' element = {<ClerkLayout><SingleSaleShop /></ClerkLayout>} ></Route>
             <Route path='/cashsales' element={<ClerkLayout>< TotalCashSalesByUser/></ClerkLayout>} ></Route>
             <Route path='/accounts-balance' element={<Layout><AccountBalances /></Layout>} ></Route>
-            <Route path='/ledgers' element={<Layout><AccountingLedgers /></Layout>} ></Route>
+            <Route path='/accounting' element={<Layout><AccountingLedgers /></Layout>} ></Route>
             <Route path='/all-ledgers' element={<Layout><AllLedgers/></Layout>} ></Route>
             <Route path='/addspoiltstock' element={<ClerkLayout><AddSpoiltStock/></ClerkLayout>} ></Route>
             <Route path='/depositcash' element={<ClerkLayout><AddCashDeposit/></ClerkLayout>} ></Route>
