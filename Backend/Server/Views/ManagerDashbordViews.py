@@ -767,7 +767,7 @@ class TotalSalesByShop(Resource):
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
 
-                        "purchase_account": it.Purchase_account
+                        "purchase_account": it.Purchase_account,
 
                         "purchase_account": it.Purchase_account,
 

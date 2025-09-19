@@ -25,7 +25,7 @@ const SingleSaleShop = () => {
       }
 
       const response = await axios.get(
-        `api/diraja/sale/${shopId}/${salesId}`,
+        `/api/diraja/sale/${shopId}/${salesId}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
