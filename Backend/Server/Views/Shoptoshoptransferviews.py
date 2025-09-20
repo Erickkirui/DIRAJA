@@ -213,6 +213,69 @@ class ConfirmTransfer(Resource):
         db.session.commit()
         return {"message": f"Transfer {action}ed successfully"}
 
+class DeclineTransfers(Resource):
+    @jwt_required()
+    def patch(self, transfer_id):
+        data = request.get_json() or {}
+        note = data.get("note", "No reason provided")
+
+        user_id = get_jwt_identity()
+        user = Users.query.get(user_id)
+        if not user:
+            return {"message": "Invalid user"}, 400
+
+        transfer = Shoptoshoptransfer.query.get(transfer_id)
+        if not transfer:
+            return {"message": "Transfer not found"}, 404
+
+        if transfer.status != "pending":
+            return {"message": "Only pending transfers can be declined"}, 400
+
+        try:
+            # ✅ Extract details
+            batch_number = transfer.stockv2.BatchNumber if transfer.stockv2 else None
+            inv_id = transfer.stockv2_id if transfer.stockv2 else None
+
+            # ✅ Restore stock to sender shop
+            sender_stock = ShopStockV2.query.filter_by(
+                shop_id=transfer.from_shop_id,
+                BatchNumber=batch_number,
+                itemname=transfer.itemname,
+                inventoryv2_id=inv_id
+            ).first()
+
+            if sender_stock:
+                sender_stock.quantity += transfer.quantity
+            else:
+                # If stock row doesn’t exist, create it
+                sender_stock = ShopStockV2(
+                    shop_id=transfer.from_shop_id,
+                    inventoryv2_id=inv_id,
+                    itemname=transfer.itemname,
+                    quantity=transfer.quantity,
+                    BatchNumber=batch_number,
+                    metric=transfer.metric
+                )
+                db.session.add(sender_stock)
+
+            # ✅ Update transfer status
+            transfer.status = "declined"
+            transfer.decline_note = note
+            transfer.notification_ack = False  # trigger popup for sender
+
+            db.session.commit()
+
+            return {
+                "message": "Transfer declined successfully, stock returned to sender shop",
+                "transfer_id": transfer_id,
+                "restored_quantity": transfer.quantity,
+                "metric": transfer.metric,
+                "sender_shop": transfer.from_shop_id
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"message": "Error declining transfer", "error": str(e)}, 500
 
 
 

@@ -61,10 +61,10 @@ const ShopStockMovement = () => {
 
         // Apply display formatting to all movement data
         const formattedData = {
-          transfers: formatMovementData(res.data.transfers, stockItemsData),
-          spoilt_items: formatMovementData(res.data.spoilt_items, stockItemsData),
-          returns: formatMovementData(res.data.returns, stockItemsData),
-          shop_transfers: formatMovementData(res.data.shop_transfers, stockItemsData),
+          transfers: formatMovementData(res.data.transfers || [], stockItemsData),
+          spoilt_items: formatMovementData(res.data.spoilt_items || [], stockItemsData),
+          returns: formatMovementData(res.data.returns || [], stockItemsData),
+          shop_transfers: formatMovementData(res.data.shop_transfers || [], stockItemsData),
         };
 
         setMovementData(formattedData);
@@ -191,7 +191,12 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
     },
-   
+    { title: "Date", dataIndex: "created_at", key: "created_at", 
+      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+    },
+    { title: "Type", dataIndex: "transfer_type", key: "transfer_type", 
+      render: (type) => type || 'From Store' 
+    },
   ];
 
   const spoiltColumns = [
@@ -206,6 +211,9 @@ const ShopStockMovement = () => {
     { title: "Collector", dataIndex: "collector_name", key: "collector_name" },
     { title: "Comment", dataIndex: "comment", key: "comment" },
     { title: "Location", dataIndex: "location", key: "location" },
+    { title: "Date", dataIndex: "created_at", key: "created_at", 
+      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+    },
   ];
 
   const returnsColumns = [
@@ -218,6 +226,9 @@ const ShopStockMovement = () => {
     },
     { title: "Reason", dataIndex: "reason", key: "reason" },
     { title: "Source", dataIndex: "source", key: "source" },
+    { title: "Date", dataIndex: "created_at", key: "created_at", 
+      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+    },
   ];
 
   const shopTransferColumns = [
@@ -228,24 +239,45 @@ const ShopStockMovement = () => {
       key: "quantity",
       render: (quantity, record) => record.display || `${quantity} ${record.metric || "pcs"}`,
     },
-    { title: "Source", dataIndex: "source", key: "source" },
-    { title: "Destination", dataIndex: "destination", key: "destination" },
+    { title: "From Shop", dataIndex: "source_shop_name", key: "source_shop_name" },
+    { title: "To Shop", dataIndex: "destination_shop_name", key: "destination_shop_name" },
     {
       title: "Direction",
       dataIndex: "direction",
       key: "direction",
-      render: (direction) => (
-        <span className={`direction-${direction}`}>
-          {direction.toUpperCase()}
-        </span>
-      ),
+      render: (direction, record) => {
+        const currentShopId = parseInt(localStorage.getItem('shop_id'));
+        const isIncoming = record.destination_shop_id === currentShopId;
+        const isOutgoing = record.source_shop_id === currentShopId;
+        
+        let displayDirection = direction;
+        let className = 'direction-unknown';
+        
+        if (isIncoming) {
+          displayDirection = 'INCOMING';
+          className = 'direction-incoming';
+        } else if (isOutgoing) {
+          displayDirection = 'OUTGOING';
+          className = 'direction-outgoing';
+        }
+        
+        return (
+          <span className={className}>
+            {displayDirection}
+          </span>
+        );
+      },
     },
+    { title: "Date", dataIndex: "created_at", key: "created_at", 
+      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+    },
+    { title: "Status", dataIndex: "status", key: "status" },
   ];
 
   // Map tabs to dropdown options
   const tabOptions = {
     transfers: {
-      label: `From store (${movementData.transfers.length})`,
+      label: `Store Transfers (${movementData.transfers.length})`,
       columns: transferColumns,
       data: movementData.transfers,
     },
@@ -289,12 +321,6 @@ const ShopStockMovement = () => {
           showIcon
           style={{ marginTop: 12 }}
         />
-      )}
-
-      {movementData.time_period && (
-        <div style={{ margin: "12px 0", fontWeight: "bold" }}>
-          Time Period: {movementData.time_period}
-        </div>
       )}
 
       {loading && <LoadingAnimation />}

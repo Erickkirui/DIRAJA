@@ -13,6 +13,7 @@ const BROILER_PARTS = [
   { name: 'Neck', unitCost: 0 },
   { name: 'Feet', unitCost: 0 },
   { name: 'Wings', unitCost: 0 },
+  { name: 'Chicken Minced', unitCost: 0 },
   { name: 'Broiler', unitCost: 0 }
 ];
 

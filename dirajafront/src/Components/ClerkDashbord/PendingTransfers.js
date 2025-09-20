@@ -16,91 +16,77 @@ const PendingTransfers = () => {
     "boneless breast", "thighs", "drumstick", "big legs", "backbone", 
     "liver", "gizzard", "neck", "feet", "wings", "broiler"
   ];
+  
+  // Format numbers: no decimals if whole, else show up to 3 decimals
+  const formatNumber = (value) => {
+    return Number(value) % 1 === 0 ? Number(value).toString() : Number(value).toFixed(3);
+  };
 
-// Process quantity display like ShopStockList
-const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
-  const itemInfo = items.find((item) => item.item_name === itemname);
+  // Process quantity display like ShopStockList
+  const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
+    const itemInfo = items.find((item) => item.item_name === itemname);
 
-  // Always use kg for specific items regardless of incoming metric
-  const shouldUseKg = kgItems.some(kgItem => 
-    itemname.toLowerCase().includes(kgItem.toLowerCase())
-  );
+    // Always use kg for specific items regardless of incoming metric
+    const shouldUseKg = kgItems.some(kgItem => 
+      itemname.toLowerCase().includes(kgItem.toLowerCase())
+    );
 
-  if (shouldUseKg) {
-    return `${Number(quantity).toFixed(3)} kg`;
-  }
+    if (shouldUseKg) {
+      return `${formatNumber(quantity)} kg`;
+    }
 
-  if (!itemInfo) {
-    return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
-  }
+    if (!itemInfo) {
+      return `${formatNumber(quantity)} ${metric || "pcs"}`;
+    }
 
-  // Kgs stay as kgs
-  if (metric && metric.toLowerCase() === "kgs") {
-    return `${Number(quantity).toFixed(3)} kgs`;
-  }
+    // Kgs stay as kgs
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${formatNumber(quantity)} kgs`;
+    }
 
-  // Eggs → trays + pieces
-  const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
-  if (isEggs && itemInfo.pack_quantity > 0) {
-    const trays = Math.floor(quantity / itemInfo.pack_quantity);
-    const pieces = quantity % itemInfo.pack_quantity;
-    return trays > 0
-      ? `${Number(trays).toFixed(3)} tray${trays !== 1 ? "s" : ""}${
-          pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
-        }`
-      : `${Number(pieces).toFixed(3)} pcs`;
-  }
+    // Eggs → trays + pieces
+    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
+    if (isEggs && itemInfo.pack_quantity > 0) {
+      const trays = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return trays > 0
+        ? `${formatNumber(trays)} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
+          }`
+        : `${formatNumber(pieces)} pcs`;
+    }
 
-  // Other items with pack quantity → pkts + pcs
-  if (itemInfo.pack_quantity > 0) {
-    const packets = Math.floor(quantity / itemInfo.pack_quantity);
-    const pieces = quantity % itemInfo.pack_quantity;
-    return packets > 0
-      ? `${Number(packets).toFixed(3)} pkt${packets !== 1 ? "s" : ""}${
-          pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
-        }`
-      : `${Number(pieces).toFixed(3)} pcs`;
-  }
+    // Other items with pack quantity → pkts + pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(quantity / itemInfo.pack_quantity);
+      const pieces = quantity % itemInfo.pack_quantity;
+      return packets > 0
+        ? `${formatNumber(packets)} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
+          }`
+        : `${formatNumber(pieces)} pcs`;
+    }
 
-  // Fallback
-  return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
-}, []);
+    // Fallback
+    return `${formatNumber(quantity)} ${metric || "pcs"}`;
+  }, []);
 
-
-  // Process transfers to combine quantities for the same item
+  // Process transfers to show each instance separately with formatted display
   const processTransfers = useCallback((transfers, items) => {
-    const combinedItems = {};
-    
-    transfers.forEach(transfer => {
-      const key = transfer.itemname;
-      
-      if (!combinedItems[key]) {
-        combinedItems[key] = {
-          ...transfer,
-          quantity: transfer.quantity,
-          metric: transfer.metric,
-          to_shop_name: transfer.to_shop_name,
-          transferv2_id: transfer.transferv2_id, // Keep the first transfer ID for action
-          display: processQuantityDisplay(
-            transfer.itemname, 
-            transfer.quantity, 
-            transfer.metric,
-            items
-          )
-        };
-      } else {
-        // Combine quantities for the same item
-        combinedItems[key].quantity += transfer.quantity;
-        combinedItems[key].display = processQuantityDisplay(
-          transfer.itemname, 
-          combinedItems[key].quantity, 
-          transfer.metric,
-          items
-        );
-      }
-    });
-    
-    return Object.values(combinedItems);
+    return transfers.map(transfer => ({
+      ...transfer,
+      display: processQuantityDisplay(
+        transfer.itemname, 
+        transfer.quantity, 
+        transfer.metric,
+        items
+      ),
+      formattedDate: new Date(transfer.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    }));
   }, [processQuantityDisplay]);
 
   // Fetch stock items for proper metric conversion
@@ -155,7 +141,7 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
 
       // Check if the response has data - the backend returns {"pending_transfers": []}
       if (transfersResponse.data && transfersResponse.data.pending_transfers) {
-        // Process transfers to combine quantities for the same item with proper metric conversion
+        // Process transfers to show each instance separately with proper metric conversion
         const processedTransfers = processTransfers(transfersResponse.data.pending_transfers, items);
         setPendingTransfers(processedTransfers);
       } else {
@@ -173,74 +159,95 @@ const processQuantityDisplay = useCallback((itemname, quantity, metric, items) =
     fetchPendingTransfers();
   }, []);
 
-  // Handle "Receive Stock" for all batches of the same item
+  // Handle "Receive Stock" for a specific transfer
   const handleReceive = async (transferv2_id, itemname) => {
     try {
       const accessToken = localStorage.getItem("access_token");
       
-      // First, get all transfers for this item to receive them all
-      const response = await axios.get(
-        `api/diraja/transfers/pending?shop_id=${localStorage.getItem("shop_id")}`,
+      await axios.patch(
+        `api/diraja/transfers/${transferv2_id}/receive`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         }
       );
-      
-      // Find all transfer IDs for this item
-      const rawTransfers = response.data.pending_transfers || [];
-      const itemTransfers = rawTransfers.filter(
-        transfer => transfer.itemname === itemname
-      );
-      
-      // Receive all transfers for this item
-      for (const transfer of itemTransfers) {
-        await axios.patch(
-          `api/diraja/transfers/${transfer.transferv2_id}/receive`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-      }
 
       // Refresh list after receiving
       fetchPendingTransfers();
-      alert(`All ${itemname} stock received successfully!`);
+      alert(`${itemname} stock received successfully!`);
     } catch (err) {
       alert("Error receiving stock. Please try again.");
       console.error("Receive stock error:", err);
     }
   };
 
+  // Handle "Decline Stock" for a specific transfer
+  const handleDecline = async (transferv2_id, itemname) => {
+    if (!window.confirm(`Are you sure you want to decline ${itemname} stock?`)) {
+      return;
+    }
+
+    try {
+      const accessToken = localStorage.getItem("access_token");
+
+      await axios.patch(
+        `api/diraja/transfers/${transferv2_id}/decline`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      // Refresh list after declining
+      fetchPendingTransfers();
+      alert(`${itemname} stock declined successfully!`);
+    } catch (err) {
+      alert("Error declining stock. Please try again.");
+      console.error("Decline stock error:", err);
+    }
+  };
+
   // Define table columns
   const columns = [
     { header: "Item", key: "itemname" },
-    {
-      header: "Quantity",
-      key: "display",
-    },
-    // { header: "To Shop", key: "to_shop_name" },
+    { header: "Quantity", key: "display" },
+    { header: "Transfer Date", key: "formattedDate" },
     {
       header: "Action",
       key: "action",
       render: (transfer) => (
-        <button
-          style={{
-            backgroundColor: "#28a745",
-            color: "white",
-            padding: "6px 12px",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          }}
-          onClick={() => handleReceive(transfer.transferv2_id, transfer.itemname)}
-        >
-          Receive Stock
-        </button>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            style={{
+              backgroundColor: "#28a745",
+              color: "white",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+            onClick={() => handleReceive(transfer.transferv2_id, transfer.itemname)}
+          >
+            Receive
+          </button>
+          <button
+            style={{
+              backgroundColor: "#dc3545",
+              color: "white",
+              padding: "6px 12px",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+            onClick={() => handleDecline(transfer.transferv2_id, transfer.itemname)}
+          >
+            Decline
+          </button>
+        </div>
       ),
     },
   ];

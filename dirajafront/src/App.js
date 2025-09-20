@@ -230,7 +230,7 @@ function App() {
             <Route path="/shoptransfers" element={<Layout>< AllShopTransfers /></Layout>} ></Route>
             <Route path='/stock-shop-move' element={<ClerkLayout><ShopStockMovement /></ClerkLayout>} ></Route>
            
-            <Route path='/custom-sale' element={<ClerkLayout><Newslaeformat /></ClerkLayout>}></Route>
+            {/* <Route path='/custom-sale' element={<ClerkLayout><Newslaeformat /></ClerkLayout>}></Route> */}
             <Route path='/dirajaAI' element={<Layout><ChatAI /></Layout>} ></Route>
             {/* <Route path='/recieve-stock'  element={<ClerkLayout><PendingTransfers /></ClerkLayout>} ></Route> */}
             <Route path='/procurementinventory' element={<ClerkLayout><ProcurementTablePage /></ClerkLayout>} ></Route>
