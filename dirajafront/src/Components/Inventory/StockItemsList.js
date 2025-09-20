@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import GeneralTableLayout from '../GeneralTableLayout';
 import '../../Styles/GeneralTableLayout.css';
-import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from '@mui/material';
+import { Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 
 const StockItemsList = () => {
   const [stockItems, setStockItems] = useState([]);
@@ -15,7 +15,8 @@ const StockItemsList = () => {
     item_code: '',
     unit_price: 0,
     pack_price: 0,
-    pack_quantity: 0
+    pack_quantity: 0,
+    category: ''   // ✅ New field
   });
 
   useEffect(() => {
@@ -55,7 +56,8 @@ const StockItemsList = () => {
       item_code: item.item_code,
       unit_price: item.unit_price,
       pack_price: item.pack_price,
-      pack_quantity: item.pack_quantity
+      pack_quantity: item.pack_quantity,
+      category: item.category || ''   // ✅ load category
     });
     setOpenEditDialog(true);
   };
@@ -69,58 +71,55 @@ const StockItemsList = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name.includes('price') ? parseFloat(value) || 0 : value
+      [name]: name.includes('price') || name === 'pack_quantity' ? Number(value) || 0 : value
     }));
   };
 
   const handleSaveChanges = async () => {
-  const accessToken = localStorage.getItem('access_token');
-  if (!accessToken) {
-    setError('User is not authenticated');
-    return;
-  }
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      setError('User is not authenticated');
+      return;
+    }
 
-  try {
-    // Prepare data with proper numeric types
-    const requestData = {
-      item_name: formData.item_name,
-      item_code: formData.item_code,
-      unit_price: Number(formData.unit_price),
-      pack_price: Number(formData.pack_price),
-      pack_quantity: Number(formData.pack_quantity)
-    };
+    try {
+      const requestData = {
+        item_name: formData.item_name,
+        item_code: formData.item_code,
+        unit_price: Number(formData.unit_price),
+        pack_price: Number(formData.pack_price),
+        pack_quantity: Number(formData.pack_quantity),
+        category: formData.category   // ✅ include category
+      };
 
-    // Match the backend endpoint exactly
-    const response = await axios.put(
-      `api/diraja/stockitems/${editingItem.id}`,  // Changed to match backend
-      requestData,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await axios.put(
+        `api/diraja/stockitems/${editingItem.id}`,
+        requestData,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
-
-    console.log('Full response:', response);
-
-    if (response.status === 200) {
-      setStockItems(prevItems =>
-        prevItems.map(item =>
-          item.id === editingItem.id ? { ...item, ...requestData } : item
-        )
       );
-      handleCloseEditDialog();
+
+      if (response.status === 200) {
+        setStockItems(prevItems =>
+          prevItems.map(item =>
+            item.id === editingItem.id ? { ...item, ...requestData } : item
+          )
+        );
+        handleCloseEditDialog();
+      }
+    } catch (error) {
+      console.error('Update error:', error);
+      if (error.response) {
+        setError(error.response.data.message || error.response.data.error || 'Failed to update item');
+      } else {
+        setError('Network error - could not connect to server');
+      }
     }
-  } catch (error) {
-    console.error('Update error:', error);
-    if (error.response) {
-      setError(error.response.data.message || error.response.data.error || 'Failed to update item');
-    } else {
-      setError('Network error - could not connect to server');
-    }
-  }
-};
+  };
 
   const columns = [
     { header: 'ID', key: 'id' },
@@ -129,6 +128,7 @@ const StockItemsList = () => {
     { header: 'Unit Price', key: 'unit_price', format: (value) => `$${value?.toFixed(2) || '0.00'}` },
     { header: 'Pack Price', key: 'pack_price', format: (value) => `$${value?.toFixed(2) || '0.00'}` },
     { header: 'Pack Quantity', key: 'pack_quantity' },
+    { header: 'Category', key: 'category' },   // ✅ Show category in table
     {
       header: 'Actions',
       key: 'actions',
@@ -205,6 +205,22 @@ const StockItemsList = () => {
                 onChange={handleInputChange}
                 fullWidth
               />
+
+              {/* ✅ Category Dropdown */}
+              <FormControl margin="dense" fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                >
+                  <MenuItem value="eggs">Eggs</MenuItem>
+                  <MenuItem value="chicken">Chicken</MenuItem>
+                  <MenuItem value="farmers choice">Farmers Choice</MenuItem>
+                  <MenuItem value="others">Others</MenuItem>
+                </Select>
+              </FormControl>
+
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseEditDialog}>Cancel</Button>

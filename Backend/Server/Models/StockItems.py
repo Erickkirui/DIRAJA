@@ -12,9 +12,11 @@ class StockItems(db.Model):
     pack_price = db.Column(db.Float, nullable=True)
     pack_quantity = db.Column(db.Integer, nullable=True)
 
-
+    # ✅ New category column (optional)
+    category = db.Column(
+        db.Enum("eggs", "chicken", "farmers choice", "others", name="stock_category"),
+        nullable=True
+    )
 
     def __str__(self):
-        return f"{self.type} - {self.name}"
-
-
+        return f"{self.item_name} - {self.category or 'Uncategorized'}"

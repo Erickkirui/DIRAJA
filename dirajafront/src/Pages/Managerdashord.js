@@ -14,6 +14,7 @@ import SoldItemsList from '../Components/ManagerDashbord/SoldItemsList';
 import ManagerReportStock from '../Components/ManagerDashbord/ManagerStockReport';
 import ShopStatusList from '../Components/ManagerDashbord/ShopStstusList';
 import InventoryStockCount from '../Components/ManagerDashbord/InventoryStockCount';
+import ProductEarningsList from '../Components/ManagerDashbord/ProductEarningList';
 
 
 function Managerdashord() {
@@ -103,6 +104,7 @@ function Managerdashord() {
         <ItemStockList />
         <SoldItemsList />
         <InventoryStockCount />
+        <ProductEarningsList />
       
        </div>
           
