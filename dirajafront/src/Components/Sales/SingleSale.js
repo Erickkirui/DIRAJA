@@ -53,7 +53,7 @@ const SingleSale = () => {
   useEffect(() => {
     const fetchSale = async () => {
       try {
-        const response = await fetch(`api/diraja/sale/${sale_id}`, {
+        const response = await fetch(`/api/diraja/sale/${sale_id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
