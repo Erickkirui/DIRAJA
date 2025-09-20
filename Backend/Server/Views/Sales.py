@@ -2276,3 +2276,83 @@ class ItemsSoldSummary(Resource):
                 "error": "An error occurred while fetching sold item data",
                 "details": str(e)
             }, 500
+
+class ProductEarningsSummary(Resource):
+    @jwt_required()
+    def get(self, shop_id=None):
+        try:
+            # Query params
+            start_date = request.args.get('start_date')  # format: 'YYYY-MM-DD'
+            end_date = request.args.get('end_date')      # format: 'YYYY-MM-DD'
+
+            # Parse and validate dates
+            try:
+                if start_date:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                if end_date:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+
+            # Base query - get total earnings per product
+            query = db.session.query(
+                SoldItem.item_name,
+                SoldItem.metric,
+                func.sum(SoldItem.quantity).label("total_quantity_sold"),
+                func.sum(SoldItem.total_price).label("total_revenue"),
+                func.avg(SoldItem.unit_price).label("average_unit_price")
+            ).join(Sales, SoldItem.sales_id == Sales.sales_id)
+
+            # Apply filters
+            if shop_id is not None:
+                query = query.filter(Sales.shop_id == shop_id)
+            if start_date:
+                query = query.filter(Sales.created_at >= start_date)
+            if end_date:
+                # Include the entire end date by setting time to end of day
+                end_date_with_time = end_date.replace(hour=23, minute=59, second=59)
+                query = query.filter(Sales.created_at <= end_date_with_time)
+
+            # Group by product and metric
+            query = query.group_by(SoldItem.item_name, SoldItem.metric)
+            
+            # Order by total revenue (highest first)
+            query = query.order_by(func.sum(SoldItem.total_price).desc())
+
+            result = query.all()
+
+            product_earnings_summary = [
+                {
+                    "item_name": item_name,
+                    "metric": metric,
+                    "total_quantity_sold": round(total_quantity_sold, 2),
+                    "total_revenue": round(total_revenue, 2),
+                    "average_unit_price": round(average_unit_price, 2)
+                }
+                for item_name, metric, total_quantity_sold, total_revenue, average_unit_price in result
+            ]
+
+            # Calculate overall totals
+            total_revenue = sum(item['total_revenue'] for item in product_earnings_summary)
+            total_quantity = sum(item['total_quantity_sold'] for item in product_earnings_summary)
+
+            response = {
+                "shop_id": shop_id,
+                "period": {
+                    "start_date": start_date.strftime('%Y-%m-%d') if start_date else None,
+                    "end_date": end_date.strftime('%Y-%m-%d') if end_date else None
+                },
+                "total_products": len(product_earnings_summary),
+                "total_revenue": round(total_revenue, 2),
+                "total_quantity_sold": round(total_quantity, 2),
+                "products": product_earnings_summary
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching product earnings data",
+                "details": str(e)
+            }, 500

@@ -1,10 +1,9 @@
 from flask_restful import Resource
 from flask import request, jsonify, make_response
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from Server.Models.Users import Users
 from Server.Models.StockItems import StockItems
-from flask_jwt_extended import jwt_required, get_jwt_identity
 from functools import wraps
 
 
@@ -32,6 +31,7 @@ class PostStockItem(Resource):
         unit_price = data.get('unit_price')
         pack_price = data.get('pack_price')
         pack_quantity = data.get('pack_quantity')
+        category = data.get('category')  # ✅ New field
 
         if not item_name:
             return {"message": "item_name is required."}, 400
@@ -46,7 +46,8 @@ class PostStockItem(Resource):
             item_code=item_code,
             unit_price=unit_price,
             pack_price=pack_price,
-            pack_quantity=pack_quantity
+            pack_quantity=pack_quantity,
+            category=category  # ✅ Save category
         )
 
         db.session.add(new_item)
@@ -60,7 +61,8 @@ class PostStockItem(Resource):
                 "item_code": new_item.item_code,
                 "unit_price": new_item.unit_price,
                 "pack_price": new_item.pack_price,
-                "pack_quantity": new_item.pack_quantity
+                "pack_quantity": new_item.pack_quantity,
+                "category": new_item.category
             }
         }, 201
 
@@ -78,7 +80,8 @@ class GetAllStockItems(Resource):
                 "item_code": item.item_code,
                 "unit_price": item.unit_price,
                 "pack_price": item.pack_price,
-                "pack_quantity": item.pack_quantity
+                "pack_quantity": item.pack_quantity,
+                "category": item.category
             })
 
         return {"stock_items": result}, 200
@@ -90,9 +93,7 @@ class StockItem(Resource):
     def get(self, item_id=None):
         """Retrieve a single stock item by ID or all items if no ID is provided."""
         if item_id:
-            # Find a specific item by ID
             item = StockItems.query.get(item_id)
-            
             if not item:
                 return {"message": "Item not found."}, 404
 
@@ -102,7 +103,8 @@ class StockItem(Resource):
                 "item_code": item.item_code,
                 "unit_price": item.unit_price,
                 "pack_price": item.pack_price,
-                "pack_quantity": item.pack_quantity
+                "pack_quantity": item.pack_quantity,
+                "category": item.category
             }, 200
 
         # If no item_id provided, return all items
@@ -114,7 +116,8 @@ class StockItem(Resource):
                 "item_code": item.item_code,
                 "unit_price": item.unit_price,
                 "pack_price": item.pack_price,
-                "pack_quantity": item.pack_quantity
+                "pack_quantity": item.pack_quantity,
+                "category": item.category
             }
             for item in items
         ], 200
@@ -128,20 +131,18 @@ class StockItem(Resource):
         if not data:
             return {"message": "No input data provided"}, 400
 
-        # Find the item by ID
         item = StockItems.query.get(item_id)
         if not item:
             return {"message": "Item not found."}, 404
 
         try:
-            # Update all fields directly (simpler approach)
             item.item_name = data.get('item_name', item.item_name)
             item.item_code = data.get('item_code', item.item_code)
             item.unit_price = float(data.get('unit_price', item.unit_price))
             item.pack_price = float(data.get('pack_price', item.pack_price))
             item.pack_quantity = int(data.get('pack_quantity', item.pack_quantity))
+            item.category = data.get('category', item.category)  # ✅ Update category
             
-            # Explicit commit and refresh
             db.session.commit()
             db.session.refresh(item)
             
@@ -153,7 +154,8 @@ class StockItem(Resource):
                     "item_code": item.item_code,
                     "unit_price": item.unit_price,
                     "pack_price": item.pack_price,
-                    "pack_quantity": item.pack_quantity
+                    "pack_quantity": item.pack_quantity,
+                    "category": item.category
                 }
             }, 200
             
@@ -165,9 +167,7 @@ class StockItem(Resource):
     @check_role('manager')
     def delete(self, item_id):
         """Delete a stock item by item_id."""
-        # Find the item by ID
         item = StockItems.query.get(item_id)
-
         if not item:
             return {"message": "Item not found."}, 404
 
