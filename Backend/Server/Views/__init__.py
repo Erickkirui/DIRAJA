@@ -74,7 +74,7 @@ from Server.Views.ManagerDashbordViews import (
     TotalAmountPaidPurchases, StockAlert, TotalSalesByShop,
     TotalUnpaidAmountAllSales, TotalAmountPaidForMabanda,
     TotalAmountPaidPurchasesInventory, SalesSummary, TotalFinancialSummary,
-    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement,GetInventoryStock
+    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement,GetInventoryStock, MonthlyIncome
 )
 
 from Server.Views.Emailnotifications import (
@@ -134,7 +134,7 @@ from Server.Views.InventoryV2Views import (
     GetInventoryByBatchV2, DistributeInventoryV2, DeleteShopStockV2,
     GetTransferV2, GetTransferByIdV2, UpdateTransferV2, AddInventoryV2,
     GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
-    ManualTransferV2, ReceiveTransfer, PendingTransfers
+    ManualTransferV2, ReceiveTransfer, DeclineTransfer, PendingTransfers
 )
 
 from Server.Views.ShopstockviewsV2 import (
@@ -144,7 +144,7 @@ from Server.Views.ExpenseCategoies import (
     PostExpenseCategory, GetAllExpenseCategories, ExpenseCategoryResource
 )
 from Server.Views.Shoptoshoptransferviews import (
-    ShopToShopTransfer,  ConfirmTransfer, GetAllShopToShopTransfers, GetPendingShopToShopTransfers
+    ShopToShopTransfer,  ConfirmTransfer, GetAllShopToShopTransfers, GetPendingShopToShopTransfers, DeclineTransfers
 )
 from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById
@@ -286,7 +286,7 @@ api.add_resource(TotalAmountPaidPerShop,"/totalsalespershop")
 api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
 api.add_resource(StockMovement, '/stock-movement')
 api.add_resource(GetInventoryStock, '/inventory-stock-level')
-
+api.add_resource(MonthlyIncome, '/monthly-analytics')
 
 
 # Mabanda shop 
@@ -391,6 +391,7 @@ api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(StockDeletionResourceV2, '/v2/stock/<int:stockV2_id>')
 api.add_resource(ManualTransferV2, '/v2/manual-transfer')
 api.add_resource(ReceiveTransfer, '/transfers/<int:transfer_id>/receive')
+api.add_resource(DeclineTransfer, '/transfers/<int:transfer_id>/decline')
 api.add_resource(PendingTransfers, '/transfers/pending')
 
 
@@ -414,6 +415,7 @@ api.add_resource(StockReturns, "/stockreturns")
 api.add_resource(ShopToShopTransfer, '/transfer-stock')
 api.add_resource(GetAllShopToShopTransfers, '/allstocktransfers')
 api.add_resource(ConfirmTransfer, '/confirm-transfer/<int:transfer_id>')
+api.add_resource(DeclineTransfers, '/decline-transfer/<int:transfer_id>')
 api.add_resource(GetPendingShopToShopTransfers, '/pending-transfers')
 # api.add_resource(TransferNotifications, "/transfer-notifications")
 # api.add_resource(ShopToShopTransferList, "/shoptoshoptransfers")

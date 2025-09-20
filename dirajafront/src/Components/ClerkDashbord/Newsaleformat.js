@@ -9,6 +9,17 @@ import { DatePicker } from 'antd';
 import ItemQuantitySelector from './ItemQuantitySelector';
 import '../../Styles/Newsaleformat.css';
 
+// Utility function for precise decimal arithmetic
+const preciseAdd = (a, b) => {
+  const multiplier = Math.pow(10, Math.max(a.toString().split('.')[1]?.length || 0, b.toString().split('.')[1]?.length || 0));
+  return (a * multiplier + b * multiplier) / multiplier;
+};
+
+const preciseSubtract = (a, b) => {
+  const multiplier = Math.pow(10, Math.max(a.toString().split('.')[1]?.length || 0, b.toString().split('.')[1]?.length || 0));
+  return (a * multiplier - b * multiplier) / multiplier;
+};
+
 function NewsaleFormat() {
     const [availableItems, setAvailableItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -151,8 +162,10 @@ function NewsaleFormat() {
                  lowerItem.includes('neck') ||
                  lowerItem.includes('wings') ||
                  lowerItem.includes('big legs') ||
-                 lowerItem.includes('back bone') ||
+                 lowerItem.includes('chicken minced') ||
+                 lowerItem.includes('backbone') ||
                  lowerItem.includes('boneless breast') ||
+                 lowerItem.includes('drumstick') ||
                  lowerItem.includes('feet') ||
                  lowerItem.includes('broiler') ||
                  lowerItem.includes('liver')) &&
@@ -212,9 +225,26 @@ function NewsaleFormat() {
     };
 
     const handleQuantityChange = (index, newQuantity) => {
-        if (newQuantity >= 0) {
+        // Allow decimal values and ensure it's a valid number
+        const quantity = parseFloat(newQuantity);
+        if (!isNaN(quantity) && quantity >= 0) {
             const updatedItems = [...selectedItems];
-            updatedItems[index].quantity = newQuantity;
+            updatedItems[index].quantity = quantity;
+            setSelectedItems(updatedItems);
+        }
+    };
+
+    const handleIncrement = (index) => {
+        const updatedItems = [...selectedItems];
+        updatedItems[index].quantity = preciseAdd(parseFloat(updatedItems[index].quantity || 0), 0.1);
+        setSelectedItems(updatedItems);
+    };
+
+    const handleDecrement = (index) => {
+        const updatedItems = [...selectedItems];
+        const currentQuantity = parseFloat(updatedItems[index].quantity || 0);
+        if (currentQuantity > 0.1) {
+            updatedItems[index].quantity = preciseSubtract(currentQuantity, 0.1);
             setSelectedItems(updatedItems);
         }
     };
@@ -270,7 +300,7 @@ function NewsaleFormat() {
         setIsLoading(true);
         setMessage('');
         
-        // Validation
+        // Validation - allow decimal quantities
         for (const item of formData.items) {
             if (!item.item_name || item.quantity === '' || !item.unit_price) {
                 setMessageType('error');
@@ -447,26 +477,28 @@ function NewsaleFormat() {
                                                 onUnitTypeChange={(unitType) => handleUnitTypeChange(index, unitType)}
                                                 initialQuantity={item.quantity}
                                                 initialUnitType={item.unit_type}
+                                                allowDecimals={true} // Allow decimal quantities
                                             />
                                         ) : (
                                             <div className="quantity-controls">
                                                 <button 
                                                     className="quantity-btn"
-                                                    onClick={() => handleQuantityChange(index, item.quantity - 1)}
-                                                    disabled={item.quantity <= 1}
+                                                    onClick={() => handleDecrement(index)}
+                                                    disabled={parseFloat(item.quantity) <= 0.1}
                                                 >
                                                     -
                                                 </button>
                                                 <input
                                                     type="number"
-                                                    min="1"
+                                                    step="0.01" // Allow decimal input
+                                                    min="0.01"
                                                     value={item.quantity}
-                                                    onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 1)}
+                                                    onChange={(e) => handleQuantityChange(index, e.target.value)}
                                                     className="quantity-input"
                                                 />
                                                 <button 
                                                     className="quantity-btn"
-                                                    onClick={() => handleQuantityChange(index, item.quantity + 1)}
+                                                    onClick={() => handleIncrement(index)}
                                                 >
                                                     +
                                                 </button>
@@ -500,7 +532,7 @@ function NewsaleFormat() {
                                             <span className="item-desc">
                                                 {item.item_name} - {item.quantity} 
                                                 {item.unit_type === 'pack' && stockItem?.pack_quantity && 
-                                                ` (${item.quantity * stockItem.pack_quantity} piece${item.quantity * stockItem.pack_quantity > 1 ? 's' : ''})`
+                                                ` (${(item.quantity * stockItem.pack_quantity).toFixed(2)} piece${item.quantity * stockItem.pack_quantity > 1 ? 's' : ''})`
                                                 }
                                                 {item.unit_type !== 'pack' && item.metric && 
                                                     ` (${item.metric})`

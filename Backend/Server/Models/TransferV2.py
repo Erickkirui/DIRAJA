@@ -22,7 +22,7 @@ class TransfersV2(db.Model):
 
     # ✅ Status field (Received / Not Received)
     status = db.Column(
-        Enum('Received', 'Not Received', name='transfer_status'),
+        Enum('Received', 'Not Received', 'Declined',  name='transfer_status'),
         default='Not Received',
         nullable=False
     )

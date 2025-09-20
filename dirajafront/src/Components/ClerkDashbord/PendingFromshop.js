@@ -17,6 +17,11 @@ const PendingFromShop = () => {
     "liver", "gizzard", "neck", "feet", "wings", "broiler"
   ];
 
+  // Helper: format quantity without trailing .00
+  const formatNumber = (num, decimals = 3) => {
+    return Number(num) % 1 === 0 ? Number(num).toString() : Number(num).toFixed(decimals);
+  };
+
   // Process quantity display like ShopStockList
   const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
     const itemInfo = items.find((item) => item.item_name === itemname);
@@ -27,16 +32,16 @@ const PendingFromShop = () => {
     );
 
     if (shouldUseKg) {
-      return `${Number(quantity).toFixed(3)} kg`;
+      return `${formatNumber(quantity)} kg`;
     }
 
     if (!itemInfo) {
-      return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
+      return `${formatNumber(quantity)} ${metric || "pcs"}`;
     }
 
     // Kgs stay as kgs
     if (metric && metric.toLowerCase() === "kgs") {
-      return `${Number(quantity).toFixed(3)} kgs`;
+      return `${formatNumber(quantity)} kgs`;
     }
 
     // Eggs → trays + pieces
@@ -45,10 +50,10 @@ const PendingFromShop = () => {
       const trays = Math.floor(quantity / itemInfo.pack_quantity);
       const pieces = quantity % itemInfo.pack_quantity;
       return trays > 0
-        ? `${Number(trays).toFixed(3)} tray${trays !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
+        ? `${formatNumber(trays, 0)} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces, 0)} pcs` : ""
           }`
-        : `${Number(pieces).toFixed(3)} pcs`;
+        : `${formatNumber(pieces, 0)} pcs`;
     }
 
     // Other items with pack quantity → pkts + pcs
@@ -56,15 +61,16 @@ const PendingFromShop = () => {
       const packets = Math.floor(quantity / itemInfo.pack_quantity);
       const pieces = quantity % itemInfo.pack_quantity;
       return packets > 0
-        ? `${Number(packets).toFixed(3)} pkt${packets !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${Number(pieces).toFixed(3)} pcs` : ""
+        ? `${formatNumber(packets, 0)} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces, 0)} pcs` : ""
           }`
-        : `${Number(pieces).toFixed(3)} pcs`;
+        : `${formatNumber(pieces, 0)} pcs`;
     }
 
     // Fallback
-    return `${Number(quantity).toFixed(3)} ${metric || "pcs"}`;
+    return `${formatNumber(quantity)} ${metric || "pcs"}`;
   }, []);
+
 
   // Process transfers to combine quantities for the same item from the same shop
   const processTransfers = useCallback((transfers, items) => {
@@ -198,24 +204,53 @@ const PendingFromShop = () => {
       console.error("Accept transfer error:", err);
     }
   };
+  // Handle "Decline Transfer" for all batches of the same item from the same shop
+  const handleDecline = async (transferIds, itemname, fromShopName) => {
+    try {
+      const accessToken = localStorage.getItem("access_token");
+      const note = window.prompt(`Reason for declining ${itemname} from ${fromShopName}:`, "");
+
+      for (const transferId of transferIds) {
+        await axios.patch(
+          `api/diraja/decline-transfer/${transferId}`,
+          {
+            action: "decline",
+            note: note || "No reason provided"
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json"
+            },
+          }
+        );
+      }
+
+      // Refresh list after declining
+      fetchPendingTransfers();
+      alert(`All ${itemname} transfers from ${fromShopName} declined successfully!`);
+    } catch (err) {
+      alert("Error declining transfer. Please try again.");
+      console.error("Decline transfer error:", err);
+    }
+  };
+
 
   // Define table columns
   const columns = [
-    { header: "Item", key: "itemname" },
-    {
-      header: "Quantity",
-      key: "display",
-    },
-    { header: "From Shop", key: "from_shop_name" },
-    {
-      header: "Action",
-      key: "action",
-      render: (transfer) => (
+  { header: "Item", key: "itemname" },
+  { header: "Quantity", key: "display" },
+  { header: "From Shop", key: "from_shop_name" },
+  {
+    header: "Action",
+    key: "action",
+    render: (transfer) => (
+      <div style={{ display: "flex", gap: "8px" }}>
         <button
           style={{
             backgroundColor: "#28a745",
             color: "white",
-            padding: "6px 12px",
+            padding: "3px 12px",
             border: "none",
             borderRadius: "6px",
             cursor: "pointer",
@@ -224,9 +259,25 @@ const PendingFromShop = () => {
         >
           Accept Transfer
         </button>
-      ),
-    },
-  ];
+
+        <button
+          style={{
+            backgroundColor: "#dc3545",
+            color: "white",
+            padding: "6px 12px",
+            border: "none",
+            borderRadius: "6px",
+            cursor: "pointer",
+          }}
+          onClick={() => handleDecline(transfer.transfer_ids, transfer.itemname, transfer.from_shop_name)}
+        >
+          Decline Transfer
+        </button>
+      </div>
+    ),
+  },
+];
+
 
   if (error) return <div className="error-message">{error}</div>;
 

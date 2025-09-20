@@ -1360,23 +1360,21 @@ class CapturePaymentResource(Resource):
             if not payment_method or amount_paid is None:
                 return {"message": "Payment method and amount_paid are required"}, 400
 
-            # Check if the sale exists and get total price from sold items
+            # Check if the sale exists
             sale = Sales.query.filter_by(sales_id=sale_id).first()
             if not sale:
                 return {"message": "Sale not found"}, 404
 
-            # Calculate total price from sold items
-            sold_items = SoldItem.query.filter_by(sales_id=sale_id).all()
-            total_price = sum(item.total_price for item in sold_items)
-
-            # Find and remove the "not payed" record if it exists
-            unpaid_payment = SalesPaymentMethods.query.filter_by(sale_id=sale_id, payment_method="not payed").first()
+            # Remove the "not payed" record if it exists
+            unpaid_payment = SalesPaymentMethods.query.filter_by(
+                sale_id=sale_id, payment_method="not payed"
+            ).first()
             if unpaid_payment:
                 db.session.delete(unpaid_payment)
 
             # Check if a payment record already exists for this sale & method
             existing_payment = SalesPaymentMethods.query.filter_by(
-                sale_id=sale_id, 
+                sale_id=sale_id,
                 payment_method=payment_method
             ).first()
 
@@ -1390,7 +1388,7 @@ class CapturePaymentResource(Resource):
                     sale_id=sale_id,
                     payment_method=payment_method,
                     amount_paid=amount_paid,
-                    balance=None,  # Balance is managed at the sale level
+                    balance=None,  # Balance managed at the sale level
                     transaction_code=transaction_code,
                     created_at=datetime.utcnow(),
                 )
@@ -1400,9 +1398,11 @@ class CapturePaymentResource(Resource):
             total_paid = db.session.query(
                 db.func.sum(SalesPaymentMethods.amount_paid)
             ).filter_by(sale_id=sale_id).scalar() or 0
-            
-            # Update sale balance
-            sale.balance = max(0, total_price - total_paid)  # Ensure balance is non-negative
+
+            # ✅ Use the balance field from sales instead of sold_items total_price
+            # Assume sales.balance is always kept up to date at creation
+            new_balance = max(0, sale.balance - amount_paid)
+            sale.balance = new_balance
 
             # Update sale status
             if sale.balance == 0:
@@ -1427,29 +1427,14 @@ class CapturePaymentResource(Resource):
                 for pm in updated_payments
             ]
 
-            # Prepare sold items data for response
-            items_data = [
-                {
-                    "item_name": item.item_name,
-                    "quantity": item.quantity,
-                    "metric": item.metric,
-                    "unit_price": item.unit_price,
-                    "total_price": item.total_price,
-                    "batch_number": item.BatchNumber
-                }
-                for item in sold_items
-            ]
-
             return make_response(jsonify({
                 "message": "Payment recorded successfully",
                 "sale_id": sale_id,
                 "customer_name": sale.customer_name,
                 "customer_number": sale.customer_number,
                 "sale_status": sale.status,
-                "total_price": total_price,
                 "remaining_balance": sale.balance,
                 "payment_methods": payment_data,
-                "items": items_data,
                 "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S') 
                 if isinstance(sale.created_at, datetime) else sale.created_at,
                 "note": sale.note,
@@ -1459,6 +1444,7 @@ class CapturePaymentResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+
 
 
 class CreditHistoryResource(Resource):

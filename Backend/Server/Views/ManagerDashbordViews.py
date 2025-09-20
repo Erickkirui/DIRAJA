@@ -16,6 +16,7 @@ from Server.Models.Expenses import Expenses
 from Server.Models.Transfer import Transfer
 from Server.Models.SpoiltStock import SpoiltStock
 from Server.Models.ShopTransfers import ShopTransfer
+from Server.Models.Shoptoshoptransfer import Shoptoshoptransfer
 from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Mabandafarm import MabandaSale, MabandaExpense
 from flask_jwt_extended import jwt_required,get_jwt_identity
@@ -767,7 +768,7 @@ class TotalSalesByShop(Resource):
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
 
-                        "purchase_account": it.Purchase_account
+                        "purchase_account": it.Purchase_account,
 
                         "purchase_account": it.Purchase_account,
 
@@ -1330,10 +1331,15 @@ class StockMovement(Resource):
             # Get all shops for name lookup
             shops = Shops.query.all()
             shop_name_map = {shop.shops_id: shop.shopname for shop in shops}
+            shop_id_map = {shop.shopname: shop.shops_id for shop in shops}  # Reverse mapping for name to ID
 
             # Helper function to get shop name
             def get_shop_name(shop_id):
                 return shop_name_map.get(shop_id, f"Shop {shop_id}")
+
+            # Helper function to get shop ID from name
+            def get_shop_id(shop_name):
+                return shop_id_map.get(shop_name)
 
             # --- Transfers ---
             transfer_filters = [
@@ -1353,7 +1359,7 @@ class StockMovement(Resource):
                     'batch_number': transfer.BatchNumber,
                     'unit_cost': transfer.unitCost,
                     'total_cost': transfer.total_cost,
-                    'date': transfer.created_at.isoformat(),
+                    'created_at': transfer.created_at.isoformat(),
                     'source': 'inventory',
                     'destination': get_shop_name(transfer.shop_id),
                     'shop_id': transfer.shop_id,
@@ -1378,7 +1384,7 @@ class StockMovement(Resource):
                     'disposal_method': item.disposal_method,
                     'collector_name': item.collector_name,
                     'comment': item.comment,
-                    'date': item.created_at.isoformat(),
+                    'created_at': item.created_at.isoformat(),
                     'location': get_shop_name(item.shop_id),
                     'shop_id': item.shop_id,
                     'shop_name': get_shop_name(item.shop_id)
@@ -1399,7 +1405,7 @@ class StockMovement(Resource):
                     'item_name': ret.inventory.itemname if ret.inventory else 'Unknown',
                     'quantity': ret.quantity,
                     'reason': ret.reason,
-                    'date': ret.return_date.isoformat(),
+                    'created_at': ret.return_date.isoformat(),
                     'source': get_shop_name(ret.shop_id),
                     'destination': 'inventory',
                     'shop_id': ret.shop_id,
@@ -1407,53 +1413,57 @@ class StockMovement(Resource):
                 })
 
             # --- Shop Transfers ---
+            # Only show shop transfers that involve the current shop (either as source or destination)
             shop_transfer_filters = [
-                ShopTransfer.created_at >= start_date,
-                ShopTransfer.created_at < end_date
+                Shoptoshoptransfer.transfer_date >= start_date,
+                Shoptoshoptransfer.transfer_date < end_date
             ]
+            
             if shop_id:
+                # Filter for transfers where the current shop is either the source or destination
                 shop_transfer_filters.append(or_(
-                    ShopTransfer.shop_id == shop_id,
-                    ShopTransfer.fromshop == str(shop_id)
+                    Shoptoshoptransfer.from_shop_id == shop_id,  # Outgoing transfers
+                    Shoptoshoptransfer.to_shop_id == shop_id     # Incoming transfers
                 ))
 
-            for transfer in ShopTransfer.query.filter(*shop_transfer_filters).all():
-                is_outgoing = (shop_id and transfer.fromshop == str(shop_id))
-                
+            for transfer in Shoptoshoptransfer.query.filter(*shop_transfer_filters).all():
                 # Get source and destination shop names
-                if is_outgoing:
-                    source_shop_id = int(transfer.fromshop)
-                    destination_shop_id = int(transfer.toshop)
-                else:
-                    source_shop_id = transfer.shop_id
-                    destination_shop_id = int(transfer.toshop)
+                source_shop_name = get_shop_name(transfer.from_shop_id)
+                destination_shop_name = get_shop_name(transfer.to_shop_id)
+                
+                # Determine direction based on current shop
+                is_outgoing = transfer.from_shop_id == shop_id
+                is_incoming = transfer.to_shop_id == shop_id
+                
+                direction = 'outgoing' if is_outgoing else 'incoming'
                 
                 response['shop_transfers'].append({
                     'type': 'shop_transfer',
-                    'id': transfer.id,
-                    'item_name': transfer.item_name,
+                    'id': transfer.transfer_id,
+                    'item_name': transfer.itemname,
                     'quantity': transfer.quantity,
                     'metric': transfer.metric,
-                    'date': transfer.created_at.isoformat(),
-                    'source': get_shop_name(source_shop_id),
-                    'destination': get_shop_name(destination_shop_id),
-                    'direction': 'outgoing' if is_outgoing else 'incoming',
-                    'shop_id': source_shop_id if is_outgoing else transfer.shop_id,
-                    'shop_name': get_shop_name(source_shop_id if is_outgoing else transfer.shop_id),
-                    'source_shop_id': source_shop_id,
-                    'destination_shop_id': destination_shop_id,
-                    'source_shop_name': get_shop_name(source_shop_id),
-                    'destination_shop_name': get_shop_name(destination_shop_id)
+                    'created_at': transfer.transfer_date.isoformat(),
+                    'source': source_shop_name,
+                    'destination': destination_shop_name,
+                    'direction': direction,
+                    'shop_id': shop_id,
+                    'shop_name': get_shop_name(shop_id),
+                    'source_shop_id': transfer.from_shop_id,
+                    'destination_shop_id': transfer.to_shop_id,
+                    'source_shop_name': source_shop_name,
+                    'destination_shop_name': destination_shop_name,
+                    'status': transfer.status
                 })
 
-            # ✅ return JSON properly (correct headers)
-            return jsonify(response)
+            # ✅ Return the response dictionary directly
+            return response, 200
 
         except Exception as e:
-            return jsonify({
+            return {
                 "message": "Error retrieving stock movement data",
                 "error": str(e)
-            }), 500
+            }, 500
         
 
 
