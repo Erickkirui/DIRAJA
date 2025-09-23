@@ -194,7 +194,39 @@ class ReceiveTransfer(Resource):
             db.session.rollback()
             return {'message': 'Error receiving transfer', 'error': str(e)}, 500
 
+class DeclineTransfer(Resource):
+    @jwt_required()
+    def patch(self, transfer_id):
+        transfer = TransfersV2.query.get(transfer_id)
+        if not transfer:
+            return {'message': 'Transfer not found'}, 404
 
+        # 🚫 Ensure only "Not Received" transfers can be declined
+        if transfer.status != "Not Received":
+            return {'message': f'Transfer cannot be declined. Current status: {transfer.status}'}, 400
+
+        try:
+            # ✅ Return stock to inventory
+            inventory_item = InventoryV2.query.get(transfer.inventoryV2_id)
+            if not inventory_item:
+                return {'message': 'Original inventory item not found'}, 404
+
+            inventory_item.quantity += transfer.quantity
+
+            # ✅ Update transfer status
+            transfer.status = "Declined"
+
+            db.session.commit()
+
+            return {
+                'message': 'Transfer declined successfully. Stock returned to inventory.',
+                'transfer_id': transfer.transferv2_id,
+                'restored_quantity': transfer.quantity
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error declining transfer', 'error': str(e)}, 500
 
 
 class PendingTransfers(Resource):

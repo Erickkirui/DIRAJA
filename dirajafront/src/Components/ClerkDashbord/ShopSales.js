@@ -104,16 +104,28 @@ const ShopSales = () => {
             ))
           : 'No items',
     },
-    // {
-    //   header: 'Customer',
-    //   key: 'customer_name',
-    //   render: sale => sale.customer_name || 'Walk-in',
-    // },
+    {
+      header: 'Payment Methods',
+      key: 'payment_methods',
+      render: sale =>
+        Array.isArray(sale.payment_methods) && sale.payment_methods.length > 0
+          ? sale.payment_methods.map(payment => (
+              <div key={payment.payment_method} className="mb-1">
+                {payment.payment_method}: Ksh {payment.amount_paid?.toFixed(2) || '0.00'}
+              </div>
+            ))
+          : 'No payments',
+    },
     {
       header: 'Total Paid',
       key: 'total_amount_paid',
       render: sale => `Ksh ${sale.total_amount_paid?.toFixed(2) || '0.00'}`,
     },
+    // {
+    //   header: 'Customer',
+    //   key: 'customer_name',
+    //   render: sale => sale.customer_name || 'Walk-in',
+    // },
     // {
     //   header: 'Status',
     //   key: 'status',
