@@ -104,7 +104,7 @@ function Managerdashord() {
         <ItemStockList />
         <SoldItemsList />
         <InventoryStockCount />
-        <ProductEarningsList />
+        {/* <ProductEarningsList /> */}
       
        </div>
           
