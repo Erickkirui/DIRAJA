@@ -17,67 +17,67 @@ const ProductEarningsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Fetch shops
-  useEffect(() => {
-    const fetchShops = async () => {
-      try {
-        const shopsRes = await axios.get("api/diraja/allshops", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
-        const sortedShops = shopsRes.data.sort((a, b) =>
-          a.shopname.localeCompare(b.shopname)
-        );
-        setShops(sortedShops);
-      } catch (err) {
-        console.error("Failed to load shops", err);
-        setError("Failed to load shops data");
-      }
-    };
-    fetchShops();
-  }, []);
-
-  useEffect(() => {
-    const fetchProductEarnings = async () => {
-      setLoading(true);
-      setError("");
-
-      try {
-        const params = new URLSearchParams();
-        if (dateRange.length === 2) {
-          params.append("start_date", dateRange[0].format("YYYY-MM-DD"));
-          params.append("end_date", dateRange[1].format("YYYY-MM-DD"));
+    // Fetch shops
+    useEffect(() => {
+      const fetchShops = async () => {
+        try {
+          const shopsRes = await axios.get("api/diraja/allshops", {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          });
+          const sortedShops = shopsRes.data.sort((a, b) =>
+            a.shopname.localeCompare(b.shopname)
+          );
+          setShops(sortedShops);
+        } catch (err) {
+          console.error("Failed to load shops", err);
+          setError("Failed to load shops data");
         }
+      };
+      fetchShops();
+    }, []);
 
-        const url = selectedShopId
-          ? `api/diraja/shop/${selectedShopId}?${params}`
-          : `api/diraja/product-earnings?${params}`;
+    useEffect(() => {
+      const fetchProductEarnings = async () => {
+        setLoading(true);
+        setError("");
 
-        const res = await axios.get(url, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-          },
-        });
+        try {
+          const params = new URLSearchParams();
+          if (dateRange.length === 2) {
+            params.append("start_date", dateRange[0].format("YYYY-MM-DD"));
+            params.append("end_date", dateRange[1].format("YYYY-MM-DD"));
+          }
 
-        const products = res.data.products || [];
-        
-        // Format the revenue values with currency formatting
-        const formattedProducts = products.map(product => ({
-          ...product,
-          total_revenue_formatted: `Ksh ${product.total_revenue.toLocaleString()}`,
-          average_unit_price_formatted: `Ksh ${product.average_unit_price.toLocaleString()}`,
-          display_quantity: `${product.total_quantity_sold} ${product.metric}`
-        }));
+          const url = selectedShopId
+            ? `api/diraja/shop/${selectedShopId}?${params}`
+            : `api/diraja/product-earnings?${params}`;
 
-        setProductEarnings(formattedProducts);
-      } catch (err) {
-        console.error("Failed to fetch product earnings", err);
-        setError("Failed to fetch product earnings data");
-      } finally {
-        setLoading(false);
-      }
-    };
+          const res = await axios.get(url, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+            },
+          });
+
+          const products = res.data.products || [];
+          
+          // Format the revenue values with currency formatting
+          const formattedProducts = products.map(product => ({
+            ...product,
+            total_revenue_formatted: `Ksh ${product.total_revenue.toLocaleString()}`,
+            average_unit_price_formatted: `Ksh ${product.average_unit_price.toLocaleString()}`,
+            display_quantity: `${product.total_quantity_sold} ${product.metric}`
+          }));
+
+          setProductEarnings(formattedProducts);
+        } catch (err) {
+          console.error("Failed to fetch product earnings", err);
+          setError("Failed to fetch product earnings data");
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchProductEarnings();
   }, [selectedShopId, dateRange]);

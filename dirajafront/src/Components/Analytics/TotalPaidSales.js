@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card, Select, DatePicker, Row, Col, Statistic, Alert, Spin, Tag } from 'antd';
+import dayjs from 'dayjs';
 
 const { Option } = Select;
+const { RangePicker } = DatePicker;
 
 const TotalPaidSales = () => {
   const [shopSales, setShopSales] = useState([]);
@@ -17,7 +19,13 @@ const TotalPaidSales = () => {
     not_payed: 0,
   });
   const [loading, setLoading] = useState(false);
+  const [categorySummary, setCategorySummary] = useState([]);
+  const [categoryRange, setCategoryRange] = useState([
+    dayjs().subtract(1, 'day'), // default yesterday
+    dayjs().subtract(1, 'day'),
+  ]);
 
+  // ------------------- Fetch Shop Sales -------------------
   const fetchShopSales = async () => {
     try {
       setLoading(true);
@@ -68,15 +76,77 @@ const TotalPaidSales = () => {
     }
   };
 
+  // ------------------- Fetch Category Summary -------------------
+  const fetchCategorySummary = async () => {
+    try {
+      let start, end;
+
+      if (period === "custom" && customDate) {
+        start = dayjs(customDate);
+        end = dayjs(customDate);
+      } else {
+        switch (period) {
+          case "today":
+            start = dayjs();
+            end = dayjs();
+            break;
+          case "yesterday":
+            start = dayjs().subtract(1, "day");
+            end = dayjs().subtract(1, "day");
+            break;
+          case "week":
+            start = dayjs().startOf("week");
+            end = dayjs().endOf("week");
+            break;
+          case "month":
+            start = dayjs().startOf("month");
+            end = dayjs().endOf("month");
+            break;
+          default:
+            // fallback to manual range picker
+            [start, end] = categoryRange;
+        }
+      }
+
+      const response = await axios.get("/api/diraja/category-earnings-summary", {
+        params: {
+          start: start.format("YYYY-MM-DD"),
+          end: end.format("YYYY-MM-DD"),
+        },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+
+      if (response.data.categories) {
+        setCategorySummary(response.data.categories);
+      } else {
+        setCategorySummary([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch category summary", err);
+      setCategorySummary([]);
+    }
+  };
+
+  // ------------------- Effects -------------------
   useEffect(() => {
-    if (period !== 'custom' || customDate) {
+    if (period !== "custom" || customDate) {
       fetchShopSales();
+      fetchCategorySummary(); // fetch both when period/customDate changes
     }
   }, [period, customDate]);
 
+  // If user manually changes category range, re-fetch
+  useEffect(() => {
+    fetchCategorySummary();
+  }, [categoryRange]);
+
+  // ------------------- Utils -------------------
   const formatCurrency = (value) =>
     new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 2 }).format(value);
 
+  // ------------------- Render -------------------
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
       <h2>Shop Sale Analytics</h2>
@@ -133,6 +203,31 @@ const TotalPaidSales = () => {
             Credit: {formatCurrency(paymentSummary.not_payed)}
           </Tag>
         </Col>
+      </Row>
+
+      {/* Category Range Filter */}
+      <h4>Products Totals</h4>
+   
+
+      {/* Category Totals */}
+      <Row gutter={16} style={{ marginBottom: 20 }}>
+        {categorySummary
+          .filter((c) => ["eggs", "chicken", "farmers choice"].includes((c.category || "").toLowerCase()))
+          .map((cat) => (
+            <Col span={8} key={cat.category}>
+              <Card>
+                <Statistic
+                  title={`Total ${cat.category}`}
+                  value={cat.total_revenue}
+                  precision={2}
+                  prefix="Ksh"
+                />
+                <div style={{ marginTop: 8, fontSize: 13, color: "#888" }}>
+                  {/* Qty: {cat.total_quantity_sold} */}
+                </div>
+              </Card>
+            </Col>
+          ))}
       </Row>
 
       {/* Shop Cards */}
