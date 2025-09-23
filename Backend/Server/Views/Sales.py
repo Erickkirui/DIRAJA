@@ -1,6 +1,7 @@
 from app import db
 from flask_restful import Resource
 from Server.Models.Sales import Sales
+from Server.Models.StockItems import StockItems
 from Server.Models.LiveStock import LiveStock
 from Server.Models.SoldItems import SoldItem
 from Server.Models.Paymnetmethods import SalesPaymentMethods
@@ -2291,15 +2292,15 @@ class ItemsSoldSummary(Resource):
                 "details": str(e)
             }, 500
 
+
 class ProductEarningsSummary(Resource):
     @jwt_required()
     def get(self, shop_id=None):
         try:
             # Query params
-            start_date = request.args.get('start_date')  # format: 'YYYY-MM-DD'
-            end_date = request.args.get('end_date')      # format: 'YYYY-MM-DD'
+            start_date = request.args.get('start_date')
+            end_date = request.args.get('end_date')
 
-            # Parse and validate dates
             try:
                 if start_date:
                     start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -2308,7 +2309,6 @@ class ProductEarningsSummary(Resource):
             except ValueError:
                 return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
 
-            # Base query - get total earnings per product
             query = db.session.query(
                 SoldItem.item_name,
                 SoldItem.metric,
@@ -2317,22 +2317,15 @@ class ProductEarningsSummary(Resource):
                 func.avg(SoldItem.unit_price).label("average_unit_price")
             ).join(Sales, SoldItem.sales_id == Sales.sales_id)
 
-            # Apply filters
             if shop_id is not None:
                 query = query.filter(Sales.shop_id == shop_id)
             if start_date:
                 query = query.filter(Sales.created_at >= start_date)
             if end_date:
-                # Include the entire end date by setting time to end of day
-                end_date_with_time = end_date.replace(hour=23, minute=59, second=59)
-                query = query.filter(Sales.created_at <= end_date_with_time)
+                query = query.filter(Sales.created_at <= end_date.replace(hour=23, minute=59, second=59))
 
-            # Group by product and metric
             query = query.group_by(SoldItem.item_name, SoldItem.metric)
-            
-            # Order by total revenue (highest first)
             query = query.order_by(func.sum(SoldItem.total_price).desc())
-
             result = query.all()
 
             product_earnings_summary = [
@@ -2346,10 +2339,6 @@ class ProductEarningsSummary(Resource):
                 for item_name, metric, total_quantity_sold, total_revenue, average_unit_price in result
             ]
 
-            # Calculate overall totals
-            total_revenue = sum(item['total_revenue'] for item in product_earnings_summary)
-            total_quantity = sum(item['total_quantity_sold'] for item in product_earnings_summary)
-
             response = {
                 "shop_id": shop_id,
                 "period": {
@@ -2357,8 +2346,8 @@ class ProductEarningsSummary(Resource):
                     "end_date": end_date.strftime('%Y-%m-%d') if end_date else None
                 },
                 "total_products": len(product_earnings_summary),
-                "total_revenue": round(total_revenue, 2),
-                "total_quantity_sold": round(total_quantity, 2),
+                "total_revenue": round(sum(p["total_revenue"] for p in product_earnings_summary), 2),
+                "total_quantity_sold": round(sum(p["total_quantity_sold"] for p in product_earnings_summary), 2),
                 "products": product_earnings_summary
             }
 
@@ -2366,7 +2355,66 @@ class ProductEarningsSummary(Resource):
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            return {
-                "error": "An error occurred while fetching product earnings data",
-                "details": str(e)
-            }, 500
+            return {"error": "Database error", "details": str(e)}, 500
+
+
+# ---------------- Categories Summary ----------------
+class CategoryEarningsSummary(Resource):
+    @jwt_required()
+    def get(self, shop_id=None):
+        try:
+            # Support both ?start_date=...&end_date=... and ?start=...&end=...
+            start_date = request.args.get('start_date') or request.args.get('start')
+            end_date = request.args.get('end_date') or request.args.get('end')
+
+            try:
+                if start_date:
+                    start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                if end_date:
+                    end_date = datetime.strptime(end_date, '%Y-%m-%d')
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+
+            category_query = db.session.query(
+                StockItems.category,
+                func.sum(SoldItem.quantity).label("total_quantity_sold"),
+                func.sum(SoldItem.total_price).label("total_revenue")
+            ).join(SoldItem, SoldItem.item_name == StockItems.item_name) \
+             .join(Sales, SoldItem.sales_id == Sales.sales_id)
+
+            if shop_id is not None:
+                category_query = category_query.filter(Sales.shop_id == shop_id)
+            if start_date:
+                category_query = category_query.filter(Sales.created_at >= start_date)
+            if end_date:
+                category_query = category_query.filter(Sales.created_at <= end_date.replace(hour=23, minute=59, second=59))
+
+            category_query = category_query.group_by(StockItems.category)
+            category_result = category_query.all()
+
+            category_summary = [
+                {
+                    "category": category or "Uncategorized",
+                    "total_quantity_sold": round(total_quantity_sold, 2),
+                    "total_revenue": round(total_revenue, 2)
+                }
+                for category, total_quantity_sold, total_revenue in category_result
+            ]
+
+            response = {
+                "shop_id": shop_id,
+                "period": {
+                    "start_date": start_date.strftime('%Y-%m-%d') if start_date else None,
+                    "end_date": end_date.strftime('%Y-%m-%d') if end_date else None
+                },
+                "total_categories": len(category_summary),
+                "total_revenue": round(sum(c["total_revenue"] for c in category_summary), 2),
+                "total_quantity_sold": round(sum(c["total_quantity_sold"] for c in category_summary), 2),
+                "categories": category_summary
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {"error": "Database error", "details": str(e)}, 500
