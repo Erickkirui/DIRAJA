@@ -84,7 +84,7 @@ from Server.Views.Emailnotifications import (
 from Server.Views.Accountingviews import (
     AccountTypeResource, AccountTypeListResource, CreateAccount,
     CreateChartOfAccounts, ChartOfAccountsList, CreateItemAccount,
-    GetAllItemAccounts, SalesLedger, PurchasesLedger
+    GetAllItemAccounts, SalesLedger, PurchasesLedger,GetItems,CreateItem
 )
 
 from Server.Views.AccountBalances import (
@@ -313,6 +313,8 @@ api.add_resource(CreateItemAccount, '/itemaccounts')
 api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
 api.add_resource(SalesLedger, '/sale-ledger')
 api.add_resource(PurchasesLedger , '/purchases-ledger')
+api.add_resource(CreateItem,'/create-items')
+api.add_resource(GetItems, '/created-items-list')
 
 #Account Ballance 
 api.add_resource(PostBankAccount, '/bankaccount')
