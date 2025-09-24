@@ -34,7 +34,7 @@ const TotalAmountPaidSales = () => {
         });
 
         setTimeout(() => {
-          setTotalAmountPaid(response.data.total_sales_amount_paid);
+          setTotalAmountPaid(response.data.total_sales_amount);
           setLoading(false);
         }, 3000);
 

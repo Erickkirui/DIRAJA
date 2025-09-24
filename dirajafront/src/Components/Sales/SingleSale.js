@@ -72,7 +72,7 @@ const SingleSale = () => {
         setPaymentMethods(data.sale.payment_methods || []);
 
         if (data.sale.shop_id) {
-          const shopResponse = await fetch(`api/diraja/shop/${data.sale.shop_id}`, {
+          const shopResponse = await fetch(`/api/diraja/shop/${data.sale.shop_id}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',

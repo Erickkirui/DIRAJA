@@ -30,152 +30,154 @@ import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation');
   const shopId = localStorage.getItem('shop_id');
-  const userId = localStorage.getItem('users_id'); // 👈 get user id
   const isReliever = designation === "reliever";
   const isProcurement = designation === "procurement";
 
-  // Decide new sale route
-  let newSaleRoute = "";
-  if (userId === "14" || userId === "20") {
-    newSaleRoute = "/custom-sale";
-  } else if (shopId === "12") {
-    newSaleRoute = "/mabandasale";
-  } else if (shopId === "18") {
-    newSaleRoute = "/promo-sale";
-  } else {
-    newSaleRoute = isReliever ? "/relieversales" : "/shopsale";
-  }
-
   return (
-    <div>
-      <div className='page-area'>
-        <div className='nav-phone'>
-          <ShopNameDisplay />
+    <div >
+     
+        <div className='page-area'>
+          <div className='nav-phone'>
+            <ShopNameDisplay />
 
-          {/* NEW SALE BUTTON */}
-          <Link className="clerk-button" to={newSaleRoute}>
-            New Sale
-          </Link>
-
-          <Link className='clerk-button' to="/recieve-stock">
-            Receive Stock
-          </Link>
-
-          <div className='icon-container'>
-            {/* Procurement Group */}
-            {isProcurement && (
-              <div className='icon-group'>
-                <Link className='clerk-icon-button' to='/procurementinventory'>
-                  <FaTruck className="icon" />
-                  <span>Distribute Stock</span>
-                </Link>
-              </div>
-            )}
-
-            {shopId !== '12' && shopId !== '18' && (
-              <div className='icon-group'>
-                {/* Use /inventorycount for procurement, /shop-stock-level for others */}
-                <Link className='clerk-icon-button' to={isProcurement ? '/inventorycount' : '/shop-stock-level'}>
-                  <FaBoxes className="icon" />
-                  <span>Stock</span>
-                </Link>
-                {/* Use Shop to Shop button for procurement, Sold Items for others */}
-                {isProcurement ? (
-                  <Link className='clerk-icon-button' to='/proctransfers'>
-                    <FaExchangeAlt className="icon" />
-                    <span>Shop to Shop</span>
-                  </Link>
-                ) : (
-                  <Link className='clerk-icon-button' to='/sold-items'>
-                    <FaTools className="icon" />
-                    <span>Sold Items</span>
-                  </Link>
-                )}
-              </div>
-            )}
-
-            {/* Mabanda Group */}
+            {/* NEW SALE BUTTON */}
             {shopId === '12' && (
-              <>
-                <div className='icon-group'>
-                  <Link className="clerk-icon-button" to="/mabandastock">
-                    <FaWarehouse className="icon" />
-                    <span>Add Stock</span>
-                  </Link>
-                  <Link className="clerk-icon-button" to="/mabandaexpense">
-                    <FaFileInvoiceDollar className="icon" />
-                    <span>Add Expense</span>
-                  </Link>
-                </div>
-                <div className='icon-group'>
-                  <Link className="clerk-icon-button" to="/mabandapurchase">
-                    <FaPiggyBank className="icon" />
-                    <span>Add Purchase</span>
-                  </Link>
-                  <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/mabandasales"}>
-                    <FaEye className="icon" />
-                    <span>View Sales</span>
-                  </Link>
-                </div>
-              </>
+              <Link className="clerk-button" to="/mabandasale">
+                New Sale
+              </Link>
             )}
-
-            {/* Regular Shop Clerk Group */}
             {shopId !== '12' && shopId !== '18' && (
-              <>
-                <div className='icon-group'>
-                  <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/shopsales"}>
-                    <FaEye className="icon" />
-                    <span>View Sales</span>
-                  </Link>
-
-                  <Link className="clerk-icon-button" to="/shopcredit">
-                    <FaCreditCard className="icon" />
-                    <span>Credit Sales</span>
-                  </Link>
-                </div>
-                <div className='icon-group'>
-                  <Link className="clerk-icon-button" to="/addspoiltstock">
-                    <FaTrashAlt className="icon" />
-                    <span>Spoilt Stock</span>
-                  </Link>
-                  {/* Use /procpurchases for procurement, /stock-shop-move for others */}
-                  <Link className="clerk-icon-button" to={isProcurement ? "/procpurchases" : "/stock-shop-move"}>
-                    <FaTruck className="icon" />
-                    <span>Stock Transfers</span>
-                  </Link>
-
-                  <Link className="clerk-icon-button" to={isReliever ? "/deposit" : "/depositcash"}>
-                    <FaMoneyBillWave className="icon" />
-                    <span>Deposit Cash</span>
-                  </Link>
-                </div>
-              </>
+              <Link className="clerk-button" to={isReliever ? "/relieversales" : "/shopsale"}>
+                New Sale
+              </Link>
             )}
-          </div>
-        </div>
+            {shopId === '18' && (
+              <Link className="clerk-button" to="/promo-sale">
+                New Sale
+              </Link>
+            )}
+            <Link className='clerk-button' to="/recieve-stock">
+            Receive Stock
+            </Link>
 
-        {/* Dashboard Metrics */}
-        <div className="metrix-pair">
-          <div className='analytics-clerk'>
-            {shopId === '12' ? <TotalMabandaSales /> : <TotalShopSales />}
-          </div>
-          <div className='analytics-clerk'>
-            <Totalcreditpershop />
-          </div>
-          <div className='analytics-clerk'>
-            <TotalCashSalesByUser />
-          </div>
-        </div>
+            <div className='icon-container'>
 
-        {/* Show ShopStockList for procurement users */}
-        {isProcurement && (
-          <div className="shop-stock-list-section">
-            <ItemStockList />
+              {/* Procurement Group */}
+              {isProcurement && (
+                <div className='icon-group'>
+                  <Link className='clerk-icon-button' to='/procurementinventory'>
+                    <FaTruck className="icon" />
+                    <span>Distribute Stock</span>
+                  </Link>
+                </div>
+              )}
+
+              
+              {shopId !== '12' && shopId !== '18' && (
+                <div className='icon-group'>
+                  {/* Use /inventorycount for procurement, /shop-stock-level for others */}
+                  <Link className='clerk-icon-button' to={isProcurement ? '/inventorycount' : '/shop-stock-level'}>
+                    <FaBoxes className="icon" />
+                    <span>Stock</span>
+                  </Link>
+                  {/* Use Shop to Shop button for procurement, Sold Items for others */}
+                  {isProcurement ? (
+                    <Link className='clerk-icon-button' to='/proctransfers'>
+                      <FaExchangeAlt className="icon" />
+                      <span>Shop to Shop</span>
+                    </Link>
+                  ) : (
+                    <Link className='clerk-icon-button' to='/sold-items'>
+                      <FaTools className="icon" />
+                      <span>Sold Items</span>
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {/* Mabanda Group */}
+              {shopId === '12' && (
+                <>
+                  <div className='icon-group'>
+                    <Link className="clerk-icon-button" to="/mabandastock">
+                      <FaWarehouse className="icon" />
+                      <span>Add Stock</span>
+                    </Link>
+                    <Link className="clerk-icon-button" to="/mabandaexpense">
+                      <FaFileInvoiceDollar className="icon" />
+                      <span>Add Expense</span>
+                    </Link>
+                  </div>
+                  <div className='icon-group'>
+                    <Link className="clerk-icon-button" to="/mabandapurchase">
+                      <FaPiggyBank className="icon" />
+                      <span>Add Purchase</span>
+                    </Link>
+                    <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/mabandasales"}>
+                      <FaEye className="icon" />
+                      <span>View Sales</span>
+                    </Link>
+                  </div>
+                </>
+              )}
+
+              {/* Regular Shop Clerk Group */}
+              {shopId !== '12' && shopId !== '18' && (
+                <>
+                  <div className='icon-group'>
+                    <Link className="clerk-icon-button" to={isReliever ? "/reliever" : "/shopsales"}>
+                      <FaEye className="icon" />
+                      <span>View Sales</span>
+                    </Link>
+                    
+                    <Link className="clerk-icon-button" to="/shopcredit">
+                      <FaCreditCard className="icon" />
+                      <span>Credit Sales</span>
+                    </Link>
+                  </div>
+                  <div className='icon-group'>
+                    <Link className="clerk-icon-button" to="/addspoiltstock">
+                      <FaTrashAlt className="icon" />
+                      <span>Spoilt Stock</span>
+                    </Link>
+                    {/* Use /procpurchases for procurement, /stock-shop-move for others */}
+                    <Link className="clerk-icon-button" to={isProcurement ? "/procpurchases" : "/stock-shop-move"}>
+                      <FaTruck className="icon" />
+                      <span>Stock Transfers</span>
+                    </Link>
+                   
+                    <Link className="clerk-icon-button" to={isReliever ? "/deposit" : "/depositcash"}>
+                      <FaMoneyBillWave className="icon" />
+                      <span>Deposit Cash</span>
+                    </Link>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        )}
+
+          {/* Dashboard Metrics */}
+          <div className="metrix-pair">
+            <div className='analytics-clerk'>
+              {shopId === '12' ? <TotalMabandaSales /> : <TotalShopSales />}
+            </div>
+            <div className='analytics-clerk'>
+              <Totalcreditpershop />
+            </div>
+            <div className='analytics-clerk'>
+              <TotalCashSalesByUser />
+            </div>
+          </div>
+
+          {/* Show ShopStockList for procurement users */}
+          {isProcurement && (
+            <div className="shop-stock-list-section">
+              <ItemStockList />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    
   );
 }
 

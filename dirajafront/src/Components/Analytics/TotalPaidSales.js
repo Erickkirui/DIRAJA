@@ -42,22 +42,20 @@ const TotalPaidSales = () => {
       setShopSales(data.total_sales_per_shop || []);
       setError('');
 
-      // Compute totals
-      if (data.total_sales_per_shop) {
-        const total = data.total_sales_per_shop.reduce((sum, shop) => {
-          const amount = parseFloat(shop.total_sales_amount_paid.replace(/[^\d.-]/g, ''));
-          return sum + (isNaN(amount) ? 0 : amount);
-        }, 0);
-        setTotalSales(total);
-        setShopCount(data.total_sales_per_shop.length);
+      // Compute totals directly from backend summary
+      if (data.summary) {
+        setTotalSales(
+          parseFloat(data.summary.overall_total_sales.replace(/[^\d.-]/g, "")) || 0
+        );
+        setShopCount(data.total_sales_per_shop ? data.total_sales_per_shop.length : 0);
 
         // Payment summary from backend
-        if (data.summary && data.summary.overall_payment_breakdown) {
+        if (data.summary.overall_payment_breakdown) {
           const summary = data.summary.overall_payment_breakdown;
           setPaymentSummary({
-            sasapay: parseFloat(summary.sasapay.replace(/[^\d.-]/g, '')) || 0,
-            cash: parseFloat(summary.cash.replace(/[^\d.-]/g, '')) || 0,
-            not_payed: parseFloat(summary.not_payed.replace(/[^\d.-]/g, '')) || 0,
+            sasapay: parseFloat(summary.sasapay.replace(/[^\d.-]/g, "")) || 0,
+            cash: parseFloat(summary.cash.replace(/[^\d.-]/g, "")) || 0,
+            not_payed: parseFloat(summary.not_payed.replace(/[^\d.-]/g, "")) || 0,
           });
         }
       } else {
@@ -65,6 +63,7 @@ const TotalPaidSales = () => {
         setShopCount(0);
         setPaymentSummary({ sasapay: 0, cash: 0, not_payed: 0 });
       }
+
     } catch (error) {
       console.error('Error fetching shop sales:', error);
       setError('Error fetching shop sales');
@@ -201,7 +200,7 @@ const TotalPaidSales = () => {
         </Col>
         <Col>
           <Tag color="orange" style={{ fontSize: 14 }}>
-            Credit (Not Payed): {formatCurrency(paymentSummary.not_payed)}
+            Credit: {formatCurrency(paymentSummary.not_payed)}
           </Tag>
         </Col>
       </Row>
@@ -237,7 +236,7 @@ const TotalPaidSales = () => {
       ) : shopSales.length > 0 ? (
         <Row gutter={[12, 12]}>
           {shopSales.map((shop) => {
-            const salesValue = parseFloat(shop.total_sales_amount_paid.replace(/[^\d.-]/g, ''));
+            const salesValue = parseFloat(shop.total_sales.replace(/[^\d.-]/g, ''));
             const comparisonValue = shop.comparison || 0;
 
             return (

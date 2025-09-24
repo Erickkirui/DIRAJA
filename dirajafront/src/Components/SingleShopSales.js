@@ -62,7 +62,7 @@ const ShopSalesDetails = () => {
 
       setData(sales);
       setShopName(response.data.shop_name || "");
-      setTotalSalesAmount(response.data.total_sales_amount_paid || "Ksh 0.00");
+      setTotalSalesAmount(response.data.total_sales || "Ksh 0.00");
 
       // 🆕 set totals by method
       setTotalSasapay(response.data.total_sasapay || 0);
@@ -114,11 +114,16 @@ const ShopSalesDetails = () => {
     {
       header: "Total Amount",
       key: "total_amount_paid",
-      render: (item) =>
-        item.total_amount_paid !== undefined
-          ? `Ksh ${Number(item.total_amount_paid).toLocaleString()}`
-          : "Ksh 0.00",
+      render: (item) => {
+        const amount =
+          Number(item.total_amount_paid) > 0
+            ? item.total_amount_paid
+            : item.balance || 0;
+
+        return `Ksh ${Number(amount).toLocaleString()}`;
+      },
     },
+
     {
       header: "Items",
       key: "items",
