@@ -9,6 +9,7 @@ from Server.Models.Inventory import Inventory
 from Server.Models.Sales import Sales
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.ItemsLists import ItemsList
 
 class CreateAccount(Resource):
     @jwt_required()
@@ -122,6 +123,7 @@ class AccountTypeResource(Resource):
             db.session.rollback()
             return make_response(jsonify({"message": "Error deleting account type.", "error": str(e)}), 500)
         
+#chat of aacounts 
 
 class CreateChartOfAccounts(Resource):
     # POST a new chart of account entry
@@ -387,3 +389,83 @@ class SalesLedger(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 500
+
+
+#items list 
+
+class CreateItem(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+
+        item_type = data.get('item_type')
+        item_name = data.get('item_name')
+        gl_account_id = data.get('gl_account_id')  # Expecting a list of IDs
+        description = data.get('description')
+
+        # ✅ Basic validation
+        if not item_type:
+            return make_response(jsonify({"message": "'item_type' is required."}), 400)
+
+        if gl_account_id is None:
+            return make_response(jsonify({"message": "'gl_account_id' is required."}), 400)
+
+        # ✅ Ensure gl_account_id is stored as JSON (list or dict)
+        if not isinstance(gl_account_id, (list, dict)):
+            return make_response(jsonify({"message": "'gl_account_id' must be a list or dict."}), 400)
+
+        new_item = ItemsList(
+            item_type=item_type,
+            item_name=item_name,
+            gl_account_id=gl_account_id,
+            description=description
+        )
+
+        try:
+            db.session.add(new_item)
+            db.session.commit()
+            return make_response(jsonify({
+                "message": "Item created successfully.",
+                "item": {
+                    "id": new_item.item_id,
+                    "type": new_item.item_type,
+                    "name": new_item.item_name,
+                    "gl_account_id": new_item.gl_account_id,
+                    "description": new_item.description
+                }
+            }), 201)
+        except Exception as e:
+            db.session.rollback()
+            return make_response(jsonify({"message": "Error creating item.", "error": str(e)}), 500)
+
+    
+
+class GetItems(Resource):
+    def get(self):
+        try:
+            items = ItemsList.query.all()
+            result = []
+
+            for item in items:
+                gl_accounts_info = []
+
+                # Ensure gl_account_id is a list
+                if isinstance(item.gl_account_id, list) and item.gl_account_id:
+                    accounts = ChartOfAccounts.query.filter(
+                        ChartOfAccounts.id.in_(item.gl_account_id)
+                    ).all()
+                    # Return id + name of each linked account
+                    gl_accounts_info = [{"id": acc.id, "name": acc.name} for acc in accounts]
+
+                result.append({
+                    "id": item.item_id,
+                    "type": item.item_type,
+                    "name": item.item_name,
+                    "description": item.description,
+                    "gl_accounts": gl_accounts_info
+                })
+
+            return make_response(jsonify({"items": result}), 200)
+
+        except Exception as e:
+            return make_response(jsonify({"message": "Error fetching items", "error": str(e)}), 500)
