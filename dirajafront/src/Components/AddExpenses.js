@@ -29,7 +29,7 @@ const AddExpense = () => {
     const fetchData = async () => {
       try {
         const [shopResponse, categoryResponse, accountResponse] = await Promise.all([
-          axios.get('api/diraja/allshops', {
+          axios.get('api/diraja/activeshops', {
             headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
           }),
           axios.get('api/diraja/expensecategories', {

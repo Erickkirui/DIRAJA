@@ -16,7 +16,7 @@ const ItemStockList = () => {
     const fetchInitialData = async () => {
       try {
         // Fetch shops
-        const shopsResponse = await axios.get("api/diraja/allshops", {
+        const shopsResponse = await axios.get("api/diraja/activeshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },

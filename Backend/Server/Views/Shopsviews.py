@@ -125,6 +125,29 @@ class GetAllShops(Resource):
         } for shop in shops]
 
         return make_response(jsonify(all_shops), 200)
+    
+class GetActiveShops(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # ✅ Only fetch shops where shopstatus = 'active'
+            active_shops = Shops.query.filter_by(shopstatus="active").all()
+
+            shops_list = [{
+                "shop_id": shop.shops_id,
+                "shopname": shop.shopname,
+                "location": shop.location,
+                "employee": shop.employee,
+                "shopstatus": shop.shopstatus,
+                "created_at": shop.created_at,
+                "report_status": shop.report_status
+            } for shop in active_shops]
+
+            return make_response(jsonify(shops_list), 200)
+
+        except Exception as e:
+            return {"error": "Failed to fetch active shops"}, 500
+
 
 
     
