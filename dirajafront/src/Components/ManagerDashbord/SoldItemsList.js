@@ -22,7 +22,7 @@ const SoldItemsList = () => {
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        const shopsRes = await axios.get("api/diraja/allshops", {
+        const shopsRes = await axios.get("api/diraja/activeshops", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("access_token")}`,
           },

@@ -35,12 +35,12 @@ const DistributeInventoryModal = ({
   const [isBroilerParts, setIsBroilerParts] = useState(false);
   const [stockItems, setStockItems] = useState([]);
   const [selectedStockItem, setSelectedStockItem] = useState(null);
-  const [unitType, setUnitType] = useState('pieces'); // New state for pack/piece selection
+  const [unitType, setUnitType] = useState('pack');
 
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('api/diraja/allshops', {
+        const response = await axios.get('api/diraja/activeshops', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`
           }
@@ -94,9 +94,40 @@ const DistributeInventoryModal = ({
       setSelectedStockItem(null);
     }
     
-    // Reset unit type when selection changes
-    setUnitType('pieces');
+    // Reset unit type to pack when selection changes
+    setUnitType('pack');
   }, [selectedInventory, inventory, stockItems]);
+
+  // Prevent wheel/touchpad scrolling from changing number inputs
+  const handleWheel = (e) => {
+    e.target.blur();
+  };
+
+  // Validate and format quantity input
+  const handleQuantityChange = (e) => {
+    const value = e.target.value;
+    
+    // Allow only numbers and decimal point
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setQuantity(value);
+    }
+  };
+
+  // Validate quantity on blur
+  const handleQuantityBlur = (e) => {
+    let value = e.target.value;
+    
+    // Remove leading zeros and ensure proper decimal format
+    if (value) {
+      // Convert to number and back to string to remove unnecessary zeros
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue) && numValue > 0) {
+        setQuantity(numValue.toString());
+      } else {
+        setQuantity('');
+      }
+    }
+  };
 
   // Determine placeholder text for quantity input
   const getQuantityPlaceholder = () => {
@@ -108,15 +139,22 @@ const DistributeInventoryModal = ({
         return 'Quantity in kgs';
       }
     }
-    return `Quantity in ${unitType === 'pack' ? 'packs' : 'pieces'}`;
+    return 'Quantity in packs';
   };
 
   const handleDistribute = async (e) => {
     e.preventDefault();
     const accessToken = localStorage.getItem('access_token');
 
-    if (quantity <= 0 || !shopId || !distributionDate) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+    // Validate quantity as number
+    const quantityNum = parseFloat(quantity);
+    if (quantityNum <= 0 || !shopId || !distributionDate) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields with valid values.' });
+      return;
+    }
+
+    if (isNaN(quantityNum)) {
+      setMessage({ type: 'error', text: 'Please enter a valid quantity.' });
       return;
     }
 
@@ -136,9 +174,9 @@ const DistributeInventoryModal = ({
             throw new Error(`Inventory item with ID ${inventoryV2_id} not found`);
           }
 
-          // Convert quantity if using pack unit type
-          let finalQuantity = parseFloat(quantity);
-          if (unitType === 'pack' && selectedStockItem?.pack_quantity) {
+          // Convert quantity from packs to pieces
+          let finalQuantity = quantityNum;
+          if (selectedStockItem?.pack_quantity) {
             finalQuantity = finalQuantity * parseFloat(selectedStockItem.pack_quantity);
           }
 
@@ -180,7 +218,7 @@ const DistributeInventoryModal = ({
       setDistributionDate('');
       setSelectedBroilerPart('');
       setBroilerPartUnitCost(0);
-      setUnitType('pieces');
+      setUnitType('pack');
       setTimeout(onClose, 1500);
     } catch (error) {
       let errorMessage = 'Error distributing inventory. Please try again.';
@@ -270,30 +308,21 @@ const DistributeInventoryModal = ({
                   step="0.01"
                   value={broilerPartUnitCost}
                   onChange={(e) => setBroilerPartUnitCost(e.target.value)}
+                  onWheel={handleWheel}
                   required
                 />
               </div>
             </>
           )}
 
-          {/* Unit type selector - only show if item has pack quantity */}
+          {/* Show pack information if item has pack quantity */}
           {selectedStockItem && selectedStockItem.pack_quantity && !isBroilerParts && (
             <div className="form-group">
-              <label htmlFor="unit-type-select">Unit Type:</label>
-              <select
-                id="unit-type-select"
-                className="modal-select"
-                value={unitType}
-                onChange={(e) => setUnitType(e.target.value)}
-              >
-                <option value="pieces">Pieces</option>
-                <option value="pack">Pack</option>
-              </select>
-              {unitType === 'pack' && (
+              <div className="pack-info">
                 <small className="text-muted">
-                  1 pack = {selectedStockItem.pack_quantity} pieces
+                  <strong>Pack Information:</strong> 1 pack = {selectedStockItem.pack_quantity} pieces
                 </small>
-              )}
+              </div>
             </div>
           )}
 
@@ -303,11 +332,12 @@ const DistributeInventoryModal = ({
             </label>
             <input
               id="quantity-input"
-              type="number"
-              min="0.01"
-              step="0.01"
+              type="text" // Changed from "number" to "text"
+              inputMode="decimal" // Shows appropriate keyboard on mobile
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={handleQuantityChange}
+              onBlur={handleQuantityBlur}
+              onWheel={handleWheel}
               placeholder={getQuantityPlaceholder()}
               required
             />

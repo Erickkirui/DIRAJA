@@ -9,7 +9,7 @@ from Server.Views.Usersviews import (
 )
 
 from Server.Views.Shopsviews import (
-    AddShops, ShopsResourceById, GetAllShops
+    AddShops, ShopsResourceById, GetAllShops, GetActiveShops
 )
 
 from Server.Views.Shopstockviews import (
@@ -174,6 +174,7 @@ api.add_resource(UserLogin, '/login')
 api.add_resource(AddShops, '/newshop')
 api.add_resource(ShopsResourceById, '/shop/<int:shops_id>')
 api.add_resource(GetAllShops, '/allshops')
+api.add_resource(GetActiveShops, '/activeshops')
 
 #stock endpoints
 api.add_resource(GetShopStock, '/shopstock')
@@ -404,7 +405,7 @@ api.add_resource(PendingTransfers, '/transfers/pending')
 api.add_resource(GetShopStockV2, '/shopstockv2')
 #Get stock by shopid
 api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
-api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/inventory/<int:inventory_id>/deletev2')
+api.add_resource(ShopStockDeleteV2, '/shops/<int:shop_id>/stock/delete')
 api.add_resource(BatchDetailsResourceV2, '/batch-detailsv2')
 api.add_resource(BatchDetailsResourceForShopV2, '/shop-batchdetailsv2')
 api.add_resource(AvailableBatchesResourceV2, '/batches/availablev2')

@@ -12,7 +12,8 @@ const ShopToShopTransfer = () => {
     piece_quantity: '',
     BatchNumber: '',
     metric: '',
-    remainingStock: 0
+    remainingStock: 0,
+    action: 'transfer'  // <-- NEW field
   });
 
   const [shops, setShops] = useState([]);
@@ -28,7 +29,7 @@ const ShopToShopTransfer = () => {
   useEffect(() => {
     const fetchShops = async () => {
       try {
-        const response = await axios.get('api/diraja/allshops', {
+        const response = await axios.get('api/diraja/activeshops', {
           headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
         });
         setShops(response.data);
@@ -153,11 +154,9 @@ const ShopToShopTransfer = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Allow decimal values for quantity fields
     if ((name === 'pack_quantity' || name === 'piece_quantity') && value !== '') {
-      // Validate decimal input
       if (!/^\d*\.?\d*$/.test(value)) {
-        return; // Don't update if not a valid decimal
+        return;
       }
     }
 
@@ -174,25 +173,17 @@ const ShopToShopTransfer = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.to_shop_id) {
-      setMessage({ type: 'error', text: 'Please select destination shop' });
-      return;
-    }
-
     if (!formData.item_name) {
-      setMessage({ type: 'error', text: 'Please select an item to transfer' });
+      setMessage({ type: 'error', text: 'Please select an item' });
       return;
     }
 
     let finalQuantity;
-    
-    // Calculate final quantity based on whether the item has pack quantity
     if (selectedStockItem && selectedStockItem.pack_quantity > 0) {
       let packs = parseFloat(formData.pack_quantity || 0);
       let pieces = parseFloat(formData.piece_quantity || 0);
       finalQuantity = (packs * selectedStockItem.pack_quantity) + pieces;
     } else {
-      // For items without pack quantity, use only piece quantity
       finalQuantity = parseFloat(formData.piece_quantity || 0);
     }
 
@@ -210,27 +201,46 @@ const ShopToShopTransfer = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      const payload = {
-        from_shop_id: parseInt(formData.from_shop_id),
-        to_shop_id: parseInt(formData.to_shop_id),
-        item_name: formData.item_name,
-        quantity: finalQuantity,
-        BatchNumber: formData.BatchNumber
-      };
-
-      const response = await axios.post('api/diraja/transfer-stock', payload, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      if (formData.action === 'transfer') {
+        // Normal shop-to-shop transfer
+        if (!formData.to_shop_id) {
+          setMessage({ type: 'error', text: 'Please select destination shop' });
+          setIsLoading(false);
+          return;
         }
-      });
 
-      setMessage({
-        type: 'success',
-        text: response.data.message || 'Transfer completed successfully'
-      });
+        const payload = {
+          from_shop_id: parseInt(formData.from_shop_id),
+          to_shop_id: parseInt(formData.to_shop_id),
+          item_name: formData.item_name,
+          quantity: finalQuantity,
+          BatchNumber: formData.BatchNumber
+        };
+
+        const response = await axios.post('api/diraja/transfer-stock', payload, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('access_token')}`
+          }
+        });
+
+        setMessage({ type: 'success', text: response.data.message || 'Transfer completed successfully' });
+
+      } else if (formData.action === 'return') {
+        // Return to main inventory
+        const response = await axios.delete(`/api/diraja/shops/${formData.from_shop_id}/stock/delete`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+          data: {
+            itemname: formData.item_name,
+            quantity_to_delete: finalQuantity
+          }
+        });
+
+        setMessage({ type: 'success', text: response.data.message || 'Return to store completed successfully' });
+      }
 
       setFormData(prev => ({
         ...prev,
+        to_shop_id: '',
         item_name: '',
         pack_quantity: '',
         piece_quantity: '',
@@ -242,11 +252,8 @@ const ShopToShopTransfer = () => {
     } catch (error) {
       const errorMessage = error.response?.data?.message ||
         error.response?.data?.error ||
-        'Failed to complete transfer';
-      setMessage({
-        type: 'error',
-        text: errorMessage
-      });
+        'Operation failed';
+      setMessage({ type: 'error', text: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -271,30 +278,47 @@ const ShopToShopTransfer = () => {
       )}
 
       <form onSubmit={handleSubmit} className="form">
+        {/* NEW - Action Selector */}
         <div className="form-group">
-          <label>To Shop</label>
-          {isShopLoading ? (
-            <p>Loading shops...</p>
-          ) : (
-            <select
-              name="to_shop_id"
-              value={formData.to_shop_id}
-              onChange={handleChange}
-              className="select"
-              required
-              disabled={!formData.from_shop_id}
-            >
-              <option value="">Select destination shop</option>
-              {shops
-                .filter(shop => shop.shops_id !== parseInt(formData.from_shop_id))
-                .map(shop => (
-                  <option key={shop.shop_id} value={shop.shop_id}>
-                    {shop.shopname}
-                  </option>
-                ))}
-            </select>
-          )}
+          <label>Action</label>
+          <select
+            name="action"
+            value={formData.action}
+            onChange={handleChange}
+            className="select"
+          >
+            <option value="transfer">Transfer to Shop</option>
+            <option value="return">Return to Store</option>
+          </select>
         </div>
+
+        {/* Show destination shop only if transfer */}
+        {formData.action === 'transfer' && (
+          <div className="form-group">
+            <label>To Shop</label>
+            {isShopLoading ? (
+              <p>Loading shops...</p>
+            ) : (
+              <select
+                name="to_shop_id"
+                value={formData.to_shop_id}
+                onChange={handleChange}
+                className="select"
+                required={formData.action === 'transfer'}
+                disabled={!formData.from_shop_id}
+              >
+                <option value="">Select destination shop</option>
+                {shops
+                  .filter(shop => shop.shops_id !== parseInt(formData.from_shop_id))
+                  .map(shop => (
+                    <option key={shop.shop_id} value={shop.shop_id}>
+                      {shop.shopname}
+                    </option>
+                  ))}
+              </select>
+            )}
+          </div>
+        )}
 
         {formData.from_shop_id && (
           <div className="form-group">

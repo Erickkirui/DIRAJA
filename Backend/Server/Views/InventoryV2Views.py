@@ -347,64 +347,133 @@ class DeleteShopStockV2(Resource):
                     'available_quantity': shop_stock.quantity
                 }, 400
 
-            transfer = TransfersV2.query.get(shop_stock.transferv2_id)
-            if not transfer:
-                db.session.rollback()
-                return {'message': 'Related Transfer record not found'}, 404
+            # Check if transfer exists, but don't fail if it doesn't
+            transfer = None
+            if shop_stock.transferv2_id:
+                transfer = TransfersV2.query.get(shop_stock.transferv2_id)
+                if not transfer:
+                    current_app.logger.warning(f"Transfer record {shop_stock.transferv2_id} not found for stock {stockv2_id}")
 
-            inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+            # Check if inventory item exists
+            inventory_item = None
+            if shop_stock.inventoryv2_id:
+                inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+                if not inventory_item:
+                    current_app.logger.warning(f"Inventory record {shop_stock.inventoryv2_id} not found for stock {stockv2_id}")
+
+            # If inventory item doesn't exist, we can't restore quantity to inventory
+            # But we can still process the return/delete operation
             if not inventory_item:
-                db.session.rollback()
-                return {'message': 'Related Inventory item not found'}, 404
-
-            # Restore partial quantity if not deleting all
-            if quantity_to_delete < shop_stock.quantity:
-                shop_stock.quantity -= quantity_to_delete
-                inventory_item.quantity += quantity_to_delete
+                # Create a log entry or alternative handling for missing inventory
+                current_app.logger.warning(f"Processing return without inventory restoration for stock {stockv2_id}")
                 
-                return_record = ReturnsV2(
-                    stockv2_id=shop_stock.stockv2_id,
-                    inventoryv2_id=inventory_item.inventoryV2_id,
-                    shop_id=shop_stock.shop_id,
-                    quantity=quantity_to_delete,
-                    returned_by=current_user_id,
-                    return_date=datetime.utcnow(),
-                    reason="Partial return to inventory"
-                )
-                db.session.add(return_record)
+                if quantity_to_delete < shop_stock.quantity:
+                    # Partial deletion without inventory restoration
+                    shop_stock.quantity -= quantity_to_delete
+                    
+                    return_record = ReturnsV2(
+                        stockv2_id=shop_stock.stockv2_id,
+                        inventoryv2_id=shop_stock.inventoryv2_id,  # Use the ID even if record doesn't exist
+                        shop_id=shop_stock.shop_id,
+                        quantity=quantity_to_delete,
+                        returned_by=current_user_id,
+                        return_date=datetime.utcnow(),
+                        reason="Partial return - inventory item not available"
+                    )
+                    db.session.add(return_record)
+                else:
+                    # Full deletion without inventory restoration
+                    return_record = ReturnsV2(
+                        stockv2_id=shop_stock.stockv2_id,
+                        inventoryv2_id=shop_stock.inventoryv2_id,  # Use the ID even if record doesn't exist
+                        shop_id=shop_stock.shop_id,
+                        quantity=shop_stock.quantity,
+                        returned_by=current_user_id,
+                        return_date=datetime.utcnow(),
+                        reason="Full return - inventory item not available"
+                    )
+                    db.session.add(return_record)
+                    
+                    # Delete related return records first
+                    ReturnsV2.query.filter_by(stockv2_id=shop_stock.stockv2_id).delete()
+                    
+                    # Only delete transfer if it exists and has no other dependencies
+                    if transfer:
+                        other_stocks = ShopStockV2.query.filter(
+                            ShopStockV2.transferv2_id == transfer.transferv2_id,
+                            ShopStockV2.stockv2_id != shop_stock.stockv2_id
+                        ).count()
+                        
+                        if other_stocks == 0:
+                            db.session.delete(transfer)
+                    
+                    db.session.delete(shop_stock)
             else:
-                # Delete entire record if deleting all quantity
-                inventory_item.quantity += shop_stock.quantity
-                
-                return_record = ReturnsV2(
-                    stockv2_id=shop_stock.stockv2_id,
-                    inventoryv2_id=inventory_item.inventoryV2_id,
-                    shop_id=shop_stock.shop_id,
-                    quantity=shop_stock.quantity,
-                    returned_by=current_user_id,
-                    return_date=datetime.utcnow(),
-                    reason="Full return to inventory"
-                )
-                db.session.add(return_record)
-                
-                # Delete related return records first to avoid foreign key constraint violation
-                ReturnsV2.query.filter_by(stockv2_id=shop_stock.stockv2_id).delete()
-                
-                db.session.delete(transfer)
-                db.session.delete(shop_stock)
+                # Original logic with inventory restoration
+                if quantity_to_delete < shop_stock.quantity:
+                    shop_stock.quantity -= quantity_to_delete
+                    inventory_item.quantity += quantity_to_delete
+                    
+                    return_record = ReturnsV2(
+                        stockv2_id=shop_stock.stockv2_id,
+                        inventoryv2_id=inventory_item.inventoryV2_id,
+                        shop_id=shop_stock.shop_id,
+                        quantity=quantity_to_delete,
+                        returned_by=current_user_id,
+                        return_date=datetime.utcnow(),
+                        reason="Partial return to inventory"
+                    )
+                    db.session.add(return_record)
+                else:
+                    inventory_item.quantity += shop_stock.quantity
+                    
+                    return_record = ReturnsV2(
+                        stockv2_id=shop_stock.stockv2_id,
+                        inventoryv2_id=inventory_item.inventoryV2_id,
+                        shop_id=shop_stock.shop_id,
+                        quantity=shop_stock.quantity,
+                        returned_by=current_user_id,
+                        return_date=datetime.utcnow(),
+                        reason="Full return to inventory"
+                    )
+                    db.session.add(return_record)
+                    
+                    ReturnsV2.query.filter_by(stockv2_id=shop_stock.stockv2_id).delete()
+                    
+                    if transfer:
+                        other_stocks = ShopStockV2.query.filter(
+                            ShopStockV2.transferv2_id == transfer.transferv2_id,
+                            ShopStockV2.stockv2_id != shop_stock.stockv2_id
+                        ).count()
+                        
+                        if other_stocks == 0:
+                            db.session.delete(transfer)
+                    
+                    db.session.delete(shop_stock)
 
             db.session.commit()
             
+            # Build response
             response_data = {
                 'message': 'Return processed successfully',
                 'details': {
                     'stockv2_id': int(stockv2_id),
                     'returned_quantity': quantity_to_delete,
-                    'inventoryv2_id': int(inventory_item.inventoryV2_id),
-                    'transferv2_id': int(transfer.transferv2_id),
                     'return_record_id': return_record.returnv2_id
                 }
             }
+            
+            # Add optional details
+            if transfer:
+                response_data['details']['transferv2_id'] = int(transfer.transferv2_id)
+            
+            if inventory_item:
+                response_data['details']['inventoryv2_id'] = int(inventory_item.inventoryV2_id)
+                response_data['details']['inventory_restored'] = True
+            else:
+                response_data['details']['inventoryv2_id'] = shop_stock.inventoryv2_id
+                response_data['details']['inventory_restored'] = False
+                response_data['details']['note'] = 'Inventory item not found - quantity not restored to inventory'
             
             if quantity_to_delete < shop_stock.quantity:
                 response_data['details']['remaining_quantity'] = shop_stock.quantity
