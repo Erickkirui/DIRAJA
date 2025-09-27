@@ -121,51 +121,98 @@ class BatchDetailsResourceV2(Resource):
 
 class ShopStockDeleteV2(Resource):
     parser = reqparse.RequestParser()
-    parser.add_argument('quantity_to_delete', type=int, required=True, help="Quantity to delete cannot be blank!")
+    parser.add_argument(
+        'quantity_to_delete',
+        type=int,
+        required=True,
+        help="Quantity to delete cannot be blank!"
+    )
+    parser.add_argument(
+        'itemname',
+        type=str,
+        required=True,
+        help="Item name cannot be blank!"
+    )
+    parser.add_argument(
+        'reason',
+        type=str,
+        required=False,
+        help="Reason for return (optional)"
+    )
 
     @jwt_required()
-    @check_role('manager')
-    def delete(self, shop_id, inventoryV2_id):
+    def delete(self, shop_id):
         args = self.parser.parse_args()
         quantity_to_delete = args['quantity_to_delete']
+        itemname = args['itemname']
+        reason = args.get('reason')
 
         try:
             with db.session.begin_nested():
-                shop_stock = ShopStockV2.query.filter_by(
-                    shop_id=shop_id, 
-                    inventoryv2_id=inventoryV2_id
-                ).first()
-                
+                # 🔎 Find the most recent batch of this item in the shop
+                shop_stock = (
+                    ShopStockV2.query
+                    .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
+                    .filter(
+                        ShopStockV2.shop_id == shop_id,
+                        InventoryV2.itemname == itemname
+                    )
+                    .order_by(InventoryV2.created_at.desc())  # most recent batch
+                    .first()
+                )
+
                 if not shop_stock:
-                    return {"error": f"Stock for InventoryV2 ID {inventoryV2_id} in Shop ID {shop_id} not found"}, 404
+                    return {
+                        "error": f"No stock found for item '{itemname}' in shop {shop_id}"
+                    }, 404
 
                 if quantity_to_delete <= 0:
                     return {"error": "Quantity to delete must be positive"}, 400
 
                 if quantity_to_delete > shop_stock.quantity:
-                    return {"error": f"Cannot delete {quantity_to_delete} units, only {shop_stock.quantity} available"}, 400
+                    return {
+                        "error": f"Cannot delete {quantity_to_delete} units, "
+                                 f"only {shop_stock.quantity} available"
+                    }, 400
 
-                inventory_item = InventoryV2.query.get(inventoryV2_id)
+                # Get the matching inventory batch
+                inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
                 if not inventory_item:
-                    return {"error": f"InventoryV2 item {inventoryV2_id} not found"}, 404
+                    return {"error": f"Inventory item for '{itemname}' not found"}, 404
 
-                unit_cost = shop_stock.total_cost / shop_stock.quantity if shop_stock.quantity > 0 else 0
+                # Calculate cost breakdown
+                unit_cost = (
+                    shop_stock.total_cost / shop_stock.quantity
+                    if shop_stock.quantity > 0 else 0
+                )
                 remaining_quantity = shop_stock.quantity - quantity_to_delete
                 new_total_cost = unit_cost * remaining_quantity
 
-                if remaining_quantity > 0:
-                    shop_stock.quantity = remaining_quantity
-                    shop_stock.total_cost = new_total_cost
-                    db.session.add(shop_stock)
-                else:
-                    db.session.delete(shop_stock)
+                # Create return record
+                return_record = ReturnsV2(
+                    stockv2_id=shop_stock.stockv2_id,
+                    inventoryv2_id=shop_stock.inventoryv2_id,
+                    shop_id=shop_id,
+                    quantity=quantity_to_delete,
+                    returned_by=get_jwt_identity(),
+                    return_date=func.now(),
+                    reason=reason
+                )
+                db.session.add(return_record)
 
+                # Update shop stock - NEVER DELETE, just set quantity to 0 if needed
+                shop_stock.quantity = remaining_quantity
+                shop_stock.total_cost = new_total_cost
+                db.session.add(shop_stock)
+
+                # Return stock back to inventory
                 inventory_item.quantity += quantity_to_delete
                 db.session.add(inventory_item)
 
+                # Update or delete transfer record
                 transfer = TransfersV2.query.filter_by(
                     shop_id=shop_id,
-                    inventoryV2_id=inventoryV2_id
+                    inventoryV2_id=shop_stock.inventoryv2_id
                 ).first()
 
                 if transfer:
@@ -174,33 +221,46 @@ class ShopStockDeleteV2(Resource):
                         transfer.total_cost = new_total_cost
                         db.session.add(transfer)
                     else:
-                        db.session.delete(transfer)
+                        # For transfers, you might still want to keep the record for history
+                        # or set quantity to 0 instead of deleting
+                        transfer.quantity = 0
+                        transfer.total_cost = 0
+                        db.session.add(transfer)
 
                 db.session.commit()
 
-            response = {
-                "message": "Shop stock deleted successfully",
+            return {
+                "message": "Shop stock returned successfully",
                 "inventory_item": {
-                    "inventoryV2_id": inventoryV2_id,
+                    "inventoryV2_id": shop_stock.inventoryv2_id,
+                    "itemname": itemname,
                     "updated_quantity": inventory_item.quantity
                 },
-                "deleted_stock": {
+                "shop_stock": {
                     "shop_id": shop_id,
+                    "stockv2_id": shop_stock.stockv2_id,
                     "quantity_deleted": quantity_to_delete,
-                    "quantity_remaining": remaining_quantity
+                    "quantity_remaining": remaining_quantity,
+                    "total_cost_remaining": new_total_cost
+                },
+                "return_record": {
+                    "returnv2_id": return_record.returnv2_id,
+                    "quantity_returned": quantity_to_delete,
+                    "return_date": return_record.return_date.isoformat() if return_record.return_date else None,
+                    "reason": reason
                 }
-            }
-
-            return response, 200
+            }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
             current_app.logger.error(f"Database error: {str(e)}")
             return {"error": "Database error occurred"}, 500
+
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "Unexpected error occurred"}, 500
+
 
 class GetShopStockV2(Resource):
     @jwt_required()

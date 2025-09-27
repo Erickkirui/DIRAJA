@@ -172,7 +172,7 @@ class TotalAmountPaidSalesPerShop(Resource):
             date_str = request.args.get('date')
             if not date_str:
                 return {"message": "Date parameter is required when period is 'date'"}, 400
-            
+
             try:
                 start_date = datetime.strptime(date_str, "%Y-%m-%d").replace(
                     hour=0, minute=0, second=0, microsecond=0
@@ -195,11 +195,12 @@ class TotalAmountPaidSalesPerShop(Resource):
                 Sales.shop_id == shop_id
             )
 
-            # Query for total unpaid (from Sales.balance)
+            # Query for total unpaid (only if status is unpaid or partially_paid)
             query_unpaid = db.session.query(
                 func.sum(Sales.balance)
             ).filter(
-                Sales.shop_id == shop_id
+                Sales.shop_id == shop_id,
+                Sales.status.in_(["unpaid", "partially_paid"])
             )
 
             # Apply date filters if not 'alltime'
@@ -227,6 +228,7 @@ class TotalAmountPaidSalesPerShop(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {"error": f"Database error: {str(e)}"}, 500
+
 
 
 
@@ -443,6 +445,7 @@ class TotalAmountPaidPerShop(Resource):
         today = datetime.utcnow()
         start_date = None
         end_date = None
+        period = None  # Initialize period variable
 
         # Check if a custom date is provided
         date_str = request.args.get('date')
@@ -452,6 +455,7 @@ class TotalAmountPaidPerShop(Resource):
                     hour=0, minute=0, second=0, microsecond=0
                 )
                 end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                period = "custom"  # Set period for custom date
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
@@ -499,6 +503,7 @@ class TotalAmountPaidPerShop(Resource):
                     db.session.query(func.sum(Sales.balance))
                     .filter(Sales.shop_id == shop_id)
                     .filter(Sales.created_at.between(start_date, end_date))
+                    .filter(Sales.status.in_(["unpaid", "partially paid"]))  # ✅ Only unpaid or partially paid
                     .scalar() or 0
                 )
 
@@ -527,43 +532,50 @@ class TotalAmountPaidPerShop(Resource):
                         payment_summary["cash"] = float(total or 0)
                         overall_payment_totals["cash"] += float(total or 0)
 
-                # --- Ensure not_payed comes from Sales.balance ---
+                # --- Ensure not_payed comes from Sales.balance with correct status ---
                 payment_summary["not_payed"] = float(total_unpaid or 0)
                 overall_payment_totals["not_payed"] += float(total_unpaid or 0)
 
-
                 # --- Comparison with previous period ---
                 comparison_start, comparison_end = None, None
-                if period == "today":
-                    comparison_diff = 0
-                elif period == "yesterday":
-                    comparison_start = (start_date - timedelta(days=1))
-                    comparison_end = comparison_start.replace(hour=23, minute=59, second=59, microsecond=999999)
-                elif period == "week":
-                    comparison_start = (start_date - timedelta(days=7))
-                    comparison_end = start_date - timedelta(seconds=1)
-                elif period == "month":
-                    comparison_start = (start_date - timedelta(days=30))
-                    comparison_end = start_date - timedelta(seconds=1)
+                comparison_diff = 0  # Initialize with default value
+                
+                # Only calculate comparison for predefined periods, not custom dates
+                if period != "custom":
+                    if period == "today":
+                        # For today, compare with yesterday
+                        comparison_start = (start_date - timedelta(days=1))
+                        comparison_end = comparison_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    elif period == "yesterday":
+                        # For yesterday, compare with day before yesterday
+                        comparison_start = (start_date - timedelta(days=1))
+                        comparison_end = comparison_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    elif period == "week":
+                        # For this week, compare with previous week
+                        comparison_start = (start_date - timedelta(days=7))
+                        comparison_end = start_date - timedelta(seconds=1)
+                    elif period == "month":
+                        # For this month, compare with previous month
+                        comparison_start = (start_date - timedelta(days=30))
+                        comparison_end = start_date - timedelta(seconds=1)
 
-                if comparison_start and comparison_end:
-                    previous_paid = (
-                        db.session.query(func.sum(SalesPaymentMethods.amount_paid))
-                        .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
-                        .filter(Sales.shop_id == shop_id)
-                        .filter(Sales.created_at.between(comparison_start, comparison_end))
-                        .scalar() or 0
-                    )
-                    previous_unpaid = (
-                        db.session.query(func.sum(Sales.balance))
-                        .filter(Sales.shop_id == shop_id)
-                        .filter(Sales.created_at.between(comparison_start, comparison_end))
-                        .scalar() or 0
-                    )
-                    previous_total = previous_paid + previous_unpaid
-                    comparison_diff = total_sales - previous_total
-                else:
-                    comparison_diff = 0
+                    if comparison_start and comparison_end:
+                        previous_paid = (
+                            db.session.query(func.sum(SalesPaymentMethods.amount_paid))
+                            .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
+                            .filter(Sales.shop_id == shop_id)
+                            .filter(Sales.created_at.between(comparison_start, comparison_end))
+                            .scalar() or 0
+                        )
+                        previous_unpaid = (
+                            db.session.query(func.sum(Sales.balance))
+                            .filter(Sales.shop_id == shop_id)
+                            .filter(Sales.created_at.between(comparison_start, comparison_end))
+                            .filter(Sales.status.in_(["unpaid", "partially paid"]))  # ✅ Apply same filter here
+                            .scalar() or 0
+                        )
+                        previous_total = previous_paid + previous_unpaid
+                        comparison_diff = total_sales - previous_total
 
                 overall_paid += total_paid
                 overall_unpaid += total_unpaid
@@ -601,6 +613,7 @@ class TotalAmountPaidPerShop(Resource):
                 "error": "An error occurred while fetching total sales amounts for all shops",
                 "details": str(e)
             }, 500
+
 
 
 
@@ -724,13 +737,6 @@ class TotalSalesByShop(Resource):
             sasapay_aliases = ['sasapay', 'sasa pay', 'sasa-pay', 'sasa_pay']
             cash_aliases = ['cash', 'cash payment', 'cash-pay', 'cash_pay']
 
-
-            # Lower-cased alias lists once
-            sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
-            cash_aliases_l = [s.lower() for s in cash_aliases]
-
-            # --------- Totals by method (paid amounts) ----------
-            # Sasapay total
             sasapay_aliases_l = [s.lower() for s in sasapay_aliases]
             cash_aliases_l = [s.lower() for s in cash_aliases]
 
@@ -746,7 +752,6 @@ class TotalSalesByShop(Resource):
                 .scalar() or 0.0
             )
 
-            # Cash total
             cash_total = (
                 db.session.query(db.func.coalesce(db.func.sum(SalesPaymentMethods.amount_paid), 0.0))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
@@ -768,12 +773,14 @@ class TotalSalesByShop(Resource):
                 .scalar() or 0.0
             )
 
+            # ✅ Only unpaid or partially_paid count as credit
             credit_total = (
                 db.session.query(db.func.coalesce(db.func.sum(Sales.balance), 0.0))
                 .filter(
                     Sales.shop_id == shop_id,
                     Sales.created_at.between(start_date, end_date),
-                    Sales.balance > 0
+                    Sales.balance > 0,
+                    Sales.status.in_(["unpaid", "partially_paid"])
                 )
                 .scalar() or 0.0
             )
@@ -799,9 +806,6 @@ class TotalSalesByShop(Resource):
                     for p in sale.payment
                 ]
 
-
-
-
                 total_amount_paid = sum((pd["amount_paid"] or 0) for pd in payment_data)
 
                 sold_items = [
@@ -815,9 +819,6 @@ class TotalSalesByShop(Resource):
                         "stockv2_id": it.stockv2_id,
                         "cost_of_sale": it.Cost_of_sale,
                         "purchase_account": it.Purchase_account,
-
-                    
-
                     }
                     for it in sale.items
                 ]
@@ -849,13 +850,13 @@ class TotalSalesByShop(Resource):
                 "total_cash": cash_total,
 
                 "total_credit": credit_total,
-                "total_sales": f"Ksh {total_sales:,.2f}",   # ✅ new field
+                "total_sales": f"Ksh {total_sales:,.2f}",
 
                 "formatted": {
                     "sasapay": f"Ksh {sasapay_total:,.2f}",
                     "cash": f"Ksh {cash_total:,.2f}",
                     "credit": f"Ksh {credit_total:,.2f}",
-                    "total_sales": f"Ksh {total_sales:,.2f}",   # ✅ formatted version
+                    "total_sales": f"Ksh {total_sales:,.2f}",
                 },
 
                 "sales_records": sales_list,
@@ -863,13 +864,13 @@ class TotalSalesByShop(Resource):
                 "end_date": end_date.strftime('%Y-%m-%d %H:%M:%S')
             }, 200
 
-
         except SQLAlchemyError as e:
             db.session.rollback()
             return {
                 "error": "An error occurred while fetching total sales for the shop",
                 "details": str(e)
             }, 500
+
 
 
 class TotalUnpaidAmountAllSales(Resource):

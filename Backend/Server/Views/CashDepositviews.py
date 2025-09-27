@@ -79,7 +79,7 @@ class AddCashDeposit(Resource):
             shop_to_bank_mapping = {
                 1: 12, 2: 3, 3: 6, 4: 2, 5: 5, 6: 17,
                 7: 15, 8: 9, 10: 18, 11: 8, 12: 7,
-                14: 14, 16: 13, 19: 22
+                14: 14, 16: 13, 19: 22, 20: 23
             }
 
             net_amount = amount - deductions

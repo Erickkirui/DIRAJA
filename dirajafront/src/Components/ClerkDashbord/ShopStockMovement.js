@@ -15,10 +15,10 @@ const ShopStockMovement = () => {
     shop_transfers: [],
   });
   const [dateRange, setDateRange] = useState([
-    dayjs().subtract(1, "day"), // Yesterday as start date
-    dayjs().subtract(1, "day"), // Yesterday as end date
+    dayjs(), // Today as start date
+    dayjs(), // Today as end date
   ]);
-  const [daysBack, setDaysBack] = useState(1); // Set to 1 day back
+  const [daysBack, setDaysBack] = useState(0); // Set to 0 days back (today)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("transfers");
