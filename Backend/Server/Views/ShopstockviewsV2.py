@@ -149,19 +149,19 @@ class ShopStockDeleteV2(Resource):
 
         try:
             with db.session.begin_nested():
-                # 🔎 Find the most recent batch of this item in the shop
-                shop_stock = (
+                # 🔎 Get all batches for this item in the shop (latest first)
+                shop_stocks = (
                     ShopStockV2.query
                     .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
                     .filter(
                         ShopStockV2.shop_id == shop_id,
                         InventoryV2.itemname == itemname
                     )
-                    .order_by(InventoryV2.created_at.desc())  # most recent batch
-                    .first()
+                    .order_by(InventoryV2.created_at.desc())
+                    .all()
                 )
 
-                if not shop_stock:
+                if not shop_stocks:
                     return {
                         "error": f"No stock found for item '{itemname}' in shop {shop_id}"
                     }, 404
@@ -169,86 +169,87 @@ class ShopStockDeleteV2(Resource):
                 if quantity_to_delete <= 0:
                     return {"error": "Quantity to delete must be positive"}, 400
 
-                if quantity_to_delete > shop_stock.quantity:
+                total_available = sum(stock.quantity for stock in shop_stocks)
+                if quantity_to_delete > total_available:
                     return {
                         "error": f"Cannot delete {quantity_to_delete} units, "
-                                 f"only {shop_stock.quantity} available"
+                                 f"only {total_available} available across batches"
                     }, 400
 
-                # Get the matching inventory batch
-                inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
-                if not inventory_item:
-                    return {"error": f"Inventory item for '{itemname}' not found"}, 404
+                deleted_records = []
+                qty_remaining_to_delete = quantity_to_delete
 
-                # Calculate cost breakdown
-                unit_cost = (
-                    shop_stock.total_cost / shop_stock.quantity
-                    if shop_stock.quantity > 0 else 0
-                )
-                remaining_quantity = shop_stock.quantity - quantity_to_delete
-                new_total_cost = unit_cost * remaining_quantity
+                for shop_stock in shop_stocks:
+                    if qty_remaining_to_delete <= 0:
+                        break
 
-                # Create return record
-                return_record = ReturnsV2(
-                    stockv2_id=shop_stock.stockv2_id,
-                    inventoryv2_id=shop_stock.inventoryv2_id,
-                    shop_id=shop_id,
-                    quantity=quantity_to_delete,
-                    returned_by=get_jwt_identity(),
-                    return_date=func.now(),
-                    reason=reason
-                )
-                db.session.add(return_record)
+                    delete_qty = min(qty_remaining_to_delete, shop_stock.quantity)
 
-                # Update shop stock - NEVER DELETE, just set quantity to 0 if needed
-                shop_stock.quantity = remaining_quantity
-                shop_stock.total_cost = new_total_cost
-                db.session.add(shop_stock)
+                    # Get the matching inventory batch
+                    inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+                    if not inventory_item:
+                        return {"error": f"Inventory item for '{itemname}' not found"}, 404
 
-                # Return stock back to inventory
-                inventory_item.quantity += quantity_to_delete
-                db.session.add(inventory_item)
+                    # Cost per unit for this batch
+                    unit_cost = (
+                        shop_stock.total_cost / shop_stock.quantity
+                        if shop_stock.quantity > 0 else 0
+                    )
 
-                # Update or delete transfer record
-                transfer = TransfersV2.query.filter_by(
-                    shop_id=shop_id,
-                    inventoryV2_id=shop_stock.inventoryv2_id
-                ).first()
+                    # New shop stock values
+                    new_remaining_qty = shop_stock.quantity - delete_qty
+                    new_total_cost = unit_cost * new_remaining_qty
 
-                if transfer:
-                    if remaining_quantity > 0:
-                        transfer.quantity = remaining_quantity
-                        transfer.total_cost = new_total_cost
+                    # Create return record
+                    return_record = ReturnsV2(
+                        stockv2_id=shop_stock.stockv2_id,
+                        inventoryv2_id=shop_stock.inventoryv2_id,
+                        shop_id=shop_id,
+                        quantity=delete_qty,
+                        returned_by=get_jwt_identity(),
+                        return_date=func.now(),
+                        reason=reason
+                    )
+                    db.session.add(return_record)
+
+                    # Update shop stock
+                    shop_stock.quantity = new_remaining_qty
+                    shop_stock.total_cost = new_total_cost
+                    db.session.add(shop_stock)
+
+                    # Update inventory (returned items go back)
+                    inventory_item.quantity += delete_qty
+                    db.session.add(inventory_item)
+
+                    # Update or adjust transfer record
+                    transfer = TransfersV2.query.filter_by(
+                        shop_id=shop_id,
+                        inventoryV2_id=shop_stock.inventoryv2_id
+                    ).first()
+                    if transfer:
+                        if new_remaining_qty > 0:
+                            transfer.quantity = new_remaining_qty
+                            transfer.total_cost = new_total_cost
+                        else:
+                            transfer.quantity = 0
+                            transfer.total_cost = 0
                         db.session.add(transfer)
-                    else:
-                        # For transfers, you might still want to keep the record for history
-                        # or set quantity to 0 instead of deleting
-                        transfer.quantity = 0
-                        transfer.total_cost = 0
-                        db.session.add(transfer)
+
+                    deleted_records.append({
+                        "stockv2_id": shop_stock.stockv2_id,
+                        "batch_inventory_id": shop_stock.inventoryv2_id,
+                        "quantity_deleted": delete_qty,
+                        "quantity_remaining": new_remaining_qty,
+                        "total_cost_remaining": new_total_cost
+                    })
+
+                    qty_remaining_to_delete -= delete_qty
 
                 db.session.commit()
 
             return {
-                "message": "Shop stock returned successfully",
-                "inventory_item": {
-                    "inventoryV2_id": shop_stock.inventoryv2_id,
-                    "itemname": itemname,
-                    "updated_quantity": inventory_item.quantity
-                },
-                "shop_stock": {
-                    "shop_id": shop_id,
-                    "stockv2_id": shop_stock.stockv2_id,
-                    "quantity_deleted": quantity_to_delete,
-                    "quantity_remaining": remaining_quantity,
-                    "total_cost_remaining": new_total_cost
-                },
-                "return_record": {
-                    "returnv2_id": return_record.returnv2_id,
-                    "quantity_returned": quantity_to_delete,
-                    "return_date": return_record.return_date.isoformat() if return_record.return_date else None,
-                    "reason": reason
-                }
+                "message": f"Successfully deleted {quantity_to_delete} units across batches",
+                "deleted_batches": deleted_records
             }, 200
 
         except SQLAlchemyError as e:
@@ -260,6 +261,7 @@ class ShopStockDeleteV2(Resource):
             db.session.rollback()
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "Unexpected error occurred"}, 500
+
 
 
 class GetShopStockV2(Resource):
@@ -878,3 +880,135 @@ class StockReturns(Resource):
             })
 
         return make_response(jsonify(all_returns), 200)
+    
+
+class BrokenEggs(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument(
+        'quantity_to_move',
+        type=int,
+        required=True,
+        help="Quantity to move cannot be blank!"
+    )
+    parser.add_argument(
+        'reason',
+        type=str,
+        required=False,
+        help="Reason for reclassification (optional)"
+    )
+
+    @jwt_required()
+    def post(self, shop_id):
+        args = self.parser.parse_args()
+        quantity_to_move = args['quantity_to_move']
+        reason = args.get('reason')
+
+        from_itemname = "Eggs (Grade)"
+        to_itemname = "Broken eggs"
+
+        try:
+            with db.session.begin_nested():
+                # 🔎 Get all "Eggs" batches in the shop
+                from_stocks = (
+                    ShopStockV2.query
+                    .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
+                    .filter(
+                        ShopStockV2.shop_id == shop_id,
+                        ShopStockV2.itemname == from_itemname
+                    )
+                    .order_by(InventoryV2.created_at.asc())  # oldest first
+                    .all()
+                )
+
+                if not from_stocks:
+                    return {"error": f"No stock for '{from_itemname}' in shop {shop_id}"}, 404
+
+                total_available = sum(s.quantity for s in from_stocks)
+                if quantity_to_move > total_available:
+                    return {
+                        "error": f"Cannot move {quantity_to_move} units, "
+                                 f"only {total_available} '{from_itemname}' available"
+                    }, 400
+
+                qty_remaining = quantity_to_move
+                moved_records = []
+                new_broken_entries = []
+
+                for from_stock in from_stocks:
+                    if qty_remaining <= 0:
+                        break
+
+                    move_qty = min(qty_remaining, from_stock.quantity)
+
+                    # Per-unit cost from this batch
+                    unit_cost = (
+                        from_stock.total_cost / from_stock.quantity
+                        if from_stock.quantity > 0 else 0
+                    )
+
+                    # Deduct from Eggs batch
+                    from_stock.quantity -= move_qty
+                    from_stock.total_cost = unit_cost * from_stock.quantity
+                    db.session.add(from_stock)
+
+                    # Create new Broken eggs entry (new row in ShopStockV2)
+                    broken_entry = ShopStockV2(
+                        shop_id=shop_id,
+                        inventoryv2_id=from_stock.inventoryv2_id,
+                        transferv2_id=from_stock.transferv2_id,
+                        BatchNumber=from_stock.BatchNumber,
+                        itemname=to_itemname,  # ✅ explicitly set
+                        quantity=move_qty,
+                        total_cost=unit_cost * move_qty
+                    )
+                    db.session.add(broken_entry)
+                    db.session.flush()  # get stockv2_id
+
+                    # Log the reclassification
+                    reclass_log = ReturnsV2(
+                        stockv2_id=from_stock.stockv2_id,
+                        inventoryv2_id=from_stock.inventoryv2_id,
+                        shop_id=shop_id,
+                        quantity=move_qty,
+                        returned_by=get_jwt_identity(),
+                        return_date=func.now(),
+                        reason=reason or f"Reclassified to {to_itemname}"
+                    )
+                    db.session.add(reclass_log)
+
+                    moved_records.append({
+                        "from_stock_id": from_stock.stockv2_id,
+                        "moved_quantity": move_qty,
+                        "unit_cost": unit_cost
+                    })
+
+                    new_broken_entries.append({
+                        "new_stock_id": broken_entry.stockv2_id,
+                        "inventoryv2_id": broken_entry.inventoryv2_id,
+                        "BatchNumber": broken_entry.BatchNumber,
+                        "quantity": broken_entry.quantity,
+                        "total_cost": broken_entry.total_cost
+                    })
+
+                    qty_remaining -= move_qty
+
+                db.session.commit()
+
+            return {
+                "message": f"Successfully moved {quantity_to_move} from '{from_itemname}' to '{to_itemname}' in shop {shop_id}",
+                "details": moved_records,
+                "broken_entries": new_broken_entries
+            }, 200
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error: {str(e)}")
+            return {"error": "Database error occurred"}, 500
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return {"error": "Unexpected error occurred"}, 500
+
+
+
