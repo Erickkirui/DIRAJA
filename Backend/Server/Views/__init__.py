@@ -74,7 +74,7 @@ from Server.Views.ManagerDashbordViews import (
     TotalAmountPaidPurchases, StockAlert, TotalSalesByShop,
     TotalUnpaidAmountAllSales, TotalAmountPaidForMabanda,
     TotalAmountPaidPurchasesInventory, SalesSummary, TotalFinancialSummary,
-    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement,GetInventoryStock, MonthlyIncome
+    TotalUnpaidAmountPerClerk, TotalExpensesForMabanda,StockMovement,GetInventoryStock, MonthlyIncome,SendNotification
 )
 
 from Server.Views.Emailnotifications import (
@@ -290,7 +290,7 @@ api.add_resource(TotalSalesByShop,"/totalsalesbyshop/<int:shop_id>")
 api.add_resource(StockMovement, '/stock-movement')
 api.add_resource(GetInventoryStock, '/inventory-stock-level')
 api.add_resource(MonthlyIncome, '/monthly-analytics')
-
+api.add_resource(SendNotification, "/send_notification")
 
 # Mabanda shop 
 api.add_resource(AddMabandaSale,'/newmabandasale')

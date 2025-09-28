@@ -30,6 +30,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
 from flask import current_app
 import traceback
+from pywebpush import webpush, WebPushException
 from sqlalchemy import func
 
 
@@ -1611,3 +1612,30 @@ class GetInventoryStock(Resource):
                 "error": "An error occurred while fetching inventory stock data",
                 "details": str(e)
             }, 500
+
+
+class SendNotification(Resource):
+    def post(self):
+        data = request.get_json()
+
+        subscription_info = data.get("subscription")
+        payload = data.get("message", "Hello from KUKUZETU!")
+
+        if not subscription_info:
+            return {"error": "Missing subscription info"}, 400
+
+        try:
+            webpush(
+                subscription_info=subscription_info,
+                data=payload,
+                vapid_private_key=current_app.config["VAPID_PRIVATE_KEY"],
+                vapid_claims={
+                    "sub": current_app.config["VAPID_EMAIL"]
+                }
+            )
+            return {"success": True}, 200
+        except WebPushException as ex:
+            return {"error": str(ex)}, 500
+
+
+
