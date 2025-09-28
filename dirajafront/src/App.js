@@ -121,6 +121,7 @@ import CSVUploader from './Components/Reports/CSVUploader';
 import TransferManagement from './Pages/Transfersmanagement';
 import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
 import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
+import BrokenEggsReclassify from './Components/ClerkDashbord/BrokenEggs';
 
 
 
@@ -242,6 +243,7 @@ function App() {
             <Route path='/transaction-analyse' element={<Layout><CSVUploader /></Layout>} ></Route>
             <Route path='/recieve-stock'  element={<ClerkLayout><TransferManagement /></ClerkLayout>} ></Route>
             <Route path='/custom-sale' element={<ClerkLayout><NewsaleFormat/></ClerkLayout>}></Route>
+            <Route path='/broken-eggs' element={<ClerkLayout><BrokenEggsReclassify/></ClerkLayout>}></Route>
 
            </Routes> 
        

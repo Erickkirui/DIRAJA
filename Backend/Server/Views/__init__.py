@@ -127,7 +127,7 @@ from Server.Views.ShopstockviewsV2 import (
     GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2,
     AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2,
     ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2,
-    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns
+    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns, BrokenEggs
 )
 
 from Server.Views.InventoryV2Views import (
@@ -414,6 +414,8 @@ api.add_resource(GetAllStockV2, '/allstockv2')
 api.add_resource(ItemDetailsResourceForShopV2, '/shop-itemdetailsv2')
 api.add_resource(TransferSystemStockV2, "/transfer-system-stock")
 api.add_resource(StockReturns, "/stockreturns")
+api.add_resource(BrokenEggs, "/shops/<int:shop_id>/stock/broken-eggs")
+
 
 
 #Shoptoshop transfer
