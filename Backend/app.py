@@ -7,11 +7,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from flask_mail import Mail
 
-# LangChain + Gemini
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.utilities import SQLDatabase
-from langchain.chains import create_sql_query_chain
-
 load_dotenv()
 
 # ---------- Extensions ----------
@@ -83,6 +78,11 @@ def create_app(config_name):
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
 
+    # ✅ VAPID keys (from .env)
+    app.config['VAPID_PUBLIC_KEY'] = os.getenv("VAPID_PUBLIC_KEY")
+    app.config['VAPID_PRIVATE_KEY'] = os.getenv("VAPID_PRIVATE_KEY")
+    app.config['VAPID_EMAIL'] = os.getenv("VAPID_EMAIL")  # e.g. "mailto:admin@yourdomain.com"
+
     # Init extensions
     db.init_app(app)
     Migrate(app, db)
@@ -95,18 +95,5 @@ def create_app(config_name):
 
     # Register views
     initialize_views(app)
-
-    # ---------- LangChain SQL Connection ----------
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set. Check your .env file or environment variables.")
-
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", google_api_key=api_key)
-    database = SQLDatabase.from_uri(app.config["SQLALCHEMY_DATABASE_URI"])
-
-    # Attach objects to app
-    app.llm = llm                              # ✅ now app has llm
-    app.sql_database = database                # raw db for queries
-    app.db_chain = create_sql_query_chain(llm, database)  # chain for SQL generation
 
     return app

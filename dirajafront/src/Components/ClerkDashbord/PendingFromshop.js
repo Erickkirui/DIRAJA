@@ -283,7 +283,7 @@ const PendingFromShop = () => {
 
   return (
     <div className="transfers-container">
-      <h2>Pending Transfers From Other Shops</h2>
+  
 
       {loading ? (
         <LoadingAnimation />
