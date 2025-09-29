@@ -178,6 +178,9 @@ const ShopStockList = () => {
         <button className="button" onClick={() => navigate("/transfer")}>
           Transfer Stock
         </button>
+        <button className="button" onClick={() => navigate("/broken-eggs")}>
+          Broken
+        </button>
       </div>
 
       {/* Tabs */}
