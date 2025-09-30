@@ -19,6 +19,7 @@ const Inventory = () => {
   const [editingInventoryId, setEditingInventoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [stockItems, setStockItems] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const editInventoryRef = useRef(null);
 
@@ -49,9 +50,6 @@ const Inventory = () => {
         setStockItems(stockItemsData);
 
         // Apply display formatting to inventory
-
-        // FIXED: Changed inventoryResponse.data to response.data
-
         const processedInventory = inventoryResponse.data.map((item) => {
           const itemInfo = stockItemsData.find(
             (stockItem) => stockItem.item_name === item.itemname
@@ -120,7 +118,11 @@ const Inventory = () => {
 
   useEffect(() => {
     if (editingInventoryId !== null) {
+      // Small timeout to ensure the DOM has updated
+      setTimeout(() => setIsModalVisible(true), 10);
       editInventoryRef.current?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      setIsModalVisible(false);
     }
   }, [editingInventoryId]);
 
@@ -179,6 +181,16 @@ const Inventory = () => {
   const handleDistributeSuccess = () => {
     setSelectedInventory([]);
     setSelectedAction('');
+  };
+
+  const handleEditClick = (inventoryId) => {
+    setEditingInventoryId(inventoryId);
+  };
+
+  const handleCloseUpdate = () => {
+    setIsModalVisible(false);
+    // Small delay to allow slide-out animation to complete
+    setTimeout(() => setEditingInventoryId(null), 300);
   };
 
   const filteredInventory = inventory
@@ -275,13 +287,57 @@ const Inventory = () => {
     { header: 'Comments', key: 'note' },
   ];
 
-  const handleEditClick = (inventoryId) => {
-    setEditingInventoryId(inventoryId);
+  // Inline styles for the modal
+  const overlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 999,
+    display: editingInventoryId ? 'block' : 'none',
+    transition: 'opacity 0.3s ease-in-out',
+    opacity: isModalVisible ? 1 : 0,
   };
 
-  const handleCloseUpdate = () => {
-    setEditingInventoryId(null);
+  const modalContainerStyle = {
+    position: 'fixed',
+    top: 0,
+    right: isModalVisible ? 0 : '-400px',
+    width: '400px',
+    height: '100vh',
+    backgroundColor: 'white',
+    boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)',
+    zIndex: 1000,
+    transition: 'left 0.3s ease-in-out',
+    overflowY: 'auto',
+    padding: '20px',
   };
+
+  const closeButtonStyle = {
+    position: 'absolute',
+    top: '10px',
+    right: '15px',
+    background: 'none',
+    border: 'none',
+    fontSize: '24px',
+    cursor: 'pointer',
+    color: '#666',
+    width: '30px',
+    height: '30px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: '50%',
+  };
+
+  const closeButtonHoverStyle = {
+    backgroundColor: '#f0f0f0',
+    color: '#000',
+  };
+
+  const [isCloseHovered, setIsCloseHovered] = useState(false);
 
   return (
     <div className="inventory-container">
@@ -329,13 +385,39 @@ const Inventory = () => {
       )}
 
       {editingInventoryId && (
-        <div ref={editInventoryRef}>
-          <UpdateInventory
-            inventoryId={editingInventoryId}
-            onClose={handleCloseUpdate}
-            onUpdateSuccess={() => setInventory([...inventory])}
+        <>
+          {/* Overlay */}
+          <div 
+            style={overlayStyle}
+            onClick={handleCloseUpdate}
           />
-        </div>
+          
+          {/* Slide-in modal */}
+          <div 
+            style={modalContainerStyle}
+            ref={editInventoryRef}
+          >
+            <button 
+              style={{
+                ...closeButtonStyle,
+                ...(isCloseHovered ? closeButtonHoverStyle : {})
+              }}
+              onClick={handleCloseUpdate}
+              onMouseEnter={() => setIsCloseHovered(true)}
+              onMouseLeave={() => setIsCloseHovered(false)}
+            >
+              ×
+            </button>
+            <UpdateInventory
+              inventoryId={editingInventoryId}
+              onClose={handleCloseUpdate}
+              onUpdateSuccess={() => {
+                setInventory([...inventory]);
+                handleCloseUpdate();
+              }}
+            />
+          </div>
+        </>
       )}
 
       <GeneralTableLayout
