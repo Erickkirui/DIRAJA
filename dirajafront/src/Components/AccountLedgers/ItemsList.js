@@ -51,11 +51,7 @@ function ItemsList() {
   };
 
   const handleItemAdded = (newItem) => {
-    // Option 1: append directly
     setData((prev) => [...prev, newItem]);
-
-    // Option 2: re-fetch everything from backend
-    // fetchItems();
   };
 
   const columns = [
@@ -63,20 +59,44 @@ function ItemsList() {
     { key: 'name', header: 'Item Name' },
     { key: 'type', header: 'Item Type' },
     {
-      key: 'gl_accounts',
+      key: 'accounts',
       header: 'Linked Accounts',
-      render: (row) => row.gl_accounts.map((acc) => acc.name).join(', '),
+      render: (row) => {
+        if (row.type === 'Inventory') {
+          return [
+            row.purchase_account?.name,
+            row.sales_account?.name,
+            row.cost_of_sales_account?.name,
+          ]
+            .filter(Boolean)
+            .join(', ');
+        } else {
+          return row.gl_account?.name || '—';
+        }
+      },
     },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', alignItems: 'flex-start' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: '20px',
+        alignItems: 'flex-start',
+      }}
+    >
       {/* Left: Add Form */}
       <div style={{ flex: '1', maxWidth: '400px' }}>
         <CreateItem onItemAdded={handleItemAdded} />
 
         {message && (
-          <div style={{ margin: '10px 0', color: messageType === 'error' ? 'red' : 'green' }}>
+          <div
+            style={{
+              margin: '10px 0',
+              color: messageType === 'error' ? 'red' : 'green',
+            }}
+          >
             {messageType === 'success' ? '✅ Success: ' : '❌ Error: '}
             {message}
           </div>
@@ -89,7 +109,14 @@ function ItemsList() {
 
         {/* Pagination controls */}
         {totalPages > 1 && (
-          <div style={{ display: 'flex', gap: '10px', marginTop: '10px', flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '10px',
+              marginTop: '10px',
+              flexWrap: 'wrap',
+            }}
+          >
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
