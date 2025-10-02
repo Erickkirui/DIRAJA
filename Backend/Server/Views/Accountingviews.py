@@ -393,6 +393,7 @@ class SalesLedger(Resource):
 
 #items list 
 
+
 class CreateItem(Resource):
     @jwt_required()
     def post(self):
@@ -400,23 +401,39 @@ class CreateItem(Resource):
 
         item_type = data.get('item_type')
         item_name = data.get('item_name')
-        gl_account_id = data.get('gl_account_id')  # Expecting a list of IDs
+        purchase_account = data.get('purchase_account')
+        sales_account = data.get('sales_account')
+        cost_of_sales_account = data.get('cost_of_sales_account')
+        gl_account_id = data.get('gl_account_id')
         description = data.get('description')
 
         # ✅ Basic validation
         if not item_type:
             return make_response(jsonify({"message": "'item_type' is required."}), 400)
+        if not item_name:
+            return make_response(jsonify({"message": "'item_name' is required."}), 400)
 
-        if gl_account_id is None:
-            return make_response(jsonify({"message": "'gl_account_id' is required."}), 400)
+        # ✅ Validate foreign keys if provided
+        for field_name, account_id in {
+            "purchase_account": purchase_account,
+            "sales_account": sales_account,
+            "cost_of_sales_account": cost_of_sales_account,
+            "gl_account_id": gl_account_id
+        }.items():
+            if account_id is not None:
+                if not ChartOfAccounts.query.get(account_id):
+                    return make_response(
+                        jsonify({"message": f"Invalid {field_name}: account {account_id} does not exist."}),
+                        400
+                    )
 
-        # ✅ Ensure gl_account_id is stored as JSON (list or dict)
-        if not isinstance(gl_account_id, (list, dict)):
-            return make_response(jsonify({"message": "'gl_account_id' must be a list or dict."}), 400)
-
+        # ✅ Create new item
         new_item = ItemsList(
             item_type=item_type,
             item_name=item_name,
+            purchase_account=purchase_account,
+            sales_account=sales_account,
+            cost_of_sales_account=cost_of_sales_account,
             gl_account_id=gl_account_id,
             description=description
         )
@@ -430,13 +447,20 @@ class CreateItem(Resource):
                     "id": new_item.item_id,
                     "type": new_item.item_type,
                     "name": new_item.item_name,
+                    "purchase_account": new_item.purchase_account,
+                    "sales_account": new_item.sales_account,
+                    "cost_of_sales_account": new_item.cost_of_sales_account,
                     "gl_account_id": new_item.gl_account_id,
                     "description": new_item.description
                 }
             }), 201)
         except Exception as e:
             db.session.rollback()
-            return make_response(jsonify({"message": "Error creating item.", "error": str(e)}), 500)
+            return make_response(jsonify({
+                "message": "Error creating item.",
+                "error": str(e)
+            }), 500)
+
 
     
 
@@ -447,25 +471,28 @@ class GetItems(Resource):
             result = []
 
             for item in items:
-                gl_accounts_info = []
-
-                # Ensure gl_account_id is a list
-                if isinstance(item.gl_account_id, list) and item.gl_account_id:
-                    accounts = ChartOfAccounts.query.filter(
-                        ChartOfAccounts.id.in_(item.gl_account_id)
-                    ).all()
-                    # Return id + name of each linked account
-                    gl_accounts_info = [{"id": acc.id, "name": acc.name} for acc in accounts]
+                def get_account_info(account_id):
+                    if account_id:
+                        acc = ChartOfAccounts.query.get(account_id)
+                        if acc:
+                            return {"id": acc.id, "name": acc.name, "type": acc.type}
+                    return None
 
                 result.append({
                     "id": item.item_id,
                     "type": item.item_type,
                     "name": item.item_name,
                     "description": item.description,
-                    "gl_accounts": gl_accounts_info
+                    "purchase_account": get_account_info(item.purchase_account),
+                    "sales_account": get_account_info(item.sales_account),
+                    "cost_of_sales_account": get_account_info(item.cost_of_sales_account),
+                    "gl_account": get_account_info(item.gl_account_id),
                 })
 
             return make_response(jsonify({"items": result}), 200)
 
         except Exception as e:
-            return make_response(jsonify({"message": "Error fetching items", "error": str(e)}), 500)
+            return make_response(
+                jsonify({"message": "Error fetching items", "error": str(e)}), 
+                500
+            )
