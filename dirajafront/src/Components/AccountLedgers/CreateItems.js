@@ -64,13 +64,22 @@ const CreateItem = ({ onSuccess }) => {
       return;
     }
 
-    // values.accounts is already an array of IDs from AntD <Select>
-    const payload = {
-      item_type: values.itemType,
-      item_name: values.itemName,
-      gl_account_id: values.accounts, // ✅ FIXED
-      description: values.description,
-    };
+    const payload =
+      values.itemType === 'Inventory'
+        ? {
+            item_type: values.itemType,
+            item_name: values.itemName,
+            description: values.description,
+            purchase_account: values.purchaseAccount,
+            sales_account: values.salesAccount,
+            cost_of_sales_account: values.costOfSalesAccount,
+          }
+        : {
+            item_type: values.itemType,
+            item_name: values.itemName,
+            description: values.description,
+            gl_account_id: values.glAccount,
+          };
 
     try {
       const response = await fetch('api/diraja/create-items', {
@@ -145,16 +154,45 @@ const CreateItem = ({ onSuccess }) => {
         <TextArea rows={3} placeholder="Optional description" />
       </Form.Item>
 
-      <Form.Item
-        name="accounts"
-        label="Chart of Accounts"
-        rules={[{ required: true, message: 'Please select at least one account' }]}
-      >
-        <Select
-          mode="multiple"
-          options={accountsOptions}
-          placeholder="Select chart accounts..."
-        />
+      {/* Conditional rendering */}
+      <Form.Item shouldUpdate={(prev, curr) => prev.itemType !== curr.itemType}>
+        {({ getFieldValue }) =>
+          getFieldValue('itemType') === 'Inventory' ? (
+            <>
+              <Form.Item
+                name="purchaseAccount"
+                label="Purchase Account"
+                rules={[{ required: true, message: 'Please select purchase account' }]}
+              >
+                <Select options={accountsOptions} placeholder="Select purchase account" />
+              </Form.Item>
+
+              <Form.Item
+                name="salesAccount"
+                label="Sales Account"
+                rules={[{ required: true, message: 'Please select sales account' }]}
+              >
+                <Select options={accountsOptions} placeholder="Select sales account" />
+              </Form.Item>
+
+              <Form.Item
+                name="costOfSalesAccount"
+                label="Cost of Sales Account"
+                rules={[{ required: true, message: 'Please select cost of sales account' }]}
+              >
+                <Select options={accountsOptions} placeholder="Select cost of sales account" />
+              </Form.Item>
+            </>
+          ) : (
+            <Form.Item
+              name="glAccount"
+              label="Chart of Accounts"
+              rules={[{ required: true, message: 'Please select chart of account' }]}
+            >
+              <Select options={accountsOptions} placeholder="Select chart account" />
+            </Form.Item>
+          )
+        }
       </Form.Item>
 
       <Form.Item>

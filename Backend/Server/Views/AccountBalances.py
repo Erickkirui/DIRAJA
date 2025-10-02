@@ -11,8 +11,7 @@ from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount  # adjust import if needed
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
-
-
+from Server.Models import ChartOfAccounts
 
 def check_role(required_role):
     def wrapper(fn):
@@ -53,6 +52,7 @@ class PostBankAccount(Resource):
 
         account_name = data.get('Account_name')
         account_balance = data.get('Account_Balance')
+        chart_account_id = data.get('chart_account_id')  # ✅ new field
 
         if not account_name or account_balance is None:
             return {"message": "Account_name and Account_Balance are required."}, 400
@@ -62,9 +62,18 @@ class PostBankAccount(Resource):
         if existing:
             return {"message": "Account with this name already exists."}, 409
 
+        # ✅ Validate chart_account_id if provided
+        if chart_account_id:
+            chart_account = ChartOfAccounts.query.get(chart_account_id)
+            if not chart_account:
+                return {"message": "Invalid chart_account_id provided."}, 400
+        else:
+            chart_account_id = None
+
         new_account = BankAccount(
             Account_name=account_name,
-            Account_Balance=account_balance
+            Account_Balance=account_balance,
+            chart_account_id=chart_account_id  # ✅ save foreign key
         )
 
         db.session.add(new_account)
@@ -75,9 +84,11 @@ class PostBankAccount(Resource):
             "account": {
                 "id": new_account.id,
                 "Account_name": new_account.Account_name,
-                "Account_Balance": new_account.Account_Balance
+                "Account_Balance": new_account.Account_Balance,
+                "chart_account_id": new_account.chart_account_id  # ✅ include in response
             }
         }, 201
+
 
 
 class GetAllBankAccounts(Resource):
@@ -91,11 +102,13 @@ class GetAllBankAccounts(Resource):
             result.append({
                 "id": account.id,
                 "Account_name": account.Account_name,
-                "Account_Balance": account.Account_Balance
+                "Account_Balance": account.Account_Balance,
+                "chart_account_id": account.chart_account_id,
+                "chart_account_name": account.chart_account.name if account.chart_account else None
             })
 
         return {"accounts": result}, 200
-    
+
 
 class DepositToAccount(Resource):
     @jwt_required()
