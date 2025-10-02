@@ -61,11 +61,11 @@ from Server.Views.employeeloanview import (
 
 from Server.Views.Sales import (
     AddSale, GetSales, GetSalesByShop, SalesResources, GetPaymentTotals,
-    SalesBalanceResource, TotalBalanceSummary, ItemsSoldSummary,
+    SalesBalanceResource, TotalBalanceSummary, 
     UpdateSalePayment, GetUnpaidSales, PaymentMethodsResource,
     CapturePaymentResource, CreditHistoryResource, GetSingleSaleByShop,
     SalesByEmployeeResource, GetSale, GetUnpaidSalesByClerk,
-    TotalCashSalesByUser, CashSales, CashSalesByUser, GenerateSalesReport,ProductEarningsSummary,CategoryEarningsSummary
+    TotalCashSalesByUser, CashSales, CashSalesByUser, GenerateSalesReport,ProductEarningsSummary,CategoryEarningsSummary, ItemsSoldSummary
 )
 
 from Server.Views.ManagerDashbordViews import (

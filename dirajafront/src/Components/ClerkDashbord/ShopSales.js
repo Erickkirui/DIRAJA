@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import PaginationTable from '../../PaginationTable';
 import LoadingAnimation from '../LoadingAnimation';
@@ -12,7 +12,67 @@ const ShopSales = () => {
   const [error, setError] = useState('');
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [stockItems, setStockItems] = useState([]);
   const itemsPerPage = 50;
+
+  // Fetch stock items for processing item quantities
+  const fetchStockItems = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await axios.get("api/diraja/stockitems", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setStockItems(response.data.stock_items || []);
+    } catch (err) {
+      console.error("Error fetching stock items:", err);
+    }
+  }, []);
+
+  // Process item quantity into human-readable display
+  const processItemQuantity = useCallback((item) => {
+    const itemInfo = stockItems.find(stockItem => stockItem.item_name === item.item_name);
+
+    if (!itemInfo) {
+      return `${item.quantity} ${item.metric || "pcs"}`;
+    }
+
+    // Kgs stay as kgs
+    if (item.metric && item.metric.toLowerCase() === "kgs") {
+      return `${item.quantity} kgs`;
+    }
+
+    // Eggs → trays + pieces
+    const isEggs = item.item_name.toLowerCase().includes("egg");
+    if (isEggs && itemInfo.pack_quantity > 0) {
+      const trays = Math.floor(item.quantity / itemInfo.pack_quantity);
+      const pieces = item.quantity % itemInfo.pack_quantity;
+      
+      if (trays > 0) {
+        return `${trays} tray${trays !== 1 ? "s" : ""}${
+          pieces > 0 ? `, ${pieces} pcs` : ""
+        }`;
+      }
+      return `${pieces} pcs`;
+    }
+
+    // Other items with pack quantity → pkts + pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(item.quantity / itemInfo.pack_quantity);
+      const pieces = item.quantity % itemInfo.pack_quantity;
+      
+      if (packets > 0) {
+        return `${packets} pkt${packets !== 1 ? "s" : ""}${
+          pieces > 0 ? `, ${pieces} pcs` : ""
+        }`;
+      }
+      return `${pieces} pcs`;
+    }
+
+    // Fallback
+    return `${item.quantity} ${item.metric || "pcs"}`;
+  }, [stockItems]);
 
   const fetchSales = async (page = 1, search = '', date = '') => {
     try {
@@ -47,6 +107,10 @@ const ShopSales = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStockItems();
+  }, [fetchStockItems]);
 
   useEffect(() => {
     fetchSales(currentPage, searchQuery, selectedDate);
@@ -99,7 +163,7 @@ const ShopSales = () => {
         Array.isArray(sale.items)
           ? sale.items.map(item => (
               <div key={`${item.item_name}-${item.BatchNumber}`} className="mb-1">
-                {item.item_name} × {item.quantity} {item.metric} — Ksh {item.total_price}
+                {item.item_name} × {processItemQuantity(item)}
               </div>
             ))
           : 'No items',
