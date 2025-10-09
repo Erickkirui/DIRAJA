@@ -908,7 +908,7 @@ class BrokenEggs(Resource):
 
         try:
             with db.session.begin_nested():
-                # 🔎 Get all "Eggs" batches in the shop
+                # 🔎 Get all "Eggs" batches in the shop (latest first)
                 from_stocks = (
                     ShopStockV2.query
                     .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
@@ -916,7 +916,7 @@ class BrokenEggs(Resource):
                         ShopStockV2.shop_id == shop_id,
                         ShopStockV2.itemname == from_itemname
                     )
-                    .order_by(InventoryV2.created_at.asc())  # oldest first
+                    .order_by(InventoryV2.created_at.desc())  # ✅ latest batch first
                     .all()
                 )
 
@@ -939,6 +939,8 @@ class BrokenEggs(Resource):
                         break
 
                     move_qty = min(qty_remaining, from_stock.quantity)
+                    if move_qty <= 0:
+                        continue  # ✅ skip if no deduction
 
                     # Per-unit cost from this batch
                     unit_cost = (
@@ -951,20 +953,20 @@ class BrokenEggs(Resource):
                     from_stock.total_cost = unit_cost * from_stock.quantity
                     db.session.add(from_stock)
 
-                    # Create new Broken eggs entry (new row in ShopStockV2)
+                    # Create new Broken eggs entry only if move_qty > 0
                     broken_entry = ShopStockV2(
                         shop_id=shop_id,
                         inventoryv2_id=from_stock.inventoryv2_id,
                         transferv2_id=from_stock.transferv2_id,
                         BatchNumber=from_stock.BatchNumber,
-                        itemname=to_itemname,  # ✅ explicitly set
+                        itemname=to_itemname,
                         quantity=move_qty,
                         total_cost=unit_cost * move_qty
                     )
                     db.session.add(broken_entry)
-                    db.session.flush()  # get stockv2_id
+                    db.session.flush()
 
-                    # Log the reclassification
+                    # Log reclassification
                     reclass_log = ReturnsV2(
                         stockv2_id=from_stock.stockv2_id,
                         inventoryv2_id=from_stock.inventoryv2_id,
@@ -1009,6 +1011,7 @@ class BrokenEggs(Resource):
             db.session.rollback()
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "Unexpected error occurred"}, 500
+
 
 
 

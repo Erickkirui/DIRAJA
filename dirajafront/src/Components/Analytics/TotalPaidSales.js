@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card, Select, DatePicker, Row, Col, Statistic, Alert, Spin, Tag } from 'antd';
 import dayjs from 'dayjs';
+import { format } from 'date-fns';
 
 const { Option } = Select;
 const { RangePicker } = DatePicker;
@@ -10,7 +11,15 @@ const TotalPaidSales = () => {
   const [shopSales, setShopSales] = useState([]);
   const [error, setError] = useState('');
   const [period, setPeriod] = useState('yesterday');
-  const [customDate, setCustomDate] = useState('');
+  const [dateRange, setDateRange] = useState(() => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    return {
+      startDate: yesterday,
+      endDate: today,
+    };
+  });
   const [totalSales, setTotalSales] = useState(0);
   const [shopCount, setShopCount] = useState(0);
   const [paymentSummary, setPaymentSummary] = useState({
@@ -20,16 +29,26 @@ const TotalPaidSales = () => {
   });
   const [loading, setLoading] = useState(false);
   const [categorySummary, setCategorySummary] = useState([]);
-  const [categoryRange, setCategoryRange] = useState([
-    dayjs().subtract(1, 'day'), // default yesterday
-    dayjs().subtract(1, 'day'),
-  ]);
 
   // ------------------- Fetch Shop Sales -------------------
   const fetchShopSales = async () => {
     try {
       setLoading(true);
-      const params = period === 'custom' ? { date: customDate } : { period };
+      
+      let params = {};
+      
+      if (period === 'custom') {
+        if (dateRange.startDate && dateRange.endDate) {
+          const formattedStart = format(dateRange.startDate, 'yyyy-MM-dd');
+          const formattedEnd = format(dateRange.endDate, 'yyyy-MM-dd');
+          params = { 
+            start_date: formattedStart, 
+            end_date: formattedEnd 
+          };
+        }
+      } else {
+        params = { period };
+      }
 
       const response = await axios.get('/api/diraja/totalsalespershop', {
         params,
@@ -81,9 +100,9 @@ const TotalPaidSales = () => {
     try {
       let start, end;
 
-      if (period === "custom" && customDate) {
-        start = dayjs(customDate);
-        end = dayjs(customDate);
+      if (period === "custom" && dateRange.startDate && dateRange.endDate) {
+        start = dayjs(dateRange.startDate);
+        end = dayjs(dateRange.endDate);
       } else {
         switch (period) {
           case "today":
@@ -103,8 +122,8 @@ const TotalPaidSales = () => {
             end = dayjs().endOf("month");
             break;
           default:
-            // fallback to manual range picker
-            [start, end] = categoryRange;
+            start = dayjs().subtract(1, "day");
+            end = dayjs().subtract(1, "day");
         }
       }
 
@@ -129,18 +148,32 @@ const TotalPaidSales = () => {
     }
   };
 
+  // ------------------- Handle Date Range Change -------------------
+  const handleDateRangeChange = (dates, dateStrings) => {
+    if (dates && dates[0] && dates[1]) {
+      setDateRange({
+        startDate: dates[0].toDate(),
+        endDate: dates[1].toDate(),
+      });
+    } else {
+      // Reset to default if cleared
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(today.getDate() - 1);
+      setDateRange({
+        startDate: yesterday,
+        endDate: today,
+      });
+    }
+  };
+
   // ------------------- Effects -------------------
   useEffect(() => {
-    if (period !== "custom" || customDate) {
+    if (period !== "custom" || (period === "custom" && dateRange.startDate && dateRange.endDate)) {
       fetchShopSales();
-      fetchCategorySummary(); // fetch both when period/customDate changes
+      fetchCategorySummary();
     }
-  }, [period, customDate]);
-
-  // If user manually changes category range, re-fetch
-  useEffect(() => {
-    fetchCategorySummary();
-  }, [categoryRange]);
+  }, [period, dateRange]);
 
   // ------------------- Utils -------------------
   const formatCurrency = (value) =>
@@ -159,12 +192,19 @@ const TotalPaidSales = () => {
             <Option value="yesterday">Yesterday</Option>
             <Option value="week">This Week</Option>
             <Option value="month">This Month</Option>
-            <Option value="custom">Custom Date</Option>
+            <Option value="custom">Custom Date Range</Option>
           </Select>
         </Col>
         {period === 'custom' && (
           <Col>
-            <DatePicker onChange={(date, dateString) => setCustomDate(dateString)} />
+            <RangePicker 
+              onChange={handleDateRangeChange}
+              value={[
+                dateRange.startDate ? dayjs(dateRange.startDate) : null,
+                dateRange.endDate ? dayjs(dateRange.endDate) : null
+              ]}
+              style={{ width: 300 }}
+            />
           </Col>
         )}
       </Row>
@@ -205,11 +245,8 @@ const TotalPaidSales = () => {
         </Col>
       </Row>
 
-      {/* Category Range Filter */}
-      <h4>Products Totals</h4>
-   
-
       {/* Category Totals */}
+      <h4>Products Totals</h4>
       <Row gutter={16} style={{ marginBottom: 20 }}>
         {categorySummary
           .filter((c) => ["eggs", "chicken", "farmers choice"].includes((c.category || "").toLowerCase()))
