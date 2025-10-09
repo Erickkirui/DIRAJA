@@ -7,7 +7,9 @@ from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.BankAccounts import BankAccount, BankingTransaction
 from Server.Models.Users import Users
 from app import db
+import json
 from functools import wraps
+from pywebpush import webpush, WebPushException
 from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from dateutil import parser
@@ -15,6 +17,7 @@ from flask_restful import reqparse
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
+from Server.Models.PushSubscription import PushSubscription
 from flask import current_app
 import re
 
@@ -106,7 +109,6 @@ class DistributeInventoryV2(Resource):
         quantity = data['quantity']
         metric = data['metric']
         itemname = data['itemname']
-        itemname = data['itemname']
         unitCost = data['unitCost']
         amountPaid = data['amountPaid']
         BatchNumber = data['BatchNumber']
@@ -126,10 +128,10 @@ class DistributeInventoryV2(Resource):
             return {'message': 'Insufficient inventory quantity'}, 400
 
         try:
-            # ✅ Deduct immediately from inventory
+            # ✅ Deduct stock immediately
             inventory_item.quantity -= quantity
 
-            # ✅ Create transfer record with "Not Received"
+            # ✅ Create transfer record
             new_transfer = TransfersV2(
                 shop_id=shop_id,
                 inventoryV2_id=inventoryV2_id,
@@ -148,8 +150,11 @@ class DistributeInventoryV2(Resource):
             db.session.add(new_transfer)
             db.session.commit()
 
+            # ✅ Send push notification
+            self.send_push_to_shop(shop_id, itemname)
+
             return {
-                'message': 'Transfer created successfully. Stock deducted from inventory, awaiting receipt.',
+                'message': 'Transfer created successfully and notification sent.',
                 'transfer_id': new_transfer.transferv2_id
             }, 201
 
@@ -157,6 +162,41 @@ class DistributeInventoryV2(Resource):
             db.session.rollback()
             return {'message': 'Error creating transfer', 'error': str(e)}, 500
 
+
+    def send_push_to_shop(self, shop_id, itemname):
+        """Send push notification to all subscriptions for a shop."""
+        subscriptions = PushSubscription.query.filter_by(shop_id=shop_id).all()
+        if not subscriptions:
+            print(f"No push subscriptions found for shop {shop_id}")
+            return
+
+        # ✅ Fetch VAPID keys from app config
+        vapid_private_key = current_app.config.get("VAPID_PRIVATE_KEY")
+        vapid_email = current_app.config.get("VAPID_EMAIL")
+
+        payload = {
+            "title": "New Stock Alert",
+            "body": f"New stock of {itemname} has been distributed to your shop. Please receive it.",
+            "icon": "/logo192.png",
+        }
+
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {
+                            "p256dh": sub.p256dh,
+                            "auth": sub.auth,
+                        },
+                    },
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims={"sub": vapid_email},
+                )
+                print(f"Push sent to shop {shop_id} subscriber {sub.id}")
+            except WebPushException as e:
+                print(f"Push failed for {sub.id}: {repr(e)}")
 
 
 class ReceiveTransfer(Resource):
