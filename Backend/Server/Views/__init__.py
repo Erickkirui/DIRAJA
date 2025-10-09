@@ -169,6 +169,12 @@ from Server.Views.credirors import (
 )
 
 
+from Server.Views.TaskManagerViews import (
+    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
+)
+
+
+
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -463,6 +469,15 @@ api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
 
 
 api.add_resource(ProcessCSV, '/process-csv')
+
+
+#TaskManager
+api.add_resource(CreateTask, "/newtask")
+api.add_resource(TaskResource, "/tasks/<int:task_id>")
+api.add_resource(GetTasks, "/alltasks")
+api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
+api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
+api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
 
 
 #TaskManager

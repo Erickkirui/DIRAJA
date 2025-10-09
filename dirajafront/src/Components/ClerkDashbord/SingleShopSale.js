@@ -7,7 +7,10 @@ import PaymentMethods from '../PaymentMethod';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import ItemQuantitySelector from './ItemQuantitySelector';
-import { Form, DatePicker } from 'antd';
+import {
+  Form,
+  DatePicker,
+} from 'antd';
 import dayjs from 'dayjs';
 
 const SingleShopSale = () => {
@@ -16,10 +19,9 @@ const SingleShopSale = () => {
         customer_name: '',
         customer_number: '',
         status: '',
-        sale_date: dayjs().format('YYYY-MM-DD'),
+        sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
         payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
-        discount: 0, // NEW FIELD
         items: [{
             item_name: '',
             quantity: '',
@@ -33,7 +35,6 @@ const SingleShopSale = () => {
             estimated_cost: 0
         }]
     });
-
     const [availableItems, setAvailableItems] = useState([]);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
@@ -59,7 +60,7 @@ const SingleShopSale = () => {
                         headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
                     })
                 ]);
-
+                
                 setAvailableItems(batchesResponse.data);
                 setStockItems(stockItemsResponse.data.stock_items || []);
             } catch (error) {
@@ -80,7 +81,7 @@ const SingleShopSale = () => {
         if (!stockItem) return 0;
 
         const quantity = parseFloat(item.quantity) || 0;
-
+        
         if (item.unit_type === 'pack' && stockItem.pack_price) {
             return quantity * parseFloat(stockItem.pack_price);
         } else {
@@ -134,7 +135,7 @@ const SingleShopSale = () => {
 
         if (field === 'unit_type') {
             newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
-
+            
             const quantity = parseFloat(newItems[index].quantity) || 0;
             if (value === 'pack' && stockItem?.pack_price) {
                 newItems[index].total_price = (quantity * parseFloat(stockItem.pack_price)).toFixed(2);
@@ -145,14 +146,14 @@ const SingleShopSale = () => {
 
         if (field === 'quantity' || field === 'unit_price') {
             const quantity = parseFloat(value) || 0;
-
+            
             if (newItems[index].unit_type === 'pack' && stockItem?.pack_price) {
                 newItems[index].total_price = (quantity * parseFloat(stockItem.pack_price)).toFixed(2);
             } else {
                 const unitPrice = field === 'unit_price' ? parseFloat(value) : parseFloat(newItems[index].unit_price);
                 newItems[index].total_price = (quantity * (unitPrice || 0)).toFixed(2);
             }
-
+            
             newItems[index].estimated_cost = calculateEstimatedCost(newItems[index]);
         }
 
@@ -239,7 +240,8 @@ const SingleShopSale = () => {
         e.preventDefault();
         setIsLoading(true);
         setMessage('');
-
+        
+        // Validation
         for (const item of formData.items) {
             if (!item.item_name || item.quantity === '' || !item.unit_price) {
                 setMessageType('error');
@@ -247,7 +249,7 @@ const SingleShopSale = () => {
                 setIsLoading(false);
                 return;
             }
-
+            
             if (parseFloat(item.quantity) > parseFloat(item.remainingStock)) {
                 setMessageType('error');
                 setMessage(`Quantity for ${item.item_name} exceeds available stock (${item.remainingStock})`);
@@ -256,27 +258,27 @@ const SingleShopSale = () => {
             }
         }
 
+        // Calculate total amount paid
         const totalAmountPaid = formData.payment_methods.reduce(
             (sum, payment) => sum + (parseFloat(payment.amount) || 0), 0
         );
 
-        const discount = parseFloat(formData.discount) || 0;
-
+        // Calculate balance according to business rules
         let balance;
-        if (formData.status === "unpaid") {
-            balance = Math.max(0, grandTotal - discount);
-        } else if (formData.status === "partially_paid") {
-            balance = Math.max(0, grandTotal - discount - totalAmountPaid);
+        if (totalAmountPaid === 0) {
+            // If amount is 0, balance equals the estimated cost
+            balance = grandTotal;
         } else {
-            balance = 0;
+            // Otherwise balance is the difference between estimated cost and amount paid
+            balance = Math.max(0, grandTotal - totalAmountPaid);
         }
 
-        const formDataToSubmit = {
+        // Prepare data for submission with explicit balance
+        const formDataToSubmit = { 
             ...formData,
-            discount,
-            balance,
-            estimated_cost: grandTotal,
-            total_amount_paid: totalAmountPaid,
+            balance: balance, // Explicitly set the balance
+            estimated_cost: grandTotal, // Include estimated_cost at root level
+            total_amount_paid: totalAmountPaid, // Include total amount paid
             items: formData.items.map(item => {
                 const stockItem = stockItems.find(si => si.item_name === item.item_name);
                 return {
@@ -289,7 +291,7 @@ const SingleShopSale = () => {
                     total_price: parseFloat(item.estimated_cost),
                     estimated_cost: parseFloat(item.estimated_cost), // Include estimated_cost per item
                     total_price: parseFloat(item.total_price),
-                    estimated_cost: parseFloat(item.estimated_cost)
+                    estimated_cost: parseFloat(item.estimated_cost) // Include estimated_cost per item
                 };
             }),
             payment_methods: formData.payment_methods.map(payment => ({
@@ -298,7 +300,7 @@ const SingleShopSale = () => {
                 transaction_code: payment.transaction_code.trim() === "" ? "none" : payment.transaction_code
             }))
         };
-
+    
         try {
             const response = await axios.post('api/diraja/newsale', formDataToSubmit, {
                 headers: {
@@ -306,20 +308,20 @@ const SingleShopSale = () => {
                     Authorization: `Bearer ${localStorage.getItem('access_token')}`,
                 },
             });
-
+    
             if (response.status === 201) {
                 setMessageType('success');
                 setMessage(response.data.message || 'Sale recorded successfully.');
-
+    
+                // Reset form after successful submission
                 setFormData({
                     shop_id: localStorage.getItem('shop_id') || '',
                     customer_name: '',
                     customer_number: '',
                     status: '',
-                    sale_date: dayjs().format('YYYY-MM-DD'),
+                    sale_date: dayjs().format('YYYY-MM-DD'), // Reset to current date
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                     promocode: '',
-                    discount: 0,
                     items: [{
                         item_name: '',
                         quantity: '',
@@ -333,7 +335,7 @@ const SingleShopSale = () => {
                         estimated_cost: 0
                     }]
                 });
-
+    
                 setTimeout(() => {
                     window.location.reload();
                 }, 2000);
@@ -355,30 +357,30 @@ const SingleShopSale = () => {
             <h1>Record Sales</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                 <h5>Customer Details</h5>
-                <input
-                    name="customer_name"
-                    value={formData.customer_name}
-                    onChange={handleChange}
-                    placeholder="Customer Name"
+                <input 
+                    name="customer_name" 
+                    value={formData.customer_name} 
+                    onChange={handleChange} 
+                    placeholder="Customer Name" 
                 />
-                <input
-                    name="customer_number"
-                    value={formData.customer_number}
-                    onChange={handleChange}
-                    placeholder="Customer Number (optional)"
+                <input 
+                    name="customer_number" 
+                    value={formData.customer_number} 
+                    onChange={handleChange} 
+                    placeholder="Customer Number (optional)" 
                 />
-
+                
                 <h5>Sold Items</h5>
                 {formData.items.map((item, itemIndex) => {
-                    const selectedStockItem = stockItems.find(stockItem =>
+                    const selectedStockItem = stockItems.find(stockItem => 
                         stockItem.item_name === item.item_name
                     );
-
+                    
                     return (
                         <div key={itemIndex} className="item-row">
-                            <select
-                                name={`item_name_${itemIndex}`}
-                                value={item.item_name}
+                            <select 
+                                name={`item_name_${itemIndex}`} 
+                                value={item.item_name} 
                                 onChange={(e) => {
                                     handleItemChange(itemIndex, 'item_name', e.target.value);
                                     if (e.target.value) {
@@ -391,7 +393,7 @@ const SingleShopSale = () => {
                                     <option key={idx} value={availItem}>{availItem}</option>
                                 ))}
                             </select>
-
+                            
                             {selectedStockItem && selectedStockItem.pack_quantity ? (
                                 <>
                                     <ItemQuantitySelector
@@ -411,31 +413,31 @@ const SingleShopSale = () => {
                                 </>
                             ) : (
                                 <>
-                                    <input
-                                        type="text"
+                                    <input 
+                                        type="text" 
                                         name={`quantity_${itemIndex}`}
-                                        value={item.quantity}
+                                        value={item.quantity} 
                                         onChange={(e) => {
                                             const value = e.target.value;
                                             if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
                                                 handleItemChange(itemIndex, 'quantity', value);
                                             }
                                         }}
-                                        placeholder="Quantity"
+                                        placeholder="Quantity" 
                                     />
                                     <p className="estimated-cost">
                                         Estimated Cost: Ksh {item.estimated_cost.toFixed(2)}
                                     </p>
                                 </>
                             )}
-
+                            
                             <p className='qunatity-level'>
                                 Remaining In Stock: {item.remainingStock.toFixed(2)} {item.metric}
                             </p>
-
+                                
                             {formData.items.length > 1 && (
-                                <button
-                                    type="button"
+                                <button 
+                                    type="button" 
                                     onClick={() => removeItem(itemIndex)}
                                     className='delete-entry'
                                 >
@@ -445,32 +447,32 @@ const SingleShopSale = () => {
                         </div>
                     );
                 })}
-
-                <button
-                    type="button"
+                
+                <button 
+                    type="button" 
                     onClick={addItem}
                     className="complimentary-button"
                 >
                     Add Another Item
                 </button>
-
+                
                 <div className="grand-total">
                     <h3> Estimate Total: {grandTotal.toFixed(2)}</h3>
                 </div>
-
+                
                 <h5>Select date: </h5>
                 <Form.Item>
-                    <DatePicker
-                        style={{ width: '100%' }}
+                    <DatePicker 
+                        style={{ width: '100%' }} 
                         value={formData.sale_date ? dayjs(formData.sale_date) : dayjs()}
                         onChange={handleDateChange}
                         format="YYYY-MM-DD"
                     />
                 </Form.Item>
-
-                <select
-                    name="status"
-                    value={formData.status}
+                
+                <select 
+                    name="status" 
+                    value={formData.status} 
                     onChange={handleChange}
                     required
                 >
@@ -479,21 +481,7 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-
-                {(formData.status === "unpaid" || formData.status === "partially_paid") && (
-                    <div className="discount-field">
-                        <label>Discount</label>
-                        <input
-                            type="number"
-                            name="discount"
-                            min="0"
-                            value={formData.discount}
-                            onChange={handleChange}
-                            placeholder="Enter discount"
-                        />
-                    </div>
-                )}
-
+                
                 <PaymentMethods
                     paymentMethods={formData.payment_methods}
                     validPaymentMethods={validPaymentMethods}
@@ -502,19 +490,19 @@ const SingleShopSale = () => {
                     removePaymentMethod={removePaymentMethod}
                     totalAmount={grandTotal}
                 />
-
-                <input
-                    name="promocode"
-                    type="text"
-                    value={formData.promocode}
-                    onChange={handleChange}
-                    placeholder="Enter promocode"
+                
+                <input 
+                    name="promocode" 
+                    type="text" 
+                    value={formData.promocode} 
+                    onChange={handleChange} 
+                    placeholder="Enter promocode" 
                 />
-
+                
                 <button className="add-sale-button" type="submit" disabled={isLoading}>
                     {isLoading ? 'Processing...' : 'Add Sale'}
                 </button>
-
+                
                 {message && (
                     <Stack>
                         <Alert severity={messageType} variant="outlined">
