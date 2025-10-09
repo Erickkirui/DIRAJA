@@ -122,7 +122,7 @@ import TransferManagement from './Pages/Transfersmanagement';
 import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
 import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
 import BrokenEggsReclassify from './Components/ClerkDashbord/BrokenEggs';
-
+import NotificationPrompt from './Components/Notifications';
 
 
 
@@ -132,7 +132,9 @@ import BrokenEggsReclassify from './Components/ClerkDashbord/BrokenEggs';
 function App() {
   return (
     <div className="App">
+      <NotificationPrompt />
       <Router>
+        
         <ScrollTotop />
           <Routes>
             <Route path='/login' element={<LoginPage/>} ></Route>
@@ -214,6 +216,7 @@ function App() {
             <Route path="/add-suplier" element={<Layout><AddSuppliers /></Layout>}></Route>
             <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
             <Route path='/addexpensecategory' element={<Layout><AddExpenseCategory/></Layout>} ></Route>
+            
 
             <Route path='/allpurchases' element={<Layout><PurchasesV2/></Layout>} ></Route>
 
