@@ -153,6 +153,9 @@ from Server.Views.StockReport import (
 from Server.Views.Sasapaycodes import (
     ProcessCSV
 )
+from Server.Views.PushSubscription import  (
+    PushSubscribe
+)
 
 from Server.Views.TaskManagerViews import (
     CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
@@ -168,6 +171,8 @@ api = Api(api_endpoint)
 
 # Email reports
 api.add_resource(Report, '/send-report')
+
+api.add_resource(PushSubscribe ,'/subscribe')
 
 # users endpoints 
 api.add_resource(CountUsers, '/countusers')
