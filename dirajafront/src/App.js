@@ -123,6 +123,7 @@ import NewsaleFormat from './Components/ClerkDashbord/Newsaleformat';
 import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale';
 import BrokenEggsReclassify from './Components/ClerkDashbord/BrokenEggs';
 import NotificationPrompt from './Components/Notifications';
+import SupplierDetails from './Components/Suppliers/SupplierDetails';
 
 
 
@@ -215,6 +216,7 @@ function App() {
             <Route path='/distribute-stock' element={<ClerkLayout><ProcurementTablePage /></ClerkLayout>} ></Route>
             <Route path="/add-suplier" element={<Layout><AddSuppliers /></Layout>}></Route>
             <Route path='/supplier' element={<Layout><Suppliers /></Layout>} ></Route>
+            <Route path="/suppliers/:id" element={<Layout><SupplierDetails /></Layout>} ></Route>
             <Route path='/addexpensecategory' element={<Layout><AddExpenseCategory/></Layout>} ></Route>
             
 

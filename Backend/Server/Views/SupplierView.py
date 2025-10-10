@@ -1,5 +1,5 @@
 from flask_restful import Resource
-from Server.Models.Supplier import Suppliers  
+from Server.Models.Supplier import Suppliers, SupplierHistory
 from app import db
 from flask import request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -66,12 +66,55 @@ class GetAllSuppliers(Resource):
                     'supplier_location': supplier.supplier_location,
                     'total_amount_received': supplier.total_amount_received,
                     'email': supplier.email,
-                    'phone_number': supplier.phone_number
+                    'phone_number': supplier.phone_number,
+                    'items_sold': supplier.items_sold if supplier.items_sold else []
                 })
 
             return {'suppliers': supplier_list}, 200
+
         except Exception as e:
             return {
                 'error': 'Failed to fetch suppliers',
                 'details': str(e)
             }, 500
+
+class GetSingleSupplier(Resource):
+    @jwt_required()
+    def get(self, supplier_id):
+        try:
+            supplier = Suppliers.query.filter_by(supplier_id=supplier_id).first()
+
+            if not supplier:
+                return {'message': 'Supplier not found'}, 404
+
+            # Get supplier history
+            histories = SupplierHistory.query.filter_by(supplier_id=supplier.supplier_id).order_by(
+                SupplierHistory.transaction_date.desc()
+            ).all()
+
+            history_list = [{
+                'history_id': h.history_id,
+                'amount_received': h.amount_received,
+                'item_bought': h.item_bought,
+                'transaction_date': h.transaction_date.strftime("%Y-%m-%d %H:%M:%S")
+            } for h in histories]
+
+            supplier_data = {
+                'supplier_id': supplier.supplier_id,
+                'supplier_name': supplier.supplier_name,
+                'supplier_location': supplier.supplier_location,
+                'total_amount_received': supplier.total_amount_received,
+                'email': supplier.email,
+                'phone_number': supplier.phone_number,
+                'items_sold': supplier.items_sold if supplier.items_sold else [],
+                'history': history_list
+            }
+
+            return {'supplier': supplier_data}, 200
+
+        except Exception as e:
+            return {
+                'error': 'Failed to fetch supplier details',
+                'details': str(e)
+            }, 500
+

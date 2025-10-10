@@ -18,6 +18,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
 import logging
 from Server.Models.PushSubscription import PushSubscription
+from Server.Models.Supplier import SupplierHistory , Suppliers
 from flask import current_app
 import re
 
@@ -646,18 +647,21 @@ class UpdateTransferV2(Resource):
         return make_response(jsonify({"message": "Transfer updated successfully"}), 200)
 
 
+
 class AddInventoryV2(Resource):
     @jwt_required()
-    # @check_role('manager')
     def post(self):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        required_fields = ['itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice',
-                           'Suppliername', 'Supplier_location', 'created_at']
+        required_fields = [
+            'itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice',
+            'Suppliername', 'Supplier_location', 'created_at'
+        ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
+        # Extract fields
         itemname = data.get('itemname')
         quantity = data.get('quantity')
         metric = data.get('metric')
@@ -671,9 +675,6 @@ class AddInventoryV2(Resource):
         note = data.get('note', '')
         created_at_str = data.get('created_at')
 
-        Trasnaction_type_credit = data.get('Trasnaction_type_credit')
-        Transcation_type_debit = data.get('Transcation_type_debit')
-
         try:
             created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
         except ValueError:
@@ -684,54 +685,109 @@ class AddInventoryV2(Resource):
 
         last_inventory = InventoryV2.query.order_by(InventoryV2.inventoryV2_id.desc()).first()
         next_batch_number = 1 if not last_inventory else last_inventory.inventoryV2_id + 1
-        batch_code = InventoryV2.generate_batch_code(Suppliername, Supplier_location, itemname, created_at, next_batch_number)
+        batch_code = InventoryV2.generate_batch_code(
+            Suppliername, Supplier_location, itemname, created_at, next_batch_number
+        )
         debit_account_value = unitPrice * quantity
 
         if not source or len(source.strip()) == 0:
             source = "Unknown"
 
-        transaction = None
-        if source not in ["Unknown", "External funding"]:
-            account = BankAccount.query.filter_by(Account_name=source).first()
-            if not account:
-                return {'message': f'Bank account with name "{source}" not found'}, 404
-
-            account.Account_Balance -= amountPaid
-            db.session.add(account)
-
-            transaction = BankingTransaction(
-                account_id=account.id,
-                Transaction_type_debit=amountPaid,
-                Transaction_type_credit=None
-            )
-            db.session.add(transaction)
-
-        new_inventory = InventoryV2(
-            itemname=itemname,
-            initial_quantity=quantity,
-            quantity=quantity,
-            metric=metric,
-            unitCost=unitCost,
-            totalCost=totalCost,
-            amountPaid=amountPaid,
-            unitPrice=unitPrice,
-            BatchNumber=batch_code,
-            user_id=current_user_id,
-            Suppliername=Suppliername,
-            Supplier_location=Supplier_location,
-            ballance=balance,
-            note=note,
-            created_at=created_at,
-            source=source,
-            Trasnaction_type_credit=amountPaid,
-            Transcation_type_debit=debit_account_value,
-            paymentRef=paymentRef
-        )
-
         try:
+            # ✅ Step 1: Check or create supplier
+            supplier = Suppliers.query.filter_by(
+                supplier_name=Suppliername,
+                supplier_location=Supplier_location
+            ).first()
+
+            if not supplier:
+                supplier = Suppliers(
+                    supplier_name=Suppliername,
+                    supplier_location=Supplier_location,
+                    total_amount_received=amountPaid,
+                    email=data.get('email'),
+                    phone_number=data.get('phone_number'),
+                    items_sold=json.dumps([itemname])  # store as JSON string
+                )
+                db.session.add(supplier)
+                db.session.flush()  # ensures supplier_id is available immediately
+            else:
+                # Update totals and items
+                supplier.total_amount_received += amountPaid
+
+                # ✅ Ensure items_sold is a valid list
+                if not supplier.items_sold:
+                    items_list = []
+                else:
+                    try:
+                        items_list = json.loads(supplier.items_sold)
+                    except Exception:
+                        items_list = supplier.items_sold.split(",") if isinstance(supplier.items_sold, str) else []
+
+                # ✅ Add new item if not already there
+                if itemname not in items_list:
+                    items_list.append(itemname)
+
+                supplier.items_sold = json.dumps(items_list)
+                db.session.flush()  # ensure supplier_id is updated before history insert
+
+            # ✅ Step 2: Add supplier history
+            supplier_history = SupplierHistory(
+                supplier_id=supplier.supplier_id,
+                amount_received=amountPaid,
+                transaction_date=datetime.utcnow(),
+                item_bought=itemname
+            )
+            db.session.add(supplier_history)
+
+            # ✅ Step 3: Handle bank transaction if applicable
+            if source not in ["Unknown", "External funding"]:
+                account = BankAccount.query.filter_by(Account_name=source).first()
+                if not account:
+                    return {'message': f'Bank account with name "{source}" not found'}, 404
+
+                account.Account_Balance -= amountPaid
+                db.session.add(account)
+
+                transaction = BankingTransaction(
+                    account_id=account.id,
+                    Transaction_type_debit=amountPaid,
+                    Transaction_type_credit=None
+                )
+                db.session.add(transaction)
+
+            # ✅ Step 4: Add inventory record
+            new_inventory = InventoryV2(
+                itemname=itemname,
+                initial_quantity=quantity,
+                quantity=quantity,
+                metric=metric,
+                unitCost=unitCost,
+                totalCost=totalCost,
+                amountPaid=amountPaid,
+                unitPrice=unitPrice,
+                BatchNumber=batch_code,
+                user_id=current_user_id,
+                Suppliername=Suppliername,
+                Supplier_location=Supplier_location,
+                ballance=balance,
+                note=note,
+                created_at=created_at,
+                source=source,
+                Trasnaction_type_credit=amountPaid,
+                Transcation_type_debit=debit_account_value,
+                paymentRef=paymentRef
+            )
+
             db.session.add(new_inventory)
             db.session.commit()
-            return {'message': 'Inventory added successfully', 'BatchNumber': batch_code}, 201
+
+            return {
+                'message': 'Inventory and supplier records added successfully',
+                'BatchNumber': batch_code,
+                'SupplierID': supplier.supplier_id
+            }, 201
+
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500

@@ -118,7 +118,7 @@ from Server.Views.MeritandDemerit import (
 )
 
 from Server.Views.SupplierView import (
-    AddSupplier, GetAllSuppliers
+    AddSupplier, GetAllSuppliers, GetSingleSupplier
 )
 
 from Server.Views.ShopstockviewsV2 import (
@@ -368,7 +368,7 @@ api.add_resource(GetMeritLedger, '/meritledger')
 #Suppliers endpoints 
 api.add_resource(AddSupplier , '/creat-supplier')
 api.add_resource(GetAllSuppliers,'/all-suppliers' )
-
+api.add_resource(GetSingleSupplier, '/suppliers/<int:supplier_id>')
 #stockv2 endpoints
 # api.add_resource(GetShopStockV2, '/shopstockv2')
 # api.add_resource(GetShopStockByShopIdV2, '/shopstockv2/shop/<int:shop_id>')  
