@@ -149,15 +149,15 @@ class ShopStockDeleteV2(Resource):
 
         try:
             with db.session.begin_nested():
-                # 🔎 Get all batches for this item in the shop (latest first)
+                # 🔎 Get all batches (include those without inventory links)
                 shop_stocks = (
                     ShopStockV2.query
-                    .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
+                    .outerjoin(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
                     .filter(
                         ShopStockV2.shop_id == shop_id,
-                        InventoryV2.itemname == itemname
+                        ShopStockV2.itemname == itemname
                     )
-                    .order_by(InventoryV2.created_at.desc())
+                    .order_by(ShopStockV2.stockv2_id.desc())
                     .all()
                 )
 
@@ -185,22 +185,30 @@ class ShopStockDeleteV2(Resource):
 
                     delete_qty = min(qty_remaining_to_delete, shop_stock.quantity)
 
-                    # Get the matching inventory batch
-                    inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
-                    if not inventory_item:
-                        return {"error": f"Inventory item for '{itemname}' not found"}, 404
+                    # Get the inventory batch if linked
+                    inventory_item = None
+                    if shop_stock.inventoryv2_id:
+                        inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
 
-                    # Cost per unit for this batch
+                    # Calculate cost per unit (if cost exists)
                     unit_cost = (
-                        shop_stock.total_cost / shop_stock.quantity
+                        (shop_stock.total_cost or 0) / shop_stock.quantity
                         if shop_stock.quantity > 0 else 0
                     )
 
-                    # New shop stock values
+                    # Update shop stock
                     new_remaining_qty = shop_stock.quantity - delete_qty
                     new_total_cost = unit_cost * new_remaining_qty
+                    shop_stock.quantity = new_remaining_qty
+                    shop_stock.total_cost = new_total_cost
+                    db.session.add(shop_stock)
 
-                    # Create return record
+                    # Update inventory only if it exists
+                    if inventory_item:
+                        inventory_item.quantity += delete_qty
+                        db.session.add(inventory_item)
+
+                    # Create a return record
                     return_record = ReturnsV2(
                         stockv2_id=shop_stock.stockv2_id,
                         inventoryv2_id=shop_stock.inventoryv2_id,
@@ -212,20 +220,12 @@ class ShopStockDeleteV2(Resource):
                     )
                     db.session.add(return_record)
 
-                    # Update shop stock
-                    shop_stock.quantity = new_remaining_qty
-                    shop_stock.total_cost = new_total_cost
-                    db.session.add(shop_stock)
-
-                    # Update inventory (returned items go back)
-                    inventory_item.quantity += delete_qty
-                    db.session.add(inventory_item)
-
-                    # Update or adjust transfer record
+                    # Adjust transfer record if exists
                     transfer = TransfersV2.query.filter_by(
                         shop_id=shop_id,
                         inventoryV2_id=shop_stock.inventoryv2_id
                     ).first()
+
                     if transfer:
                         if new_remaining_qty > 0:
                             transfer.quantity = new_remaining_qty
@@ -261,6 +261,7 @@ class ShopStockDeleteV2(Resource):
             db.session.rollback()
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "Unexpected error occurred"}, 500
+
 
 
 

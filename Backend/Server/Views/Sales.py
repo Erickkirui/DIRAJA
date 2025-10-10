@@ -32,7 +32,7 @@ from fuzzywuzzy import process
 
 from flask import send_file
 from io import BytesIO
-import pandas as pd
+
 
 
 
@@ -2023,6 +2023,7 @@ class TotalCashSalesByUser(Resource):
 class GenerateSalesReport(Resource):
     @jwt_required()
     def post(self):
+        import pandas as pd
         try:
             filters = request.get_json() or {}
 
