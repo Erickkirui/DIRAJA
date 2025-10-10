@@ -15,13 +15,17 @@ class Suppliers(db.Model):
     email = db.Column(db.String(255), nullable=True)
     phone_number = db.Column(db.String(50), nullable=True)
 
+    # ✅ New column: list of items the supplier sells
+    items_sold = db.Column(db.JSON, nullable=True, default=list)
+
     # Relationship to supplier history
     histories = db.relationship('SupplierHistory', backref='supplier', lazy=True)
 
     def __repr__(self):
         return (f"Supplier(supplier_id={self.supplier_id}, name='{self.supplier_name}', "
                 f"location='{self.supplier_location}', total_amount_received={self.total_amount_received}, "
-                f"email='{self.email}', phone_number='{self.phone_number}')")
+                f"email='{self.email}', phone_number='{self.phone_number}', "
+                f"items_sold={self.items_sold})")
 
 
 class SupplierHistory(db.Model):
