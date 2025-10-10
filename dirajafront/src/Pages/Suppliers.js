@@ -7,10 +7,7 @@ function Suppliers() {
     <div>
         <div className='header-container'>
             <h1>Suppliers</h1>
-           <div>
-            <Link className='add-button' to="/add-suplier">Add Suppliers ＋ </Link>
-    
-           </div>
+           
             </div>
         <GetSuppliers />
     </div>
