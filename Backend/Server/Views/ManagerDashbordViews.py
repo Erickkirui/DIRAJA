@@ -448,36 +448,56 @@ class TotalAmountPaidPerShop(Resource):
         end_date = None
         period = None  # Initialize period variable
 
-        # Check if a custom date is provided
-        date_str = request.args.get('date')
-        if date_str:
+        # Check if custom date range is provided
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        
+        if start_date_str and end_date_str:
             try:
-                start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(
                     hour=0, minute=0, second=0, microsecond=0
                 )
-                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-                period = "custom"  # Set period for custom date
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(
+                    hour=23, minute=59, second=59, microsecond=999999
+                )
+                period = "custom"  # Set period for custom date range
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
-            period = request.args.get('period', 'today')
-
-            if period == 'today':
-                start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
-            elif period == 'yesterday':
-                start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            elif period == 'week':
-                start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
-            elif period == 'month':
-                start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-                end_date = today
+            # Check if a single custom date is provided (for backward compatibility)
+            date_str = request.args.get('date')
+            if date_str:
+                try:
+                    start_date = datetime.strptime(date_str, '%Y-%m-%d').replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    period = "custom"
+                except ValueError:
+                    return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
             else:
-                return {
-                    "message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or a custom date."
-                }, 400
+                period = request.args.get('period', 'today')
+
+                if period == 'today':
+                    start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today
+                elif period == 'yesterday':
+                    start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                elif period == 'week':
+                    start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today
+                elif period == 'month':
+                    start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today
+                else:
+                    return {
+                        "message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or provide start_date and end_date."
+                    }, 400
+
+        # Validate date range
+        if start_date > end_date:
+            return {"message": "Start date cannot be after end date."}, 400
 
         try:
             shops = Shops.query.filter_by(shopstatus="active").all()
@@ -538,11 +558,12 @@ class TotalAmountPaidPerShop(Resource):
                 overall_payment_totals["not_payed"] += float(total_unpaid or 0)
 
                 # --- Comparison with previous period ---
-                comparison_start, comparison_end = None, None
                 comparison_diff = 0  # Initialize with default value
                 
                 # Only calculate comparison for predefined periods, not custom dates
                 if period != "custom":
+                    comparison_start, comparison_end = None, None
+                    
                     if period == "today":
                         # For today, compare with yesterday
                         comparison_start = (start_date - timedelta(days=1))

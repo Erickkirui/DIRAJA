@@ -83,7 +83,7 @@ function Navbar({ onMenuItemClick }) {
                   <span>Stock Transfers</span>
                 </NavLink>
                 <NavLink
-                  to="/stockstatus"
+                  to="/stockreport"
                   className="menu-item sub-item"
                   onClick={onMenuItemClick}
                 >

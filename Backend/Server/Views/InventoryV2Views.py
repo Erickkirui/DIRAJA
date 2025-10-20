@@ -947,13 +947,13 @@ class InventoryResourceByIdV2(Resource):
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
 
-    @jwt_required()
-    @check_role('manager')
-    def put(self, inventoryV2_id):
-        data = request.get_json()
-        inventory = InventoryV2.query.get(inventoryV2_id)
-        if not inventory:
-            return {'message': 'Inventory not found'}, 404
+    # @jwt_required()
+    # @check_role('manager')
+    # def put(self, inventoryV2_id):
+    #     data = request.get_json()
+    #     inventory = InventoryV2.query.get(inventoryV2_id)
+    #     if not inventory:
+    #         return {'message': 'Inventory not found'}, 404
 
     #     try:
     #         itemname = data.get('itemname', inventory.itemname)
@@ -967,14 +967,14 @@ class InventoryResourceByIdV2(Resource):
     #         Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
     #         note = data.get('note', inventory.note)
 
-            created_at_str = data.get('created_at', None)
-            if created_at_str:
-                try:
-                    created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
-                except ValueError:
-                    return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
-            else:
-                created_at = inventory.created_at
+            # created_at_str = data.get('created_at', None)
+            # if created_at_str:
+            #     try:
+            #         created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
+            #     except ValueError:
+            #         return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
+            # else:
+            #     created_at = inventory.created_at
 
     #         inventory.itemname = itemname
     #         inventory.initial_quantity = initial_quantity
@@ -989,17 +989,17 @@ class InventoryResourceByIdV2(Resource):
     #         inventory.created_at = created_at
 
             # Check what the actual foreign key column name is in your models
-            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
-            for transfer in transfers:
-                transfer.itemname = itemname
-                transfer.unitCost = unitCost
-                transfer.amountPaid = amountPaid
+            # transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            # for transfer in transfers:
+            #     transfer.itemname = itemname
+            #     transfer.unitCost = unitCost
+            #     transfer.amountPaid = amountPaid
 
-            # Check what the actual foreign key column name is in your models
-            shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
-            for stock in shop_stocks:
-                stock.itemname = itemname
-                stock.unitPrice = unitPrice
+            # # Check what the actual foreign key column name is in your models
+            # shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
+            # for stock in shop_stocks:
+            #     stock.itemname = itemname
+            #     stock.unitPrice = unitPrice
 
     #         db.session.commit()
     #         return {'message': 'Inventory and related records updated successfully'}, 200

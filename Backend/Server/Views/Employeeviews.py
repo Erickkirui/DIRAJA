@@ -2,6 +2,7 @@ from flask_restful import Resource
 from Server.Models.Employees import Employees
 from Server.Models.Users import Users
 from Server.Models.Sales import Sales
+from Server.Models.Paymnetmethods import SalesPaymentMethods
 from Server.Models.SoldItems import SoldItem
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
@@ -9,7 +10,7 @@ from flask import jsonify,request,make_response
 from datetime import datetime
 from functools import wraps
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlalchemy.exc import SQLAlchemyError
 
 def check_role(required_role):
@@ -301,25 +302,84 @@ class UpdateEmployeeShop(Resource):
 
 
 
+# class GetEmployeeLeaderboard(Resource):
+#     @jwt_required()
+#     def get(self):
+#         try:
+#             # Join Sales and SoldItem tables to ensure aggregation works correctly
+#             sales = db.session.query(
+#                 Sales.user_id,
+#                 db.func.count(Sales.sales_id).label('total_sales'),
+#                 db.func.sum(SoldItem.total_price).label('total_amount')
+#             ).join(SoldItem, Sales.sales_id == SoldItem.sales_id) \
+#              .group_by(Sales.user_id) \
+#              .order_by(db.func.sum(SoldItem.total_price).desc()) \
+#              .all()
+
+#             if not sales:
+#                 return {"message": "No sales found"}, 404
+
+#             leaderboard = []
+
+#             for sale in sales:
+#                 user = Users.query.filter_by(users_id=sale.user_id).first()
+#                 employee_name = user.username if user else "Unknown Employee"
+
+#                 leaderboard.append({
+#                     "employee_name": employee_name,
+#                     "total_sales": f"{sale.total_sales:,}",
+#                     "total_amount": f"{sale.total_amount:,.2f}" if sale.total_amount else "0.00"
+#                 })
+
+#             return make_response(jsonify(leaderboard), 200)
+
+#         except Exception as e:
+#             return {"error": str(e)}, 500
+
+
 class GetEmployeeLeaderboard(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Join Sales and SoldItem tables to ensure aggregation works correctly
-            sales = db.session.query(
-                Sales.user_id,
-                db.func.count(Sales.sales_id).label('total_sales'),
-                db.func.sum(SoldItem.total_price).label('total_amount')
-            ).join(SoldItem, Sales.sales_id == SoldItem.sales_id) \
-             .group_by(Sales.user_id) \
-             .order_by(db.func.sum(SoldItem.total_price).desc()) \
-             .all()
+            start_date = datetime(2025, 10, 1)
+
+            # Subquery: total amount paid per sale
+            payments_subq = (
+                db.session.query(
+                    SalesPaymentMethods.sale_id,
+                    func.coalesce(func.sum(SalesPaymentMethods.amount_paid), 0).label("amount_paid")
+                )
+                .group_by(SalesPaymentMethods.sale_id)
+                .subquery()
+            )
+
+            # Expression: choose based on sale status
+            total_amount_expr = case(
+                (Sales.status == "paid", func.coalesce(payments_subq.c.amount_paid, 0)),
+                (Sales.status == "unpaid", func.coalesce(Sales.balance, 0)),
+                (Sales.status == "partially_paid", func.coalesce(payments_subq.c.amount_paid, 0) + func.coalesce(Sales.balance, 0)),
+                else_=0
+            )
+
+            # Query
+            sales = (
+                db.session.query(
+                    Sales.user_id,
+                    func.count(Sales.sales_id).label("total_sales"),
+                    func.coalesce(func.sum(total_amount_expr), 0).label("total_amount")
+                )
+                .join(SoldItem, Sales.sales_id == SoldItem.sales_id)
+                .outerjoin(payments_subq, Sales.sales_id == payments_subq.c.sale_id)
+                .filter(Sales.created_at >= start_date)
+                .group_by(Sales.user_id)
+                .order_by(func.sum(total_amount_expr).desc())
+                .all()
+            )
 
             if not sales:
-                return {"message": "No sales found"}, 404
+                return make_response(jsonify({"message": "No data found for this period"}), 200)
 
             leaderboard = []
-
             for sale in sales:
                 user = Users.query.filter_by(users_id=sale.user_id).first()
                 employee_name = user.username if user else "Unknown Employee"
