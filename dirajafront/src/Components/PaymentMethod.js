@@ -47,7 +47,32 @@ const PaymentMethods = ({
                             }}
                             placeholder="Amount"
                             disabled={isNotPayed}
+                            min="0"
+                            step="0.01"
                         />
+
+                        {/* Discount Field - Always defaults to 0 */}
+                        <input
+                            type="number"
+                            className="input"
+                            value={method.discount ?? 0}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                // Ensure we always have a valid number, default to 0
+                                const processedValue = value === "" ? 0 : (parseFloat(value) || 0);
+                                handlePaymentChange(index, "discount", processedValue);
+                            }}
+                            onBlur={(e) => {
+                                // If field is empty on blur, set it to 0
+                                if (e.target.value === "") {
+                                    handlePaymentChange(index, "discount", 0);
+                                }
+                            }}
+                            placeholder="Discount"
+                            min="0"
+                            step="0.01"
+                        />
+
                       
                         {method.method && method.method.toLowerCase() !== 'cash' && method.method.toLowerCase() !== 'not payed' && (
                             <input

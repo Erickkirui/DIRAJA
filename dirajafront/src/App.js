@@ -124,6 +124,7 @@ import CategorizedShopSale from './Components/ClerkDashbord/CategorisedShopSale'
 import BrokenEggsReclassify from './Components/ClerkDashbord/BrokenEggs';
 import NotificationPrompt from './Components/Notifications';
 import SupplierDetails from './Components/Suppliers/SupplierDetails';
+import CookedItems from './Components/ClerkDashbord/CookedItems';
 
 
 
@@ -249,6 +250,7 @@ function App() {
             <Route path='/recieve-stock'  element={<ClerkLayout><TransferManagement /></ClerkLayout>} ></Route>
             <Route path='/custom-sale' element={<ClerkLayout><NewsaleFormat/></ClerkLayout>}></Route>
             <Route path='/broken-eggs' element={<ClerkLayout><BrokenEggsReclassify/></ClerkLayout>}></Route>
+            <Route path='/cooked' element={<ClerkLayout><CookedItems/></ClerkLayout>}></Route>
 
            </Routes> 
        

@@ -94,7 +94,6 @@ class AddSale(Resource):
             payment_methods = data['payment_methods']
             promocode = data.get('promocode', '')
             status = data['status'].lower()
-            # Get balance from request or default to 0 if not provided
             balance = float(data.get('balance', 0))
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
@@ -126,9 +125,8 @@ class AddSale(Resource):
                     'quantity': float(item['quantity']),
                     'metric': metric,
                     'unit_price': float(item['unit_price']),
-                    'total_price': float(item['quantity']) * float(item['unit_price'])
+                    'total_price': float(item['total_price']) 
                 })
-                total_price += float(item['quantity']) * float(item['unit_price'])
                 total_quantity += float(item['quantity'])
 
         except (ValueError, KeyError, TypeError) as e:
@@ -261,7 +259,7 @@ class AddSale(Resource):
                 customer_number=data['customer_number'],
                 status=status,
                 created_at=created_at,
-                balance=balance,  # Use the balance provided or default to 0
+                balance=balance,
                 promocode=promocode
             )
             db.session.add(new_sale)
@@ -286,6 +284,14 @@ class AddSale(Resource):
                 method = payment['method'].strip().lower()
                 amount = float(payment['amount'])
                 transaction_code = payment.get('transaction_code', 'N/A').strip().upper()
+                
+                # ✅ Ensure discount defaults to 0 if not provided or invalid
+                discount = 0
+                if 'discount' in payment:
+                    try:
+                        discount = float(payment['discount'])
+                    except (ValueError, TypeError):
+                        discount = 0  # Default to 0 if discount is invalid
 
                 if method == 'sasapay':
                     bank_id = shop_to_bank_mapping.get(shop_id)
@@ -313,11 +319,13 @@ class AddSale(Resource):
                                 'new_balance': bank_account.Account_Balance
                             })
 
+                # ✅ Discount is now recorded in the DB (will be 0 if not provided)
                 db.session.add(SalesPaymentMethods(
                     sale_id=new_sale.sales_id,
                     payment_method=method,
                     amount_paid=amount,
                     transaction_code=transaction_code,
+                    discount=discount,
                     created_at=created_at
                 ))
 
@@ -342,7 +350,7 @@ class AddSale(Resource):
                 'financial': {
                     'total': total_price,
                     'paid': total_amount_paid,
-                    'balance': balance,  # Return the balance that was provided or 0
+                    'balance': balance,
                     'purchase_cost': purchase_account
                 },
                 'items': {
@@ -355,7 +363,8 @@ class AddSale(Resource):
                 },
                 'payments': {
                     'methods': [pm['method'] for pm in payment_methods],
-                    'sasapay_deposits': sasapay_deposits or "No SASAPAY deposits processed"
+                    'sasapay_deposits': sasapay_deposits or "No SASAPAY deposits processed",
+                    'discounts_applied': [{'method': pm['method'], 'discount': float(pm.get('discount', 0))} for pm in payment_methods]
                 }
             }, 201
 
@@ -370,6 +379,7 @@ class AddSale(Resource):
                     'sasapay_attempts': sasapay_deposits
                 }
             }, 500
+
 
 
 

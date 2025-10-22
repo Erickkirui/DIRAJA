@@ -84,20 +84,41 @@ class ShopToShopTransfer(Resource):
                 batch.quantity -= take_qty
                 db.session.add(batch)
 
-                # ✅ Create pending transfer record (with metric)
+                # ✅ Create transfer record (no inventoryv2_id here)
                 transfer = Shoptoshoptransfer(
                     from_shop_id=from_shop_id,
                     to_shop_id=to_shop_id,
                     users_id=user_id,
                     stockv2_id=batch.stockv2_id,
                     itemname=batch.itemname,
-                    metric=batch.metric,   # 🔑 include metric from source stock
+                    metric=batch.metric,
                     quantity=take_qty,
                     status="pending"
                 )
                 db.session.add(transfer)
 
-                # ✅ Record deducted batches (include metric for frontend clarity)
+                # ✅ Add/update destination stock record
+                dest_stock = ShopStockV2.query.filter_by(
+                    shop_id=to_shop_id,
+                    itemname=batch.itemname,
+                    BatchNumber=batch.BatchNumber
+                ).first()
+
+                if dest_stock:
+                    dest_stock.quantity += take_qty
+                else:
+                    dest_stock = ShopStockV2(
+                        shop_id=to_shop_id,
+                        itemname=batch.itemname,
+                        BatchNumber=batch.BatchNumber,
+                        quantity=take_qty,
+                        metric=batch.metric,
+                        stockv2_id=batch.stockv2_id,
+                        inventoryv2_id=batch.inventoryv2_id  # ✅ add it only here
+                    )
+                db.session.add(dest_stock)
+
+                # ✅ Record transfer info
                 transfer_records.append({
                     "batch_number": batch.BatchNumber,
                     "deducted": take_qty,
@@ -109,17 +130,18 @@ class ShopToShopTransfer(Resource):
             db.session.commit()
 
             return {
-                "message": "Transfer initiated successfully (awaiting confirmation)",
+                "message": "Transfer completed successfully",
                 "item": item_name,
                 "requested_quantity": quantity,
                 "deductions": transfer_records,
                 "destination_shop": to_shop_id,
-                "status": "pending"
+                "status": "success"
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {"message": "Transfer failed", "error": str(e)}, 500
+
 
 
         

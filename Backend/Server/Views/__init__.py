@@ -161,6 +161,9 @@ from Server.Views.TaskManagerViews import (
     CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
 )
 
+from Server.Views.CookedItemsView import  (
+    AddCookedItems
+)
 
 
 
@@ -427,6 +430,7 @@ api.add_resource(TransferSystemStockV2, "/transfer-system-stock")
 api.add_resource(StockReturns, "/stockreturns")
 api.add_resource(BrokenEggs, "/shops/<int:shop_id>/stock/broken-eggs")
 
+api.add_resource(AddCookedItems, "/shops/<int:shop_id>/stock/cooked")
 
 
 #Shoptoshop transfer
