@@ -20,7 +20,7 @@ const SingleShopSale = () => {
         customer_number: '',
         status: '',
         sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
-        payment_methods: [{ method: '', amount: '', transaction_code: '' }],
+        payment_methods: [{ method: '', amount: '', transaction_code: '', discount: '' }],
         promocode: '',
         items: [{
             item_name: '',
@@ -196,6 +196,10 @@ const SingleShopSale = () => {
         const { name, value } = e.target;
         setFormData({ ...formData, [name]: value });
     };
+      // Prevent wheel/touchpad scrolling from changing number inputs
+    const handleWheel = (e) => {
+        e.target.blur();
+    };
 
     const handleDateChange = (date, dateString) => {
         setFormData({ ...formData, sale_date: dateString });
@@ -254,6 +258,12 @@ const SingleShopSale = () => {
             }
         }
 
+        // Calculate total discount
+        const totalDiscount = formData.payment_methods.reduce(
+            (sum, payment) => sum + (parseFloat(payment.discount) || 0), 0
+        );
+
+
         // Calculate total amount paid
         const totalAmountPaid = formData.payment_methods.reduce(
             (sum, payment) => sum + (parseFloat(payment.amount) || 0), 0
@@ -263,10 +273,10 @@ const SingleShopSale = () => {
         let balance;
         if (totalAmountPaid === 0) {
             // If amount is 0, balance equals the estimated cost
-            balance = grandTotal;
+            balance = grandTotal - totalDiscount;
         } else {
             // Otherwise balance is the difference between estimated cost and amount paid
-            balance = Math.max(0, grandTotal - totalAmountPaid);
+            balance = Math.max(0, grandTotal - totalAmountPaid - totalDiscount);
         }
 
         // Prepare data for submission with explicit balance
@@ -284,7 +294,7 @@ const SingleShopSale = () => {
                         : parseFloat(item.quantity),
                     metric: item.metric,
                     unit_price: parseFloat(item.unit_price),
-                    total_price: parseFloat(item.total_price),
+                    total_price: parseFloat(item.estimated_cost),
                     estimated_cost: parseFloat(item.estimated_cost) // Include estimated_cost per item
                 };
             }),
@@ -475,7 +485,8 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-                
+
+ 
                 <PaymentMethods
                     paymentMethods={formData.payment_methods}
                     validPaymentMethods={validPaymentMethods}

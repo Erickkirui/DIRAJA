@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 
@@ -147,7 +146,18 @@ const BrokenEggs = () => {
       <form onSubmit={handleSubmit} className="form">
         <div className="form-group">
           <label>Available Eggs</label>
-          <p>{displayQuantity}</p>
+          <div className="shortcuts" style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px',
+            border: '1px solid var(--primary)',
+            padding: '10px',
+            borderRadius: '4px',
+            marginBottom: '15px'
+          }}>
+            <label style={{ margin: 0, fontWeight: 'bold' }}>Available Stock:</label>
+            <p style={{ margin: 0 }}>{displayQuantity}</p>
+          </div>
         </div>
 
         <div className="form-group">
@@ -160,6 +170,7 @@ const BrokenEggs = () => {
               onChange={handleChange}
               placeholder="No. of trays"
               className="input"
+              style={{ width: "50%" }}
             />
             <input
               name="piece_quantity"
@@ -168,6 +179,7 @@ const BrokenEggs = () => {
               onChange={handleChange}
               placeholder="No. of pieces"
               className="input"
+              style={{ width: "50%" }}
             />
           </div>
           <small className="text-muted">1 tray = 30 eggs</small>
@@ -182,6 +194,7 @@ const BrokenEggs = () => {
             onChange={handleChange}
             placeholder="Reason for breakage"
             className="input"
+            style={{ width: "50%" }}
           />
         </div>
 
@@ -198,4 +211,3 @@ const BrokenEggs = () => {
 };
 
 export default BrokenEggs;
-

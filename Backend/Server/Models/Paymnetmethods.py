@@ -9,6 +9,7 @@ class SalesPaymentMethods(db.Model):
     sale_id = db.Column(db.Integer, db.ForeignKey('sales.sales_id'), nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     amount_paid = db.Column(db.Float, nullable=False)
+    discount = db.Column(db.Float, nullable=False)
     balance = db.Column(db.Float, nullable=True)  # Balance field
     transaction_code = db.Column(db.String(100), nullable=True)  # New optional field
     created_at = db.Column(db.DateTime, nullable=False)

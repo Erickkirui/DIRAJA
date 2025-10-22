@@ -170,16 +170,26 @@ const ShopStockList = () => {
 
   return (
     <div>
-      {/* Heading and Transfer Stock Button */}
+      {/* Header on top */}
+      <h2 style={{ margin: "0 0 20px 0" }}>My Shop Stock</h2>
+
+      {/* Buttons flexing below the header */}
       <div
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}
+        style={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: "10px",
+          marginBottom: "20px"
+        }}
       >
-        <h2 style={{ margin: 0 }}>My Shop Stock</h2>
         <button className="button" onClick={() => navigate("/transfer")}>
           Transfer Stock
         </button>
         <button className="button" onClick={() => navigate("/broken-eggs")}>
-          Broken
+          Broken Eggs
+        </button>
+        <button className="button" onClick={() => navigate("/cooked")}>
+          Cooked Items
         </button>
       </div>
 
@@ -191,12 +201,12 @@ const ShopStockList = () => {
         >
           In Stock
         </button>
-        <button
+        {/* <button
           className={`tab-button ${activeTab === "outOfStock" ? "active" : ""}`}
           onClick={() => setActiveTab("outOfStock")}
         >
           Out of Stock
-        </button>
+        </button> */}
       </div>
 
       {loading && <LoadingAnimation />}
