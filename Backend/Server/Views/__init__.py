@@ -472,14 +472,6 @@ api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
 api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
 
 
-#TaskManager
-api.add_resource(CreateTask, "/newtask")
-api.add_resource(TaskResource, "/tasks/<int:task_id>")
-api.add_resource(GetTasks, "/alltasks")
-api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
-api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
-api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
-
 #creditors
 api.add_resource(CreateCreditor, '/add-creditors')
 api.add_resource(CreditorsList, '/creditors')
