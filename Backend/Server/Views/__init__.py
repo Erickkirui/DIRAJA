@@ -168,14 +168,6 @@ from Server.Views.credirors import (
     CreateCreditor,CreditorsList,SingleCreditor
 )
 
-
-from Server.Views.TaskManagerViews import (
-    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
-)
-
-
-
-
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
 
