@@ -160,7 +160,9 @@ from Server.Views.PushSubscription import  (
 from Server.Views.TaskManagerViews import (
     CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
 )
-
+from Server.Views.credirors import (
+    CreateCreditor,CreditorsList,SingleCreditor
+)
 
 
 
@@ -465,3 +467,8 @@ api.add_resource(GetTasks, "/alltasks")
 api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
 api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
 api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
+
+#creditors
+api.add_resource(CreateCreditor, '/add-creditors')
+api.add_resource(CreditorsList, '/creditors')
+api.add_resource(SingleCreditor, '/creditors/<int:creditor_id>')
