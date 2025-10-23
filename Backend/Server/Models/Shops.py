@@ -15,6 +15,8 @@ class Shops(db.Model):
     report_status = db.Column(db.Boolean, default=True, nullable=False)  
     created_at = db.Column(db.DateTime, server_default=db.func.now())
 
+    creditors = db.relationship('Creditors', back_populates='shops', lazy=True)
+
     @validates('shopstatus')
     def validate_shopstatus(self, key, shopstatus):
         valid_shopstatus = ['active', 'inactive']
