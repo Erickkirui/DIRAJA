@@ -8,6 +8,7 @@ from flask import request, make_response, jsonify
 from functools import wraps
 import datetime
 from flask_jwt_extended import jwt_required
+from sqlalchemy.orm import joinedload
 
 
 def check_role(required_role):
@@ -26,6 +27,7 @@ def check_role(required_role):
         return decorator
     return wrapper
 
+
 class CreateTask(Resource):
     @jwt_required()
     @check_role('manager')
@@ -33,13 +35,22 @@ class CreateTask(Resource):
         data = request.get_json()
 
         try:
+            # Validate status
+            allowed_statuses = ["Pending", "Complete", "In Progress"]
+            status = data.get("status", "Pending")
+
+            if status not in allowed_statuses:
+                return {
+                    "error": f"Invalid status '{status}'. Allowed values are: {', '.join(allowed_statuses)}"
+                }, 400
+
             new_task = TaskManager(
-                user_id=data.get("user_id"),  
+                user_id=data.get("user_id"),
                 assignee_id=data.get("assignee_id"),
                 task=data.get("task"),
                 assigned_date=datetime.datetime.utcnow(),
                 due_date=datetime.datetime.strptime(data["due_date"], "%Y-%m-%d") if data.get("due_date") else None,
-                status=data.get("status", "Pending"),
+                status=status,
                 closing_date=datetime.datetime.strptime(data["closing_date"], "%Y-%m-%d") if data.get("closing_date") else None
             )
 
@@ -55,17 +66,23 @@ class CreateTask(Resource):
                     "status": new_task.status,
                     "due_date": str(new_task.due_date) if new_task.due_date else None
                 }
-            }, 201   
+            }, 201
 
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 400
 
+
 class GetTasks(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        tasks = TaskManager.query.all()
+        # Use joinedload to eagerly load the assigner and assignee relationships
+        tasks = TaskManager.query.options(
+            joinedload(TaskManager.assigner),
+            joinedload(TaskManager.assignee)
+        ).all()
+        
         if not tasks:
             return {"message": "No tasks found"}, 404
 
@@ -73,7 +90,9 @@ class GetTasks(Resource):
             {
                 "task_id": task.task_id,
                 "assigner_id": task.user_id,
+                "assigner_username": task.assigner.username if task.assigner else "Unknown",
                 "assignee_id": task.assignee_id,
+                "assignee_username": task.assignee.username if task.assignee else "Unknown",
                 "task": task.task,
                 "assigned_date": str(task.assigned_date),
                 "due_date": str(task.due_date) if task.due_date else None,
@@ -87,14 +106,21 @@ class GetTasks(Resource):
 class TaskResource(Resource):
     @jwt_required()
     def get(self, task_id):
-        task = TaskManager.query.get(task_id)
+        # Use joinedload to eagerly load the assigner and assignee relationships
+        task = TaskManager.query.options(
+            joinedload(TaskManager.assigner),
+            joinedload(TaskManager.assignee)
+        ).get(task_id)
+        
         if not task:
             return jsonify({"error": "Task not found"}), 404
 
         return jsonify({
             "task_id": task.task_id,
             "assigner_id": task.user_id,
+            "assigner_username": task.assigner.username if task.assigner else "Unknown",
             "assignee_id": task.assignee_id,
+            "assignee_username": task.assignee.username if task.assignee else "Unknown",
             "task": task.task,
             "assigned_date": str(task.assigned_date),
             "due_date": str(task.due_date),
@@ -141,10 +167,15 @@ class TaskResource(Resource):
             db.session.rollback()
             return jsonify({"error": str(e)}), 400
 
+
 class PendingTasks(Resource):
     @jwt_required()
     def get(self, user_id):
-        tasks = TaskManager.query.filter_by(assignee_id=user_id, status="Pending").all()
+        # Use joinedload to eagerly load the assigner relationship
+        tasks = TaskManager.query.options(
+            joinedload(TaskManager.assigner)
+        ).filter_by(assignee_id=user_id, status="Pending").all()
+        
         if not tasks:
             return jsonify({"message": "No pending tasks for this user"})
 
@@ -152,6 +183,7 @@ class PendingTasks(Resource):
             {
                 "task_id": t.task_id,
                 "task": t.task,
+                "assigner_username": t.assigner.username if t.assigner else "Unknown",
                 "due_date": str(t.due_date),
                 "assigned_date": str(t.assigned_date),
                 "status": t.status
@@ -162,7 +194,12 @@ class PendingTasks(Resource):
 class ViewTask(Resource):
     @jwt_required()
     def get(self, task_id):
-        task = TaskManager.query.get(task_id)
+        # Use joinedload to eagerly load the assigner and assignee relationships
+        task = TaskManager.query.options(
+            joinedload(TaskManager.assigner),
+            joinedload(TaskManager.assignee)
+        ).get(task_id)
+        
         if not task:
             return jsonify({"error": "Task not found"}), 404
 
@@ -170,7 +207,9 @@ class ViewTask(Resource):
             "task_id": task.task_id,
             "task": task.task,
             "assigner_id": task.user_id,
+            "assigner_username": task.assigner.username if task.assigner else "Unknown",
             "assignee_id": task.assignee_id,
+            "assignee_username": task.assignee.username if task.assignee else "Unknown",
             "assigned_date": str(task.assigned_date),
             "due_date": str(task.due_date),
             "status": task.status,
@@ -199,3 +238,39 @@ class AcknowledgeTask(Resource):
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 400
+
+
+class CompleteTask(Resource):
+    @jwt_required()
+    def put(self, task_id):
+        """
+        Mark a task as complete
+        """
+        task = TaskManager.query.get(task_id)
+        if not task:
+            return {"error": "Task not found"}, 404
+
+        # Check if task is already completed
+        if task.status == "Complete":
+            return {"message": "Task is already completed"}, 400
+
+        try:
+            # Update task status to complete and set closing date
+            task.status = "Complete"
+            task.closing_date = datetime.datetime.utcnow()
+            
+            db.session.commit()
+
+            return {
+                "message": "Task marked as complete successfully",
+                "task": {
+                    "task_id": task.task_id,
+                    "status": task.status,
+                    "closing_date": str(task.closing_date)
+                }
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 400
+

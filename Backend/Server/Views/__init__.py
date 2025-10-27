@@ -158,7 +158,7 @@ from Server.Views.PushSubscription import  (
 )
 
 from Server.Views.TaskManagerViews import (
-    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
+    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks,CompleteTask
 )
 
 from Server.Views.CookedItemsView import  (
@@ -470,7 +470,7 @@ api.add_resource(GetTasks, "/alltasks")
 api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
 api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
 api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
-
+api.add_resource(CompleteTask, '/<int:task_id>/complete')
 
 #creditors
 api.add_resource(CreateCreditor, '/add-creditors')

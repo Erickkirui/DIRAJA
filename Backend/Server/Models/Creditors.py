@@ -12,9 +12,10 @@ class Creditors(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
     total_credit = db.Column(db.Float)
     credit_amount = db.Column(db.Float)
+    phone_number = db.Column(db.String(20))  # Added phone number column
 
     # Relationship using back_populates
     shops = db.relationship('Shops', back_populates='creditors', lazy=True)
 
     def __str__(self):
-        return f"Creditor(id={self.id}, name='{self.name}', shop_id={self.shop_id}, total_credit={self.total_credit}, credit_amount={self.credit_amount})"
+        return f"Creditor(id={self.id}, name='{self.name}', shop_id={self.shop_id}, total_credit={self.total_credit}, credit_amount={self.credit_amount}, phone_number='{self.phone_number}')"

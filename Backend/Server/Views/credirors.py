@@ -9,6 +9,7 @@ from sqlalchemy import func
 import datetime
 from Server.Models.Creditors import Creditors
 from Server.Models.Users import Users
+from Server.Models.Shops import Shops
 
 # Decorator for role checking
 def check_role(required_role):
@@ -35,7 +36,8 @@ class CreateCreditor(Resource):
                 name=data.get("name"),
                 shop_id=data.get("shop_id"),
                 total_credit=data.get("total_credit", 0.0),
-                credit_amount=data.get("credit_amount", 0.0)
+                credit_amount=data.get("credit_amount", 0.0),
+                phone_number=data.get("phone_number")  # ✅ Added phone number
             )
 
             db.session.add(new_creditor)
@@ -48,13 +50,15 @@ class CreateCreditor(Resource):
                     "name": new_creditor.name,
                     "shop_id": new_creditor.shop_id,
                     "total_credit": new_creditor.total_credit,
-                    "credit_amount": new_creditor.credit_amount
+                    "credit_amount": new_creditor.credit_amount,
+                    "phone_number": new_creditor.phone_number  # ✅ Include in response
                 }
             }, 201
 
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 400
+
 
 
 class CreditorsList(Resource):
@@ -65,12 +69,15 @@ class CreditorsList(Resource):
 
             creditors_list = []
             for creditor in creditors:
+                shop = Shops.query.get(creditor.shop_id)  # ✅ Get the matching shop
                 creditors_list.append({
                     "id": creditor.id,
                     "name": creditor.name,
                     "shop_id": creditor.shop_id,
+                    "shop_name": shop.shopname if shop else None,  # ✅ Include shop name
                     "total_credit": creditor.total_credit,
-                    "credit_amount": creditor.credit_amount
+                    "credit_amount": creditor.credit_amount,
+                    "phone_number": creditor.phone_number  # ✅ Include phone number
                 })
 
             return {
@@ -80,6 +87,7 @@ class CreditorsList(Resource):
 
         except Exception as e:
             return {"error": str(e)}, 400
+
 
 
 class SingleCreditor(Resource):
@@ -95,7 +103,9 @@ class SingleCreditor(Resource):
                 "creditor": {
                     "id": creditor.id,
                     "name": creditor.name,
+                    "phone_number": creditor.phone_number,
                     "shop_id": creditor.shop_id,
+                    "shop_name": creditor.shops.shopname if creditor.shops else None,
                     "total_credit": creditor.total_credit,
                     "credit_amount": creditor.credit_amount
                 }
@@ -117,6 +127,8 @@ class SingleCreditor(Resource):
 
             if 'name' in data:
                 creditor.name = data['name']
+            if 'phone_number' in data:
+                creditor.phone_number = data['phone_number']
             if 'shop_id' in data:
                 creditor.shop_id = data['shop_id']
             if 'total_credit' in data:
@@ -131,7 +143,9 @@ class SingleCreditor(Resource):
                 "creditor": {
                     "id": creditor.id,
                     "name": creditor.name,
+                    "phone_number": creditor.phone_number,
                     "shop_id": creditor.shop_id,
+                    "shop_name": creditor.shops.shopname if creditor.shops else None,
                     "total_credit": creditor.total_credit,
                     "credit_amount": creditor.credit_amount
                 }
