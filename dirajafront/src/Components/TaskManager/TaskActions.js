@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState('');
-    const [messageType, setMessageType] = useState('');
+    const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({
         task: task.task,
         assignee_id: task.assignee_id,
@@ -12,10 +11,55 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
         due_date: task.due_date ? task.due_date.split('T')[0] : ''
     });
 
+    // Fetch users for assignee dropdown
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const accessToken = localStorage.getItem('access_token');
+                const response = await axios.get('/api/diraja/allusers', {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+
+                let userList = [];
+                if (Array.isArray(response.data)) {
+                    userList = response.data;
+                } else if (response.data?.users) {
+                    userList = response.data.users;
+                } else if (response.data?.data) {
+                    userList = response.data.data;
+                }
+
+                setUsers(userList);
+            } catch (err) {
+                console.error('Error fetching users:', err);
+            }
+        };
+
+        fetchUsers();
+    }, []);
+
+    // Get current assignee name
+    const getAssigneeName = () => {
+        const user = users.find(u =>
+            u.users_id === task.assignee_id ||
+            u.user_id === task.assignee_id ||
+            u.id === task.assignee_id
+        );
+        return user ? (user.username || user.name || 'Unknown User') : 'Unknown User';
+    };
+
+    // Handle input changes
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
     const handleEditSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setMessage('');
 
         try {
             const response = await axios.put(`/api/diraja/tasks/${task.task_id}`, formData, {
@@ -26,72 +70,70 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
             });
 
             if (response.status === 200) {
-                setMessageType('success');
-                setMessage('Task updated successfully!');
-                setTimeout(() => {
-                    onTaskUpdated();
-                }, 1000);
+                onTaskUpdated();
             }
         } catch (error) {
             console.error("Error updating task:", error);
-            const errorMessage = error.response?.data?.error || "Failed to update task";
-            setMessageType('error');
-            setMessage(errorMessage);
+            alert(error.response?.data?.error || "Failed to update task");
         } finally {
             setLoading(false);
         }
     };
 
     const handleDeleteConfirm = async () => {
-        setLoading(true);
-        setMessage('');
+        if (!window.confirm('Are you sure you want to delete this task?')) return;
 
+        setLoading(true);
         try {
             const response = await axios.delete(`/api/diraja/tasks/${task.task_id}`, {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-                },
+                headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
             });
 
             if (response.status === 200) {
-                setMessageType('success');
-                setMessage('Task deleted successfully!');
-                setTimeout(() => {
-                    onTaskDeleted();
-                }, 1000);
+                onTaskDeleted();
             }
         } catch (error) {
             console.error("Error deleting task:", error);
-            const errorMessage = error.response?.data?.error || "Failed to delete task";
-            setMessageType('error');
-            setMessage(errorMessage);
+            alert(error.response?.data?.error || "Failed to delete task");
         } finally {
             setLoading(false);
         }
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+    const handleMarkComplete = async () => {
+        setLoading(true);
+
+        try {
+            const response = await axios.put(`/api/diraja/${task.task_id}/complete`, {}, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+                },
+            });
+
+            if (response.status === 200) {
+                onTaskUpdated();
+            }
+        } catch (error) {
+            console.error("Error marking task as complete:", error);
+            alert(error.response?.data?.error || "Failed to mark task as complete");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
         <div>
-            {message && (
-                <div style={{
-                    padding: '10px',
-                    marginBottom: '15px',
-                    borderRadius: '4px',
-                    backgroundColor: messageType === 'success' ? '#d4edda' : '#f8d7da',
-                    color: messageType === 'success' ? '#155724' : '#721c24',
-                    border: `1px solid ${messageType === 'success' ? '#c3e6cb' : '#f5c6cb'}`
-                }}>
-                    {message}
-                </div>
-            )}
+            {/* Current Assignee Display */}
+            <div style={{
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '4px',
+                border: '1px solid #e9ecef'
+            }}>
+                <strong>Current Assignee:</strong> {getAssigneeName()}
+            </div>
 
             <form onSubmit={handleEditSubmit}>
                 <div style={{ marginBottom: '15px' }}>
@@ -116,10 +158,9 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
 
                 <div style={{ marginBottom: '15px' }}>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                        Assignee ID:
+                        Assignee:
                     </label>
-                    <input
-                        type="text"
+                    <select
                         name="assignee_id"
                         value={formData.assignee_id}
                         onChange={handleInputChange}
@@ -130,7 +171,14 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                             borderRadius: '4px',
                             fontSize: '14px'
                         }}
-                    />
+                    >
+                        <option value="">Select Assignee</option>
+                        {users.map(user => (
+                            <option key={user.users_id || user.user_id || user.id} value={user.users_id || user.user_id || user.id}>
+                                {user.username || user.name || 'Unknown User'}
+                            </option>
+                        ))}
+                    </select>
                 </div>
 
                 <div style={{ marginBottom: '15px' }}>
@@ -149,13 +197,13 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                             fontSize: '14px'
                         }}
                     >
-                        <option value="pending">Pending</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="completed">Completed</option>
-                        <option value="cancelled">Cancelled</option>
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Complete">Complete</option>
                     </select>
                 </div>
 
+                {/* Due Date (pre-filled with current due date) */}
                 <div style={{ marginBottom: '20px' }}>
                     <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                         Due Date:
@@ -173,18 +221,10 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                             fontSize: '14px'
                         }}
                     />
-                    {formData.due_date && (
-                        <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
-                            Current due date: {new Date(formData.due_date).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}
-                        </div>
-                    )}
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', justifyContent: 'space-between' }}>
+                {/* Bottom Buttons */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
                     <button
                         type="button"
                         onClick={handleDeleteConfirm}
@@ -200,32 +240,34 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                             opacity: loading ? 0.6 : 1
                         }}
                     >
-                        {loading ? 'Deleting...' : 'Delete Task'}
+                        {loading ? 'Deleting...' : 'Delete'}
                     </button>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <button
+                        type="button"
+                        onClick={onTaskUpdated}
+                        disabled={loading}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#6c757d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '14px'
+                        }}
+                    >
+                        Cancel
+                    </button>
+
+                    {task.status !== 'Complete' && (
                         <button
                             type="button"
-                            onClick={onTaskUpdated}
+                            onClick={handleMarkComplete}
                             disabled={loading}
                             style={{
                                 padding: '10px 20px',
-                                backgroundColor: '#6c757d',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '14px'
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            style={{
-                                padding: '10px 20px',
-                                backgroundColor: '#007bff',
+                                backgroundColor: '#28a745',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
@@ -234,9 +276,26 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                                 opacity: loading ? 0.6 : 1
                             }}
                         >
-                            {loading ? 'Updating...' : 'Update Task'}
+                            {loading ? 'Completing...' : 'Mark Complete'}
                         </button>
-                    </div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            padding: '10px 20px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            opacity: loading ? 0.6 : 1
+                        }}
+                    >
+                        {loading ? 'Updating...' : 'Update Task'}
+                    </button>
                 </div>
             </form>
         </div>

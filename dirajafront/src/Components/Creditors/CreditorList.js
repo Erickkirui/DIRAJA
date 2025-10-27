@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import GeneralTableLayout from '../GeneralTableLayout';
-import CreditorActions from './CreditorAction'; // Import the CreditorActions component
+import CreditorActions from './CreditorAction';
 
 const CreditorsList = () => {
   const [creditors, setCreditors] = useState([]);
-  const [shops, setShops] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,42 +12,6 @@ const CreditorsList = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCreditor, setSelectedCreditor] = useState(null);
   const [showCreditorModal, setShowCreditorModal] = useState(false);
-
-  // Fetch shops to map shop IDs to shop names
-  useEffect(() => {
-    const fetchShops = async () => {
-      try {
-        const accessToken = localStorage.getItem('access_token');
-        if (!accessToken) {
-          setError('No access token found, please log in.');
-          return;
-        }
-
-        const response = await axios.get('/api/diraja/allshops', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        // Handle different response formats
-        let shopList = [];
-        if (Array.isArray(response.data)) {
-          shopList = response.data;
-        } else if (response.data && Array.isArray(response.data.shops)) {
-          shopList = response.data.shops;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          shopList = response.data.data;
-        }
-
-        setShops(shopList);
-      } catch (err) {
-        console.error('Error fetching shops:', err);
-        setError('Error fetching shops data.');
-      }
-    };
-
-    fetchShops();
-  }, []);
 
   // Fetch creditors
   const fetchCreditors = async () => {
@@ -78,14 +41,6 @@ const CreditorsList = () => {
     fetchCreditors();
   }, []);
 
-  // Helper function to get shop name from ID
-  const getShopName = (shopId) => {
-    const shop = shops.find(s => 
-      s.shops_id === shopId || s.id === shopId || s.shop_id === shopId
-    );
-    return shop ? (shop.name || shop.shop_name || `Shop ${shopId}`) : 'Unknown Shop';
-  };
-
   // Format currency for display in KSH
   const formatCurrency = (amount) => {
     if (amount === null || amount === undefined) return 'KSh 0.00';
@@ -103,13 +58,13 @@ const CreditorsList = () => {
 
   // Handle creditor update
   const handleCreditorUpdated = () => {
-    fetchCreditors(); // Refresh the creditor list
+    fetchCreditors();
     setShowCreditorModal(false);
   };
 
   // Handle creditor deletion
   const handleCreditorDeleted = () => {
-    fetchCreditors(); // Refresh the creditor list
+    fetchCreditors();
     setShowCreditorModal(false);
   };
 
@@ -118,13 +73,13 @@ const CreditorsList = () => {
     const searchString = searchTerm.toLowerCase();
     return (
       creditor.name.toLowerCase().includes(searchString) ||
-      getShopName(creditor.shop_id).toLowerCase().includes(searchString) ||
-      creditor.total_credit?.toString().includes(searchString) ||
+      (creditor.shop_name && creditor.shop_name.toLowerCase().includes(searchString)) ||
+      creditor.phone_number?.toLowerCase().includes(searchString) ||
       creditor.credit_amount?.toString().includes(searchString)
     );
   });
 
-  // Define table columns
+  // Define table columns (status removed)
   const columns = [
     {
       header: 'Creditor Name',
@@ -136,60 +91,24 @@ const CreditorsList = () => {
       ),
     },
     {
+      header: 'Phone Number',
+      key: 'phone_number',
+      render: (creditor) => creditor.phone_number || 'N/A',
+    },
+    {
       header: 'Shop',
-      key: 'shop_id',
-      render: (creditor) => getShopName(creditor.shop_id),
+      key: 'shop_name',
+      render: (creditor) => creditor.shop_name || 'Unknown Shop',
     },
     {
       header: 'Total Credit',
       key: 'total_credit',
-      render: (creditor) => (
-        <span style={{ 
-          color: creditor.total_credit > 0 ? '#d4edda' : '#f8d7da',
-          fontWeight: 'bold' 
-        }}>
-          {formatCurrency(creditor.total_credit)}
-        </span>
-      ),
+      render: (creditor) => formatCurrency(creditor.total_credit),
     },
     {
-      header: 'Current Credit',
+      header: 'Credit Amount',
       key: 'credit_amount',
-      render: (creditor) => (
-        <span style={{ 
-          color: creditor.credit_amount > 0 ? '#dc3545' : '#28a745',
-          fontWeight: 'bold' 
-        }}>
-          {formatCurrency(creditor.credit_amount)}
-        </span>
-      ),
-    },
-    {
-      header: 'Credit Status',
-      key: 'status',
-      render: (creditor) => {
-        const status = creditor.credit_amount > 0 ? 'Outstanding' : 
-                      creditor.credit_amount < 0 ? 'Credit Balance' : 'Settled';
-        const color = creditor.credit_amount > 0 ? '#fff3cd' : 
-                     creditor.credit_amount < 0 ? '#d4edda' : '#e2e3e5';
-        const textColor = creditor.credit_amount > 0 ? '#856404' : 
-                         creditor.credit_amount < 0 ? '#155724' : '#383d41';
-        
-        return (
-          <span
-            style={{
-              padding: '4px 8px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: color,
-              color: textColor,
-            }}
-          >
-            {status}
-          </span>
-        );
-      },
+      render: (creditor) => formatCurrency(creditor.credit_amount),
     },
     {
       header: 'Actions',
@@ -250,7 +169,7 @@ const CreditorsList = () => {
       <div style={{ marginBottom: '20px' }}>
         <input
           type="text"
-          placeholder="Search creditors, shops, or amounts..."
+          placeholder="Search creditors, phone numbers, shops, or amounts..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
@@ -331,7 +250,6 @@ const CreditorsList = () => {
               creditor={selectedCreditor}
               onCreditorUpdated={handleCreditorUpdated}
               onCreditorDeleted={handleCreditorDeleted}
-              shops={shops}
             />
           </div>
         </div>

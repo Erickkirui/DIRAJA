@@ -135,9 +135,14 @@ function Navbar({ onMenuItemClick }) {
             <span>Suppliers</span>
           </NavLink>
 
-          <NavLink to="/promo-sales-table" className="menu-item" onClick={onMenuItemClick}>
+          <NavLink to="/creditors" className="menu-item" onClick={onMenuItemClick}>
             <FaTags className="menu-icon" />
-            <span>Promo Sales</span>
+            <span> Creditors </span>
+          </NavLink>
+          
+          <NavLink to="/task-manager" className="menu-item" onClick={onMenuItemClick}>
+            <FaTags className="menu-icon" />
+            <span>Task Manager</span>
           </NavLink>
 
           {(username === "Leo" ||

@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import GeneralTableLayout from '../GeneralTableLayout';
-import TaskActions from './TaskActions'; // Import the TaskActions component
+import TaskActions from './TaskActions';
 
 const TasksList = () => {
   const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,42 +12,6 @@ const TasksList = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
-
-  // Fetch users to map IDs to usernames
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const accessToken = localStorage.getItem('access_token');
-        if (!accessToken) {
-          setError('No access token found, please log in.');
-          return;
-        }
-
-        const response = await axios.get('/api/diraja/allusers', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        // Handle different response formats
-        let userList = [];
-        if (Array.isArray(response.data)) {
-          userList = response.data;
-        } else if (response.data && Array.isArray(response.data.users)) {
-          userList = response.data.users;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          userList = response.data.data;
-        }
-
-        setUsers(userList);
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError('Error fetching users data.');
-      }
-    };
-
-    fetchUsers();
-  }, []);
 
   // Fetch tasks
   const fetchTasks = async () => {
@@ -78,65 +41,67 @@ const TasksList = () => {
     fetchTasks();
   }, []);
 
-  // Helper function to get username from ID
-  const getUsername = (userId) => {
-    const user = users.find(u => 
-      u.users_id === userId || u.user_id === userId || u.id === userId
-    );
-    return user ? (user.username || user.name || 'Unknown User') : 'Unknown User';
-  };
-
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
-  // Handle edit button click
   const handleEditClick = (task) => {
     setSelectedTask(task);
     setShowTaskModal(true);
   };
 
-  // Handle task update
   const handleTaskUpdated = () => {
-    fetchTasks(); // Refresh the task list
+    fetchTasks();
     setShowTaskModal(false);
   };
 
-  // Handle task deletion
   const handleTaskDeleted = () => {
-    fetchTasks(); // Refresh the task list
+    fetchTasks();
     setShowTaskModal(false);
   };
 
-  // Filter tasks based on search term
-  const filteredTasks = tasks.filter(task => {
+  const filteredTasks = tasks.filter((task) => {
     const searchString = searchTerm.toLowerCase();
     return (
       task.task.toLowerCase().includes(searchString) ||
-      getUsername(task.assigner_id).toLowerCase().includes(searchString) ||
-      getUsername(task.assignee_id).toLowerCase().includes(searchString) ||
+      (task.assigner_username &&
+        task.assigner_username.toLowerCase().includes(searchString)) ||
+      (task.assignee_username &&
+        task.assignee_username.toLowerCase().includes(searchString)) ||
       task.status.toLowerCase().includes(searchString)
     );
   });
 
-  // Define table columns
+  // === Updated Status Cell ===
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'Complete':
+        return { color: '#28a745', fontWeight: '600' }; // light green
+      case 'In Progress':
+        return { color: '#ffc107', fontWeight: '600' }; // yellow
+      case 'Pending':
+        return { color: '#dc3545', fontWeight: '600' }; // red
+      default:
+        return { color: '#6c757d' }; // gray fallback
+    }
+  };
+
   const columns = [
     {
       header: 'Assigner',
-      key: 'assigner_id',
-      render: (task) => getUsername(task.assigner_id),
+      key: 'assigner_username',
+      render: (task) => task.assigner_username || 'Unknown',
     },
     {
       header: 'Assignee',
-      key: 'assignee_id',
-      render: (task) => getUsername(task.assignee_id),
+      key: 'assignee_username',
+      render: (task) => task.assignee_username || 'Unknown',
     },
     {
       header: 'Task Description',
@@ -161,24 +126,7 @@ const TasksList = () => {
       header: 'Status',
       key: 'status',
       render: (task) => (
-        <span
-          style={{
-            padding: '4px 8px',
-            borderRadius: '12px',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            backgroundColor:
-              task.status === 'Completed' ? '#d4edda' :
-              task.status === 'In Progress' ? '#fff3cd' :
-              '#f8d7da',
-            color:
-              task.status === 'Completed' ? '#155724' :
-              task.status === 'In Progress' ? '#856404' :
-              '#721c24',
-          }}
-        >
-          {task.status}
-        </span>
+        <span style={getStatusStyle(task.status)}>{task.status}</span>
       ),
     },
     {
@@ -197,8 +145,8 @@ const TasksList = () => {
             fontSize: '12px',
             fontWeight: 'bold',
           }}
-          onMouseOver={(e) => e.target.style.backgroundColor = '#0056b3'}
-          onMouseOut={(e) => e.target.style.backgroundColor = '#007bff'}
+          onMouseOver={(e) => (e.target.style.backgroundColor = '#0056b3')}
+          onMouseOut={(e) => (e.target.style.backgroundColor = '#007bff')}
         >
           Edit
         </button>
@@ -208,29 +156,29 @@ const TasksList = () => {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '200px' 
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '200px',
+        }}
+      >
         <div>Loading tasks...</div>
       </div>
     );
   }
 
   return (
-    <div className="tasks-container" style={{ padding: '20px' }}>
-      <h2>Tasks Management</h2>
-      
+    <div className="tasks-container">
       {error && (
-        <div 
-          style={{ 
-            color: 'red', 
-            marginBottom: '20px', 
-            padding: '10px', 
+        <div
+          style={{
+            color: 'red',
+            marginBottom: '20px',
+            padding: '10px',
             border: '1px solid red',
-            borderRadius: '4px'
+            borderRadius: '4px',
           }}
         >
           {error}
@@ -249,7 +197,7 @@ const TasksList = () => {
             padding: '8px 12px',
             border: '1px solid #ddd',
             borderRadius: '4px',
-            fontSize: '14px'
+            fontSize: '14px',
           }}
         />
       </div>
@@ -268,7 +216,6 @@ const TasksList = () => {
         Showing {filteredTasks.length} task(s)
       </div>
 
-      {/* Task Actions Modal */}
       {selectedTask && (
         <div
           style={{
@@ -311,11 +258,9 @@ const TasksList = () => {
             >
               ×
             </button>
-            
-            <h3 style={{ marginBottom: '20px', color: '#333' }}>
-              Edit Task
-            </h3>
-            
+
+            <h3 style={{ marginBottom: '20px', color: '#333' }}>Edit Task</h3>
+
             <TaskActions
               task={selectedTask}
               onTaskUpdated={handleTaskUpdated}
