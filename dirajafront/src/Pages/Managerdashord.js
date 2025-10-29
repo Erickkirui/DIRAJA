@@ -15,6 +15,7 @@ import ManagerReportStock from '../Components/ManagerDashbord/ManagerStockReport
 import ShopStatusList from '../Components/ManagerDashbord/ShopStstusList';
 import InventoryStockCount from '../Components/ManagerDashbord/InventoryStockCount';
 import ProductEarningsList from '../Components/ManagerDashbord/ProductEarningList';
+import PendingTasksButton from '../Components/TaskManager/PendingTasksButton';
 
 
 function Managerdashord() {
@@ -46,8 +47,9 @@ function Managerdashord() {
         
         <div className="shortcuts">
           <Link to="/allusers"  >Manage Users</Link>
+           <PendingTasksButton />
 
-          <Link to="/dirajaAI"  >DIRJA AI (BETA)</Link>
+         
         </div>
        
       </div>

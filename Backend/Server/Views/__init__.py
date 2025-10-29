@@ -158,14 +158,15 @@ from Server.Views.PushSubscription import  (
 )
 
 from Server.Views.TaskManagerViews import (
-    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks
+    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks,CompleteTask
 )
 
 from Server.Views.CookedItemsView import  (
     AddCookedItems
 )
-
-
+from Server.Views.credirors import (
+    CreateCreditor,CreditorsList,SingleCreditor
+)
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -469,3 +470,9 @@ api.add_resource(GetTasks, "/alltasks")
 api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
 api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
 api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")
+api.add_resource(CompleteTask, '/<int:task_id>/complete')
+
+#creditors
+api.add_resource(CreateCreditor, '/add-creditors')
+api.add_resource(CreditorsList, '/creditors')
+api.add_resource(SingleCreditor, '/creditors/<int:creditor_id>')

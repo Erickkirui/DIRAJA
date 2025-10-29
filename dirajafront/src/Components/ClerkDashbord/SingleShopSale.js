@@ -20,7 +20,7 @@ const SingleShopSale = () => {
         customer_number: '',
         status: '',
         sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
-        payment_methods: [{ method: '', amount: '', transaction_code: '', discount: '' }],
+        payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
         items: [{
             item_name: '',
@@ -258,12 +258,6 @@ const SingleShopSale = () => {
             }
         }
 
-        // Calculate total discount
-        const totalDiscount = formData.payment_methods.reduce(
-            (sum, payment) => sum + (parseFloat(payment.discount) || 0), 0
-        );
-
-
         // Calculate total amount paid
         const totalAmountPaid = formData.payment_methods.reduce(
             (sum, payment) => sum + (parseFloat(payment.amount) || 0), 0
@@ -273,10 +267,10 @@ const SingleShopSale = () => {
         let balance;
         if (totalAmountPaid === 0) {
             // If amount is 0, balance equals the estimated cost
-            balance = grandTotal - totalDiscount;
+            balance = grandTotal;
         } else {
             // Otherwise balance is the difference between estimated cost and amount paid
-            balance = Math.max(0, grandTotal - totalAmountPaid - totalDiscount);
+            balance = Math.max(0, grandTotal - totalAmountPaid);
         }
 
         // Prepare data for submission with explicit balance
@@ -295,6 +289,8 @@ const SingleShopSale = () => {
                     metric: item.metric,
                     unit_price: parseFloat(item.unit_price),
                     total_price: parseFloat(item.estimated_cost),
+                    estimated_cost: parseFloat(item.estimated_cost), // Include estimated_cost per item
+                    total_price: parseFloat(item.total_price),
                     estimated_cost: parseFloat(item.estimated_cost) // Include estimated_cost per item
                 };
             }),
@@ -485,8 +481,7 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-
- 
+                
                 <PaymentMethods
                     paymentMethods={formData.payment_methods}
                     validPaymentMethods={validPaymentMethods}

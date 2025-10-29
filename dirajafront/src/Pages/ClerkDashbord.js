@@ -26,6 +26,7 @@ import {
 } from 'react-icons/fa';
 import ShopStockList from '../Components/ClerkDashbord/ShopStockList';
 import ItemStockList from '../Components/ManagerDashbord/ItemStocklist';
+import PendingTasksButton from '../Components/TaskManager/PendingTasksButton';
 
 function ClerkDashbord() {
   const designation = localStorage.getItem('designation');
@@ -59,6 +60,7 @@ function ClerkDashbord() {
             <Link className='clerk-button' to="/recieve-stock">
             Receive Stock
             </Link>
+            <PendingTasksButton />
 
             <div className='icon-container'>
 
