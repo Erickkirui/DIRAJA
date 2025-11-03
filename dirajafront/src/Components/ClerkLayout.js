@@ -10,7 +10,7 @@ const ClerkLayout = ({ children }) => {
     const reportStatus = localStorage.getItem('report_status');
 
     if (reportStatus === null || reportStatus === 'false') {
-      navigate('/shop-stock-level');
+      navigate('/report-stock-page');
     }
   }, [navigate]);
 
