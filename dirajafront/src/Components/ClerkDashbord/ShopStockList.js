@@ -10,10 +10,7 @@ const ShopStockList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("inStock");
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
   const [stockItems, setStockItems] = useState([]);
-  const [messageType, setMessageType] = useState("success");
   const navigate = useNavigate();
 
   // Process stock data into human-readable display
@@ -134,40 +131,6 @@ const ShopStockList = () => {
       : stock.total_remaining === 0
   );
 
-  const handleSubmitReport = async () => {
-    setSubmitting(true);
-    setMessage("");
-
-    const reportData = {};
-    itemStock.forEach((item) => {
-      reportData[item.itemname] = `${item.total_remaining} ${item.metric}`;
-    });
-
-    const payload = { shop_id: shopId, report: reportData };
-
-    try {
-      const response = await axios.post("api/diraja/report-stock", payload, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
-
-      setMessage(response.data.message || "✅ Stock report submitted.");
-      setMessageType("success");
-      localStorage.setItem("report_status", "true");
-      setTimeout(() => {
-        navigate("/depositcash");
-      }, 1000);
-    } catch (err) {
-      const errorMsg =
-        err.response?.data?.message || "❌ Failed to submit stock report.";
-      setMessage(errorMsg);
-      setMessageType("error");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <div>
       {/* Header on top */}
@@ -220,14 +183,6 @@ const ShopStockList = () => {
 
       {!loading && !error && (
         <>
-          {message && (
-            <Stack sx={{ my: 2 }}>
-              <Alert severity={messageType} variant="outlined">
-                {message}
-              </Alert>
-            </Stack>
-          )}
-
           {/* ✅ Cleaned table */}
           <div className="tab-content">
             <table className="inventory-table">
@@ -252,21 +207,6 @@ const ShopStockList = () => {
                 )}
               </tbody>
             </table>
-          </div>
-
-          {/* Submit Report Button */}
-          <div style={{ marginTop: "20px" }}>
-            <Alert severity="info" style={{ marginBottom: "10px" }}>
-              Check the stock and press submit report if it matches.  
-              If not, contact the manager.
-            </Alert>
-            <button
-              onClick={handleSubmitReport}
-              disabled={submitting}
-              className="button"
-            >
-              {submitting ? "Submitting..." : "Submit Stock Report"}
-            </button>
           </div>
         </>
       )}

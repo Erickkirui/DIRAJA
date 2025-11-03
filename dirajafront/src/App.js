@@ -103,6 +103,7 @@ import TaskPageManager from './Pages/TaskPageManager';
 import CreditorPage from './Pages/CreditorPage';
 import AddTask from './Components/TaskManager/AddTask';
 import UserPendingTasks from './Components/TaskManager/UserPendingTasks';
+import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
 
 function App() {
   return (
@@ -217,6 +218,7 @@ function App() {
           <Route path='/creditors' element={<Layout><CreditorPage /></Layout>}></Route>
           <Route path='/pending-tasks' element={<Layout><UserPendingTasks /></Layout>}></Route>
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
+          <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
         </Routes>
       </Router>
     </div>
