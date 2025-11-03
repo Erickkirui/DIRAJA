@@ -35,15 +35,15 @@ class AddNewemployee(Resource):
         if not current_user:
             return {"error": "Current user not found."}, 404
 
-        current_user_role = current_user.role
+        # current_user_role = current_user.role
 
         data = request.get_json()
 
         # Restrict manager/procurement creation
-        if data.get('role') in ['manager', 'procurement'] and current_user_role != 'super_admin':
-            return {
-                "error": "Only users with the role 'super_admin' can add an employee with the role 'manager' or 'procurement'."
-            }, 403
+        # if data.get('role') in ['manager', 'procurement'] and current_user_role != 'super_admin':
+        #     return {
+        #         "error": "Only users with the role 'super_admin' can add an employee with the role 'manager' or 'procurement'."
+        #     }, 403
 
         # List of fields that are nullable
         nullable_fields = [

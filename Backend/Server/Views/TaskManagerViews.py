@@ -30,7 +30,6 @@ def check_role(required_role):
 
 class CreateTask(Resource):
     @jwt_required()
-    @check_role('manager')
     def post(self):
         data = request.get_json()
 
@@ -48,6 +47,7 @@ class CreateTask(Resource):
                 user_id=data.get("user_id"),
                 assignee_id=data.get("assignee_id"),
                 task=data.get("task"),
+                priority=data.get("priority"),
                 assigned_date=datetime.datetime.utcnow(),
                 due_date=datetime.datetime.strptime(data["due_date"], "%Y-%m-%d") if data.get("due_date") else None,
                 status=status,
@@ -64,6 +64,7 @@ class CreateTask(Resource):
                     "task": new_task.task,
                     "assignee_id": new_task.assignee_id,
                     "status": new_task.status,
+                    "priority": new_task.priority,
                     "due_date": str(new_task.due_date) if new_task.due_date else None
                 }
             }, 201
@@ -94,6 +95,7 @@ class GetTasks(Resource):
                 "assignee_id": task.assignee_id,
                 "assignee_username": task.assignee.username if task.assignee else "Unknown",
                 "task": task.task,
+                "priority":task.priority,
                 "assigned_date": str(task.assigned_date),
                 "due_date": str(task.due_date) if task.due_date else None,
                 "status": task.status,
@@ -122,6 +124,7 @@ class TaskResource(Resource):
             "assignee_id": task.assignee_id,
             "assignee_username": task.assignee.username if task.assignee else "Unknown",
             "task": task.task,
+            "priority":task.priority,
             "assigned_date": str(task.assigned_date),
             "due_date": str(task.due_date),
             "status": task.status,
@@ -140,6 +143,7 @@ class TaskResource(Resource):
             task.task = data.get("task", task.task)
             task.assignee_id = data.get("assignee_id", task.assignee_id)
             task.status = data.get("status", task.status)
+            task.priority = data.get("priority", task.priority)
             if data.get("due_date"):
                 task.due_date = datetime.datetime.strptime(data["due_date"], "%Y-%m-%d")
             if data.get("closing_date"):
@@ -183,6 +187,7 @@ class PendingTasks(Resource):
             {
                 "task_id": t.task_id,
                 "task": t.task,
+                "priority": t.priority,
                 "assigner_username": t.assigner.username if t.assigner else "Unknown",
                 "due_date": str(t.due_date),
                 "assigned_date": str(t.assigned_date),
@@ -209,6 +214,7 @@ class ViewTask(Resource):
             "assigner_id": task.user_id,
             "assigner_username": task.assigner.username if task.assigner else "Unknown",
             "assignee_id": task.assignee_id,
+            "priority": task.priority,
             "assignee_username": task.assignee.username if task.assignee else "Unknown",
             "assigned_date": str(task.assigned_date),
             "due_date": str(task.due_date),
