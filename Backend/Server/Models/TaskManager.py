@@ -1,5 +1,7 @@
 from app import db
 import datetime
+from sqlalchemy.orm import validates
+
 
 class TaskManager(db.Model):
     __tablename__ = "task_manager"
@@ -10,12 +12,20 @@ class TaskManager(db.Model):
     task = db.Column(db.String(255), nullable=False)
     assigned_date = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
     due_date = db.Column(db.DateTime, nullable=True)
-    status = db.Column(db.String(50), default="Pending", nullable=False)  # e.g., Pending, In Progress, Completed
+    status = db.Column(db.String(50), default="Pending", nullable=False)# e.g., Pending, In Progress, Completed
+    priority = db.Column(db.String(50), nullable=False)
     closing_date = db.Column(db.DateTime, nullable=True)
 
     # Relationships
     assigner = db.relationship('Users', foreign_keys=[user_id], backref='assigned_tasks')
     assignee = db.relationship('Users', foreign_keys=[assignee_id], backref='received_tasks')
+    
+    
+    @validates('priority')
+    def validate_role(self, key, priority):
+        valid_priorities = ['High', 'Medium', 'Low']
+        assert priority in valid_priorities, f"Invalid priority. Must be one of: {', '.join(valid_priorities)}"
+        return priority
 
     def __repr__(self):
         return (f"TaskManager(task_id={self.task_id}, user_id={self.user_id}, assignee_id={self.assignee_id}, "

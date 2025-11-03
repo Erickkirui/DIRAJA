@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import GeneralTableLayout from "../GeneralTableLayout";
+import {Link} from "react-router-dom";
 
 const UserPendingTasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -104,6 +105,44 @@ const UserPendingTasks = () => {
       render: (task) => formatDate(task.due_date),
     },
     {
+      header: "Priority",
+      key: "priority",
+      render: (task) => {
+        let backgroundColor = "";
+        switch (task.priority?.toLowerCase()) {
+          case "high":
+            backgroundColor = "#b94a48"; // red tone
+            break;
+          case "medium":
+            backgroundColor = "#a07a2b"; // brown tone
+            break;
+          case "low":
+            backgroundColor = "#3b7b63"; // green tone
+            break;
+          default:
+            backgroundColor = "#6c757d"; // gray for unknown
+        }
+
+        return (
+          <span
+            style={{
+              display: "inline-block",
+              padding: "4px 10px",
+              borderRadius: "4px",
+              backgroundColor,
+              color: "white",
+              fontSize: "12px",
+              fontWeight: "600",
+              textTransform: "capitalize",
+            }}
+          >
+            {task.priority}
+          </span>
+        );
+      },
+    },
+
+    {
       header: "Actions",
       key: "actions",
       render: (task) => (
@@ -147,7 +186,12 @@ const UserPendingTasks = () => {
 
   return (
     <div className="pending-tasks-container">
-      <h2>My Pending Tasks</h2>
+      <div className='header-container'>
+              <h2>My pending</h2>
+             <div>
+              <Link className='add-button' to="/create-task">Create Task ＋ </Link>
+              </div>
+              </div>
 
       {error && (
         <div

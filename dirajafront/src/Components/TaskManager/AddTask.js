@@ -128,6 +128,7 @@ const AddTask = ({ onSuccess }) => {
       user_id: currentUserId, // Always use current user from localStorage
       assignee_id: values.assignee_id,
       task: values.task,
+      priority:values.priority,
       due_date: values.due_date ? values.due_date.format("YYYY-MM-DD") : null,
       status: values.status || "Pending",
     };
@@ -238,6 +239,21 @@ const AddTask = ({ onSuccess }) => {
             { label: "Completed", value: "Completed" },
           ]}
           placeholder="Select task status"
+        />
+      </Form.Item>
+      <Form.Item
+        name="priority"
+        label="Priority"
+        initialValue="Medium"
+        rules={[{ required: true, message: "Please select priority" }]}
+      >
+        <Select
+          options={[
+            { label: "High", value: "High" },
+            { label: "Medium", value: "Medium" },
+            { label: "Low", value: "Low" },
+          ]}
+          placeholder="Select task priority"
         />
       </Form.Item>
 

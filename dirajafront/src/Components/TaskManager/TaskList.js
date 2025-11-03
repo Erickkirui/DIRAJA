@@ -123,12 +123,98 @@ const TasksList = () => {
       render: (task) => formatDate(task.due_date),
     },
     {
-      header: 'Status',
-      key: 'status',
-      render: (task) => (
-        <span style={getStatusStyle(task.status)}>{task.status}</span>
-      ),
+      header: "Priority",
+      key: "priority",
+      render: (task) => {
+        let backgroundColor = "";
+        switch (task.priority?.toLowerCase()) {
+          case "high":
+            backgroundColor = "#b94a48"; // red tone
+            break;
+          case "medium":
+            backgroundColor = "#a07a2b"; // brown tone
+            break;
+          case "low":
+            backgroundColor = "#3b7b63"; // green tone
+            break;
+          default:
+            backgroundColor = "#6c757d"; // gray for unknown
+        }
+
+        return (
+          <span
+            style={{
+              display: "inline-block",
+              padding: "4px 10px",
+              borderRadius: "4px",
+              backgroundColor,
+              color: "white",
+              fontSize: "12px",
+              fontWeight: "600",
+              textTransform: "capitalize",
+            }}
+          >
+            {task.priority}
+          </span>
+        );
+      },
+},
+
+    {
+      header: "Status",
+      key: "status",
+      render: (task) => {
+        let backgroundColor = "";
+        let dotColor = "";
+
+        switch (task.status?.toLowerCase()) {
+          case "complete":
+            backgroundColor = "#37674c"; // green background
+            dotColor = "#46a171"; // light green dot
+            break;
+          case "in progress":
+            backgroundColor = "#355f8b"; // blue background
+            dotColor = "#2783de"; // light blue dot
+            break;
+          case "pending":
+            backgroundColor = "#934b45"; // gray background
+            dotColor = "#852118ff"; // light gray dot
+            break;
+          default:
+            backgroundColor = "#6c757d"; // fallback gray
+            dotColor = "#d1d5db";
+        }
+
+        return (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "4px 10px",
+              borderRadius: "9999px", // fully rounded
+              backgroundColor,
+              color: "white",
+              fontSize: "12px",
+              fontWeight: "600",
+              textTransform: "capitalize",
+            }}
+          >
+            <span
+              style={{
+                display: "inline-block",
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: dotColor,
+              }}
+            ></span>
+            {task.status}
+          </span>
+        );
+      },
     },
+
     {
       header: 'Actions',
       key: 'actions',
