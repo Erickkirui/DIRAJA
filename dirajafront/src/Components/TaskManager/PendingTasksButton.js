@@ -43,8 +43,8 @@ const PendingTasksButton = () => {
 
     fetchPendingCount();
 
-    // Refresh count every 30 seconds
-    const interval = setInterval(fetchPendingCount, 30000);
+    // Refresh count every hour (3600000 milliseconds)
+    const interval = setInterval(fetchPendingCount, 3600000);
     return () => clearInterval(interval);
   }, []);
 

@@ -48,6 +48,9 @@ const SingleShopSale = () => {
     ];
     const validPaymentMethods = ['cash', 'mpesa', 'sasapay', 'not payed', 'sasapay deliveries'];
 
+    // Check if customer details should be shown
+    const shouldShowCustomerDetails = formData.status === 'unpaid' || formData.status === 'partially_paid';
+
     useEffect(() => {
         const fetchItems = async () => {
             try {
@@ -356,19 +359,7 @@ const SingleShopSale = () => {
         <div>
             <h1>Record Sales</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
-                <h5>Customer Details</h5>
-                <input 
-                    name="customer_name" 
-                    value={formData.customer_name} 
-                    onChange={handleChange} 
-                    placeholder="Customer Name" 
-                />
-                <input 
-                    name="customer_number" 
-                    value={formData.customer_number} 
-                    onChange={handleChange} 
-                    placeholder="Customer Number (optional)" 
-                />
+               
                 
                 <h5>Sold Items</h5>
                 {formData.items.map((item, itemIndex) => {
@@ -481,6 +472,25 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
+                 {/* Customer Details - Conditionally Rendered */}
+                 
+                {shouldShowCustomerDetails && (
+                    <>
+                        <h5>Customer Details</h5>
+                        <input 
+                            name="customer_name" 
+                            value={formData.customer_name} 
+                            onChange={handleChange} 
+                            placeholder="Customer Name" 
+                        />
+                        <input 
+                            name="customer_number" 
+                            value={formData.customer_number} 
+                            onChange={handleChange} 
+                            placeholder="Customer Number (optional)" 
+                        />
+                    </>
+                )}
                 
                 <PaymentMethods
                     paymentMethods={formData.payment_methods}
