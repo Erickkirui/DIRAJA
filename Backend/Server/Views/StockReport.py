@@ -80,11 +80,11 @@ class SubmitStockReport(Resource):
         if not shop:
             return {'message': 'Shop not found'}, 404
 
-        # ✅ Check if a report has already been submitted (today) based on report_status
+        # ✅ Prevent duplicate report submissions
         if shop.report_status:
             return {'message': 'Stock report already submitted today'}, 400
 
-        # Optional: Extract comment from differences
+        # ✅ Extract comment from differences if not provided
         if not comment:
             differences = report_data.get("differences", {})
             for item in differences.values():
@@ -97,26 +97,25 @@ class SubmitStockReport(Resource):
             # Start transaction
             db.session.begin_nested()
 
-            # ✅ Create the StockReport
+            # ✅ Create StockReport
             report = StockReport(
                 shop_id=shop_id,
                 user_id=user_id,
                 report=report_data,
                 comment=comment
             )
-
             db.session.add(report)
-            
-            # ✅ Mark the shop as reported for today
+
+            # ✅ Mark shop as reported
             shop.report_status = True
 
-            # ✅ Compare report data with ShopStockV2 and create reconciliation records
+            # ✅ Create reconciliation records
             reconciliation_results = self.create_reconciliation_records(
                 shop_id, user_id, report_data, comment
             )
 
             db.session.commit()
-            
+
             return {
                 'message': 'Stock report submitted successfully',
                 'reconciliation_created': len(reconciliation_results),
@@ -133,77 +132,45 @@ class SubmitStockReport(Resource):
         Returns tuple (quantity, unit)
         """
         if not value_str or value_str == "null":
-            return 0, "null"
-        
-        # Convert to string for safety
+            return 0, ""
+
         value_str = str(value_str).strip()
-        
-        # Handle "null" values
+
+        # Handle "null"
         if "null" in value_str.lower():
-            try:
-                # Extract number before "null"
-                match = re.search(r'([\d.]+)\s*null', value_str)
-                if match:
-                    return float(match.group(1)), "null"
-            except:
-                pass
-            return 0, "null"
-        
-        # Handle "item" units
-        if "item" in value_str.lower():
-            try:
-                match = re.search(r'([\d.]+)\s*item', value_str)
-                if match:
-                    return float(match.group(1)), "item"
-            except:
-                pass
-        
-        # Handle "kg" units
-        if "kg" in value_str.lower():
-            try:
-                match = re.search(r'([\d.]+)\s*kg', value_str)
-                if match:
-                    return float(match.group(1)), "kg"
-            except:
-                pass
-        
-        # Handle "pcs" units (NEW - this was missing)
-        if "pcs" in value_str.lower() or "pc" in value_str.lower():
-            try:
-                match = re.search(r'([\d.]+)\s*pcs?', value_str, re.IGNORECASE)
-                if match:
-                    return float(match.group(1)), "pcs"
-            except:
-                pass
-        
-        # Handle plain numbers with units (generic case)
-        try:
-            # Try to extract number and unit separately
-            match = re.search(r'([\d.]+)\s*([a-zA-Z]*)', value_str)
+            match = re.search(r'([\d.]+)\s*null', value_str)
             if match:
-                quantity = float(match.group(1))
-                unit = match.group(2).lower() if match.group(2) else "pcs"
-                if not unit:
-                    unit = "pcs"
-                return quantity, unit
-        except:
-            pass
-        
-        # Try to parse as plain number (default to pcs)
+                return float(match.group(1)), ""
+            return 0, ""
+
+        # Handle known units
+        for unit in ["item", "kg", "pcs", "pc"]:
+            if unit in value_str.lower():
+                match = re.search(r'([\d.]+)\s*' + unit, value_str, re.IGNORECASE)
+                if match:
+                    detected_unit = unit if unit != "pc" else "pcs"
+                    return float(match.group(1)), detected_unit
+
+        # Handle generic cases
+        match = re.search(r'([\d.]+)\s*([a-zA-Z]*)', value_str)
+        if match:
+            quantity = float(match.group(1))
+            unit = match.group(2).lower().strip()
+            return quantity, unit
+
+        # Try plain numbers (no unit)
         try:
-            return float(value_str), "pcs"
+            return float(value_str), ""
         except:
             print(f"Warning: Could not parse report value: '{value_str}'")
-            return 0, "unknown"
+            return 0, ""
 
     def normalize_item_name(self, item_name):
         """
         Normalize item names for comparison between report and stock data
         """
-        # Convert to lowercase and remove extra spaces
         normalized = ' '.join(item_name.lower().split())
-        
-        # Common normalization rules
+
         replacements = {
             'catering sausages': 'sausage',
             'smokies': 'smokie',
@@ -211,16 +178,16 @@ class SubmitStockReport(Resource):
             'drumstick': 'drum stick',
             'gizzard': 'gizzards',
         }
-        
+
         for old, new in replacements.items():
             if old in normalized:
                 normalized = normalized.replace(old, new)
-        
+
         return normalized
-    
+
     def get_stock_value_for_item(self, shop_id, report_item_name, report_unit):
         """
-        Find all matching items in ShopStockV2 for given shop and return total quantity
+        Find matching items in ShopStockV2 for a given shop and return total quantity
         """
         normalized_name = self.normalize_item_name(report_item_name)
         stock_items = ShopStockV2.query.filter_by(shop_id=shop_id).all()
@@ -232,31 +199,29 @@ class SubmitStockReport(Resource):
         for stock_item in stock_items:
             stock_item_name_normalized = self.normalize_item_name(stock_item.itemname)
 
-            # ✅ Exact match
             if stock_item_name_normalized == normalized_name:
                 total_quantity += float(stock_item.quantity or 0)
                 match_found = True
                 match_type = "exact_match"
 
-            # ✅ Partial match
             elif normalized_name in stock_item_name_normalized or stock_item_name_normalized in normalized_name:
                 total_quantity += float(stock_item.quantity or 0)
                 match_found = True
                 if match_type != "exact_match":
                     match_type = "partial_match"
 
-        # ✅ Debug log to verify values
-        print(f"Stock lookup - Item: {report_item_name}, Normalized: {normalized_name}, Stock Qty: {total_quantity}, Match: {match_type}")
+        print(f"Stock lookup - Item: {report_item_name}, Normalized: {normalized_name}, "
+              f"Stock Qty: {total_quantity}, Match: {match_type}")
 
         return total_quantity, match_type if match_found else "no_match"
 
     def create_reconciliation_records(self, shop_id, user_id, report_data, comment):
         """
         Compare report data with ShopStockV2 and create StockReconciliation records
+        only if there is a difference.
         """
         reconciliation_results = []
 
-        # Handle both dict and list input structures
         if isinstance(report_data, list):
             items = {entry.get('item'): entry.get('value') for entry in report_data if entry.get('item')}
         elif isinstance(report_data, dict):
@@ -265,26 +230,25 @@ class SubmitStockReport(Resource):
             raise ValueError("Invalid report_data format. Must be dict or list.")
 
         for item_name, report_value_str in items.items():
-            if item_name in ["differences", "note", "comment"]:  # Skip metadata fields
+            if item_name in ["differences", "note", "comment"]:
                 continue
 
             print(f"Processing item: {item_name}, value: '{report_value_str}'")
 
-            # Parse reported value like "34kg" -> (34.0, "kg")
             report_quantity, report_unit = self.parse_report_value(report_value_str)
-            
-            print(f"Parsed - Quantity: {report_quantity}, Unit: {report_unit}")
+            print(f"Parsed - Quantity: {report_quantity}, Unit: '{report_unit}'")
 
-            # Get stock quantity from ShopStockV2
             stock_quantity, match_status = self.get_stock_value_for_item(shop_id, item_name, report_unit)
-
-            # Calculate difference
             difference = round(report_quantity - stock_quantity, 3)
 
-            # Set reconciliation status
-            status = 'Solved' if abs(difference) < 0.01 else 'Unsolved'
+            # ✅ Skip items with no difference
+            if abs(difference) < 0.01:
+                print(f"Skipping '{item_name}' - no difference (Stock: {stock_quantity}, Report: {report_quantity})")
+                continue
 
-            # Create StockReconciliation entry
+            status = 'Unsolved'
+
+            # ✅ Only save reconciliation when there is a difference
             reconciliation = StockReconciliation(
                 shop_id=shop_id,
                 user_id=user_id,
@@ -293,7 +257,7 @@ class SubmitStockReport(Resource):
                 item=item_name,
                 difference=difference,
                 status=status,
-                comment=f"Unit: {report_unit}. {comment}" if comment else f"Unit: {report_unit}",
+                comment=comment,
                 created_at=func.now()
             )
             db.session.add(reconciliation)
@@ -304,7 +268,7 @@ class SubmitStockReport(Resource):
                 'report_value': round(report_quantity, 3),
                 'difference': difference,
                 'status': status,
-                'unit': report_unit,
+                'unit': report_unit if report_unit else None,
                 'match': match_status
             })
 
