@@ -10,7 +10,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  Grid
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
@@ -24,9 +25,25 @@ const ManualStockReport = () => {
   const [messageType, setMessageType] = useState("success");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [editQuantity, setEditQuantity] = useState("");
+  const [editPackets, setEditPackets] = useState("0");
+  const [editPieces, setEditPieces] = useState("0");
+  const [editQuantity, setEditQuantity] = useState("0");
   const [reportData, setReportData] = useState({});
   const navigate = useNavigate();
+
+  // List of items that should use kg as metric and allow decimals
+  const kgItems = [
+    "boneless breast", "thighs", "drumstick", "big legs", "backbone", 
+    "liver", "gizzard", "neck", "feet", "wings", "broiler"
+  ];
+
+  // Check if item should use kg metric
+  const shouldUseKg = (itemName) => {
+    if (!itemName) return false;
+    return kgItems.some(kgItem => 
+      itemName.toLowerCase().includes(kgItem.toLowerCase())
+    );
+  };
 
   // Fetch stock items and shop stock
   useEffect(() => {
@@ -58,7 +75,11 @@ const ManualStockReport = () => {
         // Group by itemname and sum total_remaining
         const grouped = rawStock.reduce((acc, stock) => {
           if (!acc[stock.itemname]) {
-            acc[stock.itemname] = { ...stock };
+            acc[stock.itemname] = { 
+              ...stock,
+              metric: stock.metric || "pcs",
+              pack_quantity: stock.pack_quantity || 0
+            };
           } else {
             acc[stock.itemname].total_remaining += stock.total_remaining;
           }
@@ -93,33 +114,147 @@ const ManualStockReport = () => {
     fetchData();
   }, [shopId]);
 
+  const parseQuantityToPacketsAndPieces = (itemName, quantity) => {
+    const packQuantity = getItemPackQuantity(itemName);
+    const qty = parseFloat(quantity) || 0;
+    
+    if (packQuantity > 0 && !shouldUseKg(itemName)) {
+      const packets = Math.floor(qty / packQuantity);
+      const pieces = qty % packQuantity;
+      return { packets: packets.toString(), pieces: pieces.toString() };
+    }
+    
+    return { packets: "0", pieces: qty.toString() };
+  };
+
   const handleItemClick = (stock) => {
     const itemInfo = stockItems.find(item => item.item_name === stock.itemname);
-    setEditingItem({
+    const editingItemData = {
       ...stock,
-      metric: itemInfo?.metric || "pcs",
-      pack_quantity: itemInfo?.pack_quantity || 0
-    });
-    setEditQuantity(reportData[stock.itemname] || "0");
+      metric: stock.metric || itemInfo?.metric || "pcs",
+      pack_quantity: stock.pack_quantity || itemInfo?.pack_quantity || 0
+    };
+    
+    setEditingItem(editingItemData);
+    
+    // Parse existing quantity to appropriate format
+    const currentQuantity = reportData[stock.itemname] || "0";
+    
+    if (shouldUseKg(stock.itemname)) {
+      // For kg items, use single input with decimal support
+      setEditQuantity(currentQuantity);
+      setEditPackets("0");
+      setEditPieces("0");
+    } else if (editingItemData.pack_quantity > 0) {
+      // For items with pack quantity, use packets/pieces
+      const { packets, pieces } = parseQuantityToPacketsAndPieces(stock.itemname, currentQuantity);
+      setEditPackets(packets);
+      setEditPieces(pieces);
+      setEditQuantity("0");
+    } else {
+      // For other items, use single input
+      setEditQuantity(currentQuantity);
+      setEditPackets("0");
+      setEditPieces("0");
+    }
+    
     setEditDialogOpen(true);
   };
 
-  const handleSaveQuantity = () => {
-    if (editingItem && editQuantity !== "") {
-      const quantity = parseFloat(editQuantity);
-      if (!isNaN(quantity) && quantity >= 0) {
-        setReportData(prev => ({
-          ...prev,
-          [editingItem.itemname]: editQuantity
-        }));
-        setEditDialogOpen(false);
-        setEditingItem(null);
-        setEditQuantity("");
-      } else {
-        setMessage("Please enter a valid quantity");
-        setMessageType("error");
-      }
+  const calculateTotalQuantity = (packets, pieces, packQuantity) => {
+    const pkts = parseInt(packets) || 0;
+    const pcs = parseInt(pieces) || 0;
+    return (pkts * packQuantity) + pcs;
+  };
+
+  const getTotalPiecesFromInput = () => {
+    if (!editingItem) return 0;
+    
+    if (shouldUseKg(editingItem.itemname)) {
+      return parseFloat(editQuantity) || 0;
+    } else if (editingItem.pack_quantity > 0) {
+      return calculateTotalQuantity(editPackets, editPieces, editingItem.pack_quantity);
+    } else {
+      return parseFloat(editQuantity) || 0;
     }
+  };
+
+  const handleSaveQuantity = () => {
+    if (editingItem) {
+      let totalQuantity;
+      
+      if (shouldUseKg(editingItem.itemname)) {
+        // For kg items, validate decimal input
+        const quantity = parseFloat(editQuantity);
+        if (isNaN(quantity) || quantity < 0) {
+          setMessage("Please enter a valid positive quantity");
+          setMessageType("error");
+          return;
+        }
+        totalQuantity = quantity;
+      } else if (editingItem.pack_quantity > 0) {
+        // For items with pack quantity, validate packets and pieces
+        const packets = parseInt(editPackets) || 0;
+        const pieces = parseInt(editPieces) || 0;
+        
+        if (packets < 0 || pieces < 0) {
+          setMessage("Please enter valid positive quantities");
+          setMessageType("error");
+          return;
+        }
+
+        if (pieces >= editingItem.pack_quantity) {
+          setMessage(`Pieces cannot be ${editingItem.pack_quantity} or more. Convert extra pieces to packets.`);
+          setMessageType("error");
+          return;
+        }
+
+        totalQuantity = calculateTotalQuantity(editPackets, editPieces, editingItem.pack_quantity);
+      } else {
+        // For other items
+        const quantity = parseFloat(editQuantity);
+        if (isNaN(quantity) || quantity < 0) {
+          setMessage("Please enter a valid positive quantity");
+          setMessageType("error");
+          return;
+        }
+        totalQuantity = quantity;
+      }
+
+      setReportData(prev => ({
+        ...prev,
+        [editingItem.itemname]: totalQuantity.toString()
+      }));
+      setEditDialogOpen(false);
+      setEditingItem(null);
+      setEditPackets("0");
+      setEditPieces("0");
+      setEditQuantity("0");
+    }
+  };
+
+  const getItemMetric = (itemName) => {
+    if (!itemName) return "pcs";
+    if (shouldUseKg(itemName)) {
+      return "kgs";
+    }
+    
+    const stockItem = shopStock.find(stock => stock.itemname === itemName);
+    const itemInfo = stockItems.find(item => item.item_name === itemName);
+    
+    return stockItem?.metric || itemInfo?.metric || "pcs";
+  };
+
+  const getItemPackQuantity = (itemName) => {
+    if (!itemName) return 0;
+    if (shouldUseKg(itemName)) {
+      return 0; // kg items don't use pack quantities
+    }
+    
+    const stockItem = shopStock.find(stock => stock.itemname === itemName);
+    const itemInfo = stockItems.find(item => item.item_name === itemName);
+    
+    return stockItem?.pack_quantity || itemInfo?.pack_quantity || 0;
   };
 
   const formatQuantityForBackend = (itemName, quantity) => {
@@ -128,20 +263,9 @@ const ManualStockReport = () => {
     }
 
     const qty = parseFloat(quantity);
-    const itemInfo = stockItems.find(item => item.item_name === itemName);
+    const metric = getItemMetric(itemName);
 
-    if (!itemInfo) {
-      return `${qty} pcs`;
-    }
-
-    // For items with "kgs" metric, use "kg" in the report
-    if (itemInfo.metric && itemInfo.metric.toLowerCase() === "kgs") {
-      return `${qty} kg`;
-    }
-
-    // For eggs and other items with pack quantities, send the total quantity in pieces
-    // The backend will handle the conversion
-    return `${qty} ${itemInfo.metric || "pcs"}`;
+    return `${qty} ${metric}`;
   };
 
   const handleSubmit = async (event) => {
@@ -168,7 +292,6 @@ const ManualStockReport = () => {
       }
     });
 
-    // Debug: Log the payload before sending
     console.log("Submitting payload:", {
       shop_id: shopId,
       report: finalReportData
@@ -190,7 +313,6 @@ const ManualStockReport = () => {
       setMessage(response.data.message || "✅ Stock report submitted successfully!");
       setMessageType("success");
 
-      // Optional: Redirect after success
       setTimeout(() => {
         localStorage.setItem("report_status", "true");
         navigate("/depositcash");
@@ -207,45 +329,70 @@ const ManualStockReport = () => {
   };
 
   const formatDisplayValue = (itemName, quantity) => {
-    if (!quantity || isNaN(quantity)) return "0 pcs";
+    if (!quantity || isNaN(quantity) || parseFloat(quantity) === 0) {
+      const metric = getItemMetric(itemName);
+      const packQuantity = getItemPackQuantity(itemName);
+      
+      if (packQuantity > 0 && !shouldUseKg(itemName)) {
+        return `0 ${itemName && itemName.toLowerCase().includes("egg") ? "trays" : "pkts"}, 0 pcs`;
+      }
+      return `0 ${metric}`;
+    }
     
     const qty = parseFloat(quantity);
-    const itemInfo = stockItems.find(item => item.item_name === itemName);
+    const metric = getItemMetric(itemName);
+    const packQuantity = getItemPackQuantity(itemName);
 
-    if (!itemInfo) return `${qty} pcs`;
-
-    // Kgs stay as kgs
-    if (itemInfo.metric && itemInfo.metric.toLowerCase() === "kgs") {
-      return `${qty} kgs`;
+    // For kgs metric - display as entered with decimals
+    if (metric.toLowerCase() === "kgs" || metric.toLowerCase() === "kg") {
+      return `${qty} ${metric}`;
     }
 
-    // Eggs → trays + pieces
-    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
-    if (isEggs && itemInfo.pack_quantity > 0) {
-      const trays = Math.floor(qty / itemInfo.pack_quantity);
-      const pieces = qty % itemInfo.pack_quantity;
-      return trays > 0
-        ? `${trays} tray${trays !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
-        : `${pieces} pcs`;
-    }
-
-    // Other items with pack quantity → pkts + pcs
-    if (itemInfo.pack_quantity > 0) {
-      const packets = Math.floor(qty / itemInfo.pack_quantity);
-      const pieces = qty % itemInfo.pack_quantity;
+    // For items with pack quantity → pkts + pcs
+    if (packQuantity > 0) {
+      const packets = Math.floor(qty / packQuantity);
+      const pieces = qty % packQuantity;
+      
+      if (itemName && itemName.toLowerCase().includes("egg")) {
+        return packets > 0
+          ? `${packets} tray${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} eggs` : ""}`
+          : `${pieces} eggs`;
+      }
+      
       return packets > 0
         ? `${packets} pkt${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
         : `${pieces} pcs`;
     }
 
-    // Fallback
-    return `${qty} ${itemInfo.metric || "pcs"}`;
+    // For items without pack quantity, use the metric directly
+    return `${qty} ${metric}`;
+  };
+
+  const getInputType = () => {
+    if (!editingItem) return 'single';
+    
+    if (shouldUseKg(editingItem.itemname)) {
+      return 'kg';
+    } else if (editingItem.pack_quantity > 0) {
+      return 'packets';
+    } else {
+      return 'single';
+    }
+  };
+
+  // Safe function to check if item is eggs
+  const isEggItem = (item) => {
+    return item?.itemname?.toLowerCase().includes("egg") || false;
+  };
+
+  // Safe function to get metric
+  const getEditingItemMetric = () => {
+    return editingItem?.metric || "pcs";
   };
 
   return (
     <div>
-        <h2 style={{ margin: "0 0 20px 0" }}>Stock Report </h2>
-   
+      <h2 style={{ margin: "0 0 20px 0" }}>Stock Report</h2>
 
       <Alert severity="info" sx={{ mb: 3 }}>
         Click on any item in the table to set its quantity. Items start at 0 by default.
@@ -270,18 +417,25 @@ const ManualStockReport = () => {
           </thead>
           <tbody className="batchnumber-size">
             {shopStock.length > 0 ? (
-              shopStock.map((stock, index) => (
-                <tr 
-                  key={index} 
-                  onClick={() => handleItemClick(stock)}
-                  style={{ cursor: 'pointer', backgroundColor: parseFloat(reportData[stock.itemname] || 0) > 0 ? '#f0f8f0' : 'transparent' }}
-                >
-                  <td>{stock.itemname}</td>
-                  <td>
-                    {formatDisplayValue(stock.itemname, reportData[stock.itemname] || "0")}
-                  </td>
-                </tr>
-              ))
+              shopStock.map((stock, index) => {
+                const packQuantity = getItemPackQuantity(stock.itemname);
+                return (
+                  <tr 
+                    key={index} 
+                    onClick={() => handleItemClick(stock)}
+                    style={{ 
+                      cursor: 'pointer', 
+                      backgroundColor: parseFloat(reportData[stock.itemname] || 0) > 0 ? '#f0f8f0' : 'transparent' 
+                    }}
+                  >
+                    <td>{stock.itemname}</td>
+                    
+                    <td>
+                      {formatDisplayValue(stock.itemname, reportData[stock.itemname] || "0")}
+                    </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan="2">No items in stock.</td>
@@ -292,28 +446,78 @@ const ManualStockReport = () => {
       </Box>
 
       {/* Edit Quantity Dialog */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Set Quantity for {editingItem?.itemname}
+          Set Quantity for {editingItem?.itemname || "Item"}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            label="Quantity"
-            type="number"
-            value={editQuantity}
-            onChange={(e) => setEditQuantity(e.target.value)}
-            inputProps={{ min: 0, step: "any" }}
-            fullWidth
-            sx={{ mt: 2 }}
-            helperText={`Enter quantity in ${editingItem?.metric || "pcs"}`}
-          />
-          {editQuantity && !isNaN(editQuantity) && (
-            <Alert severity="info" sx={{ mt: 2 }}>
-              <strong>Will display as:</strong> {formatDisplayValue(editingItem?.itemname, editQuantity)}
-              <br />
-              <strong>Will send to backend as:</strong> {formatQuantityForBackend(editingItem?.itemname, editQuantity) || "0 (will be skipped)"}
-            </Alert>
+          {getInputType() === 'packets' ? (
+            <>
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <Grid item xs={6}>
+                  <TextField
+                    label={isEggItem(editingItem) ? "Trays" : "Packets"}
+                    type="number"
+                    value={editPackets}
+                    onChange={(e) => setEditPackets(e.target.value)}
+                    inputProps={{ min: 0, step: 1 }}
+                    fullWidth
+                    helperText={`1 ${isEggItem(editingItem) ? "tray" : "pkt"} = ${editingItem?.pack_quantity || 0} pcs`}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    label="Pieces"
+                    type="number"
+                    value={editPieces}
+                    onChange={(e) => setEditPieces(e.target.value)}
+                    inputProps={{ 
+                      min: 0, 
+                      max: (editingItem?.pack_quantity || 1) - 1,
+                      step: 1 
+                    }}
+                    fullWidth
+                    helperText={`Max ${(editingItem?.pack_quantity || 1) - 1} pieces`}
+                  />
+                </Grid>
+              </Grid>
+              
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <strong>Total Quantity:</strong> {getTotalPiecesFromInput()} pieces
+                <br />
+                <strong>Display:</strong> {formatDisplayValue(editingItem?.itemname, getTotalPiecesFromInput().toString())}
+                <br />
+                <strong>Backend:</strong> {formatQuantityForBackend(editingItem?.itemname, getTotalPiecesFromInput().toString()) || "0 (will be skipped)"}
+              </Alert>
+            </>
+          ) : (
+            <>
+              <TextField
+                autoFocus
+                label="Quantity"
+                type="number"
+                value={getInputType() === 'kg' ? editQuantity : editPieces}
+                onChange={(e) => {
+                  if (getInputType() === 'kg') {
+                    setEditQuantity(e.target.value);
+                  } else {
+                    setEditPieces(e.target.value);
+                  }
+                }}
+                inputProps={{ 
+                  min: 0, 
+                  step: getInputType() === 'kg' ? "0.1" : "1" 
+                }}
+                fullWidth
+                sx={{ mt: 2 }}
+                helperText={`Enter quantity in ${getEditingItemMetric()}${getInputType() === 'kg' ? ' (decimals allowed)' : ''}`}
+              />
+              <Alert severity="info" sx={{ mt: 2 }}>
+                <strong>Will display as:</strong> {formatDisplayValue(editingItem?.itemname, getInputType() === 'kg' ? editQuantity : editPieces)}
+                <br />
+                <strong>Will send to backend as:</strong> {formatQuantityForBackend(editingItem?.itemname, getInputType() === 'kg' ? editQuantity : editPieces) || "0 (will be skipped)"}
+              </Alert>
+            </>
           )}
         </DialogContent>
         <DialogActions>

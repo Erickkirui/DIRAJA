@@ -220,7 +220,7 @@ function App() {
           <Route path='/pending-tasks' element={<Layout><UserPendingTasks /></Layout>}></Route>
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
           <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
-          <Route path='/reconsiliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
+          <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
         </Routes>
       </Router>
     </div>
