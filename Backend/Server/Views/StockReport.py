@@ -453,7 +453,6 @@ class StockReconciliationList(Resource):
                     'status': recon.status,
                     'comment': recon.comment,
                     'created_at': recon.created_at.isoformat() if recon.created_at else None,
-                    'updated_at': recon.updated_at.isoformat() if recon.updated_at else None
                 })
 
             return {
