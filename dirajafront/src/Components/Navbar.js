@@ -96,6 +96,13 @@ function Navbar({ onMenuItemClick }) {
                 >
                   <span>Stock Movement</span>
                 </NavLink>
+                <NavLink
+                  to="/reconciliation"
+                  className="menu-item sub-item"
+                  onClick={onMenuItemClick}
+                >
+                  <span>Stock Reconciliation</span>
+                </NavLink>
               </div>
             )}
           </div>

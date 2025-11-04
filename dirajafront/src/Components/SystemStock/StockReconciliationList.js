@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import GeneralTableLayout from '../GeneralTableLayout';
 
@@ -13,6 +13,144 @@ const StockReconciliationList = () => {
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolveComment, setResolveComment] = useState('');
   const [resolving, setResolving] = useState(false);
+  const [stockItems, setStockItems] = useState([]);
+
+  // List of items that should always use "kg" as metric
+  const kgItems = [
+    "boneless breast", "thighs", "drumstick", "big legs", "backbone", 
+    "liver", "gizzard", "neck", "feet", "wings", "broiler"
+  ];
+  
+  // Format numbers: no decimals if whole, else show up to 3 decimals
+  const formatNumber = (value) => {
+    if (value === null || value === undefined) return 'N/A';
+    return Number(value) % 1 === 0 ? Number(value).toString() : Number(value).toFixed(3);
+  };
+
+  // Process quantity display with proper negative number handling
+  const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
+    const itemInfo = items.find((item) => item.item_name === itemname);
+
+    // Always use kg for specific items regardless of incoming metric
+    const shouldUseKg = kgItems.some(kgItem => 
+      itemname.toLowerCase().includes(kgItem.toLowerCase())
+    );
+
+    if (shouldUseKg) {
+      return `${formatNumber(quantity)} kg`;
+    }
+
+    if (!itemInfo) {
+      return `${formatNumber(quantity)} ${metric || "pcs"}`;
+    }
+
+    // Kgs stay as kgs
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${formatNumber(quantity)} kgs`;
+    }
+
+    // Handle negative quantities properly
+    const isNegative = quantity < 0;
+    const absoluteQuantity = Math.abs(quantity);
+
+    // Eggs → trays + pieces
+    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
+    if (isEggs && itemInfo.pack_quantity > 0) {
+      const trays = Math.floor(absoluteQuantity / itemInfo.pack_quantity);
+      const pieces = absoluteQuantity % itemInfo.pack_quantity;
+      const formatted = trays > 0
+        ? `${formatNumber(trays)} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
+          }`
+        : `${formatNumber(pieces)} pcs`;
+      return isNegative ? `-${formatted}` : formatted;
+    }
+
+    // Other items with pack quantity → pkts + pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(absoluteQuantity / itemInfo.pack_quantity);
+      const pieces = absoluteQuantity % itemInfo.pack_quantity;
+      const formatted = packets > 0
+        ? `${formatNumber(packets)} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
+          }`
+        : `${formatNumber(pieces)} pcs`;
+      return isNegative ? `-${formatted}` : formatted;
+    }
+
+    // Fallback
+    return `${formatNumber(quantity)} ${metric || "pcs"}`;
+  }, []);
+
+  // Special function for difference display that handles negative pack quantities correctly
+  const processDifferenceDisplay = useCallback((itemname, difference, metric, items) => {
+    const itemInfo = items.find((item) => item.item_name === itemname);
+
+    // Always use kg for specific items regardless of incoming metric
+    const shouldUseKg = kgItems.some(kgItem => 
+      itemname.toLowerCase().includes(kgItem.toLowerCase())
+    );
+
+    if (shouldUseKg) {
+      return `${formatNumber(difference)} kg`;
+    }
+
+    if (!itemInfo) {
+      return `${formatNumber(difference)} ${metric || "pcs"}`;
+    }
+
+    // Kgs stay as kgs
+    if (metric && metric.toLowerCase() === "kgs") {
+      return `${formatNumber(difference)} kgs`;
+    }
+
+    // Handle negative differences with pack quantities
+    const isNegative = difference < 0;
+    const absoluteDifference = Math.abs(difference);
+
+    // Eggs → trays + pieces
+    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
+    if (isEggs && itemInfo.pack_quantity > 0) {
+      const trays = Math.floor(absoluteDifference / itemInfo.pack_quantity);
+      const pieces = absoluteDifference % itemInfo.pack_quantity;
+      const formatted = trays > 0
+        ? `${formatNumber(trays)} tray${trays !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} eggs` : ""
+          }`
+        : `${formatNumber(pieces)} eggs`;
+      return isNegative ? `-${formatted}` : formatted;
+    }
+
+    // Other items with pack quantity → pkts + pcs
+    if (itemInfo.pack_quantity > 0) {
+      const packets = Math.floor(absoluteDifference / itemInfo.pack_quantity);
+      const pieces = absoluteDifference % itemInfo.pack_quantity;
+      const formatted = packets > 0
+        ? `${formatNumber(packets)} pkt${packets !== 1 ? "s" : ""}${
+            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
+          }`
+        : `${formatNumber(pieces)} pcs`;
+      return isNegative ? `-${formatted}` : formatted;
+    }
+
+    // Fallback
+    return `${formatNumber(difference)} ${metric || "pcs"}`;
+  }, []);
+
+  // Fetch stock items for proper metric conversion
+  const fetchStockItems = async () => {
+    try {
+      const response = await axios.get("api/diraja/stockitems", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+      return response.data.stock_items || [];
+    } catch (err) {
+      console.error("Error fetching stock items:", err);
+      return [];
+    }
+  };
 
   // Fetch stock reconciliations
   const fetchReconciliations = async () => {
@@ -23,13 +161,45 @@ const StockReconciliationList = () => {
         return;
       }
 
-      const response = await axios.get('/api/diraja/stock-reconciliation', {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
+      // Fetch both stock items and reconciliations in parallel
+      const [items, reconciliationsResponse] = await Promise.all([
+        fetchStockItems(),
+        axios.get('/api/diraja/stock-reconciliation', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        })
+      ]);
 
-      setReconciliations(response.data.reconciliations || []);
+      setStockItems(items);
+
+      const rawReconciliations = reconciliationsResponse.data.reconciliations || [];
+      
+      // Process reconciliations to format quantities properly
+      const processedReconciliations = rawReconciliations.map(reconciliation => ({
+        ...reconciliation,
+        formattedStockValue: processQuantityDisplay(
+          reconciliation.item,
+          reconciliation.stock_value,
+          reconciliation.metric,
+          items
+        ),
+        formattedReportValue: processQuantityDisplay(
+          reconciliation.item,
+          reconciliation.report_value,
+          reconciliation.metric,
+          items
+        ),
+        // Use special function for difference to handle negative numbers correctly
+        formattedDifference: processDifferenceDisplay(
+          reconciliation.item,
+          reconciliation.difference,
+          reconciliation.metric,
+          items
+        )
+      }));
+
+      setReconciliations(processedReconciliations);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching stock reconciliations:', err);
@@ -52,11 +222,6 @@ const StockReconciliationList = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
-  };
-
-  const formatNumber = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    return typeof value === 'number' ? value.toFixed(3) : value;
   };
 
   // === Status Cell Styles ===
@@ -83,11 +248,11 @@ const StockReconciliationList = () => {
   // === Difference Cell Styles ===
   const getDifferenceStyle = (difference) => {
     if (difference > 0) {
-      return { color: '#28a745', fontWeight: '600' }; // Green for positive
+      return { color: '#8850f1', fontWeight: 'normal' }; // Green for positive
     } else if (difference < 0) {
-      return { color: '#dc3545', fontWeight: '600' }; // Red for negative
+      return { color: '#dc3545', fontWeight: 'normal' }; // Red for negative
     } else {
-      return { color: '#6c757d', fontWeight: '600' }; // Gray for zero
+      return { color: '#6c757d', fontWeight: 'normal' }; // Gray for zero
     }
   };
 
@@ -108,13 +273,12 @@ const StockReconciliationList = () => {
         return;
       }
 
-      // Update the reconciliation - you may need to adjust the API endpoint and payload
+      // Update the reconciliation
       const response = await axios.put(
         `/api/diraja/stock-reconciliation/${selectedReconciliation.id}`,
         {
-          comment: 'resolved', // Update comment to "resolved"
-          status: 'Solved', // Update status to "Solved"
-          // Include other required fields if needed by your API
+          comment: 'resolved',
+          status: 'Solved',
         },
         {
           headers: {
@@ -130,7 +294,25 @@ const StockReconciliationList = () => {
             ? {
                 ...item,
                 comment: 'resolved',
-                status: 'Solved'
+                status: 'Solved',
+                formattedStockValue: processQuantityDisplay(
+                  item.item,
+                  item.stock_value,
+                  item.metric,
+                  stockItems
+                ),
+                formattedReportValue: processQuantityDisplay(
+                  item.item,
+                  item.report_value,
+                  item.metric,
+                  stockItems
+                ),
+                formattedDifference: processDifferenceDisplay(
+                  item.item,
+                  item.difference,
+                  item.metric,
+                  stockItems
+                )
               }
             : item
         )
@@ -160,6 +342,16 @@ const StockReconciliationList = () => {
 
   const columns = [
     {
+      header: 'Created At',
+      key: 'created_at',
+      render: (reconciliation) => formatDate(reconciliation.created_at),
+    },
+    {
+      header: 'Shop',
+      key: 'shopname',
+      render: (reconciliation) => (reconciliation.shopname),
+    },
+    {
       header: 'Item Name',
       key: 'item',
       render: (reconciliation) => (
@@ -169,21 +361,32 @@ const StockReconciliationList = () => {
       ),
     },
     {
-      header: 'Stock Value',
+      header: 'System Value',
       key: 'stock_value',
-      render: (reconciliation) => formatNumber(reconciliation.stock_value),
+      render: (reconciliation) => (
+        <div style={{ fontFamily: 'monospace' }}>
+          {reconciliation.formattedStockValue}
+        </div>
+      ),
     },
     {
       header: 'Report Value',
       key: 'report_value',
-      render: (reconciliation) => formatNumber(reconciliation.report_value),
+      render: (reconciliation) => (
+        <div style={{ fontFamily: 'monospace' }}>
+          {reconciliation.formattedReportValue}
+        </div>
+      ),
     },
     {
       header: 'Difference',
       key: 'difference',
       render: (reconciliation) => (
-        <span style={getDifferenceStyle(reconciliation.difference)}>
-          {formatNumber(reconciliation.difference)}
+        <span 
+          style={getDifferenceStyle(reconciliation.difference)}
+          className="difference-value"
+        >
+          {reconciliation.formattedDifference}
         </span>
       ),
     },
@@ -230,11 +433,6 @@ const StockReconciliationList = () => {
           {reconciliation.comment}
         </div>
       ),
-    },
-    {
-      header: 'Created At',
-      key: 'created_at',
-      render: (reconciliation) => formatDate(reconciliation.created_at),
     },
     {
       header: 'Actions',
@@ -296,7 +494,9 @@ const StockReconciliationList = () => {
   }
 
   return (
+    
     <div className="stock-reconciliation-container">
+      <h1>Stock reconciliation</h1>
       {error && (
         <div
           style={{
@@ -395,9 +595,26 @@ const StockReconciliationList = () => {
             </div>
 
             <div style={{ marginBottom: '15px' }}>
+              <strong>Stock Value:</strong>{' '}
+              <span style={{ fontFamily: 'monospace' }}>
+                {selectedReconciliation.formattedStockValue}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
+              <strong>Report Value:</strong>{' '}
+              <span style={{ fontFamily: 'monospace' }}>
+                {selectedReconciliation.formattedReportValue}
+              </span>
+            </div>
+
+            <div style={{ marginBottom: '15px' }}>
               <strong>Difference:</strong>{' '}
-              <span style={getDifferenceStyle(selectedReconciliation.difference)}>
-                {formatNumber(selectedReconciliation.difference)}
+              <span 
+                style={getDifferenceStyle(selectedReconciliation.difference)}
+                className="difference-value"
+              >
+                {selectedReconciliation.formattedDifference}
               </span>
             </div>
 
