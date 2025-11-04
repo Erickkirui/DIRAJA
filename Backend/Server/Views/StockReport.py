@@ -388,7 +388,7 @@ class StockReconciliationList(Resource):
     @jwt_required()
     def get(self):
         """
-        Get stock reconciliation records with filtering and pagination
+        Get stock reconciliation records with filtering, pagination, and shop names
         """
         try:
             # Get query parameters
@@ -400,8 +400,14 @@ class StockReconciliationList(Resource):
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 20, type=int)
 
-            # Start with base query
-            query = StockReconciliation.query
+            # Start with base query joining with Shops table
+            query = db.session.query(
+                StockReconciliation, 
+                Shops.shopname
+            ).join(
+                Shops, 
+                StockReconciliation.shop_id == Shops.shops_id
+            )
 
             # Apply filters
             if shop_id:
@@ -439,12 +445,13 @@ class StockReconciliationList(Resource):
                 error_out=False
             )
 
-            # Format response
+            # Format response with shop name
             reconciliations = []
-            for recon in pagination.items:
+            for recon, shopname in pagination.items:
                 reconciliations.append({
                     'id': recon.id,
                     'shop_id': recon.shop_id,
+                    'shopname': shopname,  # Include shop name
                     'user_id': recon.user_id,
                     'item': recon.item,
                     'stock_value': float(recon.stock_value),
