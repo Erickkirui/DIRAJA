@@ -202,6 +202,49 @@ const TaskActions = ({ task, onTaskUpdated, onTaskDeleted }) => {
                         <option value="Complete">Complete</option>
                     </select>
                 </div>
+                <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                        Status:
+                    </label>
+                    <select
+                        name="status"
+                        value={formData.status}
+                        onChange={handleInputChange}
+                        style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <option value="Pending">Pending</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Complete">Complete</option>
+                    </select>
+                </div>
+
+                <div style={{ marginBottom: '15px' }}>
+                    <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                        Priority:
+                    </label>
+                    <select
+                        name="priority"
+                        value={formData.priority}
+                        onChange={handleInputChange}
+                        style={{
+                            width: '100%',
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                        }}
+                    >
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
 
                 {/* Due Date (pre-filled with current due date) */}
                 <div style={{ marginBottom: '20px' }}>

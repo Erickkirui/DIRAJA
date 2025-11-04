@@ -113,7 +113,6 @@ class ShopToShopTransfer(Resource):
                         BatchNumber=batch.BatchNumber,
                         quantity=take_qty,
                         metric=batch.metric,
-                        stockv2_id=batch.stockv2_id,
                         inventoryv2_id=batch.inventoryv2_id  # ✅ add it only here
                     )
                 db.session.add(dest_stock)

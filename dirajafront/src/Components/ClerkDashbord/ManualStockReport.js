@@ -122,6 +122,28 @@ const ManualStockReport = () => {
     }
   };
 
+  const formatQuantityForBackend = (itemName, quantity) => {
+    if (!quantity || isNaN(quantity) || parseFloat(quantity) === 0) {
+      return null;
+    }
+
+    const qty = parseFloat(quantity);
+    const itemInfo = stockItems.find(item => item.item_name === itemName);
+
+    if (!itemInfo) {
+      return `${qty} pcs`;
+    }
+
+    // For items with "kgs" metric, use "kg" in the report
+    if (itemInfo.metric && itemInfo.metric.toLowerCase() === "kgs") {
+      return `${qty} kg`;
+    }
+
+    // For eggs and other items with pack quantities, send the total quantity in pieces
+    // The backend will handle the conversion
+    return `${qty} ${itemInfo.metric || "pcs"}`;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     
@@ -137,14 +159,19 @@ const ManualStockReport = () => {
     setSubmitting(true);
     setMessage("");
 
-    // Create report object with items that have quantity > 0
+    // Create report object with proper formatting for backend
     const finalReportData = {};
     Object.keys(reportData).forEach(itemName => {
-      const quantity = parseFloat(reportData[itemName]);
-      if (quantity > 0) {
-        const itemInfo = stockItems.find(item => item.item_name === itemName);
-        finalReportData[itemName] = `${quantity} ${itemInfo?.metric || "pcs"}`;
+      const formattedValue = formatQuantityForBackend(itemName, reportData[itemName]);
+      if (formattedValue) {
+        finalReportData[itemName] = formattedValue;
       }
+    });
+
+    // Debug: Log the payload before sending
+    console.log("Submitting payload:", {
+      shop_id: shopId,
+      report: finalReportData
     });
 
     const payload = {
@@ -156,6 +183,7 @@ const ManualStockReport = () => {
       const response = await axios.post("api/diraja/report-stock", payload, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          'Content-Type': 'application/json'
         },
       });
 
@@ -172,6 +200,7 @@ const ManualStockReport = () => {
       const errorMsg = err.response?.data?.message || "❌ Failed to submit stock report.";
       setMessage(errorMsg);
       setMessageType("error");
+      console.error("Submission error:", err.response?.data);
     } finally {
       setSubmitting(false);
     }
@@ -282,6 +311,8 @@ const ManualStockReport = () => {
           {editQuantity && !isNaN(editQuantity) && (
             <Alert severity="info" sx={{ mt: 2 }}>
               <strong>Will display as:</strong> {formatDisplayValue(editingItem?.itemname, editQuantity)}
+              <br />
+              <strong>Will send to backend as:</strong> {formatQuantityForBackend(editingItem?.itemname, editQuantity) || "0 (will be skipped)"}
             </Alert>
           )}
         </DialogContent>
@@ -303,8 +334,6 @@ const ManualStockReport = () => {
         >
           {submitting ? "Submitting Report..." : "Submit Stock Report"}
         </Button>
-
-
       </Box>
     </div>
   );

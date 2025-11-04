@@ -189,7 +189,7 @@ class UsersResourceById(Resource):
 class GetAllUsers(Resource):
 
     @jwt_required()
-    @check_role('manager')
+    
     def get(self):
         users = Users.query.all()
 
