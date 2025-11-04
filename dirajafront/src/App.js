@@ -104,6 +104,7 @@ import CreditorPage from './Pages/CreditorPage';
 import AddTask from './Components/TaskManager/AddTask';
 import UserPendingTasks from './Components/TaskManager/UserPendingTasks';
 import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
+import StockReconciliationList from './Components/SystemStock/StockReconciliationList';
 
 function App() {
   return (
@@ -219,6 +220,7 @@ function App() {
           <Route path='/pending-tasks' element={<Layout><UserPendingTasks /></Layout>}></Route>
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
           <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
+          <Route path='/reconsiliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
         </Routes>
       </Router>
     </div>
