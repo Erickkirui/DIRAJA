@@ -458,7 +458,7 @@ api.add_resource(SubmitStockReport, '/report-stock')
 api.add_resource(ResetShopReportStatus, '/reset-report')
 api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
-api.add_resource(StockReconciliationList, '/stock-reconciliation/')
+api.add_resource(StockReconciliationList, '/stock-reconciliation')
 api.add_resource(StockReconciliationResource, '/stock-reconciliation/<int:reconciliation_id>')
 
 
