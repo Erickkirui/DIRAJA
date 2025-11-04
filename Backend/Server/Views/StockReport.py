@@ -523,7 +523,6 @@ class StockReconciliationResource(Resource):
                     'shop_id': reconciliation.shop_id,
                     'user_id': reconciliation.user_id,
                     'created_at': reconciliation.created_at.isoformat() if reconciliation.created_at else None,
-                    'updated_at': reconciliation.updated_at.isoformat() if reconciliation.updated_at else None
                 }
             }, 200
 
