@@ -84,7 +84,7 @@ const UnresolvedReconciliationsButton = () => {
 
   return (
     <button
-      onClick={() => navigate("/reconsiliation")}
+      onClick={() => navigate("/reconciliation")}
       style={buttonStyle}
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#b91c1c")}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#dc2626")}

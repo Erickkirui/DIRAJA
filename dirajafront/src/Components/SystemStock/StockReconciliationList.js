@@ -273,11 +273,11 @@ const StockReconciliationList = () => {
         return;
       }
 
-      // Update the reconciliation
+      // Update the reconciliation - FIXED: Use resolveComment instead of selectedReconciliation.comment
       const response = await axios.put(
         `/api/diraja/stock-reconciliation/${selectedReconciliation.id}`,
         {
-          comment: 'resolved',
+          comment: resolveComment, // Use the comment from textarea input
           status: 'Solved',
         },
         {
@@ -287,13 +287,13 @@ const StockReconciliationList = () => {
         }
       );
 
-      // Update local state
+      // Update local state - FIXED: Use resolveComment here as well
       setReconciliations(prevReconciliations =>
         prevReconciliations.map(item =>
           item.id === selectedReconciliation.id
             ? {
                 ...item,
-                comment: 'resolved',
+                comment: resolveComment, // Use the comment from textarea input
                 status: 'Solved',
                 formattedStockValue: processQuantityDisplay(
                   item.item,
@@ -317,7 +317,7 @@ const StockReconciliationList = () => {
             : item
         )
       );
-
+      
       // Close modal and reset states
       setShowResolveModal(false);
       setSelectedReconciliation(null);
@@ -494,7 +494,6 @@ const StockReconciliationList = () => {
   }
 
   return (
-    
     <div className="stock-reconciliation-container">
       <h1>Stock reconciliation</h1>
       {error && (
@@ -634,7 +633,7 @@ const StockReconciliationList = () => {
                   minHeight: '80px',
                   resize: 'vertical',
                 }}
-                placeholder="Add a comment (will be updated to 'resolved')"
+                placeholder="Add a comment explaining the resolution"
               />
             </div>
 
