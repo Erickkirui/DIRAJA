@@ -16,6 +16,7 @@ import ShopStatusList from '../Components/ManagerDashbord/ShopStstusList';
 import InventoryStockCount from '../Components/ManagerDashbord/InventoryStockCount';
 import ProductEarningsList from '../Components/ManagerDashbord/ProductEarningList';
 import PendingTasksButton from '../Components/TaskManager/PendingTasksButton';
+import UnresolvedReconciliationsButton from '../Components/SystemStock/UnresolvedReconciliationsButton';
 
 
 function Managerdashord() {
@@ -48,6 +49,7 @@ function Managerdashord() {
         <div className="shortcuts">
           <Link to="/allusers"  >Manage Users</Link>
            <PendingTasksButton />
+           <UnresolvedReconciliationsButton />
 
          
         </div>
