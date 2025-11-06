@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import GeneralTableLayout from '../GeneralTableLayout';
+import { 
+  resolveReconciliation, 
+  fetchStockItems, 
+  processQuantityDisplay, 
+  processDifferenceDisplay 
+} from"./ResolveStock"
+
 
 const StockReconciliationList = () => {
   const [reconciliations, setReconciliations] = useState([]);
@@ -14,143 +20,14 @@ const StockReconciliationList = () => {
   const [resolveComment, setResolveComment] = useState('');
   const [resolving, setResolving] = useState(false);
   const [stockItems, setStockItems] = useState([]);
+  const [dateFilter, setDateFilter] = useState({
+    startDate: '',
+    endDate: ''
+  });
 
-  // List of items that should always use "kg" as metric
-  const kgItems = [
-    "boneless breast", "thighs", "drumstick", "big legs", "backbone", 
-    "liver", "gizzard", "neck", "feet", "wings", "broiler"
-  ];
-  
-  // Format numbers: no decimals if whole, else show up to 3 decimals
-  const formatNumber = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    return Number(value) % 1 === 0 ? Number(value).toString() : Number(value).toFixed(3);
-  };
-
-  // Process quantity display with proper negative number handling
-  const processQuantityDisplay = useCallback((itemname, quantity, metric, items) => {
-    const itemInfo = items.find((item) => item.item_name === itemname);
-
-    // Always use kg for specific items regardless of incoming metric
-    const shouldUseKg = kgItems.some(kgItem => 
-      itemname.toLowerCase().includes(kgItem.toLowerCase())
-    );
-
-    if (shouldUseKg) {
-      return `${formatNumber(quantity)} kg`;
-    }
-
-    if (!itemInfo) {
-      return `${formatNumber(quantity)} ${metric || "pcs"}`;
-    }
-
-    // Kgs stay as kgs
-    if (metric && metric.toLowerCase() === "kgs") {
-      return `${formatNumber(quantity)} kgs`;
-    }
-
-    // Handle negative quantities properly
-    const isNegative = quantity < 0;
-    const absoluteQuantity = Math.abs(quantity);
-
-    // Eggs → trays + pieces
-    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
-    if (isEggs && itemInfo.pack_quantity > 0) {
-      const trays = Math.floor(absoluteQuantity / itemInfo.pack_quantity);
-      const pieces = absoluteQuantity % itemInfo.pack_quantity;
-      const formatted = trays > 0
-        ? `${formatNumber(trays)} tray${trays !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
-          }`
-        : `${formatNumber(pieces)} pcs`;
-      return isNegative ? `-${formatted}` : formatted;
-    }
-
-    // Other items with pack quantity → pkts + pcs
-    if (itemInfo.pack_quantity > 0) {
-      const packets = Math.floor(absoluteQuantity / itemInfo.pack_quantity);
-      const pieces = absoluteQuantity % itemInfo.pack_quantity;
-      const formatted = packets > 0
-        ? `${formatNumber(packets)} pkt${packets !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
-          }`
-        : `${formatNumber(pieces)} pcs`;
-      return isNegative ? `-${formatted}` : formatted;
-    }
-
-    // Fallback
-    return `${formatNumber(quantity)} ${metric || "pcs"}`;
-  }, []);
-
-  // Special function for difference display that handles negative pack quantities correctly
-  const processDifferenceDisplay = useCallback((itemname, difference, metric, items) => {
-    const itemInfo = items.find((item) => item.item_name === itemname);
-
-    // Always use kg for specific items regardless of incoming metric
-    const shouldUseKg = kgItems.some(kgItem => 
-      itemname.toLowerCase().includes(kgItem.toLowerCase())
-    );
-
-    if (shouldUseKg) {
-      return `${formatNumber(difference)} kg`;
-    }
-
-    if (!itemInfo) {
-      return `${formatNumber(difference)} ${metric || "pcs"}`;
-    }
-
-    // Kgs stay as kgs
-    if (metric && metric.toLowerCase() === "kgs") {
-      return `${formatNumber(difference)} kgs`;
-    }
-
-    // Handle negative differences with pack quantities
-    const isNegative = difference < 0;
-    const absoluteDifference = Math.abs(difference);
-
-    // Eggs → trays + pieces
-    const isEggs = itemInfo.item_name.toLowerCase().includes("egg");
-    if (isEggs && itemInfo.pack_quantity > 0) {
-      const trays = Math.floor(absoluteDifference / itemInfo.pack_quantity);
-      const pieces = absoluteDifference % itemInfo.pack_quantity;
-      const formatted = trays > 0
-        ? `${formatNumber(trays)} tray${trays !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${formatNumber(pieces)} eggs` : ""
-          }`
-        : `${formatNumber(pieces)} eggs`;
-      return isNegative ? `-${formatted}` : formatted;
-    }
-
-    // Other items with pack quantity → pkts + pcs
-    if (itemInfo.pack_quantity > 0) {
-      const packets = Math.floor(absoluteDifference / itemInfo.pack_quantity);
-      const pieces = absoluteDifference % itemInfo.pack_quantity;
-      const formatted = packets > 0
-        ? `${formatNumber(packets)} pkt${packets !== 1 ? "s" : ""}${
-            pieces > 0 ? `, ${formatNumber(pieces)} pcs` : ""
-          }`
-        : `${formatNumber(pieces)} pcs`;
-      return isNegative ? `-${formatted}` : formatted;
-    }
-
-    // Fallback
-    return `${formatNumber(difference)} ${metric || "pcs"}`;
-  }, []);
-
-  // Fetch stock items for proper metric conversion
-  const fetchStockItems = async () => {
-    try {
-      const response = await axios.get("api/diraja/stockitems", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
-      return response.data.stock_items || [];
-    } catch (err) {
-      console.error("Error fetching stock items:", err);
-      return [];
-    }
-  };
+  // Memoized versions of the display functions
+  const memoizedProcessQuantityDisplay = useCallback(processQuantityDisplay, []);
+  const memoizedProcessDifferenceDisplay = useCallback(processDifferenceDisplay, []);
 
   // Fetch stock reconciliations
   const fetchReconciliations = async () => {
@@ -178,20 +55,20 @@ const StockReconciliationList = () => {
       // Process reconciliations to format quantities properly
       const processedReconciliations = rawReconciliations.map(reconciliation => ({
         ...reconciliation,
-        formattedStockValue: processQuantityDisplay(
+        formattedStockValue: memoizedProcessQuantityDisplay(
           reconciliation.item,
           reconciliation.stock_value,
           reconciliation.metric,
           items
         ),
-        formattedReportValue: processQuantityDisplay(
+        formattedReportValue: memoizedProcessQuantityDisplay(
           reconciliation.item,
           reconciliation.report_value,
           reconciliation.metric,
           items
         ),
         // Use special function for difference to handle negative numbers correctly
-        formattedDifference: processDifferenceDisplay(
+        formattedDifference: memoizedProcessDifferenceDisplay(
           reconciliation.item,
           reconciliation.difference,
           reconciliation.metric,
@@ -211,6 +88,11 @@ const StockReconciliationList = () => {
   useEffect(() => {
     fetchReconciliations();
   }, []);
+
+  // Reset to first page when search term or date filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, dateFilter]);
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -248,11 +130,11 @@ const StockReconciliationList = () => {
   // === Difference Cell Styles ===
   const getDifferenceStyle = (difference) => {
     if (difference > 0) {
-      return { color: '#8850f1', fontWeight: 'normal' }; // Green for positive
+      return { color: '#8850f1', fontWeight: 'normal' };
     } else if (difference < 0) {
-      return { color: '#dc3545', fontWeight: 'normal' }; // Red for negative
+      return { color: '#dc3545', fontWeight: 'normal' };
     } else {
-      return { color: '#6c757d', fontWeight: 'normal' }; // Gray for zero
+      return { color: '#6c757d', fontWeight: 'normal' };
     }
   };
 
@@ -267,68 +149,30 @@ const StockReconciliationList = () => {
 
     setResolving(true);
     try {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        setError('No access token found, please log in.');
-        return;
-      }
-
-      // Update the reconciliation - FIXED: Use resolveComment instead of selectedReconciliation.comment
-      const response = await axios.put(
-        `/api/diraja/stock-reconciliation/${selectedReconciliation.id}`,
-        {
-          comment: resolveComment, // Use the comment from textarea input
-          status: 'Solved',
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
+      const updatedReconciliation = await resolveReconciliation(
+        selectedReconciliation,
+        resolveComment,
+        stockItems,
+        memoizedProcessQuantityDisplay,
+        memoizedProcessDifferenceDisplay
       );
 
-      // Update local state - FIXED: Use resolveComment here as well
       setReconciliations(prevReconciliations =>
         prevReconciliations.map(item =>
           item.id === selectedReconciliation.id
-            ? {
-                ...item,
-                comment: resolveComment, // Use the comment from textarea input
-                status: 'Solved',
-                formattedStockValue: processQuantityDisplay(
-                  item.item,
-                  item.stock_value,
-                  item.metric,
-                  stockItems
-                ),
-                formattedReportValue: processQuantityDisplay(
-                  item.item,
-                  item.report_value,
-                  item.metric,
-                  stockItems
-                ),
-                formattedDifference: processDifferenceDisplay(
-                  item.item,
-                  item.difference,
-                  item.metric,
-                  stockItems
-                )
-              }
+            ? updatedReconciliation
             : item
         )
       );
       
-      // Close modal and reset states
       setShowResolveModal(false);
       setSelectedReconciliation(null);
       setResolveComment('');
-      
-      // Show success message
       alert(`Successfully resolved: ${selectedReconciliation.item}`);
       
     } catch (err) {
       console.error('Error resolving reconciliation:', err);
-      setError('Error resolving reconciliation. Please try again.');
+      setError(err.message);
     } finally {
       setResolving(false);
     }
@@ -338,6 +182,20 @@ const StockReconciliationList = () => {
     setShowResolveModal(false);
     setSelectedReconciliation(null);
     setResolveComment('');
+  };
+
+  const handleDateFilterChange = (field, value) => {
+    setDateFilter(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter({
+      startDate: '',
+      endDate: ''
+    });
   };
 
   const columns = [
@@ -471,12 +329,139 @@ const StockReconciliationList = () => {
 
   const filteredReconciliations = reconciliations.filter((reconciliation) => {
     const searchString = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = 
       reconciliation.item?.toLowerCase().includes(searchString) ||
+      reconciliation.shopname?.toLowerCase().includes(searchString) ||
       reconciliation.status?.toLowerCase().includes(searchString) ||
-      reconciliation.comment?.toLowerCase().includes(searchString)
-    );
+      reconciliation.comment?.toLowerCase().includes(searchString);
+
+    // Date filter logic
+    const reconciliationDate = new Date(reconciliation.created_at);
+    let matchesDate = true;
+
+    if (dateFilter.startDate) {
+      const startDate = new Date(dateFilter.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      if (reconciliationDate < startDate) {
+        matchesDate = false;
+      }
+    }
+
+    if (dateFilter.endDate) {
+      const endDate = new Date(dateFilter.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      if (reconciliationDate > endDate) {
+        matchesDate = false;
+      }
+    }
+
+    return matchesSearch && matchesDate;
   });
+
+  // Pagination calculations
+  const totalItems = filteredReconciliations.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentData = filteredReconciliations.slice(startIndex, endIndex);
+
+  const handleItemsPerPageChange = (e) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const renderPaginationButtons = () => {
+    const buttons = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    // First page
+    if (startPage > 1) {
+      buttons.push(
+        <button
+          key={1}
+          onClick={() => goToPage(1)}
+          style={{
+            padding: '5px 10px',
+            border: '1px solid #ddd',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            borderRadius: '4px'
+          }}
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        buttons.push(
+          <span key="ellipsis1" style={{ padding: '5px' }}>
+            ...
+          </span>
+        );
+      }
+    }
+
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          style={{
+            padding: '5px 10px',
+            border: '1px solid #ddd',
+            backgroundColor: currentPage === i ? '#007bff' : 'white',
+            color: currentPage === i ? 'white' : 'black',
+            cursor: 'pointer',
+            borderRadius: '4px'
+          }}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    // Last page
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        buttons.push(
+          <span key="ellipsis2" style={{ padding: '5px' }}>
+            ...
+          </span>
+        );
+      }
+      buttons.push(
+        <button
+          key={totalPages}
+          onClick={() => goToPage(totalPages)}
+          style={{
+            padding: '5px 10px',
+            border: '1px solid #ddd',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            borderRadius: '4px'
+          }}
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return buttons;
+  };
 
   if (loading) {
     return (
@@ -510,36 +495,232 @@ const StockReconciliationList = () => {
         </div>
       )}
 
+      {/* Search and Date Filter Section */}
       <div style={{ marginBottom: '20px' }}>
-        <input
-          type="text"
-          placeholder="Search items, status, or comments..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: '100%',
-            maxWidth: '400px',
-            padding: '8px 12px',
-            border: '1px solid #ddd',
-            borderRadius: '4px',
-            fontSize: '14px',
-          }}
-        />
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          {/* Search Input */}
+          <div style={{ flex: '1', minWidth: '300px' }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>
+              Search:
+            </label>
+            <input
+              type="text"
+              placeholder="Search items, status, or comments..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                borderRadius: '4px',
+                fontSize: '14px',
+              }}
+            />
+          </div>
+
+          {/* Date Filter */}
+          <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>
+                From Date:
+              </label>
+              <input
+                type="date"
+                value={dateFilter.startDate}
+                onChange={(e) => handleDateFilterChange('startDate', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            
+            <div>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '14px' }}>
+                To Date:
+              </label>
+              <input
+                type="date"
+                value={dateFilter.endDate}
+                onChange={(e) => handleDateFilterChange('endDate', e.target.value)}
+                style={{
+                  padding: '8px 12px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            
+            <button
+              onClick={clearDateFilter}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                height: '36px'
+              }}
+            >
+              Clear Dates
+            </button>
+          </div>
+        </div>
       </div>
 
-      <GeneralTableLayout
-        data={filteredReconciliations}
-        columns={columns}
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={setItemsPerPage}
-        emptyMessage="No stock reconciliations found"
-      />
-
-      <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-        Showing {filteredReconciliations.length} reconciliation(s)
+      {/* Table */}
+      <div style={{ overflowX: 'auto', marginBottom: '20px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f8f9fa' }}>
+              {columns.map(column => (
+                <th 
+                  key={column.key}
+                  style={{ 
+                    padding: '12px', 
+                    textAlign: 'left', 
+                    borderBottom: '2px solid #dee2e6',
+                    fontWeight: '600'
+                  }}
+                >
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {currentData.length > 0 ? (
+              currentData.map((reconciliation, index) => (
+                <tr 
+                  key={reconciliation.id || index}
+                  style={{ 
+                    borderBottom: '1px solid #dee2e6',
+                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa'
+                  }}
+                >
+                  {columns.map(column => (
+                    <td 
+                      key={column.key}
+                      style={{ 
+                        padding: '12px', 
+                        verticalAlign: 'top'
+                      }}
+                    >
+                      {column.render ? column.render(reconciliation) : reconciliation[column.key]}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td 
+                  colSpan={columns.length} 
+                  style={{ 
+                    padding: '40px', 
+                    textAlign: 'center', 
+                    color: '#6c757d' 
+                  }}
+                >
+                  No stock reconciliations found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Items Per Page Selector - Moved Below Table */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '20px',
+        flexWrap: 'wrap',
+        gap: '15px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <label htmlFor="itemsPerPage" style={{ fontSize: '14px', fontWeight: '500' }}>
+            Show:
+          </label>
+          <select
+            id="itemsPerPage"
+            value={itemsPerPage}
+            onChange={handleItemsPerPageChange}
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+            }}
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <span style={{ fontSize: '14px', color: '#666' }}>
+            entries per page
+          </span>
+        </div>
+
+        <div style={{ fontSize: '14px', color: '#666' }}>
+          Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
+          {(dateFilter.startDate || dateFilter.endDate) && ' (filtered)'}
+        </div>
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          marginTop: '20px',
+          padding: '10px 0'
+        }}>
+          <div style={{ display: 'flex', gap: '5px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => goToPage(currentPage - 1)}
+              disabled={currentPage === 1}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                backgroundColor: currentPage === 1 ? '#f8f9fa' : 'white',
+                color: currentPage === 1 ? '#6c757d' : '#007bff',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              Previous
+            </button>
+            
+            {renderPaginationButtons()}
+            
+            <button
+              onClick={() => goToPage(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #ddd',
+                backgroundColor: currentPage === totalPages ? '#f8f9fa' : 'white',
+                color: currentPage === totalPages ? '#6c757d' : '#007bff',
+                cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Resolve Modal */}
       {showResolveModal && selectedReconciliation && (
