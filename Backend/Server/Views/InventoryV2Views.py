@@ -92,6 +92,102 @@ class GetInventoryByBatchV2(Resource):
         except Exception as e:
             return make_response(jsonify({'message': 'Error fetching inventory', 'error': str(e)}), 500)
 
+
+class ProcessInventoryV2(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+
+        # Required fields for processing inventory
+        required_fields = [
+            'source_inventory_id', 'processed_items', 'note'
+        ]
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing required fields'}, 400
+
+        source_inventory_id = data['source_inventory_id']
+        processed_items = data['processed_items']  # List of processed items
+        note = data['note']
+
+        try:
+            # ✅ Fetch source inventory item
+            source_item = InventoryV2.query.get(source_inventory_id)
+            if not source_item:
+                return {'message': 'Source inventory item not found'}, 404
+
+            # ✅ Validate processed items
+            total_processed_quantity = 0
+            for item in processed_items:
+                if not all(field in item for field in ['itemname', 'quantity', 'metric', 'unitPrice']):
+                    return {'message': 'Missing fields in processed items'}, 400
+                total_processed_quantity += item['quantity']
+
+            # ✅ Ensure we're not processing more than available
+            if source_item.quantity < total_processed_quantity:
+                return {'message': 'Insufficient inventory quantity for processing'}, 400
+
+            # ✅ Calculate cost allocation based on quantity ratio
+            processed_inventory_items = []
+            
+            for item_data in processed_items:
+                # Calculate the cost allocation for this processed item
+                quantity_ratio = item_data['quantity'] / total_processed_quantity
+                allocated_cost = source_item.totalCost * quantity_ratio
+                allocated_amount_paid = source_item.amountPaid * quantity_ratio
+                
+                # Calculate unit cost based on allocated cost
+                unit_cost = allocated_cost / item_data['quantity'] if item_data['quantity'] > 0 else 0
+
+                # Create new inventory item for the processed product
+                new_processed_item = InventoryV2(
+                    itemname=item_data['itemname'],
+                    initial_quantity=item_data['quantity'],
+                    quantity=item_data['quantity'],
+                    metric=item_data['metric'],
+                    unitCost=unit_cost,
+                    totalCost=allocated_cost,
+                    amountPaid=allocated_amount_paid,
+                    unitPrice=item_data['unitPrice'],
+                    BatchNumber=source_item.BatchNumber,  # Same batch number
+                    user_id=current_user_id,
+                    Trasnaction_type_credit=item_data['quantity'],  # Credit for new items
+                    Transcation_type_debit=0.0,
+                    paymentRef=source_item.paymentRef,
+                    Suppliername=source_item.Suppliername,
+                    Supplier_location=source_item.Supplier_location,
+                    ballance=item_data['quantity'],
+                    note=f"Processed from {source_item.itemname}.",
+                    source=source_item.source
+                )
+
+                db.session.add(new_processed_item)
+                processed_inventory_items.append({
+                    'itemname': item_data['itemname'],
+                    'quantity': item_data['quantity'],
+                    'metric': item_data['metric'],
+                    'new_item_id': new_processed_item.inventoryV2_id
+                })
+
+            # ✅ Deduct the processed quantity from source item
+            source_item.quantity -= total_processed_quantity
+            source_item.ballance = source_item.quantity
+            source_item.Transcation_type_debit = total_processed_quantity
+            source_item.note = f"Processed into multiple items. {note}"
+
+            db.session.commit()
+
+            return {
+                'message': 'Inventory processed successfully',
+                'processed_items': processed_inventory_items,
+                'source_item_remaining_quantity': source_item.quantity
+            }, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error processing inventory', 'error': str(e)}, 500
+
+
 class DistributeInventoryV2(Resource):
     @jwt_required()
     def post(self):

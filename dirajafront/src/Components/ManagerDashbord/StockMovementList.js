@@ -254,12 +254,12 @@ const StockMovement = () => {
           }
         });
 
-        // Sort all data in descending order by date
+        // Sort all data in descending order by created_at
         const formattedData = {
-          transfers: processedTransfers.sort((a, b) => new Date(b.date) - new Date(a.date)),
-          spoilt_items: processedSpoiltItems.sort((a, b) => new Date(b.date) - new Date(a.date)),
-          returns: processedReturns.sort((a, b) => new Date(b.date) - new Date(a.date)),
-          shop_transfers: processedShopTransfers.sort((a, b) => new Date(b.date) - new Date(a.date)),
+          transfers: processedTransfers.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+          spoilt_items: processedSpoiltItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+          returns: processedReturns.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
+          shop_transfers: processedShopTransfers.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
           time_period: res.data.time_period
         };
 
@@ -280,7 +280,9 @@ const StockMovement = () => {
   }, [selectedShopId, dateRange, daysBack, stockItems]);
 
   const formatDate = (dateString) => {
-    return dayjs(dateString).format("YYYY-MM-DD HH:mm");
+    if (!dateString) return "N/A";
+    const date = dayjs(dateString);
+    return date.isValid() ? date.format("YYYY-MM-DD HH:mm") : "Invalid Date";
   };
 
   const renderTable = (data, columns) => {
@@ -332,8 +334,8 @@ const StockMovement = () => {
     },
     {
       title: "Date",
-      dataIndex: "date",
-      key: "date",
+      dataIndex: "created_at",
+      key: "created_at",
       render: formatDate,
     },
     {
@@ -371,8 +373,8 @@ const StockMovement = () => {
     },
     {
       title: "Date",
-      dataIndex: "date",
-      key: "date",
+      dataIndex: "created_at",
+      key: "created_at",
       render: formatDate,
     },
     {
@@ -405,8 +407,8 @@ const StockMovement = () => {
     },
     {
       title: "Date",
-      dataIndex: "date",
-      key: "date",
+      dataIndex: "created_at",
+      key: "created_at",
       render: formatDate,
     },
     {
@@ -434,8 +436,8 @@ const StockMovement = () => {
     },
     {
       title: "Date",
-      dataIndex: "date",
-      key: "date",
+      dataIndex: "created_at",
+      key: "created_at",
       render: formatDate,
     },
     {

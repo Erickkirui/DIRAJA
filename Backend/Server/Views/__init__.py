@@ -134,7 +134,8 @@ from Server.Views.InventoryV2Views import (
     GetInventoryByBatchV2, DistributeInventoryV2, DeleteShopStockV2,
     GetTransferV2, GetTransferByIdV2, UpdateTransferV2, AddInventoryV2,
     GetAllInventoryV2, InventoryResourceByIdV2, StockDeletionResourceV2,
-    ManualTransferV2, ReceiveTransfer, DeclineTransfer, PendingTransfers
+    ManualTransferV2, ReceiveTransfer, DeclineTransfer, PendingTransfers,
+    ProcessInventoryV2
 )
 
 from Server.Views.ShopstockviewsV2 import (
@@ -405,6 +406,7 @@ api.add_resource(InventoryResourceByIdV2, '/v2/inventory/<int:inventoryV2_id>')
 api.add_resource(DeleteShopStockV2, '/v2/deleteshopstock/<int:stockv2_id>')
 api.add_resource(GetInventoryByBatchV2, '/v2/inventory-by-batch')
 api.add_resource(DistributeInventoryV2, '/v2/distribute-inventory')
+api.add_resource(ProcessInventoryV2, '/create-parts')
 api.add_resource(GetTransferV2, '/v2/transfers')
 api.add_resource(GetTransferByIdV2, '/v2/transfer/<int:transferV2_id>')
 api.add_resource(UpdateTransferV2, '/v2/transfer/<int:transferV2_id>')
