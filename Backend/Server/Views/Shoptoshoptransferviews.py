@@ -80,11 +80,11 @@ class ShopToShopTransfer(Resource):
                 if take_qty <= 0:
                     continue
 
-                # ✅ Deduct from source batch
+                # ✅ ONLY Deduct from source batch - DO NOT add to destination yet
                 batch.quantity -= take_qty
                 db.session.add(batch)
 
-                # ✅ Create transfer record (no inventoryv2_id here)
+                # ✅ Create transfer record with status "pending"
                 transfer = Shoptoshoptransfer(
                     from_shop_id=from_shop_id,
                     to_shop_id=to_shop_id,
@@ -97,25 +97,8 @@ class ShopToShopTransfer(Resource):
                 )
                 db.session.add(transfer)
 
-                # ✅ Add/update destination stock record
-                dest_stock = ShopStockV2.query.filter_by(
-                    shop_id=to_shop_id,
-                    itemname=batch.itemname,
-                    BatchNumber=batch.BatchNumber
-                ).first()
-
-                if dest_stock:
-                    dest_stock.quantity += take_qty
-                else:
-                    dest_stock = ShopStockV2(
-                        shop_id=to_shop_id,
-                        itemname=batch.itemname,
-                        BatchNumber=batch.BatchNumber,
-                        quantity=take_qty,
-                        metric=batch.metric,
-                        inventoryv2_id=batch.inventoryv2_id  # ✅ add it only here
-                    )
-                db.session.add(dest_stock)
+                # ❌ REMOVED: The code that immediately adds to destination stock
+                # This is what was causing the double entry
 
                 # ✅ Record transfer info
                 transfer_records.append({
@@ -129,12 +112,12 @@ class ShopToShopTransfer(Resource):
             db.session.commit()
 
             return {
-                "message": "Transfer completed successfully",
+                "message": "Transfer initiated successfully - awaiting recipient confirmation",
                 "item": item_name,
                 "requested_quantity": quantity,
                 "deductions": transfer_records,
                 "destination_shop": to_shop_id,
-                "status": "success"
+                "status": "pending"
             }, 201
 
         except Exception as e:
@@ -142,8 +125,6 @@ class ShopToShopTransfer(Resource):
             return {"message": "Transfer failed", "error": str(e)}, 500
 
 
-
-        
 class ConfirmTransfer(Resource):
     @jwt_required()
     def post(self, transfer_id):
@@ -162,19 +143,11 @@ class ConfirmTransfer(Resource):
 
         # ✅ Extract details from transfer
         batch_number = transfer.stockv2.BatchNumber if transfer.stockv2 else None
-        inv_id = transfer.stockv2_id if transfer.stockv2 else None
+        inv_id = transfer.stockv2.inventoryv2_id if transfer.stockv2 else None
         metric = transfer.metric if hasattr(transfer, "metric") else None
 
-        # 🔍 Check if inventory really exists
-        if inv_id:
-            inv_exists = db.session.query(
-                db.session.query(InventoryV2).filter_by(inventoryV2_id=inv_id).exists()
-            ).scalar()
-            if not inv_exists:
-                inv_id = None  # force NULL if missing
-
         if action == "accept":
-            # ✅ Look for a matching destination stock with same batch & itemname
+            # ✅ Look for existing destination stock with same batch & itemname
             destination_stock = ShopStockV2.query.filter_by(
                 shop_id=transfer.to_shop_id,
                 BatchNumber=batch_number,
@@ -182,22 +155,10 @@ class ConfirmTransfer(Resource):
             ).first()
 
             if destination_stock:
-                if destination_stock.itemname == transfer.itemname:
-                    # ✅ Same itemname → update quantity
-                    destination_stock.quantity += transfer.quantity
-                else:
-                    # ❌ Batch exists but itemname mismatch → create a new row
-                    new_stock = ShopStockV2(
-                        shop_id=transfer.to_shop_id,
-                        inventoryv2_id=inv_id,
-                        itemname=transfer.itemname,
-                        quantity=transfer.quantity,
-                        BatchNumber=batch_number,
-                        metric=metric
-                    )
-                    db.session.add(new_stock)
+                # ✅ Add quantity to existing stock
+                destination_stock.quantity += transfer.quantity
             else:
-                # 🚀 No such batch in destination → create new entry
+                # ✅ Create new stock entry in destination shop
                 new_stock = ShopStockV2(
                     shop_id=transfer.to_shop_id,
                     inventoryv2_id=inv_id,
@@ -210,23 +171,33 @@ class ConfirmTransfer(Resource):
 
             transfer.status = "accepted"
             transfer.decline_note = None
-            transfer.notification_ack = True   # no popup needed if accepted
+            transfer.notification_ack = True
 
         elif action == "decline":
-            # Return stock to sender shop
+            # ✅ Return stock to sender shop
             sender_stock = ShopStockV2.query.filter_by(
                 shop_id=transfer.from_shop_id,
                 BatchNumber=batch_number,
-                itemname=transfer.itemname,
-                inventoryv2_id=inv_id
+                itemname=transfer.itemname
             ).first()
 
             if sender_stock:
                 sender_stock.quantity += transfer.quantity
+            else:
+                # ✅ If original batch doesn't exist, create it
+                new_sender_stock = ShopStockV2(
+                    shop_id=transfer.from_shop_id,
+                    inventoryv2_id=inv_id,
+                    itemname=transfer.itemname,
+                    quantity=transfer.quantity,
+                    BatchNumber=batch_number,
+                    metric=metric
+                )
+                db.session.add(new_sender_stock)
 
             transfer.status = "declined"
             transfer.decline_note = note or "No reason provided"
-            transfer.notification_ack = False  # popup required for sender
+            transfer.notification_ack = False
 
         else:
             return {"message": "Invalid action"}, 400
