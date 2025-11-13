@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import '../Styles/expenses.css';
+import '../../Styles/expenses.css'
 
 const AddExpense = () => {
   const [expenseData, setExpenseData] = useState({

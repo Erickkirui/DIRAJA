@@ -7,6 +7,8 @@ from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 from datetime import datetime
+from sqlalchemy import and_
+from math import ceil
 from functools import wraps
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -110,17 +112,51 @@ class AddExpense(Resource):
             return {"message": "Failed to add expense", "error": str(e)}, 500
 
 
-
-
 class AllExpenses(Resource):
 
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Fetch all expenses ordered by 'created_at' in descending order
-        expenses = Expenses.query.order_by(Expenses.created_at.desc()).all()
-        all_expenses = []
+        # Query parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = 50
+        category = request.args.get('category', type=str)
+        shopname = request.args.get('shopname', type=str)
+        start_date = request.args.get('start_date', type=str)
+        end_date = request.args.get('end_date', type=str)
 
+        # Base query
+        query = Expenses.query
+
+        # Apply filters if provided
+        filters = []
+        if category:
+            filters.append(Expenses.category.ilike(f"%{category}%"))
+
+        if shopname:
+            # Join with Shops table to filter by shopname
+            query = query.join(Shops, Expenses.shop_id == Shops.shops_id)
+            filters.append(Shops.shopname.ilike(f"%{shopname}%"))
+
+        if start_date and end_date:
+            try:
+                start = datetime.strptime(start_date, '%Y-%m-%d')
+                end = datetime.strptime(end_date, '%Y-%m-%d')
+                filters.append(Expenses.created_at.between(start, end))
+            except ValueError:
+                return make_response(jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400)
+
+        if filters:
+            query = query.filter(and_(*filters))
+
+        # Order by latest
+        query = query.order_by(Expenses.created_at.desc())
+
+        # Pagination
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        expenses = pagination.items
+
+        all_expenses = []
         for expense in expenses:
             user = Users.query.filter_by(users_id=expense.user_id).first()
             shop = Shops.query.filter_by(shops_id=expense.shop_id).first()
@@ -130,14 +166,14 @@ class AllExpenses(Resource):
 
             balance = max(expense.totalPrice - expense.amountPaid, 0)
 
-            # Ensure created_at is correctly formatted
+            # Format created_at
             created_at = None
             if expense.created_at:
                 if isinstance(expense.created_at, str):
                     try:
                         created_at = datetime.strptime(expense.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
                     except ValueError:
-                        created_at = expense.created_at  # Keep it as it is if parsing fails
+                        created_at = expense.created_at
                 elif isinstance(expense.created_at, datetime):
                     created_at = expense.created_at.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -158,10 +194,23 @@ class AllExpenses(Resource):
                 "created_at": created_at,
                 "source": expense.source,
                 "paymentRef": expense.paymentRef,
-                "comments": expense.comments  
+                "comments": expense.comments
             })
 
-        return make_response(jsonify(all_expenses), 200)
+        # Pagination metadata
+        pagination_info = {
+            "page": page,
+            "per_page": per_page,
+            "total_items": pagination.total,
+            "total_pages": ceil(pagination.total / per_page),
+            "has_next": pagination.has_next,
+            "has_prev": pagination.has_prev,
+        }
+
+        return make_response(jsonify({
+            "expenses": all_expenses,
+            "pagination": pagination_info
+        }), 200)
 
 
 class GetShopExpenses(Resource):

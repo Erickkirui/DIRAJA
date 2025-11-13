@@ -1,5 +1,5 @@
 import React from 'react'
-import Expenses from '../Components/GetAllExpense'
+import Expenses from '../Components/Expenses/GetAllExpense'
 import { Link } from 'react-router-dom';
 
 export default function ExpensePage() {

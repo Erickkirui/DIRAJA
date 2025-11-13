@@ -1,37 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Spin, Alert } from 'antd';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
+import { Spin, Alert } from "antd";
 
 const MonthlyIncomeChart = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Fetch monthly income data
-  const fetchMonthlyIncome = async () => {
+  const fetchMonthlyAnalytics = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('access_token');
-      const response = await axios.get('/api/diraja/monthly-analytics', {
+      const token = localStorage.getItem("access_token");
+      const response = await axios.get("/api/diraja/monthly-analytics", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const monthNames = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
       ];
 
       const formattedData = response.data.monthly_income.map((item) => ({
         month: monthNames[item.month - 1],
-        total_income: item.total_income,
+        revenue: item.total_income,
       }));
 
       setData(formattedData);
-      setError('');
+      setError("");
     } catch (err) {
-      console.error('Error fetching monthly income:', err);
-      setError('Failed to fetch monthly income data');
+      console.error("Error fetching monthly analytics:", err);
+      setError("Failed to fetch monthly income data");
       setData([]);
     } finally {
       setLoading(false);
@@ -39,26 +48,53 @@ const MonthlyIncomeChart = () => {
   };
 
   useEffect(() => {
-    fetchMonthlyIncome();
+    fetchMonthlyAnalytics();
   }, []);
 
   const formatCurrency = (value) =>
-    new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(value);
+    new Intl.NumberFormat("en-KE", {
+      style: "currency",
+      currency: "KES",
+      minimumFractionDigits: 0,
+    }).format(value);
 
-  if (loading) return <Spin size="large" style={{ display: 'block', margin: '50px auto' }} />;
-  if (error) return <Alert message="Error" description={error} type="error" showIcon />;
+  if (loading)
+    return <Spin size="large" style={{ display: "block", margin: "50px auto" }} />;
+  if (error)
+    return <Alert message="Error" description={error} type="error" showIcon />;
 
   return (
-    <div style={{ width: '100%', height: 200 }}> {/* Half height */}
-      <h2 style={{ textAlign: 'center', marginBottom: 20 }}>Monthly Income</h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-          {/* Removed CartesianGrid */}
+    <div
+      style={{
+        width: "100%",
+        height: 400,
+        background: "#fff",
+        borderRadius: 10,
+        padding: 20,
+      }}
+    >
+      <h2 style={{ textAlign: "left", marginBottom: 20, color: "#4B0082" }}>
+        Example Company: Monthly Revenue
+      </h2>
+
+      <ResponsiveContainer width="100%" height="85%">
+        <BarChart data={data} margin={{ top: 10, right: 40, left: 0, bottom: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="month" />
-          <YAxis tickFormatter={formatCurrency} />
+          <YAxis
+            label={{ value: "Revenue (KES)", angle: -90, position: "insideLeft" }}
+            tickFormatter={formatCurrency}
+          />
           <Tooltip formatter={(value) => formatCurrency(value)} />
-          <Line type="linear" dataKey="total_income" stroke="#1890ff" strokeWidth={3} dot={{ r: 5 }} />
-        </LineChart>
+          <Legend verticalAlign="top" height={36} />
+          <Bar
+            dataKey="revenue"
+            fill="#7B1FA2" // Deep purple
+            radius={[6, 6, 0, 0]}
+            barSize={45}
+            name="Revenue"
+          />
+        </BarChart>
       </ResponsiveContainer>
     </div>
   );
