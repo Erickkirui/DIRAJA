@@ -102,9 +102,9 @@ const EmployeeSales = () => {
       render: item => `${item.quantity} ${item.metric}`,
     },
     {
-      header: 'Total',
-      key: 'total_price',
-      render: item => `Ksh ${item.total_price.toFixed(2)}`,
+      header: 'Total Paid',
+      key: 'total_amount_paid',
+      render: sale => `Ksh ${sale.total_amount_paid?.toFixed(2) || '0.00'}`,
     },
   ];
 

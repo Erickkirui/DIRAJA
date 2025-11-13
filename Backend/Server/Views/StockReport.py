@@ -5,6 +5,9 @@ from Server.Models.Shops import Shops
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.Users import Users
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import func, or_
+from flask import current_app
 from Server.Models.StockReconciliation import StockReconciliation
 from datetime import datetime
 from app import db
@@ -218,27 +221,61 @@ class SubmitStockReport(Resource):
     def create_reconciliation_records(self, shop_id, user_id, report_data, comment):
         """
         Compare report data with ShopStockV2 and create StockReconciliation records
-        only if there is a difference.
+        for items with differences, including skipped items with report_value as 0.
         """
         reconciliation_results = []
 
+        # Extract reported items
+        reported_items = {}
         if isinstance(report_data, list):
-            items = {entry.get('item'): entry.get('value') for entry in report_data if entry.get('item')}
+            reported_items = {entry.get('item'): entry.get('value') for entry in report_data if entry.get('item')}
         elif isinstance(report_data, dict):
-            items = report_data
+            reported_items = {k: v for k, v in report_data.items() if k not in ["differences", "note", "comment"]}
         else:
             raise ValueError("Invalid report_data format. Must be dict or list.")
 
-        for item_name, report_value_str in items.items():
-            if item_name in ["differences", "note", "comment"]:
-                continue
+        # Get all stock items for this shop
+        stock_items = ShopStockV2.query.filter_by(shop_id=shop_id).all()
+        
+        # Create a set of all unique item names from stock (normalized for comparison)
+        all_stock_items = {}
+        for stock_item in stock_items:
+            normalized_name = self.normalize_item_name(stock_item.itemname)
+            if normalized_name not in all_stock_items:
+                all_stock_items[normalized_name] = {
+                    'original_name': stock_item.itemname,
+                    'total_quantity': 0.0
+                }
+            all_stock_items[normalized_name]['total_quantity'] += float(stock_item.quantity or 0)
 
-            print(f"Processing item: {item_name}, value: '{report_value_str}'")
+        # Process all items (both reported and skipped)
+        processed_items = set()
+        
+        # First, process reported items
+        for item_name, report_value_str in reported_items.items():
+            normalized_name = self.normalize_item_name(item_name)
+            processed_items.add(normalized_name)
+            
+            print(f"Processing reported item: {item_name}, value: '{report_value_str}'")
 
             report_quantity, report_unit = self.parse_report_value(report_value_str)
             print(f"Parsed - Quantity: {report_quantity}, Unit: '{report_unit}'")
 
-            stock_quantity, match_status = self.get_stock_value_for_item(shop_id, item_name, report_unit)
+            # Get stock quantity for this item
+            stock_quantity = 0.0
+            match_status = "no_match"
+            
+            if normalized_name in all_stock_items:
+                stock_quantity = all_stock_items[normalized_name]['total_quantity']
+                match_status = "exact_match"
+            else:
+                # Try to find partial match
+                for stock_norm_name, stock_data in all_stock_items.items():
+                    if normalized_name in stock_norm_name or stock_norm_name in normalized_name:
+                        stock_quantity = stock_data['total_quantity']
+                        match_status = "partial_match"
+                        break
+
             difference = round(report_quantity - stock_quantity, 3)
 
             # ✅ Skip items with no difference
@@ -271,6 +308,44 @@ class SubmitStockReport(Resource):
                 'unit': report_unit if report_unit else None,
                 'match': match_status
             })
+
+        # Then, process skipped items (items in stock but not reported)
+        for normalized_name, stock_data in all_stock_items.items():
+            if normalized_name not in processed_items:
+                item_name = stock_data['original_name']
+                stock_quantity = stock_data['total_quantity']
+                report_quantity = 0.0  # Skipped items have report value of 0
+                difference = round(report_quantity - stock_quantity, 3)
+
+                print(f"Processing skipped item: {item_name}, Stock: {stock_quantity}, Report: 0")
+
+                # ✅ Only create record if there's a difference (which there will be for skipped items)
+                if abs(difference) > 0.01:
+                    status = 'Unsolved'
+
+                    reconciliation = StockReconciliation(
+                        shop_id=shop_id,
+                        user_id=user_id,
+                        stock_value=round(stock_quantity, 3),
+                        report_value=round(report_quantity, 3),
+                        item=item_name,
+                        difference=difference,
+                        status=status,
+                        comment=comment + " (Skipped item)" if comment else "Skipped item",
+                        created_at=func.now()
+                    )
+                    db.session.add(reconciliation)
+
+                    reconciliation_results.append({
+                        'item': item_name,
+                        'stock_value': round(stock_quantity, 3),
+                        'report_value': round(report_quantity, 3),
+                        'difference': difference,
+                        'status': status,
+                        'unit': "",  # No unit for skipped items
+                        'match': "exact_match",
+                        'note': 'skipped'
+                    })
 
         return reconciliation_results
 
@@ -356,15 +431,30 @@ class StockReconciliationList(Resource):
         """
         try:
             # Get query parameters
+            page = int(request.args.get('page', 1))
+            limit = int(request.args.get('limit', 50))
+            
+            # Filters
             shop_id = request.args.get('shop_id')
             status = request.args.get('status')
+            shop_name = request.args.get('shop_name')
             item_name = request.args.get('item_name')
             date_from = request.args.get('date_from')
             date_to = request.args.get('date_to')
-            page = request.args.get('page', 1, type=int)
-            per_page = request.args.get('per_page', 20, type=int)
+            search_query = request.args.get('searchQuery', '')
+            
+            # Sorting
+            sort_by = request.args.get('sort_by', 'created_at')
+            sort_order = request.args.get('sort_order', 'desc')
+            
+            # Valid sort fields
+            valid_sort_fields = ['created_at', 'shopname', 'item', 'stock_value', 'report_value', 'difference', 'status']
+            if sort_by not in valid_sort_fields:
+                sort_by = 'created_at'
+            if sort_order not in ['asc', 'desc']:
+                sort_order = 'desc'
 
-            # Start with base query joining with Shops table
+            # Base query joining with Shops table
             query = db.session.query(
                 StockReconciliation, 
                 Shops.shopname
@@ -383,6 +473,18 @@ class StockReconciliationList(Resource):
             if item_name:
                 query = query.filter(StockReconciliation.item.ilike(f'%{item_name}%'))
             
+            if shop_name:
+                query = query.filter(Shops.shopname.ilike(f'%{shop_name}%'))
+            
+            if search_query:
+                query = query.filter(
+                    or_(
+                        StockReconciliation.item.ilike(f"%{search_query}%"),
+                        Shops.shopname.ilike(f"%{search_query}%"),
+                        StockReconciliation.comment.ilike(f"%{search_query}%")
+                    )
+                )
+            
             if date_from:
                 try:
                     date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
@@ -399,23 +501,58 @@ class StockReconciliationList(Resource):
                 except ValueError:
                     return {'message': 'Invalid date_to format. Use YYYY-MM-DD.'}, 400
 
-            # Order by most recent first
-            query = query.order_by(StockReconciliation.created_at.desc())
+            # Handle sorting
+            if sort_by == 'shopname':
+                order_field = Shops.shopname
+            elif sort_by == 'item':
+                order_field = StockReconciliation.item
+            elif sort_by == 'stock_value':
+                order_field = StockReconciliation.stock_value
+            elif sort_by == 'report_value':
+                order_field = StockReconciliation.report_value
+            elif sort_by == 'difference':
+                order_field = StockReconciliation.difference
+            elif sort_by == 'status':
+                order_field = StockReconciliation.status
+            else:
+                order_field = StockReconciliation.created_at
 
-            # Paginate results
-            pagination = query.paginate(
-                page=page, 
-                per_page=per_page, 
-                error_out=False
+            # Sort direction
+            if sort_order == 'desc':
+                query = query.order_by(order_field.desc())
+            else:
+                query = query.order_by(order_field.asc())
+
+            # Decide pagination - use offset/limit only when no complex filters/sorting
+            use_pagination = not (
+                search_query or
+                shop_id or
+                status or
+                item_name or
+                shop_name or
+                date_from or
+                date_to or
+                sort_by != 'created_at' or
+                sort_order != 'desc'
             )
+
+            if use_pagination:
+                offset = (page - 1) * limit
+                results = query.offset(offset).limit(limit).all()
+                total_records = query.count()
+                total_pages = (total_records + limit - 1) // limit
+            else:
+                results = query.all()
+                total_records = len(results)
+                total_pages = 1
 
             # Format response with shop name
             reconciliations = []
-            for recon, shopname in pagination.items:
+            for recon, shopname_val in results:
                 reconciliations.append({
                     'id': recon.id,
                     'shop_id': recon.shop_id,
-                    'shopname': shopname,  # Include shop name
+                    'shopname': shopname_val,
                     'user_id': recon.user_id,
                     'item': recon.item,
                     'stock_value': float(recon.stock_value),
@@ -428,18 +565,20 @@ class StockReconciliationList(Resource):
 
             return {
                 'reconciliations': reconciliations,
-                'pagination': {
-                    'page': page,
-                    'per_page': per_page,
-                    'total': pagination.total,
-                    'pages': pagination.pages,
-                    'has_next': pagination.has_next,
-                    'has_prev': pagination.has_prev
-                }
+                'total_records': total_records,
+                'total_pages': total_pages,
+                'current_page': page
             }, 200
 
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            return {"error": "Database operation failed."}, 500
+        except ValueError as e:
+            current_app.logger.error(f"Value error: {str(e)}")
+            return {"error": str(e)}, 400
         except Exception as e:
-            return {'message': f'Error fetching reconciliation records: {str(e)}'}, 500
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return {"error": "An unexpected error occurred."}, 500
         
 class StockReconciliationResource(Resource):
     @jwt_required()
