@@ -7,6 +7,9 @@ from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.Users import Users
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import func, or_
+from sqlalchemy import and_
+from flask import jsonify,request,make_response
+from math import ceil
 from flask import current_app
 from Server.Models.StockReconciliation import StockReconciliation
 from datetime import datetime
@@ -430,125 +433,78 @@ class StockReconciliationList(Resource):
         Get stock reconciliation records with filtering, pagination, and shop names
         """
         try:
-            # Get query parameters
-            page = int(request.args.get('page', 1))
-            limit = int(request.args.get('limit', 50))
-            
-            # Filters
-            shop_id = request.args.get('shop_id')
-            status = request.args.get('status')
-            shop_name = request.args.get('shop_name')
-            item_name = request.args.get('item_name')
-            date_from = request.args.get('date_from')
-            date_to = request.args.get('date_to')
-            search_query = request.args.get('searchQuery', '')
-            
-            # Sorting
-            sort_by = request.args.get('sort_by', 'created_at')
-            sort_order = request.args.get('sort_order', 'desc')
-            
-            # Valid sort fields
-            valid_sort_fields = ['created_at', 'shopname', 'item', 'stock_value', 'report_value', 'difference', 'status']
-            if sort_by not in valid_sort_fields:
-                sort_by = 'created_at'
-            if sort_order not in ['asc', 'desc']:
-                sort_order = 'desc'
+            # Get query parameters - match AllExpenses structure
+            page = request.args.get('page', 1, type=int)
+            per_page = 50
+            shop_name = request.args.get('shopname', type=str)
+            item_name = request.args.get('item_name', type=str)
+            status = request.args.get('status', type=str)
+            start_date = request.args.get('start_date', type=str)
+            end_date = request.args.get('end_date', type=str)
+            search_query = request.args.get('searchQuery', '', type=str)
 
-            # Base query joining with Shops table
-            query = db.session.query(
-                StockReconciliation, 
-                Shops.shopname
-            ).join(
-                Shops, 
-                StockReconciliation.shop_id == Shops.shops_id
+            # Base query - query only the main model first for pagination
+            query = StockReconciliation.query.join(
+                Shops, StockReconciliation.shop_id == Shops.shops_id
             )
 
-            # Apply filters
-            if shop_id:
-                query = query.filter(StockReconciliation.shop_id == shop_id)
-            
-            if status:
-                query = query.filter(StockReconciliation.status == status)
-            
-            if item_name:
-                query = query.filter(StockReconciliation.item.ilike(f'%{item_name}%'))
-            
+            # Apply filters using the same pattern as AllExpenses
+            filters = []
+
             if shop_name:
-                query = query.filter(Shops.shopname.ilike(f'%{shop_name}%'))
-            
+                filters.append(Shops.shopname.ilike(f"%{shop_name}%"))
+
+            if item_name:
+                filters.append(StockReconciliation.item.ilike(f"%{item_name}%"))
+
+            if status:
+                filters.append(StockReconciliation.status == status)
+
             if search_query:
-                query = query.filter(
-                    or_(
-                        StockReconciliation.item.ilike(f"%{search_query}%"),
-                        Shops.shopname.ilike(f"%{search_query}%"),
-                        StockReconciliation.comment.ilike(f"%{search_query}%")
-                    )
-                )
-            
-            if date_from:
+                filters.append(or_(
+                    StockReconciliation.item.ilike(f"%{search_query}%"),
+                    Shops.shopname.ilike(f"%{search_query}%"),
+                    StockReconciliation.comment.ilike(f"%{search_query}%")
+                ))
+
+            if start_date and end_date:
                 try:
-                    date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
-                    query = query.filter(StockReconciliation.created_at >= date_from_obj)
-                except ValueError:
-                    return {'message': 'Invalid date_from format. Use YYYY-MM-DD.'}, 400
-            
-            if date_to:
-                try:
-                    date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+                    start = datetime.strptime(start_date, '%Y-%m-%d')
+                    end = datetime.strptime(end_date, '%Y-%m-%d')
                     # Include the entire end date
-                    date_to_obj = date_to_obj.replace(hour=23, minute=59, second=59)
-                    query = query.filter(StockReconciliation.created_at <= date_to_obj)
+                    end = end.replace(hour=23, minute=59, second=59)
+                    filters.append(StockReconciliation.created_at.between(start, end))
                 except ValueError:
-                    return {'message': 'Invalid date_to format. Use YYYY-MM-DD.'}, 400
+                    return make_response(jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400)
 
-            # Handle sorting
-            if sort_by == 'shopname':
-                order_field = Shops.shopname
-            elif sort_by == 'item':
-                order_field = StockReconciliation.item
-            elif sort_by == 'stock_value':
-                order_field = StockReconciliation.stock_value
-            elif sort_by == 'report_value':
-                order_field = StockReconciliation.report_value
-            elif sort_by == 'difference':
-                order_field = StockReconciliation.difference
-            elif sort_by == 'status':
-                order_field = StockReconciliation.status
-            else:
-                order_field = StockReconciliation.created_at
+            if filters:
+                query = query.filter(and_(*filters))
 
-            # Sort direction
-            if sort_order == 'desc':
-                query = query.order_by(order_field.desc())
-            else:
-                query = query.order_by(order_field.asc())
+            # Order by latest (created_at descending) like AllExpenses
+            query = query.order_by(StockReconciliation.created_at.desc())
 
-            # Decide pagination - use offset/limit only when no complex filters/sorting
-            use_pagination = not (
-                search_query or
-                shop_id or
-                status or
-                item_name or
-                shop_name or
-                date_from or
-                date_to or
-                sort_by != 'created_at' or
-                sort_order != 'desc'
-            )
+            # Use proper pagination like AllExpenses
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+            recon_items = pagination.items
 
-            if use_pagination:
-                offset = (page - 1) * limit
-                results = query.offset(offset).limit(limit).all()
-                total_records = query.count()
-                total_pages = (total_records + limit - 1) // limit
-            else:
-                results = query.all()
-                total_records = len(results)
-                total_pages = 1
-
-            # Format response with shop name
+            # Now get the shopnames for the paginated results
             reconciliations = []
-            for recon, shopname_val in results:
+            for recon in recon_items:
+                # Get the shop name for this reconciliation
+                shop = Shops.query.filter_by(shops_id=recon.shop_id).first()
+                shopname_val = shop.shopname if shop else "Unknown Shop"
+
+                # Format created_at like AllExpenses
+                created_at = None
+                if recon.created_at:
+                    if isinstance(recon.created_at, str):
+                        try:
+                            created_at = datetime.strptime(recon.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            created_at = recon.created_at
+                    elif isinstance(recon.created_at, datetime):
+                        created_at = recon.created_at.strftime('%Y-%m-%d %H:%M:%S')
+
                 reconciliations.append({
                     'id': recon.id,
                     'shop_id': recon.shop_id,
@@ -560,25 +516,30 @@ class StockReconciliationList(Resource):
                     'difference': float(recon.difference),
                     'status': recon.status,
                     'comment': recon.comment,
-                    'created_at': recon.created_at.isoformat() if recon.created_at else None,
+                    'created_at': created_at,
                 })
 
-            return {
-                'reconciliations': reconciliations,
-                'total_records': total_records,
-                'total_pages': total_pages,
-                'current_page': page
-            }, 200
+            # Pagination metadata - match AllExpenses structure exactly
+            pagination_info = {
+                "page": page,
+                "per_page": per_page,
+                "total_items": pagination.total,
+                "total_pages": ceil(pagination.total / per_page) if pagination.total > 0 else 1,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+
+            return make_response(jsonify({
+                "reconciliations": reconciliations,
+                "pagination": pagination_info
+            }), 200)
 
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
-            return {"error": "Database operation failed."}, 500
-        except ValueError as e:
-            current_app.logger.error(f"Value error: {str(e)}")
-            return {"error": str(e)}, 400
+            return make_response(jsonify({"error": "Database operation failed."}), 500)
         except Exception as e:
             current_app.logger.error(f"Unexpected error: {str(e)}")
-            return {"error": "An unexpected error occurred."}, 500
+            return make_response(jsonify({"error": "An unexpected error occurred."}), 500)
         
 class StockReconciliationResource(Resource):
     @jwt_required()
