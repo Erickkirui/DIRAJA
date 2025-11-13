@@ -1,5 +1,5 @@
 import React from 'react'
-import AddExpense from '../Components/AddExpenses'
+import AddExpense from '../Components/Expenses/AddExpenses'
 
 
 
