@@ -189,6 +189,12 @@ const ShopStockV2 = () => {
             render: (stock) => stock.batchnumber
         },
         {
+            header: 'Value',
+            key: 'total_cost',
+            render: (stock) => `Ksh ${stock.total_cost ?? ''}`
+        },
+
+        {
             header: 'Quantity',
             key: 'quantity',
             render: (stock) => stock.display || `${stock.quantity} ${stock.metric}`

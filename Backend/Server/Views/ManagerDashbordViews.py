@@ -1415,12 +1415,15 @@ class StockMovement(Resource):
             ]
             if shop_id:
                 transfer_filters.append(TransfersV2.shop_id == shop_id)
+            
+           
 
             for transfer in TransfersV2.query.filter(*transfer_filters).all():
                 response['transfers'].append({
                     'type': 'inventory_transfer',
                     'id': transfer.transferv2_id,
                     'item_name': transfer.itemname,
+                    'status':transfer.status,
                     'quantity': transfer.quantity,
                     'metric': transfer.metric,
                     'batch_number': transfer.BatchNumber,

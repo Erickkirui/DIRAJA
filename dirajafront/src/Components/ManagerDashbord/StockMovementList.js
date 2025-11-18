@@ -343,6 +343,16 @@ const StockMovement = () => {
       dataIndex: "shop_name",
       key: "shop_name",
     },
+    {
+      title: "Transfer Status",
+      dataIndex: "status",
+      key: "status"
+    },
+    {
+      title : "total Cost(ksh)",                
+      dataIndex: "total_cost",
+      key: 'total_cost'
+    }
   ];
 
   const spoiltColumns = [
