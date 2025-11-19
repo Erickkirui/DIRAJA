@@ -21,4 +21,3 @@ class SpoiltStock(db.Model):
     
     users = db.relationship('Users', backref='spoilt', lazy=True)
     shops = db.relationship('Shops', backref='spoilt', lazy=True)
-
