@@ -2,13 +2,13 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const UnresolvedReconciliationsButton = () => {
-  const [unresolvedCount, setUnresolvedCount] = useState(0);
+const PendingReturnsButton = () => {
+  const [pendingCount, setPendingCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchUnresolvedCount = async () => {
+    const fetchPendingCount = async () => {
       try {
         const accessToken = localStorage.getItem("access_token");
 
@@ -17,33 +17,29 @@ const UnresolvedReconciliationsButton = () => {
           return;
         }
 
-        const response = await axios.get(`/api/diraja/stock-reconciliation`, {
+        const response = await axios.get(`/api/diraja/returns/pending`, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
           },
         });
 
-        if (response.data && Array.isArray(response.data.reconciliations)) {
-          // Count only reconciliations that are not solved
-          const unresolvedReconciliations = response.data.reconciliations.filter(
-            (reconciliation) => reconciliation.status !== 'Solved'
-          );
-          setUnresolvedCount(unresolvedReconciliations.length);
+        if (response.data.pending_returns && Array.isArray(response.data.pending_returns)) {
+          setPendingCount(response.data.pending_returns.length);
         } else {
-          setUnresolvedCount(0);
+          setPendingCount(0);
         }
       } catch (err) {
-        console.error("Error fetching unresolved reconciliation count:", err);
-        setUnresolvedCount(0);
+        console.error("Error fetching pending returns count:", err);
+        setPendingCount(0);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUnresolvedCount();
+    fetchPendingCount();
 
-    // Refresh count every hour (3600000 milliseconds)
-    const interval = setInterval(fetchUnresolvedCount, 3600000);
+    // Refresh count every 30 minutes (1800000 milliseconds)
+    const interval = setInterval(fetchPendingCount, 1800000);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,7 +57,6 @@ const UnresolvedReconciliationsButton = () => {
     cursor: "pointer",
     transition: "background-color 0.2s ease-in-out",
     fontSize: "14px",
-    marginLeft: "10px", // Add some spacing if used alongside other buttons
   };
 
   const badgeStyle = {
@@ -84,17 +79,17 @@ const UnresolvedReconciliationsButton = () => {
 
   return (
     <button
-      onClick={() => navigate("/reconciliation")}
+      onClick={() => navigate("/pending-returns")}
       style={buttonStyle}
       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#b91c1c")}
       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
     >
-      Unresolved Stock
-      {!loading && unresolvedCount > 0 && (
-        <span style={badgeStyle}>{unresolvedCount}</span>
+      Stock Returned
+      {!loading && pendingCount > 0 && (
+        <span style={badgeStyle}>{pendingCount}</span>
       )}
     </button>
   );
 };
 
-export default UnresolvedReconciliationsButton;
+export default PendingReturnsButton;

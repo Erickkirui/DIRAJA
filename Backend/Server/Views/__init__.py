@@ -127,7 +127,7 @@ from Server.Views.ShopstockviewsV2 import (
     GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2,
     AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2,
     ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2,
-    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns, BrokenEggs
+    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns, BrokenEggs, ApproveReturn, DeclineReturn, GetPendingReturns
 )
 
 from Server.Views.InventoryV2Views import (
@@ -417,6 +417,8 @@ api.add_resource(DeclineTransfer, '/transfers/<int:transfer_id>/decline')
 api.add_resource(PendingTransfers, '/transfers/pending')
 
 
+
+
 #stockv2 endpoints
 #Get stock
 api.add_resource(GetShopStockV2, '/shopstockv2')
@@ -434,6 +436,10 @@ api.add_resource(StockReturns, "/stockreturns")
 api.add_resource(BrokenEggs, "/shops/<int:shop_id>/stock/broken-eggs")
 
 api.add_resource(AddCookedItems, "/shops/<int:shop_id>/stock/cooked")
+
+api.add_resource(ApproveReturn, '/returns/<int:return_id>/approve')
+api.add_resource(DeclineReturn, '/returns/<int:return_id>/decline')
+api.add_resource(GetPendingReturns, '/returns/pending')
 
 
 #Shoptoshop transfer

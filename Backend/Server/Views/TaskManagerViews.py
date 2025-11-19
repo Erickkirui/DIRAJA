@@ -1,12 +1,18 @@
 from flask import request, jsonify
 from flask_restful import Resource
 from app import db
+import json
 from Server.Models.TaskManager import TaskManager
+from Server.Models.PushSubscription import PushSubscription
+from pywebpush import webpush, WebPushException
 from Server.Models.Users import Users
+from functools import wraps
+from pywebpush import webpush, WebPushException
 from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_request
 from flask import request, make_response, jsonify
 from functools import wraps
 import datetime
+from flask import current_app
 from flask_jwt_extended import jwt_required
 from sqlalchemy.orm import joinedload
 
@@ -57,6 +63,9 @@ class CreateTask(Resource):
             db.session.add(new_task)
             db.session.commit()
 
+            # ✅ Send push notification to the assignee
+            self.send_push_to_user(new_task.assignee_id, new_task.task, new_task.priority)
+
             return {
                 "message": "Task created successfully",
                 "task": {
@@ -72,6 +81,41 @@ class CreateTask(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 400
+
+    def send_push_to_user(self, user_id, task_name, priority):
+        """Send push notification to all subscriptions for a user."""
+        subscriptions = PushSubscription.query.filter_by(user_id=user_id).all()
+        if not subscriptions:
+            print(f"No push subscriptions found for user {user_id}")
+            return
+
+        # ✅ Fetch VAPID keys from app config
+        vapid_private_key = current_app.config.get("VAPID_PRIVATE_KEY")
+        vapid_email = current_app.config.get("VAPID_EMAIL")
+
+        payload = {
+            "title": f"New Task Assigned ({priority} Priority)",
+            "body": f"{task_name}",
+            "icon": "/logo192.png",
+        }
+
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {
+                            "p256dh": sub.p256dh,
+                            "auth": sub.auth,
+                        },
+                    },
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims={"sub": vapid_email},
+                )
+                print(f"Push sent to user {user_id} subscriber {sub.id}")
+            except WebPushException as e:
+                print(f"Push failed for {sub.id}: {repr(e)}")
 
 
 class GetTasks(Resource):

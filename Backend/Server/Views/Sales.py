@@ -81,7 +81,7 @@ class AddSale(Resource):
         # ===== VALIDATION =====
         required_fields = [
             'shop_id', 'customer_name', 'customer_number',
-            'items', 'payment_methods', 'status'
+            'items', 'payment_methods', 'status', 'delivery'
         ]
         if not all(field in data for field in required_fields):
             return {
@@ -95,6 +95,7 @@ class AddSale(Resource):
             promocode = data.get('promocode', '')
             status = data['status'].lower()
             balance = float(data.get('balance', 0))
+            delivery = bool(data.get('delivery', 0))  # Convert to boolean, default to False (0)
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
             if not isinstance(data['items'], list) or not data['items']:
@@ -258,6 +259,7 @@ class AddSale(Resource):
                 customer_name=data['customer_name'],
                 customer_number=data['customer_number'],
                 status=status,
+                delivery=delivery,  # Add delivery field here
                 created_at=created_at,
                 balance=balance,
                 promocode=promocode
@@ -365,7 +367,8 @@ class AddSale(Resource):
                     'methods': [pm['method'] for pm in payment_methods],
                     'sasapay_deposits': sasapay_deposits or "No SASAPAY deposits processed",
                     'discounts_applied': [{'method': pm['method'], 'discount': float(pm.get('discount', 0))} for pm in payment_methods]
-                }
+                },
+                'delivery': delivery  # Include delivery status in response
             }, 201
 
         except Exception as e:
@@ -376,7 +379,8 @@ class AddSale(Resource):
                 'debug_info': {
                     'sale_id': new_sale.sales_id if new_sale else "Not created",
                     'processed_payments': [pm['method'] for pm in payment_methods],
-                    'sasapay_attempts': sasapay_deposits
+                    'sasapay_attempts': sasapay_deposits,
+                    'delivery': delivery
                 }
             }, 500
 
@@ -598,6 +602,7 @@ class GetSales(Resource):
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": sale.balance,
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -714,6 +719,7 @@ class GetSalesByShop(Resource):
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -788,6 +794,7 @@ class SalesResources(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 "balance": sale.balance,
                 "note": sale.note,
+                "delivery": sale.delivery,
                 "promocode": sale.promocode
             }
 
@@ -1311,6 +1318,7 @@ class GetUnpaidSales(Resource):
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": sale.balance,
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -1449,6 +1457,7 @@ class CapturePaymentResource(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S') 
                 if isinstance(sale.created_at, datetime) else sale.created_at,
                 "note": sale.note,
+                "delivery": sale.delivery,
                 "promocode": sale.promocode
             }), 200)
 
@@ -1682,6 +1691,7 @@ class GetUnpaidSalesByClerk(Resource):
                         for payment in sale.payment
                     ],
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
             
@@ -1780,6 +1790,7 @@ class SalesByEmployeeResource(Resource):
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 

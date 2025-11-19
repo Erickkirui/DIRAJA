@@ -105,6 +105,8 @@ import AddTask from './Components/TaskManager/AddTask';
 import UserPendingTasks from './Components/TaskManager/UserPendingTasks';
 import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
 import StockReconciliationList from './Components/SystemStock/StockReconciliationList';
+import PendingReturns from './Components/Inventory/PendingReturns';
+import PendingReturnsButton from './Components/Inventory/Pendingbutton';
 
 function App() {
   return (
@@ -221,6 +223,9 @@ function App() {
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
           <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
           <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
+          <Route path='/pending-returns' element={<Layout><PendingReturns /></Layout>} ></Route>
+          <Route path='/pending-button' element={<Layout><PendingReturnsButton /></Layout>} ></Route>
+
         </Routes>
       </Router>
     </div>
