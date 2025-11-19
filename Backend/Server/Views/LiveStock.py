@@ -543,12 +543,21 @@ class GetShopTransfers(Resource):
     @jwt_required()
     def get(self):
         try:
-            # Fetch all shop transfer records, ordered by most recent
-            transfers = ShopTransfer.query.order_by(ShopTransfer.created_at.desc()).all()
+            transfers = ShopTransfer.query.order_by(
+                ShopTransfer.created_at.desc()
+            ).all()
 
-            # Serialize the transfer records
             transfer_list = []
+
             for transfer in transfers:
+
+                # Find matching batch in InventoryV2
+                inventory = InventoryV2.query.filter_by(
+                    BatchNumber=transfer.BatchNumber
+                ).first()
+
+                unit_cost = inventory.unitCost if inventory else None
+
                 transfer_list.append({
                     "id": transfer.id,
                     "shop_id": transfer.shop_id,
@@ -557,10 +566,12 @@ class GetShopTransfers(Resource):
                     "metric": transfer.metric,
                     "fromshop": transfer.fromshop,
                     "toshop": transfer.toshop,
+                    "BatchNumber": transfer.BatchNumber,
+                    "unitCost": unit_cost,
                     "created_at": transfer.created_at.strftime("%Y-%m-%d %H:%M:%S")
                 })
 
             return {"transfers": transfer_list}, 200
-        
+
         except Exception as e:
             return {"error": str(e)}, 500

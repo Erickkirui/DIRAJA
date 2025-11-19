@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
-import UpdateExpenses from '../UpdateExpense';
+import ExpenseDetails from './ExpenseDetails';
 import PaginationTable from '../../PaginationTable';
 import SearchComponent from './SearchComponent';
 import '../../Styles/expenses.css';
@@ -90,7 +90,8 @@ const Expenses = () => {
 
   const handleEditClick = (expenseId) => {
     setEditingExpenseId(expenseId);
-    editExpenseRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Optional: scroll to the edit component if you want to keep it inline
+    // editExpenseRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleCloseUpdate = () => {
@@ -173,10 +174,10 @@ const Expenses = () => {
         </Link>
       </div>
 
-      {/* ✏️ Edit Form */}
+      {/* ✏️ Edit Form - Using ExpenseDetails component */}
       {editingExpenseId && (
         <div ref={editExpenseRef}>
-          <UpdateExpenses
+          <ExpenseDetails
             expenseId={editingExpenseId}
             onClose={handleCloseUpdate}
             onUpdateSuccess={() => fetchExpenses(currentPage, itemsPerPage, filters)}
