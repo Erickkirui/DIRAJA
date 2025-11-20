@@ -19,7 +19,7 @@ from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-import datetime 
+from datetime import datetime
 import traceback
 from sqlalchemy import func
 

@@ -93,7 +93,8 @@ from Server.Views.AccountBalances import (
 )
 
 from Server.Views.SpoiltStock import (
-    AddSpoiltStock, SpoiltStockResource
+    AddSpoiltStock, SpoiltStockResource, ApproveSpoiltStock,RejectSpoiltStock, 
+    GetPendingSpoiltStock, SpoiltStockHistory
 )
 
 from Server.Views.StockItems import (
@@ -343,6 +344,10 @@ api.add_resource(TotalBankBalance, '/total-balance')
 #Spoiltstock
 api.add_resource(AddSpoiltStock, '/newspoilt')
 api.add_resource(SpoiltStockResource, '/allspoilt')
+api.add_resource(ApproveSpoiltStock, '/spoilt/<int:record_id>/approve')
+api.add_resource(RejectSpoiltStock, '/spoilt/<int:record_id>/reject')
+api.add_resource(GetPendingSpoiltStock, '/spoilt/pending')
+api.add_resource(SpoiltStockHistory, '/spoilt/history')
 
 #stockItems 
 api.add_resource(PostStockItem, '/add-stock-items')

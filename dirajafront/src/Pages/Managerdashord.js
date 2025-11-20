@@ -18,6 +18,7 @@ import ProductEarningsList from '../Components/ManagerDashbord/ProductEarningLis
 import PendingTasksButton from '../Components/TaskManager/PendingTasksButton';
 import UnresolvedReconciliationsButton from '../Components/SystemStock/UnresolvedReconciliationsButton';
 import PendingReturnsButton from '../Components/Inventory/Pendingbutton';
+import PendingSpoiltStockButton from '../Components/SystemStock/SpoiltButton';
 
 
 function Managerdashord() {
@@ -52,6 +53,7 @@ function Managerdashord() {
            <PendingTasksButton />
            <UnresolvedReconciliationsButton />
            <PendingReturnsButton/>
+           <PendingSpoiltStockButton/>
 
          
         </div>

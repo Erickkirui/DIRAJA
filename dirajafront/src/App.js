@@ -107,6 +107,8 @@ import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
 import StockReconciliationList from './Components/SystemStock/StockReconciliationList';
 import PendingReturns from './Components/Inventory/PendingReturns';
 import PendingReturnsButton from './Components/Inventory/Pendingbutton';
+import PendingSpoiltStock from './Components/SystemStock/PendingSpoilt';
+import PendingSpoiltStockButton from './Components/SystemStock/SpoiltButton';
 
 function App() {
   return (
@@ -225,6 +227,8 @@ function App() {
           <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
           <Route path='/pending-returns' element={<Layout><PendingReturns /></Layout>} ></Route>
           <Route path='/pending-button' element={<Layout><PendingReturnsButton /></Layout>} ></Route>
+          <Route path='/pending-spoilt' element={<Layout><PendingSpoiltStock /></Layout>} ></Route>
+          <Route path='/pending-button' element={<Layout><PendingSpoiltStockButton /></Layout>} ></Route>
 
         </Routes>
       </Router>
