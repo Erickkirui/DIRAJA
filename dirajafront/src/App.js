@@ -109,6 +109,7 @@ import PendingReturns from './Components/Inventory/PendingReturns';
 import PendingReturnsButton from './Components/Inventory/Pendingbutton';
 import PendingSpoiltStock from './Components/SystemStock/PendingSpoilt';
 import PendingSpoiltStockButton from './Components/SystemStock/SpoiltButton';
+import EmployeeProfile from './Components/ClerkDashbord/EmployeeProfile';
 
 function App() {
   return (
@@ -230,6 +231,7 @@ function App() {
           <Route path='/pending-spoilt' element={<Layout><PendingSpoiltStock /></Layout>} ></Route>
           <Route path='/pending-button' element={<Layout><PendingSpoiltStockButton /></Layout>} ></Route>
 
+          <Route path='/profile' element={<ClerkLayout><EmployeeProfile /></ClerkLayout>} ></Route>
         </Routes>
       </Router>
     </div>

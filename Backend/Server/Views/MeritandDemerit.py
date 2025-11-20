@@ -98,3 +98,44 @@ class GetMeritLedger(Resource):
             })
 
         return {'merit_ledger': result}, 200
+    
+
+class GetEmployeeMeritLedger(Resource):
+    @jwt_required()
+    def get(self, user_id):
+        # 1. Get user first
+        user = Users.query.get(user_id)
+        if not user:
+            return {"message": "User not found."}, 404
+        
+        # 2. Check if user has an employee attached
+        if not user.employee_id:
+            return {"message": "This user has no linked employee."}, 400
+
+        employee = Employees.query.get(user.employee_id)
+        if not employee:
+            return {"message": "Employee not found."}, 404
+
+        # 3. Load merit ledger for that employee
+        ledger_entries = MeritLedger.query.filter_by(employee_id=user.employee_id)\
+                                          .order_by(MeritLedger.date.desc())\
+                                          .all()
+
+        return {
+            "employee": {
+                "id": employee.employee_id,
+                "name": f"{employee.first_name} {employee.middle_name} {employee.surname}",
+                "current_merit_points": employee.merit_points,
+            },
+            "ledger_history": [
+                {
+                    "ledger_id": entry.meritledger_id,
+                    "merit_id": entry.merit_id,
+                    "reason": entry.merit_reason.reason,
+                    "point_value": entry.merit_reason.point,
+                    "comment": entry.comment,
+                    "date": entry.date.isoformat(),
+                    "resulting_points": entry.resulting_points
+                } for entry in ledger_entries
+            ]
+        }, 200

@@ -32,5 +32,5 @@ function CreditorPage() {
     </div>
   );
 }
-
+  
 export default CreditorPage;
