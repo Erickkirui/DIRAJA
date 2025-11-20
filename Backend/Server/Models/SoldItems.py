@@ -12,6 +12,7 @@ class SoldItem(db.Model):
     metric = db.Column(db.String(10), nullable=False)
     unit_price = db.Column(db.Float, nullable=False)
     total_price = db.Column(db.Float, nullable=False)
+    round_off = db.Column(db.Float)
     BatchNumber = db.Column(db.String(255), nullable=False)
     stockv2_id = db.Column(db.Integer, db.ForeignKey('shop_stock_v2.stockv2_id'), nullable=False)  # Updated reference
     Cost_of_sale = db.Column(db.Float, nullable=False)

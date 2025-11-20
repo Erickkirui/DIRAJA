@@ -29,12 +29,11 @@ from Server.Models.BankAccounts import BankAccount
 from Server.Models.CashDeposit import CashDeposits
 from flask import current_app
 from fuzzywuzzy import process
+from math import modf
+
 
 from flask import send_file
 from io import BytesIO
-
-
-
 
 
 # def check_role(allowed_roles):
@@ -266,18 +265,24 @@ class AddSale(Resource):
             db.session.flush()
 
             for item in sold_items:
+                total_price = float(item['total_price'])
+
+                # Extract decimal fraction
+                fractional_part = round(total_price - int(total_price), 2)
+
                 db.session.add(SoldItem(
                     sales_id=new_sale.sales_id,
                     item_name=item['item_name'],
                     quantity=item['quantity'],
                     metric=item['metric'],
                     unit_price=item['unit_price'],
-                    total_price=item['total_price'],
+                    total_price=total_price,
                     BatchNumber=item['BatchNumber'],
                     stockv2_id=item['stockv2_id'],
                     Cost_of_sale=item['Cost_of_sale'],
                     Purchase_account=item['Purchase_account'],
-                    LivestockDeduction=item['LivestockDeduction']
+                    LivestockDeduction=item['LivestockDeduction'],
+                    round_off=fractional_part
                 ))
 
             for payment in payment_methods:

@@ -90,6 +90,8 @@ const UserDisplay = () => {
             {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
             {role === 'manager' && <Link to="/archive" onClick={handleMenuClick}>Archive</Link>}
             {role === 'manager' && <Link to="/deposit" onClick={handleMenuClick}>Deposit</Link>}
+            {role === 'clerk' && <Link to="/profile" onClick={handleMenuClick}>Profile</Link>}
+
             {/* {role === 'manager' && <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>} */}
 
             {/* Items visible only to clerks of a specific shop */}
