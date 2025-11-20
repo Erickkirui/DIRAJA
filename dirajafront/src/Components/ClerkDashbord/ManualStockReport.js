@@ -395,7 +395,7 @@ const ManualStockReport = () => {
       <h2 style={{ margin: "0 0 20px 0" }}>Stock Report</h2>
 
       <Alert severity="info" sx={{ mb: 3 }}>
-        Click on any item in the table to set its quantity. Items start at 0 by default.
+        Click on the reported quantity of each item and enter physical quantity available at the shop. Do not skip any items.
       </Alert>
 
       {message && (
