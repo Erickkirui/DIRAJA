@@ -152,14 +152,11 @@ function Navbar({ onMenuItemClick }) {
             <span>Task Manager</span>
           </NavLink>
 
-          {(username === "Leo" ||
-            username === "Namai" ||
-            username === "External Auditor") && (
             <NavLink to="/accounts-balance" className="menu-item" onClick={onMenuItemClick}>
               <FaBalanceScale className="menu-icon" />
               <span>Account Balances</span>
             </NavLink>
-          )}
+        
           <NavLink to="/transaction-analyse" className="menu-item" onClick={onMenuItemClick}>
             <FaTags className="menu-icon" />
             <span>Compare statement</span>
