@@ -269,7 +269,7 @@
 /* Progress circle */
 .progress-ring-prog {
   fill: none;
-  stroke: #fcb6a2;  /* light peach like your screenshot */
+  stroke: var(--primary);  /* light peach like your screenshot */
   stroke-linecap: round;
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
