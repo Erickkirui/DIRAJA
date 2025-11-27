@@ -20,6 +20,7 @@ class Permission(db.Model):
     Creditors = db.Column(db.Boolean, default=False)
     Task_manager = db.Column(db.Boolean, default=False)
     Accounting = db.Column(db.Boolean, default=False)
+    Settings = db.Column(db.Boolean, default=False)
 
     # Relationships
     users = db.relationship('Users', backref='permission', lazy=True)
