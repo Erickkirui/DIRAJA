@@ -26,7 +26,6 @@ import ShopCustomers from './Components/ClerkDashbord/ShopCustomers';
 import SingleShopSale from './Components/ClerkDashbord/SingleShopSale';
 import NotFound from './Components/NotFound';
 import AnalyticsPage from './Pages/AnalyticsPage';
-import ManageUsers from './Pages/ManageUsers';
 import ManualTransfer from './Pages/AddStockPage';
 import ClerkStockManagement from './Components/StockManagement/ClerkStockManagement';
 import ShopSalesDetails from './Components/SingleShopSales';
@@ -106,6 +105,7 @@ import UserPendingTasks from './Components/TaskManager/UserPendingTasks';
 import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
 import StockReconciliationList from './Components/SystemStock/StockReconciliationList';
 import EmployeeProfile from './Components/ClerkDashbord/EmployeeProfile';
+import Settings from './Components/Settings/Settings';
 
 function App() {
   return (
@@ -149,7 +149,6 @@ function App() {
           <Route path='/balancesheet' element={<Layout><BalanceSheet /></Layout>}></Route>
           <Route path='/ProfitAndLoss' element={<Layout><ProfitAndLoss /></Layout>}></Route>
           <Route path='/CashFlowStatement' element={<Layout><CashFlowStatement /></Layout>}></Route>
-          <Route path='/allusers' element={<Layout><ManageUsers /></Layout>} />
           <Route path='/managestock' element={<ClerkLayout><ClerkStockManagement /></ClerkLayout>}></Route>
           <Route path='/stockstatus' element={<Layout><ManagerReportStock /></Layout>}></Route>
           <Route path='/salesbyshop/:shop_id' element={<Layout><ShopSalesDetails /></Layout>}></Route>
@@ -223,6 +222,7 @@ function App() {
           <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
           <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
           <Route path='/profile' element={<ClerkLayout><EmployeeProfile /></ClerkLayout>} ></Route>
+          <Route path='/settings' element={<Layout><Settings /></Layout>} ></Route>
         </Routes>
       </Router>
     </div>

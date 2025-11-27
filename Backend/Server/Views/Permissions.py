@@ -25,7 +25,8 @@ class GetAllPermissions(Resource):
                     "Suppliers": p.Suppliers,
                     "Creditors": p.Creditors,
                     "Task_manager": p.Task_manager,
-                    "Accounting": p.Accounting
+                    "Accounting": p.Accounting,
+                    "Settings":p.Settings
                 })
 
             return {"status": "success", "permissions": data}, 200
@@ -58,7 +59,8 @@ class GetUserPermissions(Resource):
                 "Suppliers": permission.Suppliers,
                 "Creditors": permission.Creditors,
                 "Task_manager": permission.Task_manager,
-                "Accounting": permission.Accounting
+                "Accounting": permission.Accounting,
+                "Settings":permission.Settings
             }
 
             return {"status": "success", "permissions": data}, 200
@@ -91,6 +93,7 @@ class UpdateUserPermissions(Resource):
             parser.add_argument("Creditors", type=bool)
             parser.add_argument("Task_manager", type=bool)
             parser.add_argument("Accounting", type=bool)
+            parser.add_argument("Settings", type=bool)
 
             args = parser.parse_args()
 

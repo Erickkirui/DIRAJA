@@ -10,20 +10,45 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const fetchUserPermissions = async (userId, accessToken) => {
+    try {
+      const response = await axios.get(`/api/diraja/permissions/user/${userId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.status === 200) {
+        const userPermissions = response.data.permissions;
+        // Store permissions in localStorage
+        localStorage.setItem('user_permissions', JSON.stringify(userPermissions));
+        return userPermissions;
+      } else {
+        console.error('Failed to fetch permissions:', response.status);
+        return {};
+      }
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      return {};
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       const response = await axios.post('api/diraja/login', { email, password });
 
-      const { access_token, refresh_token, username, users_id, role, shop_id, report_status,designation } = response.data;
+      const { access_token, refresh_token, username, users_id, role, shop_id, report_status, designation } = response.data;
 
-      // Store the data in localStorage
+      // Store the basic data in localStorage
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('username', username);
       localStorage.setItem('users_id', users_id);
       localStorage.setItem('role', role);
-      localStorage.setItem('report_status', report_status)
+      localStorage.setItem('report_status', report_status);
+      
       if (shop_id) {
         localStorage.setItem('shop_id', shop_id);
       }
@@ -31,20 +56,33 @@ const Login = () => {
         localStorage.setItem('designation', designation);
       }
 
+      // Fetch and store user permissions
+      const userPermissions = await fetchUserPermissions(users_id, access_token);
+      localStorage.setItem('user_permissions', JSON.stringify(userPermissions));
+
       // Reset the form and clear any previous errors
       setEmail('');
       setPassword('');
       setError('');
 
-      // Redirect based on the user's role
-      // Redirect based on the user's role
+      // Determine redirect path based on role and permissions
+      let redirectPath = '/';
+      
       if (role === 'manager') {
-        window.location.href = '/';
+        // Check if user has Dashboard permission
+        if (userPermissions.Dashboard === false) {
+          redirectPath = '/allinventory';
+        } else {
+          redirectPath = '/';
+        }
       } else if (role === 'clerk') {
-        window.location.href = '/clerk';
+        redirectPath = '/clerk';
       } else if (role === 'procurement') {
-        window.location.href = '/procurement';
+        redirectPath = '/procurement';
       }
+
+      // Redirect to the determined path
+      window.location.href = redirectPath;
 
     } catch (err) {
       if (err.response && err.response.data && err.response.data.error) {

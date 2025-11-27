@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Stack, Alert } from '@mui/material';
 import { faPen, faTrash, faSave, faTimes } from '@fortawesome/free-solid-svg-icons';
+import GeneralTableLayout from './GeneralTableLayout';
+import SingleUser from './Settings/SingleUser';
 
 const UsersTable = () => {
   const [users, setUsers] = useState([]);
@@ -11,6 +13,7 @@ const UsersTable = () => {
   const [newPassword, setNewPassword] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('success');
+  const [selectedUserId, setSelectedUserId] = useState(null); // Add this state
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -110,13 +113,96 @@ const UsersTable = () => {
     }
   };
 
+  // Define columns for the GeneralTableLayout
+  const columns = [
+   
+    {
+      header: 'Username',
+      key: 'username',
+    },
+    {
+      header: 'Email',
+      key: 'email',
+    },
+    {
+      header: 'Password',
+      key: 'password',
+      render: (user) => {
+        if (isEditing === user.user_id) {
+          return (
+            <div>
+              <input
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                style={{ width: '100%', padding: '4px' }}
+              />
+              <small style={{ color: 'gray', fontSize: '0.8rem', display: 'block' }}>
+                Password must have at least 8 characters, one uppercase letter, one digit, and one special character.
+              </small>
+            </div>
+          );
+        }
+        return '********';
+      },
+    },
+    {
+      header: 'Role',
+      key: 'role',
+    },
+    {
+      header: 'Actions',
+      key: 'actions',
+      render: (user) => {
+        if (isEditing === user.user_id) {
+          return (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                className="editeInventory" 
+                onClick={() => handleSaveClick(user.user_id)}
+                style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+              >
+                <FontAwesomeIcon icon={faSave} /> Save
+              </button>
+              <button 
+                className="editeInventory" 
+                onClick={() => setIsEditing(null)}
+                style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+              >
+                <FontAwesomeIcon icon={faTimes} /> Cancel
+              </button>
+            </div>
+          );
+        }
+        return (
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              className="editeInventory" 
+              onClick={() => setSelectedUserId(user.user_id)}
+              style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+            >
+              <FontAwesomeIcon icon={faPen} /> Edit
+            </button>
+            <button 
+              className="editeInventory" 
+              onClick={() => handleDeleteClick(user.user_id)}
+              style={{ padding: '4px 8px', fontSize: '0.8rem' }}
+            >
+              <FontAwesomeIcon icon={faTrash} /> Delete
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
 
   return (
     <div className="single-sale-container">
       {message && (
-        <Stack>
+        <Stack sx={{ marginBottom: 2 }}>
           <Alert severity={messageType} variant="outlined">
             {message}
           </Alert>
@@ -125,66 +211,29 @@ const UsersTable = () => {
 
       <div className="sale-details">
         <h1>All Users</h1>
-        <table className="employees-table">
-          <thead>
-            <tr>
-              <th>User ID</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Password</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.user_id}>
-                <td>{user.user_id}</td>
-                <td>{user.username}</td>
-                <td>{user.email}</td>
-                <td>
-                  {isEditing === user.user_id ? (
-                    <div>
-                      <input
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter new password"
-                      />
-                      <small style={{ color: 'gray' }}>
-                        Password must have at least 8 characters, one uppercase letter, one digit, and one special character.
-                      </small>
-                    </div>
-                  ) : (
-                    '********'
-                  )}
-                </td>
-                <td>{user.role}</td>
-                <td>
-                  {isEditing === user.user_id ? (
-                    <>
-                      <button className="editeInventory" onClick={() => handleSaveClick(user.user_id)}>
-                        <FontAwesomeIcon icon={faSave} /> Save
-                      </button>
-                      <button className="editeInventory" onClick={() => setIsEditing(null)}>
-                        <FontAwesomeIcon icon={faTimes} /> Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="editeInventory" onClick={() => handleEditClick(user.user_id)}>
-                        <FontAwesomeIcon icon={faPen} /> Edit
-                      </button>
-                      <button className="editeInventory" onClick={() => handleDeleteClick(user.user_id)}>
-                        <FontAwesomeIcon icon={faTrash} /> Delete
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <GeneralTableLayout
+          data={users}
+          columns={columns}
+          // You can optionally pass onEdit and onDelete handlers if needed
+          // onEdit={(user) => handleEditClick(user.user_id)}
+          // onDelete={(user) => handleDeleteClick(user.user_id)}
+        />
       </div>
+
+      {/* Single User Panel */}
+      {selectedUserId && (
+        <SingleUser
+          userId={selectedUserId}
+          onClose={() => setSelectedUserId(null)}
+          onUpdate={(updatedUser) => {
+            // Update the user in the table
+            setUsers(prev => prev.map(user => 
+              user.user_id === updatedUser.user_id ? updatedUser : user
+            ));
+            setSelectedUserId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
