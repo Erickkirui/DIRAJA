@@ -94,7 +94,7 @@ from Server.Views.AccountBalances import (
 
 from Server.Views.SpoiltStock import (
     AddSpoiltStock, SpoiltStockResource, ApproveSpoiltStock,RejectSpoiltStock, 
-    GetPendingSpoiltStock, SpoiltStockHistory
+    GetPendingSpoiltStock, SpoiltStockHistory, AddSpoiltFromInventory
 )
 
 from Server.Views.StockItems import (
@@ -149,7 +149,9 @@ from Server.Views.Shoptoshoptransferviews import (
     ShopToShopTransfer,  ConfirmTransfer, GetAllShopToShopTransfers, GetPendingShopToShopTransfers, DeclineTransfers
 )
 from Server.Views.StockReport import (
-    SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById, StockReconciliationList, StockReconciliationResource
+    SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById, StockReconciliationList, StockReconciliationResource,
+    GetReportedStock
+    
 )
 
 from Server.Views.Sasapaycodes import (
@@ -348,6 +350,7 @@ api.add_resource(ApproveSpoiltStock, '/spoilt/<int:record_id>/approve')
 api.add_resource(RejectSpoiltStock, '/spoilt/<int:record_id>/reject')
 api.add_resource(GetPendingSpoiltStock, '/spoilt/pending')
 api.add_resource(SpoiltStockHistory, '/spoilt/history')
+api.add_resource(AddSpoiltFromInventory, "/spoilt/inventory")
 
 #stockItems 
 api.add_resource(PostStockItem, '/add-stock-items')
@@ -476,7 +479,7 @@ api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
 api.add_resource(StockReconciliationList, '/stock-reconciliation')
 api.add_resource(StockReconciliationResource, '/stock-reconciliation/<int:reconciliation_id>')
-
+api.add_resource(GetReportedStock, '/reconciliation-level')
 
 
 api.add_resource(ProcessCSV, '/process-csv')

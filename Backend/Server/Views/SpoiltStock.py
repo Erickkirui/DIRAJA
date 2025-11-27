@@ -5,18 +5,85 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
+from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.SpoiltStock import SpoiltStock
 from Server.Models.Shopstock import ShopStock
 from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.LiveStock import LiveStock
 from datetime import datetime
-import datetime
 from app import db
 from flask_restful import Resource
 from flask import jsonify,request,make_response
 from functools import wraps
 
 from fuzzywuzzy import process
+
+class AddSpoiltFromInventory(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+
+        # Required fields
+        required = ['inventory_id', 'quantity']
+        for field in required:
+            if field not in data:
+                return {"error": f"Missing required field: {field}"}, 400
+
+        inventory_id = data['inventory_id']
+        quantity = float(data['quantity'])
+        comment = data.get('comment')
+        disposal_method = data.get('disposal_method')
+        collector_name = data.get('collector_name')
+
+        # Logged-in user as clerk
+        clerk_id = get_jwt_identity()
+
+        # Fetch inventory batch
+        inventory = InventoryV2.query.get(inventory_id)
+        if not inventory:
+            return {"error": "Inventory batch not found"}, 404
+
+        # Validate quantity
+        if quantity <= 0:
+            return {"error": "Quantity must be greater than 0"}, 400
+
+        if quantity > inventory.quantity:
+            return {
+                "error": "Quantity exceeds available stock",
+                "available_quantity": inventory.quantity
+            }, 400
+
+        # Create spoilt stock entry (NOTE: shop_id removed)
+        spoilt = SpoiltStock(
+            clerk_id=clerk_id,
+            inventory_id=inventory_id,
+            quantity=quantity,
+            item=inventory.itemname,
+            unit=inventory.metric,
+            disposal_method=disposal_method,
+            collector_name=collector_name,
+            comment=comment,
+            status="pending",
+            created_at=datetime.utcnow()
+        )
+
+        # Deduct from inventory
+        inventory.quantity -= quantity
+        inventory.totalCost = inventory.quantity * inventory.unitCost
+
+        # Save
+        db.session.add(spoilt)
+        db.session.commit()
+
+        return {
+            "message": "Spoilt stock recorded successfully",
+            "spoilt_id": spoilt.id,
+            "item": spoilt.item,
+            "unit": spoilt.unit,
+            "quantity_spoilt": quantity,
+            "remaining_batch_quantity": inventory.quantity,
+            "batch_number": inventory.BatchNumber
+        }, 201
 
 class AddSpoiltStock(Resource):
     @jwt_required()
@@ -153,6 +220,7 @@ class AddSpoiltStock(Resource):
                 "message": "Failed to record spoilt stock",
                 "error": str(e)
             }, 500
+            
 
 class ApproveSpoiltStock(Resource):
     @jwt_required()
