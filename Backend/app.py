@@ -44,6 +44,7 @@ def initialize_models():
     from Server.Models.ShopstockV2 import ShopStockV2
     from Server.Models.ExpenseCategory import ExpenseCategory
     from Server.Models.StockReport import StockReport
+    from Server.Models.Permission import Permission
 
 
 # ---------- Views Import ----------

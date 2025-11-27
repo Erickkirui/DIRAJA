@@ -171,6 +171,9 @@ from Server.Views.CookedItemsView import  (
 from Server.Views.credirors import (
     CreateCreditor,CreditorsList,SingleCreditor
 )
+from Server.Views.Permissions import (
+    GetAllPermissions,GetUserPermissions,UpdateUserPermissions
+)
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -498,3 +501,12 @@ api.add_resource(CompleteTask, '/<int:task_id>/complete')
 api.add_resource(CreateCreditor, '/add-creditors')
 api.add_resource(CreditorsList, '/creditors')
 api.add_resource(SingleCreditor, '/creditors/<int:creditor_id>')
+
+
+#permissions 
+api.add_resource(GetAllPermissions, "/permissions/all")
+api.add_resource(GetUserPermissions, "/permissions/user/<int:user_id>")
+api.add_resource(UpdateUserPermissions, "/permissions/user/<int:user_id>")
+
+
+
