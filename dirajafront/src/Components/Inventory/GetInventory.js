@@ -3,6 +3,7 @@ import axios from 'axios';
 import ExportExcel from '../Download/ExportExcel';
 import DownloadPDF from '../Download/DownloadPDF';
 import DistributeInventoryModal from './DistributeInventoryModal';
+import SpoiltInventoryModal from './SpoiltInventoryModal'; // Import the SpoiltModal
 import UpdateInventory from '../updateInventory';
 import GeneralTableLayout from '../GeneralTableLayout';
 import '../../Styles/inventory.css';
@@ -16,6 +17,7 @@ const Inventory = () => {
   const [selectedAction, setSelectedAction] = useState('');
   const [selectedInventory, setSelectedInventory] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showSpoiltModal, setShowSpoiltModal] = useState(false); // New state for spoilt modal
   const [editingInventoryId, setEditingInventoryId] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [stockItems, setStockItems] = useState([]);
@@ -146,10 +148,23 @@ const Inventory = () => {
   };
 
   const handleAction = () => {
-    if (selectedAction === 'distribute') {
-      setShowModal(true);
-    } else if (selectedAction === 'delete') {
-      handleDelete();
+    if (selectedInventory.length === 0) {
+      setError('Please select at least one inventory item.');
+      return;
+    }
+
+    switch (selectedAction) {
+      case 'distribute':
+        setShowModal(true);
+        break;
+      case 'spoilt':
+        setShowSpoiltModal(true);
+        break;
+      case 'delete':
+        handleDelete();
+        break;
+      default:
+        setError('Please select a valid action.');
     }
   };
 
@@ -173,14 +188,26 @@ const Inventory = () => {
       setInventory((prev) => prev.filter((inv) => !selectedInventory.includes(inv.inventoryV2_id)));
       setSelectedInventory([]);
       setSelectedAction('');
+      setError('');
     } catch (error) {
       setError('Error deleting inventory. Please try again.');
     }
   };
 
   const handleDistributeSuccess = () => {
+    // Refresh inventory data after successful distribution
+    fetchInventory();
     setSelectedInventory([]);
     setSelectedAction('');
+    setError('');
+  };
+
+  const handleSpoiltSuccess = () => {
+    // Refresh inventory data after successful spoilt recording
+    fetchInventory();
+    setSelectedInventory([]);
+    setSelectedAction('');
+    setError('');
   };
 
   const handleEditClick = (inventoryId) => {
@@ -191,6 +218,46 @@ const Inventory = () => {
     setIsModalVisible(false);
     // Small delay to allow slide-out animation to complete
     setTimeout(() => setEditingInventoryId(null), 300);
+  };
+
+  // Function to refresh inventory data
+  const fetchInventory = async () => {
+    try {
+      const accessToken = localStorage.getItem('access_token');
+      const inventoryResponse = await axios.get('api/diraja/v2/allinventories', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      // Apply display formatting to inventory
+      const processedInventory = inventoryResponse.data.map((item) => {
+        const itemInfo = stockItems.find(
+          (stockItem) => stockItem.item_name === item.itemname
+        );
+
+        if (!itemInfo) {
+          return {
+            ...item,
+            initial_display: `${item.initial_quantity} ${item.metric || 'pcs'}`,
+            remaining_display: `${item.remaining_quantity} ${item.metric || 'pcs'}`,
+          };
+        }
+
+        const initialDisplay = formatQuantityDisplay(item.initial_quantity, item.metric, itemInfo);
+        const remainingDisplay = formatQuantityDisplay(item.remaining_quantity, item.metric, itemInfo);
+
+        return {
+          ...item,
+          initial_display: initialDisplay,
+          remaining_display: remainingDisplay,
+        };
+      });
+
+      setInventory(processedInventory);
+    } catch (err) {
+      setError('Error refreshing inventory data.');
+    }
   };
 
   const filteredInventory = inventory
@@ -363,6 +430,7 @@ const Inventory = () => {
             <select onChange={(e) => setSelectedAction(e.target.value)} value={selectedAction}>
               <option value="">With selected, choose an action</option>
               <option value="distribute">Distribute</option>
+              <option value="spoilt">Mark as Spoilt</option> {/* New option */}
               <option value="delete">Delete</option>
             </select>
             <button onClick={handleAction} className="action-button">
@@ -381,6 +449,15 @@ const Inventory = () => {
           inventory={inventory}
           onClose={() => setShowModal(false)}
           onDistributeSuccess={handleDistributeSuccess}
+        />
+      )}
+
+      {showSpoiltModal && (
+        <SpoiltInventoryModal
+          selectedInventory={selectedInventory}
+          inventory={inventory}
+          onClose={() => setShowSpoiltModal(false)}
+          onSpoiltSuccess={handleSpoiltSuccess}
         />
       )}
 

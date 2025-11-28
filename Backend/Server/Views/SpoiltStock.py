@@ -53,7 +53,7 @@ class AddSpoiltFromInventory(Resource):
                 "available_quantity": inventory.quantity
             }, 400
 
-        # Create spoilt stock entry (NOTE: shop_id removed)
+        # Create spoilt stock entry with defaults
         spoilt = SpoiltStock(
             clerk_id=clerk_id,
             inventory_id=inventory_id,
@@ -63,7 +63,8 @@ class AddSpoiltFromInventory(Resource):
             disposal_method=disposal_method,
             collector_name=collector_name,
             comment=comment,
-            status="pending",
+            status="approved",  # ✅ CHANGED: Automatically set to approved
+            batches_affected=inventory.BatchNumber,
             created_at=datetime.utcnow()
         )
 
@@ -84,6 +85,7 @@ class AddSpoiltFromInventory(Resource):
             "remaining_batch_quantity": inventory.quantity,
             "batch_number": inventory.BatchNumber
         }, 201
+
 
 class AddSpoiltStock(Resource):
     @jwt_required()
@@ -442,7 +444,12 @@ class SpoiltStockResource(Resource):
             shop = Shops.query.filter_by(shops_id=record.shop_id).first()
 
             username = user.username if user else "Unknown User"
-            shopname = shop.shopname if shop else "Unknown Shop"
+            
+            # ✅ CHANGED: Return "Inventory" when shop_id is null, otherwise get shopname from Shops table
+            if record.shop_id is None:
+                shopname = "Inventory"
+            else:
+                shopname = shop.shopname if shop else "Unknown Shop"
 
             # Format created_at
             if record.created_at:
@@ -462,7 +469,7 @@ class SpoiltStockResource(Resource):
                 "clerk_id": record.clerk_id,
                 "username": username,
                 "shop_id": record.shop_id,
-                "shop_name": shopname,
+                "shop_name": shopname,  # This will now show "Inventory" for null shop_id
                 "item": record.item,
                 "quantity": record.quantity,
                 "unit": record.unit,
