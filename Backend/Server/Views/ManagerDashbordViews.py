@@ -858,6 +858,7 @@ class TotalSalesByShop(Resource):
                     "payment_methods": payment_data,
                     "balance": sale.balance,
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 

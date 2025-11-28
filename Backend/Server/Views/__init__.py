@@ -93,7 +93,8 @@ from Server.Views.AccountBalances import (
 )
 
 from Server.Views.SpoiltStock import (
-    AddSpoiltStock, SpoiltStockResource
+    AddSpoiltStock, SpoiltStockResource, ApproveSpoiltStock,RejectSpoiltStock, 
+    GetPendingSpoiltStock, SpoiltStockHistory, AddSpoiltFromInventory
 )
 
 from Server.Views.StockItems import (
@@ -127,7 +128,7 @@ from Server.Views.ShopstockviewsV2 import (
     GetShopStockV2, BatchDetailsResourceForShopV2, BatchDetailsResourceV2,
     AvailableBatchesByShopResourceV2, AvailableBatchesResourceV2,
     ShopStockByDateV2, AvailableItemsByShopResourceV2, ShopStockDeleteV2,
-    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns, BrokenEggs
+    TransferSystemStockV2, ItemDetailsResourceForShopV2, StockReturns, BrokenEggs, ApproveReturn, DeclineReturn, GetPendingReturns
 )
 
 from Server.Views.InventoryV2Views import (
@@ -148,7 +149,9 @@ from Server.Views.Shoptoshoptransferviews import (
     ShopToShopTransfer,  ConfirmTransfer, GetAllShopToShopTransfers, GetPendingShopToShopTransfers, DeclineTransfers
 )
 from Server.Views.StockReport import (
-    SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById, StockReconciliationList, StockReconciliationResource
+    SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById, StockReconciliationList, StockReconciliationResource,
+    GetReportedStock
+    
 )
 
 from Server.Views.Sasapaycodes import (
@@ -346,6 +349,11 @@ api.add_resource(TotalBankBalance, '/total-balance')
 #Spoiltstock
 api.add_resource(AddSpoiltStock, '/newspoilt')
 api.add_resource(SpoiltStockResource, '/allspoilt')
+api.add_resource(ApproveSpoiltStock, '/spoilt/<int:record_id>/approve')
+api.add_resource(RejectSpoiltStock, '/spoilt/<int:record_id>/reject')
+api.add_resource(GetPendingSpoiltStock, '/spoilt/pending')
+api.add_resource(SpoiltStockHistory, '/spoilt/history')
+api.add_resource(AddSpoiltFromInventory, "/spoilt/inventory")
 
 #stockItems 
 api.add_resource(PostStockItem, '/add-stock-items')
@@ -423,6 +431,8 @@ api.add_resource(DeclineTransfer, '/transfers/<int:transfer_id>/decline')
 api.add_resource(PendingTransfers, '/transfers/pending')
 
 
+
+
 #stockv2 endpoints
 #Get stock
 api.add_resource(GetShopStockV2, '/shopstockv2')
@@ -440,6 +450,10 @@ api.add_resource(StockReturns, "/stockreturns")
 api.add_resource(BrokenEggs, "/shops/<int:shop_id>/stock/broken-eggs")
 
 api.add_resource(AddCookedItems, "/shops/<int:shop_id>/stock/cooked")
+
+api.add_resource(ApproveReturn, '/returns/<int:return_id>/approve')
+api.add_resource(DeclineReturn, '/returns/<int:return_id>/decline')
+api.add_resource(GetPendingReturns, '/returns/pending')
 
 
 #Shoptoshop transfer
@@ -468,7 +482,7 @@ api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
 api.add_resource(StockReconciliationList, '/stock-reconciliation')
 api.add_resource(StockReconciliationResource, '/stock-reconciliation/<int:reconciliation_id>')
-
+api.add_resource(GetReportedStock, '/reconciliation-level')
 
 
 api.add_resource(ProcessCSV, '/process-csv')

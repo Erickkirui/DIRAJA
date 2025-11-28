@@ -164,6 +164,15 @@ const ShopSalesDetails = () => {
             ))
           : "N/A",
     },
+    {
+      header: "Delivered",
+      key: "delivery",
+      render: (item) => {
+        if (item.delivery ===true) return "Delivered";
+        if (item.delivery ===false) return "Not Delivered";
+        return "N/A";
+      },
+    },
   ];
 
   return (

@@ -346,3 +346,47 @@ select:focus{
 }
 
 
+/* Add this to your CSS file */
+.form-field-group {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background-color: #fafafa;
+}
+
+.form-field-group .delivery-checkbox {
+    margin: 0;
+}
+
+.delivery-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.delivery-checkbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* If you want the border to match your existing form fields */
+.clerk-sale select,
+.clerk-sale input:not([type="checkbox"]) {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+}
+
+/* Make sure the delivery checkbox group matches the style */
+.form-field-group {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background-color: #fff;
+}

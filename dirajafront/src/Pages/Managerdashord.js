@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import CountShops from '../Components/ManagerDashbord/CountShops';
 import CountEmployees from '../Components/ManagerDashbord/CountEmployees';
 import TotalAmountPaidExpenses from '../Components/ManagerDashbord/TotalAmountPaidExpenses';
@@ -17,29 +17,68 @@ import InventoryStockCount from '../Components/ManagerDashbord/InventoryStockCou
 import ProductEarningsList from '../Components/ManagerDashbord/ProductEarningList';
 import PendingTasksButton from '../Components/TaskManager/PendingTasksButton';
 import UnresolvedReconciliationsButton from '../Components/SystemStock/UnresolvedReconciliationsButton';
-
+import PendingReturnsButton from '../Components/Inventory/Pendingbutton';
+import PendingSpoiltStockButton from '../Components/SystemStock/SpoiltButton';
 
 function Managerdashord() {
-  // Check the role in local storage
+  const [loading, setLoading] = useState(true);
+
+  // Check the role and permissions in local storage
   useEffect(() => {
-    const role = localStorage.getItem('role');
-    // const user = localStorage.getItem('username')
+    const checkAccess = () => {
+      const role = localStorage.getItem('role');
+      
 
+      if (role === 'clerk') {
+        window.location.href = '/clerk';
+        return;
+      } else if (role === 'procurement') {
+        window.location.href = '/procurement';
+        return;
+      }
 
-    //  Auto logout if user ID is 2
-    // if (user === 'Dancan') {
-    //   localStorage.clear();
-    //   window.location.href = '/login';
-    //   return;
-    // }
+      // Check dashboard permissions
+      const userPermissions = localStorage.getItem('user_permissions');
+      
+      if (userPermissions) {
+        try {
+          const permissions = JSON.parse(userPermissions);
+          
+          // If Dashboard permission is false, redirect to /allinventory
+          if (permissions.Dashboard === false) {
+            window.location.href = '/allinventory';
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing permissions:', error);
+          // If there's an error parsing permissions, allow access as fallback
+        }
+      } else {
+        // If no permissions are stored, redirect to /allinventory for safety
+        window.location.href = '/allinventory';
+        return;
+      }
+      
+      setLoading(false);
+    };
 
-
-    if (role === 'clerk') {
-      window.location.href = '/clerk';
-    } else if (role === 'procurement') {
-      window.location.href = '/procurement';
-    }
+    checkAccess();
   }, []);
+
+  // Show loading while checking permissions
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        Checking access permissions...
+      </div>
+    );
+  }
 
   return (
     <>
@@ -47,9 +86,10 @@ function Managerdashord() {
         <h2>Business Overview</h2>
         
         <div className="shortcuts">
-          <Link to="/allusers"  >Manage Users</Link>
            <PendingTasksButton />
            <UnresolvedReconciliationsButton />
+           <PendingReturnsButton/>
+           <PendingSpoiltStockButton/>
 
          
         </div>

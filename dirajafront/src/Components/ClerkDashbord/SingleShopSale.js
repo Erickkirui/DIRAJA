@@ -22,6 +22,7 @@ const SingleShopSale = () => {
         sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
         payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
+        delivery: false, // Add delivery field with default false
         items: [{
             item_name: '',
             quantity: '',
@@ -196,8 +197,13 @@ const SingleShopSale = () => {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+        // Handle checkbox differently
+        if (type === 'checkbox') {
+            setFormData({ ...formData, [name]: checked });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
       // Prevent wheel/touchpad scrolling from changing number inputs
     const handleWheel = (e) => {
@@ -282,6 +288,7 @@ const SingleShopSale = () => {
             balance: balance, // Explicitly set the balance
             estimated_cost: grandTotal, // Include estimated_cost at root level
             total_amount_paid: totalAmountPaid, // Include total amount paid
+            delivery: formData.delivery ? 1 : 0, // Convert boolean to 1 or 0 for backend
             items: formData.items.map(item => {
                 const stockItem = stockItems.find(si => si.item_name === item.item_name);
                 return {
@@ -325,6 +332,7 @@ const SingleShopSale = () => {
                     sale_date: dayjs().format('YYYY-MM-DD'), // Reset to current date
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                     promocode: '',
+                    delivery: false, // Reset delivery to false
                     items: [{
                         item_name: '',
                         quantity: '',
@@ -460,6 +468,21 @@ const SingleShopSale = () => {
                         format="YYYY-MM-DD"
                     />
                 </Form.Item>
+
+                {/* Delivery Checkbox with Border */}
+                <div className="form-field-group">
+                    <div className="delivery-checkbox">
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                name="delivery"
+                                checked={formData.delivery}
+                                onChange={handleChange}
+                            />
+                            <span> Delivery Required</span>
+                        </label>
+                    </div>
+                </div>
                 
                 <select 
                     name="status" 
@@ -472,8 +495,9 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-                 {/* Customer Details - Conditionally Rendered */}
+
                  
+                {/* Customer Details - Conditionally Rendered */}
                 {shouldShowCustomerDetails && (
                     <>
                         <h5>Customer Details</h5>

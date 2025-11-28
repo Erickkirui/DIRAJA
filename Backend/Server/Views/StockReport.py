@@ -662,3 +662,63 @@ class StockReconciliationResource(Resource):
             return True
         
         return False
+    
+    
+class GetReportedStock(Resource):
+    @jwt_required()
+    def get(self):
+        try:
+            # Required parameters
+            shop_id = request.args.get('shop_id', type=int)
+            date_str = request.args.get('date')
+
+            if not shop_id or not date_str:
+                return {
+                    "error": "Missing required parameters: shop_id and date are required"
+                }, 400
+
+            # Convert date
+            try:
+                date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                return {"error": "Invalid date format. Use YYYY-MM-DD"}, 400
+
+            # Query only report_value grouped by item
+            query = db.session.query(
+                StockReconciliation.item,
+                func.sum(StockReconciliation.report_value).label("total_reported_value")
+            ).filter(
+                StockReconciliation.shop_id == shop_id,
+                func.date(StockReconciliation.created_at) == date_obj
+            )
+
+            # Group results
+            results = query.group_by(StockReconciliation.item).all()
+
+            # Prepare output list
+            stock_list = [
+                {
+                    "item": item,
+                    "total_reported_value": float(total_reported_value)
+                }
+                for item, total_reported_value in results
+            ]
+
+            response = {
+                "shop_id": shop_id,
+                "date": date_str,
+                "total_items": len(stock_list),
+                "reported_stocks": stock_list
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            return {
+                "error": "An error occurred while fetching reported stock data",
+                "details": str(e)
+            }, 500
+
+
+
