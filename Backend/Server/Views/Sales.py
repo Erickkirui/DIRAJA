@@ -57,20 +57,6 @@ from io import BytesIO
 #         # Your endpoint logic here
 #         return jsonify({"message": "Success"})
 
-
-
-def check_role(required_role):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = Users.query.get(current_user_id)
-            if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
@@ -433,6 +419,18 @@ class AddSale(Resource):
                 }
             }, 500
 
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
+
 
 
 class GetSale(Resource):
@@ -650,6 +648,7 @@ class GetSales(Resource):
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": sale.balance,
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -766,6 +765,7 @@ class GetSalesByShop(Resource):
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -840,6 +840,7 @@ class SalesResources(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 "balance": sale.balance,
                 "note": sale.note,
+                "delivery": sale.delivery,
                 "promocode": sale.promocode
             }
 
@@ -1363,6 +1364,7 @@ class GetUnpaidSales(Resource):
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "balance": sale.balance,
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 
@@ -1501,6 +1503,7 @@ class CapturePaymentResource(Resource):
                 "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S') 
                 if isinstance(sale.created_at, datetime) else sale.created_at,
                 "note": sale.note,
+                "delivery": sale.delivery,
                 "promocode": sale.promocode
             }), 200)
 
@@ -1734,6 +1737,7 @@ class GetUnpaidSalesByClerk(Resource):
                         for payment in sale.payment
                     ],
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
             
@@ -1832,6 +1836,7 @@ class SalesByEmployeeResource(Resource):
                     "payment_methods": payment_data,
                     "created_at": sale.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     "note": sale.note,
+                    "delivery": sale.delivery,
                     "promocode": sale.promocode
                 })
 

@@ -52,6 +52,7 @@ const PaymentMethods = ({
                         />
 
                         {/* Discount Field - Always defaults to 0 */}
+                        <h5>Discount Amount (Optional)</h5>
                         <input
                             type="number"
                             className="input"

@@ -104,6 +104,10 @@ import AddTask from './Components/TaskManager/AddTask';
 import UserPendingTasks from './Components/TaskManager/UserPendingTasks';
 import ManualStockReport from './Components/ClerkDashbord/ManualStockReport';
 import StockReconciliationList from './Components/SystemStock/StockReconciliationList';
+import PendingReturns from './Components/Inventory/PendingReturns';
+import PendingReturnsButton from './Components/Inventory/Pendingbutton';
+import PendingSpoiltStock from './Components/SystemStock/PendingSpoilt';
+import PendingSpoiltStockButton from './Components/SystemStock/SpoiltButton';
 import EmployeeProfile from './Components/ClerkDashbord/EmployeeProfile';
 import Settings from './Components/Settings/Settings';
 
@@ -221,6 +225,11 @@ function App() {
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
           <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
           <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
+          <Route path='/pending-returns' element={<Layout><PendingReturns /></Layout>} ></Route>
+          <Route path='/pending-button' element={<Layout><PendingReturnsButton /></Layout>} ></Route>
+          <Route path='/pending-spoilt' element={<Layout><PendingSpoiltStock /></Layout>} ></Route>
+          <Route path='/pending-button' element={<Layout><PendingSpoiltStockButton /></Layout>} ></Route>
+
           <Route path='/profile' element={<ClerkLayout><EmployeeProfile /></ClerkLayout>} ></Route>
           <Route path='/settings' element={<Layout><Settings /></Layout>} ></Route>
         </Routes>

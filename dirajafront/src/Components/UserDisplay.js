@@ -76,24 +76,8 @@ const UserDisplay = () => {
         />
         {showDropdown && (
           <div className="dropdown-menu">
-            <Link to="/" onClick={handleMenuClick}>Home</Link>
-            {role === 'manager' && <Link to="/allinventory" onClick={handleMenuClick}>Inventory</Link>}
-            {role === 'manager' && <Link to="/analytics" onClick={handleMenuClick}>Sales Analytics</Link>}
-            {role === 'manager' && <Link to="/expenses" onClick={handleMenuClick}>Expenses</Link>}
-            {role === 'manager' && <Link to="/mabandapage" onClick={handleMenuClick}>Mabanda farm</Link>}
-            {role === 'manager' && <Link to="/allshops" onClick={handleMenuClick}>Shops</Link>}
-            {role === 'manager' && <Link to="/allcustomers" onClick={handleMenuClick}>Customers</Link>}
-            {role === 'manager' && <Link to="/allemployees" onClick={handleMenuClick}>Employees</Link>}
-            {/* {role === 'manager' && <Link to="/purchases" onClick={handleMenuClick}>Purchases</Link>}
-            {role === 'manager' && <Link to="/alltransfers" onClick={handleMenuClick}>Transfers</Link>} */}
-            {role === 'manager' && <Link to="/shopstock" onClick={handleMenuClick}>Shop Stock</Link>}
-            {role === 'manager' && <Link to="/stockstatus" onClick={handleMenuClick}>System Stock</Link>}
-            {role === 'manager' && <Link to="/archive" onClick={handleMenuClick}>Archive</Link>}
-            {role === 'manager' && <Link to="/deposit" onClick={handleMenuClick}>Deposit</Link>}
+            {role === 'clerk' && <Link to="/clerk" onClick={handleMenuClick}>Home</Link>}
             {role === 'clerk' && <Link to="/profile" onClick={handleMenuClick}>Profile</Link>}
-
-            {/* {role === 'manager' && <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>} */}
-
             {/* Items visible only to clerks of a specific shop */}
             {role === 'clerk' && shopId === "12" && (
               <>
@@ -111,18 +95,11 @@ const UserDisplay = () => {
                   <Link to="/mabandapurchase" onClick={handleMenuClick}>Add Mabanda Purchases</Link>
               </>
             )}
-
-            {(username === 'Leo' || username === 'Support' || username === 'Namai' || username === 'External Auditor') &&  (
-              <>
-                  <Link to="/accounts-balance" onClick={handleMenuClick}>Account Balances</Link>
-              </>
-            )}
-
-            {(username === "External Auditor" || username === 'Leo' || username === 'Dancan') && (
+            {/* {(username === "External Auditor" || username === 'Leo' || username === 'Dancan') && (
               <>
                   <Link to="/allsales" onClick={handleMenuClick}>View Sales</Link>
               </>
-            )}
+            )} */}
 
             <button onClick={handleLogout}>Logout</button>
           </div>

@@ -7,7 +7,7 @@ from sqlalchemy import func, Enum
 
 class StockReconciliation(db.Model):
     __tablename__= "stock_reconciliation"
-
+ 
     id = db.Column(db.Integer, primary_key=True , autoincrement=True)
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))

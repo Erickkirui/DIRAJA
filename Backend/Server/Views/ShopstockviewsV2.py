@@ -8,6 +8,9 @@ from Server.Models.Users import Users
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Expenses import Expenses
+from pywebpush import webpush, WebPushException
+from Server.Models.PushSubscription import PushSubscription
+import json
 from Server.Models.Sales import Sales
 from app import db
 from flask import current_app
@@ -16,8 +19,9 @@ from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-import datetime 
 from datetime import datetime
+import datetime
+import traceback
 from sqlalchemy import func
 
 def check_role(required_role):
@@ -146,124 +150,308 @@ class ShopStockDeleteV2(Resource):
         quantity_to_delete = args['quantity_to_delete']
         itemname = args['itemname']
         reason = args.get('reason')
+        current_user_id = get_jwt_identity()
 
         try:
-            with db.session.begin_nested():
-                # 🔎 Get all batches (include those without inventory links)
-                shop_stocks = (
-                    ShopStockV2.query
-                    .outerjoin(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
-                    .filter(
-                        ShopStockV2.shop_id == shop_id,
-                        ShopStockV2.itemname == itemname
-                    )
-                    .order_by(ShopStockV2.stockv2_id.desc())
-                    .all()
+            # Start a transaction
+            db.session.begin()
+
+            # 🔎 Get all batches (include those without inventory links)
+            shop_stocks = (
+                ShopStockV2.query
+                .outerjoin(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
+                .filter(
+                    ShopStockV2.shop_id == shop_id,
+                    ShopStockV2.itemname == itemname
                 )
+                .order_by(ShopStockV2.stockv2_id.desc())
+                .all()
+            )
 
-                if not shop_stocks:
-                    return {
-                        "error": f"No stock found for item '{itemname}' in shop {shop_id}"
-                    }, 404
+            if not shop_stocks:
+                db.session.rollback()
+                return {
+                    "error": f"No stock found for item '{itemname}' in shop {shop_id}"
+                }, 404
 
-                if quantity_to_delete <= 0:
-                    return {"error": "Quantity to delete must be positive"}, 400
+            if quantity_to_delete <= 0:
+                db.session.rollback()
+                return {"error": "Quantity to delete must be positive"}, 400
 
-                total_available = sum(stock.quantity for stock in shop_stocks)
-                if quantity_to_delete > total_available:
-                    return {
-                        "error": f"Cannot delete {quantity_to_delete} units, "
-                                 f"only {total_available} available across batches"
-                    }, 400
+            total_available = sum(stock.quantity for stock in shop_stocks)
+            if quantity_to_delete > total_available:
+                db.session.rollback()
+                return {
+                    "error": f"Cannot delete {quantity_to_delete} units, "
+                             f"only {total_available} available across batches"
+                }, 400
 
-                deleted_records = []
-                qty_remaining_to_delete = quantity_to_delete
+            deleted_records = []
+            qty_remaining_to_delete = quantity_to_delete
 
-                for shop_stock in shop_stocks:
-                    if qty_remaining_to_delete <= 0:
-                        break
+            for shop_stock in shop_stocks:
+                if qty_remaining_to_delete <= 0:
+                    break
 
-                    delete_qty = min(qty_remaining_to_delete, shop_stock.quantity)
+                # Skip batches with 0 quantity
+                if shop_stock.quantity <= 0:
+                    continue
 
-                    # Get the inventory batch if linked
-                    inventory_item = None
-                    if shop_stock.inventoryv2_id:
-                        inventory_item = InventoryV2.query.get(shop_stock.inventoryv2_id)
+                delete_qty = min(qty_remaining_to_delete, shop_stock.quantity)
 
-                    # Calculate cost per unit (if cost exists)
-                    unit_cost = (
-                        (shop_stock.total_cost or 0) / shop_stock.quantity
-                        if shop_stock.quantity > 0 else 0
-                    )
+                # Only proceed if we're actually deleting something
+                if delete_qty <= 0:
+                    continue
 
-                    # Update shop stock
-                    new_remaining_qty = shop_stock.quantity - delete_qty
-                    new_total_cost = unit_cost * new_remaining_qty
-                    shop_stock.quantity = new_remaining_qty
-                    shop_stock.total_cost = new_total_cost
-                    db.session.add(shop_stock)
+                # Calculate cost per unit (handle division by zero)
+                unit_cost = 0
+                if shop_stock.quantity > 0 and shop_stock.total_cost:
+                    unit_cost = shop_stock.total_cost / shop_stock.quantity
 
-                    # Update inventory only if it exists
-                    if inventory_item:
-                        inventory_item.quantity += delete_qty
-                        db.session.add(inventory_item)
+                # Update shop stock (reduce immediately)
+                new_remaining_qty = shop_stock.quantity - delete_qty
+                new_total_cost = unit_cost * new_remaining_qty
+                
+                # Update the shop stock record
+                shop_stock.quantity = new_remaining_qty
+                shop_stock.total_cost = new_total_cost
 
-                    # Create a return record
-                    return_record = ReturnsV2(
-                        stockv2_id=shop_stock.stockv2_id,
-                        inventoryv2_id=shop_stock.inventoryv2_id,
-                        shop_id=shop_id,
-                        quantity=delete_qty,
-                        returned_by=get_jwt_identity(),
-                        return_date=func.now(),
-                        reason=reason
-                    )
-                    db.session.add(return_record)
+                # Create a PENDING return record
+                return_record = ReturnsV2(
+                    stockv2_id=shop_stock.stockv2_id,
+                    inventoryv2_id=shop_stock.inventoryv2_id,
+                    shop_id=shop_id,
+                    quantity=delete_qty,
+                    returned_by=current_user_id,
+                    return_date=func.now(),
+                    reason=reason,
+                    status="Pending"  # Set as pending for approval
+                )
+                db.session.add(return_record)
 
-                    # Adjust transfer record if exists
-                    transfer = TransfersV2.query.filter_by(
-                        shop_id=shop_id,
-                        inventoryV2_id=shop_stock.inventoryv2_id
-                    ).first()
+                # Adjust transfer record if exists
+                transfer = TransfersV2.query.filter_by(
+                    shop_id=shop_id,
+                    inventoryV2_id=shop_stock.inventoryv2_id
+                ).first()
 
-                    if transfer:
-                        if new_remaining_qty > 0:
-                            transfer.quantity = new_remaining_qty
-                            transfer.total_cost = new_total_cost
-                        else:
-                            transfer.quantity = 0
-                            transfer.total_cost = 0
-                        db.session.add(transfer)
+                if transfer:
+                    if new_remaining_qty > 0:
+                        transfer.quantity = new_remaining_qty
+                        transfer.total_cost = new_total_cost
+                    else:
+                        transfer.quantity = 0
+                        transfer.total_cost = 0
 
-                    deleted_records.append({
-                        "stockv2_id": shop_stock.stockv2_id,
-                        "batch_inventory_id": shop_stock.inventoryv2_id,
-                        "quantity_deleted": delete_qty,
-                        "quantity_remaining": new_remaining_qty,
-                        "total_cost_remaining": new_total_cost
-                    })
+                # Only add to deleted_records if we actually deleted something
+                deleted_records.append({
+                    "stockv2_id": shop_stock.stockv2_id,
+                    "batch_inventory_id": shop_stock.inventoryv2_id,
+                    "quantity_deleted": delete_qty,
+                    "quantity_remaining": new_remaining_qty,
+                    "total_cost_remaining": new_total_cost,
+                    "return_id": return_record.returnv2_id
+                })
 
-                    qty_remaining_to_delete -= delete_qty
+                qty_remaining_to_delete -= delete_qty
 
-                db.session.commit()
+            # Commit all changes
+            db.session.commit()
+
+            # ✅ Send push notification for approval (outside transaction)
+            self.send_return_approval_notification(shop_id, itemname, quantity_to_delete)
 
             return {
-                "message": f"Successfully deleted {quantity_to_delete} units across batches",
-                "deleted_batches": deleted_records
+                "message": f"Return request created for {quantity_to_delete} units. Waiting for approval.",
+                "deleted_batches": deleted_records,
+                "status": "Pending Approval"
             }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
-            current_app.logger.error(f"Database error: {str(e)}")
-            return {"error": "Database error occurred"}, 500
+            current_app.logger.error(f"Database error in ShopStockDeleteV2: {str(e)}")
+            # Log more details for debugging
+            current_app.logger.error(f"Error details: {e.__class__.__name__}, {e.args}")
+            return {"error": f"Database error occurred: {str(e)}"}, 500
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Unexpected error: {str(e)}")
+            current_app.logger.error(f"Unexpected error in ShopStockDeleteV2: {str(e)}")
+            current_app.logger.error(f"Traceback: {traceback.format_exc()}")
             return {"error": "Unexpected error occurred"}, 500
 
+    def send_return_approval_notification(self, shop_id, itemname, quantity):
+        """Send push notification to managers for return approval."""
+        try:
+            subscriptions = PushSubscription.query.filter_by(shop_id=shop_id).all()
+            if not subscriptions:
+                current_app.logger.info(f"No push subscriptions found for shop {shop_id}")
+                return
+
+            vapid_private_key = current_app.config.get("VAPID_PRIVATE_KEY")
+            vapid_email = current_app.config.get("VAPID_EMAIL")
+
+            payload = {
+                "title": "Return Approval Required",
+                "body": f"Return request for {quantity} units of {itemname} needs approval.",
+                "icon": "/logo192.png",
+            }
+
+            for sub in subscriptions:
+                try:
+                    webpush(
+                        subscription_info={
+                            "endpoint": sub.endpoint,
+                            "keys": {
+                                "p256dh": sub.p256dh,
+                                "auth": sub.auth,
+                            },
+                        },
+                        data=json.dumps(payload),
+                        vapid_private_key=vapid_private_key,
+                        vapid_claims={"sub": vapid_email},
+                    )
+                    current_app.logger.info(f"Return approval notification sent to shop {shop_id} subscriber {sub.id}")
+                except WebPushException as e:
+                    current_app.logger.error(f"Push failed for {sub.id}: {repr(e)}")
+                    
+        except Exception as e:
+            current_app.logger.error(f"Notification error: {str(e)}")
+            # Don't fail the main request if notifications fail
 
 
+class ApproveReturn(Resource):
+    @jwt_required()
+    def patch(self, return_id):
+        return_record = ReturnsV2.query.get(return_id)
+        if not return_record:
+            return {'message': 'Return record not found'}, 404
+
+        if return_record.status != "Pending":
+            return {'message': f'Return already {return_record.status.lower()}'}, 400
+
+        try:
+            current_user_id = get_jwt_identity()
+            
+            # ✅ Add stock back to inventory
+            if return_record.inventoryv2_id:
+                inventory_item = InventoryV2.query.get(return_record.inventoryv2_id)
+                if inventory_item:
+                    inventory_item.quantity += return_record.quantity
+                    db.session.add(inventory_item)
+
+            # ✅ Update return status
+            return_record.status = "Approved"
+            return_record.reviewed_by = current_user_id
+            return_record.review_date = datetime.datetime.utcnow()
+
+            db.session.commit()
+
+            return {
+                'message': 'Return approved successfully. Stock returned to inventory.',
+                'return_id': return_record.returnv2_id,
+                'quantity_restored': return_record.quantity
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error approving return', 'error': str(e)}, 500
+
+
+class DeclineReturn(Resource):
+    @jwt_required()
+    def patch(self, return_id):
+        return_record = ReturnsV2.query.get(return_id)
+        if not return_record:
+            return {'message': 'Return record not found'}, 404
+
+        if return_record.status != "Pending":
+            return {'message': f'Return already {return_record.status.lower()}'}, 400
+
+        try:
+            current_user_id = get_jwt_identity()
+            
+            # ✅ Return stock back to shop stock (since we deducted it initially)
+            shop_stock = ShopStockV2.query.get(return_record.stockv2_id)
+            if shop_stock:
+                shop_stock.quantity += return_record.quantity
+                
+                # Recalculate total cost
+                unit_cost = (shop_stock.total_cost or 0) / (shop_stock.quantity - return_record.quantity) if (shop_stock.quantity - return_record.quantity) > 0 else 0
+                shop_stock.total_cost = unit_cost * shop_stock.quantity
+                db.session.add(shop_stock)
+
+            # ✅ Update return status
+            return_record.status = "Declined"
+            return_record.reviewed_by = current_user_id
+            return_record.review_date = datetime.datetime.utcnow()
+
+            db.session.commit()
+
+            return {
+                'message': 'Return declined successfully. Stock returned to shop.',
+                'return_id': return_record.returnv2_id,
+                'quantity_restored_to_shop': return_record.quantity
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error declining return', 'error': str(e)}, 500
+
+
+class GetPendingReturns(Resource):
+    @jwt_required()
+    def get(self, shop_id=None):
+        """Get pending returns, optionally filtered by shop"""
+        try:
+            # Use joins to get related data in a single query
+            query = db.session.query(
+                ReturnsV2,
+                Shops.shopname,
+                Users.username,
+                ShopStockV2.itemname  # Add this to get itemname directly
+            ).join(
+                Shops, ReturnsV2.shop_id == Shops.shops_id, isouter=True
+            ).join(
+                Users, ReturnsV2.returned_by == Users.users_id, isouter=True
+            ).join(
+                ShopStockV2, ReturnsV2.stockv2_id == ShopStockV2.stockv2_id, isouter=True  # Add join to ShopStockV2
+            ).filter(
+                ReturnsV2.status == "Pending"
+            )
+            
+            # Only add this filter if you want to exclude this reason
+            # Remove if you want to see all pending returns
+            # query = query.filter(ReturnsV2.reason != "Reclassified to Broken eggs")
+            
+            if shop_id:
+                query = query.filter(ReturnsV2.shop_id == shop_id)
+            
+            results = query.all()
+            
+            pending_returns = []
+            for ret, shopname, username, itemname in results:  # Add itemname here
+                pending_returns.append({
+                    'return_id': ret.returnv2_id,
+                    'shop_id': ret.shop_id,
+                    'shopname': shopname or "Unknown",
+                    'itemname': itemname or 'Unknown',  # Use the itemname from join
+                    'quantity': ret.quantity,
+                    'reason': ret.reason,
+                    'return_date': ret.return_date.isoformat() if ret.return_date else None,
+                    'returned_by': ret.returned_by,
+                    'returned_by_username': username or "Unknown",
+                    'stockv2_id': ret.stockv2_id,
+                    'inventoryv2_id': ret.inventoryv2_id
+                })
+            
+            return {
+                'pending_returns': pending_returns
+            }, 200
+            
+        except Exception as e:
+            current_app.logger.error(f"Error fetching pending returns: {str(e)}")
+            return {'message': 'Error fetching pending returns', 'error': str(e)}, 500
 
 class GetShopStockV2(Resource):
     @jwt_required()

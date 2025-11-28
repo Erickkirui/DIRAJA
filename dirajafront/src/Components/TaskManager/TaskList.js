@@ -28,7 +28,14 @@ const TasksList = () => {
         },
       });
 
-      setTasks(response.data || []);
+      // ✅ ORDER BY NEWEST FIRST: Sort by assigned_date descending
+      const sortedTasks = (response.data || []).sort((a, b) => {
+        const dateA = new Date(a.assigned_date || 0);
+        const dateB = new Date(b.assigned_date || 0);
+        return dateB - dateA; // Newest first
+      });
+
+      setTasks(sortedTasks);
       setLoading(false);
     } catch (err) {
       console.error('Error fetching tasks:', err);
@@ -158,7 +165,7 @@ const TasksList = () => {
           </span>
         );
       },
-},
+    },
 
     {
       header: "Status",
