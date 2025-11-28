@@ -55,29 +55,46 @@ function Navbar({ onMenuItemClick }) {
 
   useEffect(() => {
     fetchUserPermissions();
+    
+    // Set up a listener for page refresh/visibility change
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible (refreshed or tab activated)
+        fetchUserPermissions();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup event listener
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const fetchUserPermissions = async () => {
-    // Check if permissions are already stored in localStorage
-    const storedPermissions = localStorage.getItem('user_permissions');
-    
-    if (storedPermissions) {
-      try {
-        const parsedPermissions = JSON.parse(storedPermissions);
-        // Compare and update permissions with all available modules
-        const updatedPermissions = compareAndUpdatePermissions(parsedPermissions);
-        setPermissions(updatedPermissions);
-      } catch (error) {
-        console.error('Error parsing stored permissions:', error);
-        // If parsing fails, fetch fresh permissions
-        await fetchPermissionsFromAPI();
-      }
-    } else {
-      // If not stored, fetch from API
+    try {
+      setLoading(true);
       await fetchPermissionsFromAPI();
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      // Fallback to localStorage if API fails
+      const storedPermissions = localStorage.getItem('user_permissions');
+      if (storedPermissions) {
+        try {
+          const parsedPermissions = JSON.parse(storedPermissions);
+          const updatedPermissions = compareAndUpdatePermissions(parsedPermissions);
+          setPermissions(updatedPermissions);
+        } catch (parseError) {
+          console.error('Error parsing stored permissions:', parseError);
+          setPermissions(allModules);
+        }
+      } else {
+        setPermissions(allModules);
+      }
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
   };
 
   const fetchPermissionsFromAPI = async () => {
@@ -100,17 +117,15 @@ function Navbar({ onMenuItemClick }) {
         // Store updated permissions in localStorage
         localStorage.setItem('user_permissions', JSON.stringify(updatedPermissions));
         setPermissions(updatedPermissions);
+        
+        console.log('Permissions updated from API');
+        return updatedPermissions;
       } else {
-        console.error('Failed to fetch permissions:', response.status);
-        // Use all modules with false permissions if API fails
-        setPermissions(allModules);
-        localStorage.setItem('user_permissions', JSON.stringify(allModules));
+        throw new Error(`Failed to fetch permissions: ${response.status}`);
       }
     } catch (error) {
-      console.error('Error fetching permissions:', error);
-      // Use all modules with false permissions on error
-      setPermissions(allModules);
-      localStorage.setItem('user_permissions', JSON.stringify(allModules));
+      console.error('Error fetching permissions from API:', error);
+      throw error;
     }
   };
 
@@ -137,41 +152,9 @@ function Navbar({ onMenuItemClick }) {
     return updatedPermissions;
   };
 
-  // Function to get newly added modules (modules in allModules but not in current permissions)
-  const getNewModules = (currentPermissions) => {
-    const newModules = {};
-    
-    Object.keys(allModules).forEach(module => {
-      if (!currentPermissions || !currentPermissions.hasOwnProperty(module)) {
-        newModules[module] = allModules[module];
-      }
-    });
-    
-    return newModules;
-  };
-
-  // Function to get removed modules (modules in current permissions but not in allModules)
-  const getRemovedModules = (currentPermissions) => {
-    const removedModules = {};
-    
-    if (currentPermissions) {
-      Object.keys(currentPermissions).forEach(module => {
-        if (!allModules.hasOwnProperty(module)) {
-          removedModules[module] = currentPermissions[module];
-        }
-      });
-    }
-    
-    return removedModules;
-  };
-
   // Function to refresh permissions (can be called from other components)
   const refreshPermissions = async () => {
-    setLoading(true);
-    // Clear cached permissions and fetch fresh ones
-    localStorage.removeItem('user_permissions');
-    await fetchPermissionsFromAPI();
-    setLoading(false);
+    await fetchUserPermissions();
   };
 
   // Function to update permissions in localStorage and state
@@ -213,33 +196,6 @@ function Navbar({ onMenuItemClick }) {
       return false; // No update needed
     } catch (error) {
       console.error('Error checking permissions:', error);
-      return false;
-    }
-  };
-
-  // Function to sync permissions with server (useful when modules change)
-  const syncPermissionsWithServer = async () => {
-    try {
-      const response = await fetch(`/api/diraja/permissions/user/${userId}`, {
-        method: 'PUT', // or POST depending on your API
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          permissions: compareAndUpdatePermissions(permissions)
-        })
-      });
-
-      if (response.ok) {
-        console.log('Permissions synced with server successfully');
-        return true;
-      } else {
-        console.error('Failed to sync permissions with server');
-        return false;
-      }
-    } catch (error) {
-      console.error('Error syncing permissions with server:', error);
       return false;
     }
   };

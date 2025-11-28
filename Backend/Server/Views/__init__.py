@@ -166,7 +166,7 @@ from Server.Views.CookedItemsView import  (
     AddCookedItems
 )
 from Server.Views.credirors import (
-    CreateCreditor,CreditorsList,SingleCreditor
+    CreateCreditor,CreditorsList,SingleCreditor,CreditorsByShop
 )
 from Server.Views.Permissions import (
     GetAllPermissions,GetUserPermissions,UpdateUserPermissions
@@ -487,6 +487,8 @@ api.add_resource(CompleteTask, '/<int:task_id>/complete')
 api.add_resource(CreateCreditor, '/add-creditors')
 api.add_resource(CreditorsList, '/creditors')
 api.add_resource(SingleCreditor, '/creditors/<int:creditor_id>')
+api.add_resource(CreditorsByShop, '/creditors/shop/<int:shop_id>')
+
 
 
 #permissions 

@@ -19,9 +19,11 @@ const SingleShopSale = () => {
         customer_name: '',
         customer_number: '',
         status: '',
-        sale_date: dayjs().format('YYYY-MM-DD'), // Set default to current date
+        sale_date: dayjs().format('YYYY-MM-DD'),
         payment_methods: [{ method: '', amount: '', transaction_code: '' }],
         promocode: '',
+        delivery: false,
+        creditor_id: '', // Creditor field
         items: [{
             item_name: '',
             quantity: '',
@@ -36,6 +38,7 @@ const SingleShopSale = () => {
         }]
     });
     const [availableItems, setAvailableItems] = useState([]);
+    const [creditors, setCreditors] = useState([]);
     const [message, setMessage] = useState('');
     const [messageType, setMessageType] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +53,23 @@ const SingleShopSale = () => {
 
     // Check if customer details should be shown
     const shouldShowCustomerDetails = formData.status === 'unpaid' || formData.status === 'partially_paid';
+
+    // Check if creditor field should be shown (for credit sales)
+    const shouldShowCreditorField = formData.status === 'unpaid' || formData.status === 'partially_paid';
+
+    // Fetch creditors for the shop
+    const fetchCreditors = async () => {
+        try {
+            const response = await axios.get(`api/diraja/creditors/shop/${formData.shop_id}`, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+            });
+            setCreditors(response.data.creditors || []);
+        } catch (error) {
+            console.error('Error fetching creditors:', error);
+            setMessageType('error');
+            setMessage('Error fetching creditors list.');
+        }
+    };
 
     useEffect(() => {
         const fetchItems = async () => {
@@ -72,7 +92,19 @@ const SingleShopSale = () => {
             }
         };
         fetchItems();
+        
+        // Fetch creditors when component mounts
+        if (formData.shop_id) {
+            fetchCreditors();
+        }
     }, [formData.shop_id]);
+
+    // Fetch creditors when status changes to unpaid or partially paid
+    useEffect(() => {
+        if (shouldShowCreditorField && formData.shop_id) {
+            fetchCreditors();
+        }
+    }, [formData.status, formData.shop_id]);
 
     useEffect(() => {
         const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
@@ -196,16 +228,47 @@ const SingleShopSale = () => {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData({ ...formData, [name]: value });
+        const { name, value, type, checked } = e.target;
+        
+        if (name === 'creditor_id') {
+            // Handle creditor selection - auto-populate customer details
+            if (value) {
+                const selectedCreditor = creditors.find(creditor => creditor.id.toString() === value);
+                if (selectedCreditor) {
+                    setFormData(prev => ({
+                        ...prev,
+                        creditor_id: value,
+                        customer_name: selectedCreditor.name,
+                        customer_number: selectedCreditor.phone_number || ''
+                    }));
+                }
+            } else {
+                // Clear creditor and customer details if no creditor selected
+                setFormData(prev => ({
+                    ...prev,
+                    creditor_id: '',
+                    customer_name: '',
+                    customer_number: ''
+                }));
+            }
+        } else if (type === 'checkbox') {
+            // Handle checkbox inputs
+            setFormData({ ...formData, [name]: checked });
+        } else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
-      // Prevent wheel/touchpad scrolling from changing number inputs
+
+    // Prevent wheel/touchpad scrolling from changing number inputs
     const handleWheel = (e) => {
         e.target.blur();
     };
 
     const handleDateChange = (date, dateString) => {
-        setFormData({ ...formData, sale_date: dateString });
+        setFormData({ 
+            ...formData, 
+            sale_date: dateString || dayjs().format('YYYY-MM-DD')
+        });
     };
 
     const handlePaymentChange = (index, field, value) => {
@@ -245,6 +308,33 @@ const SingleShopSale = () => {
         setMessage('');
         
         // Validation
+        if (!formData.sale_date) {
+            setMessageType('error');
+            setMessage('Sale date is required');
+            setIsLoading(false);
+            return;
+        }
+
+        // FIXED: Allow both unpaid and partially paid status for creditor sales
+        // Additional validation for creditor sales
+        if (formData.creditor_id) {
+            if (!formData.customer_name.trim()) {
+                setMessageType('error');
+                setMessage('Customer name is required for creditor sales');
+                setIsLoading(false);
+                return;
+            }
+            
+            // FIXED: Remove the restriction that only allows "unpaid" status for creditors
+            // Both unpaid and partially paid are allowed for creditor sales
+            if (formData.status !== 'unpaid' && formData.status !== 'partially_paid') {
+                setMessageType('error');
+                setMessage('Creditor sales must have status "unpaid" or "partially paid"');
+                setIsLoading(false);
+                return;
+            }
+        }
+
         for (const item of formData.items) {
             if (!item.item_name || item.quantity === '' || !item.unit_price) {
                 setMessageType('error');
@@ -269,19 +359,21 @@ const SingleShopSale = () => {
         // Calculate balance according to business rules
         let balance;
         if (totalAmountPaid === 0) {
-            // If amount is 0, balance equals the estimated cost
             balance = grandTotal;
         } else {
-            // Otherwise balance is the difference between estimated cost and amount paid
             balance = Math.max(0, grandTotal - totalAmountPaid);
         }
 
-        // Prepare data for submission with explicit balance
+        // Prepare data for submission with creditor_id included
         const formDataToSubmit = { 
             ...formData,
-            balance: balance, // Explicitly set the balance
-            estimated_cost: grandTotal, // Include estimated_cost at root level
-            total_amount_paid: totalAmountPaid, // Include total amount paid
+            sale_date: formData.sale_date || dayjs().format('YYYY-MM-DD'),
+            balance: balance,
+            estimated_cost: grandTotal,
+            total_amount_paid: totalAmountPaid,
+            // Ensure creditor_id is included in the submission (empty string if not selected)
+            creditor_id: formData.creditor_id || null,
+            delivery: formData.delivery, // Include delivery status
             items: formData.items.map(item => {
                 const stockItem = stockItems.find(si => si.item_name === item.item_name);
                 return {
@@ -291,10 +383,8 @@ const SingleShopSale = () => {
                         : parseFloat(item.quantity),
                     metric: item.metric,
                     unit_price: parseFloat(item.unit_price),
-                    total_price: parseFloat(item.estimated_cost),
-                    estimated_cost: parseFloat(item.estimated_cost), // Include estimated_cost per item
                     total_price: parseFloat(item.total_price),
-                    estimated_cost: parseFloat(item.estimated_cost) // Include estimated_cost per item
+                    estimated_cost: parseFloat(item.estimated_cost)
                 };
             }),
             payment_methods: formData.payment_methods.map(payment => ({
@@ -322,9 +412,11 @@ const SingleShopSale = () => {
                     customer_name: '',
                     customer_number: '',
                     status: '',
-                    sale_date: dayjs().format('YYYY-MM-DD'), // Reset to current date
+                    sale_date: dayjs().format('YYYY-MM-DD'),
                     payment_methods: [{ method: '', amount: '', transaction_code: '' }],
                     promocode: '',
+                    delivery: false, // Reset delivery to false
+                    creditor_id: '', // Reset creditor field
                     items: [{
                         item_name: '',
                         quantity: '',
@@ -360,7 +452,6 @@ const SingleShopSale = () => {
             <h1>Record Sales</h1>
             <form onSubmit={handleSubmit} className="clerk-sale">
                
-                
                 <h5>Sold Items</h5>
                 {formData.items.map((item, itemIndex) => {
                     const selectedStockItem = stockItems.find(stockItem => 
@@ -460,6 +551,21 @@ const SingleShopSale = () => {
                         format="YYYY-MM-DD"
                     />
                 </Form.Item>
+
+                {/* Delivery Checkbox */}
+                <div className="form-field-group">
+                    <div className="delivery-checkbox">
+                        <label>
+                            <input 
+                                type="checkbox" 
+                                name="delivery"
+                                checked={formData.delivery}
+                                onChange={handleChange}
+                            />
+                            <span> Delivery Sale</span>
+                        </label>
+                    </div>
+                </div>
                 
                 <select 
                     name="status" 
@@ -472,8 +578,30 @@ const SingleShopSale = () => {
                     <option value="paid">Paid</option>
                     <option value="partially_paid">Partially paid</option>
                 </select>
-                 {/* Customer Details - Conditionally Rendered */}
                  
+                {/* Creditor Dropdown - Conditionally Rendered for Unpaid/Partially Paid Sales */}
+                {shouldShowCreditorField && (
+                    <>
+                        <h5>Select Creditor</h5>
+                        <select 
+                            name="creditor_id" 
+                            value={formData.creditor_id} 
+                            onChange={handleChange}
+                        >
+                            <option value="">Select Creditor (Optional)</option>
+                            {creditors.map((creditor) => (
+                                <option key={creditor.id} value={creditor.id}>
+                                    {creditor.name} - {creditor.phone_number} 
+                                    {creditor.credit_amount > 0 && 
+                                        ` (Credit: Ksh ${creditor.credit_amount.toFixed(2)})`
+                                    }
+                                </option>
+                            ))}
+                        </select>
+                    </>
+                )}
+
+                {/* Customer Details - Conditionally Rendered */}
                 {shouldShowCustomerDetails && (
                     <>
                         <h5>Customer Details</h5>
@@ -482,6 +610,7 @@ const SingleShopSale = () => {
                             value={formData.customer_name} 
                             onChange={handleChange} 
                             placeholder="Customer Name" 
+                            required={!!formData.creditor_id} // Required if creditor is selected
                         />
                         <input 
                             name="customer_number" 
