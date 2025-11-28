@@ -174,3 +174,36 @@ class SingleCreditor(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 400
+
+
+class CreditorsByShop(Resource):
+    @jwt_required()
+    def get(self, shop_id):
+        try:
+            creditors = Creditors.query.filter_by(shop_id=shop_id).all()
+
+            if not creditors:
+                return {
+                    "message": "No creditors found for this shop.",
+                    "creditors": [],
+                    "count": 0
+                }, 200
+
+            creditors_list = []
+            for creditor in creditors:
+                creditors_list.append({
+                    "id": creditor.id,
+                    "name": creditor.name,
+                    "shop_id": creditor.shop_id,
+                    "total_credit": creditor.total_credit,
+                    "credit_amount": creditor.credit_amount,
+                    "phone_number": creditor.phone_number
+                })
+
+            return {
+                "creditors": creditors_list,
+                "count": len(creditors_list)
+            }, 200
+
+        except Exception as e:
+            return {"error": str(e)}, 400

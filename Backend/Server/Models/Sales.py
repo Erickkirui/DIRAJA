@@ -16,6 +16,7 @@ class Sales(db.Model):
     note = db.Column(db.String(50))
     promocode = db.Column(db.String(70), nullable=True)
     delivery = db.Column(db.Boolean, default=True, nullable=False)
+    
 
     # Relationships
     users = db.relationship('Users', backref='sales', lazy=True)

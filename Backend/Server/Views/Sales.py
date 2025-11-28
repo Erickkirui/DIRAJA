@@ -23,6 +23,7 @@ from datetime import datetime
 from sqlalchemy.exc import SQLAlchemyError
 from flask import jsonify, request, Response
 from functools import wraps
+from Server.Models.Creditors import Creditors
 from datetime import datetime, timedelta
 from Server.Models.Transactions import TranscationType
 from Server.Models.BankAccounts import BankAccount
@@ -56,20 +57,6 @@ from io import BytesIO
 #         # Your endpoint logic here
 #         return jsonify({"message": "Success"})
 
-
-
-def check_role(required_role):
-    def wrapper(fn):
-        @wraps(fn)
-        def decorator(*args, **kwargs):
-            current_user_id = get_jwt_identity()
-            user = Users.query.get(current_user_id)
-            if user and user.role != required_role:
-                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
-            return fn(*args, **kwargs)
-        return decorator
-    return wrapper
-
 class AddSale(Resource):
     @jwt_required()
     def post(self):
@@ -94,7 +81,8 @@ class AddSale(Resource):
             promocode = data.get('promocode', '')
             status = data['status'].lower()
             balance = float(data.get('balance', 0))
-            delivery = bool(data.get('delivery', 0))  # Convert to boolean, default to False (0)
+            delivery = bool(data.get('delivery', 0))
+            creditor_id = data.get('creditor_id')  # Get creditor_id if provided
             created_at = datetime.strptime(data['sale_date'], "%Y-%m-%d") if 'sale_date' in data else datetime.utcnow()
 
             if not isinstance(data['items'], list) or not data['items']:
@@ -131,6 +119,22 @@ class AddSale(Resource):
 
         except (ValueError, KeyError, TypeError) as e:
             return {'message': f'Invalid data format: {str(e)}'}, 400
+
+        # ===== CREDITOR VALIDATION =====
+        creditor = None
+        if creditor_id:
+            try:
+                creditor_id = int(creditor_id)
+                creditor = Creditors.query.filter_by(id=creditor_id, shop_id=shop_id).first()
+                if not creditor:
+                    return {'message': f'Creditor with ID {creditor_id} not found for this shop'}, 404
+                
+                # If creditor exists, ensure status is appropriate for credit sale
+                if status not in ["unpaid", "partially_paid"]:
+                    return {'message': 'Creditor sales must have status "unpaid" or "partially paid"'}, 400
+                    
+            except (ValueError, TypeError):
+                return {'message': 'Invalid creditor ID format'}, 400
 
         # ===== PAYMENT METHOD VALIDATION =====
         if status != "unpaid":
@@ -258,13 +262,25 @@ class AddSale(Resource):
                 customer_name=data['customer_name'],
                 customer_number=data['customer_number'],
                 status=status,
-                delivery=delivery,  # Add delivery field here
+                delivery=delivery,
                 created_at=created_at,
                 balance=balance,
-                promocode=promocode
+                promocode=promocode,
+              
             )
             db.session.add(new_sale)
             db.session.flush()
+
+            # ===== CREDITOR BALANCE UPDATE =====
+            if creditor:
+                # Calculate total sale amount
+                total_sale_amount = sum(float(item['total_price']) for item in sold_items)
+                
+                # Update creditor balances
+                creditor.total_credit = (creditor.total_credit or 0) + total_sale_amount
+                creditor.credit_amount = (creditor.credit_amount or 0) + total_sale_amount
+                
+                db.session.add(creditor)
 
             for item in sold_items:
                 total_price = float(item['total_price'])
@@ -351,7 +367,7 @@ class AddSale(Resource):
 
             db.session.commit()
 
-            return {
+            response_data = {
                 'message': 'Sale processed successfully',
                 'sale_id': new_sale.sales_id,
                 'financial': {
@@ -373,8 +389,21 @@ class AddSale(Resource):
                     'sasapay_deposits': sasapay_deposits or "No SASAPAY deposits processed",
                     'discounts_applied': [{'method': pm['method'], 'discount': float(pm.get('discount', 0))} for pm in payment_methods]
                 },
-                'delivery': delivery  # Include delivery status in response
-            }, 201
+                'delivery': delivery
+            }
+
+            # Add creditor information to response if applicable
+            if creditor:
+                response_data['creditor'] = {
+                    'creditor_id': creditor.id,
+                    'creditor_name': creditor.name,
+                    'previous_total_credit': creditor.total_credit - sum(float(item['total_price']) for item in sold_items),
+                    'new_total_credit': creditor.total_credit,
+                    'previous_credit_amount': creditor.credit_amount - sum(float(item['total_price']) for item in sold_items),
+                    'new_credit_amount': creditor.credit_amount
+                }
+
+            return response_data, 201
 
         except Exception as e:
             db.session.rollback()
@@ -385,10 +414,22 @@ class AddSale(Resource):
                     'sale_id': new_sale.sales_id if new_sale else "Not created",
                     'processed_payments': [pm['method'] for pm in payment_methods],
                     'sasapay_attempts': sasapay_deposits,
-                    'delivery': delivery
+                    'delivery': delivery,
+                    'creditor_id': creditor_id
                 }
             }, 500
 
+def check_role(required_role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorator(*args, **kwargs):
+            current_user_id = get_jwt_identity()
+            user = Users.query.get(current_user_id)
+            if user and user.role != required_role:
+                 return make_response( jsonify({"error": "Unauthorized access"}), 403 )       
+            return fn(*args, **kwargs)
+        return decorator
+    return wrapper
 
 
 
