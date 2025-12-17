@@ -389,4 +389,16 @@ select:focus{
     padding: 16px;
     margin-bottom: 16px;
     background-color: #fff;
+
+}
+.nav-button{
+  background-color: #fff;
+  border: 1px solid var(--primary);
+  padding: 10px;
+  border-radius: 4px;
+}
+.nav-button-group{
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }

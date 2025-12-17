@@ -110,6 +110,7 @@ import PendingSpoiltStock from './Components/SystemStock/PendingSpoilt';
 import PendingSpoiltStockButton from './Components/SystemStock/SpoiltButton';
 import EmployeeProfile from './Components/ClerkDashbord/EmployeeProfile';
 import Settings from './Components/Settings/Settings';
+import ReportStockProcess from './Pages/ReportStockProcess';
 
 function App() {
   return (
@@ -223,7 +224,7 @@ function App() {
           <Route path='/creditors' element={<Layout><CreditorPage /></Layout>}></Route>
           <Route path='/pending-tasks' element={<Layout><UserPendingTasks /></Layout>}></Route>
           <Route path='/pending-clerk-tasks' element={<ClerkLayout><UserPendingTasks /></ClerkLayout>}></Route>
-          <Route path='/report-stock-page' element={<ClerkLayout><ManualStockReport /></ClerkLayout>} ></Route>
+          <Route path='/report-stock-page' element={<ClerkLayout><ReportStockProcess /></ClerkLayout>} ></Route>
           <Route path='/reconciliation' element={<Layout><StockReconciliationList /></Layout>} ></Route>
           <Route path='/pending-returns' element={<Layout><PendingReturns /></Layout>} ></Route>
           <Route path='/pending-button' element={<Layout><PendingReturnsButton /></Layout>} ></Route>
