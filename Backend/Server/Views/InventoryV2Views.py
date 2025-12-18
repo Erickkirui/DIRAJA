@@ -950,32 +950,52 @@ class InventoryResourceByIdV2(Resource):
 
         if not inventory:
             return {"error": "Inventory not found"}, 404
-        
-        try:
-            # Check what the actual foreign key column name is in your models
-            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
-            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            # Check what the actual foreign key column name is in your models
-            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
-            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            for transfer in transfers:
-                db.session.delete(transfer)
-            
-            # Check what the actual foreign key column name is in your models
-            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            # Check what the actual foreign key column name is in your models
-            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            for stock in shop_stocks:
-                db.session.delete(stock)
 
-            db.session.delete(inventory)
+        try:
+            # Delete transfer records (FK: inventoryV2_id)
+            try:
+                transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+                for transfer in transfers:
+                    db.session.delete(transfer)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting transfer records",
+                    "error": str(e),
+                    "hint": "Check TransfersV2 model foreign key. Should be 'inventoryV2_id'."
+                }, 500
+
+            # Delete shop stock records (FK: inventoryv2_id)
+            try:
+                shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
+                for stock in shop_stocks:
+                    db.session.delete(stock)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting shop stock records",
+                    "error": str(e),
+                    "hint": "Check ShopStockV2 model foreign key. Should be 'inventoryv2_id'."
+                }, 500
+
+            # Delete inventory itself
+            try:
+                db.session.delete(inventory)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting inventory record",
+                    "error": str(e)
+                }, 500
+
+            # Commit the transaction
             db.session.commit()
 
             return {"message": "Inventory deleted successfully"}, 200
-        
+
         except Exception as e:
             db.session.rollback()
-            return {"message": "Error deleting inventory", "error": str(e)}, 500
+            return {
+                "message": "General error while deleting inventory",
+                "error": str(e)
+            }, 500
 
     @jwt_required()
     def put(self, inventoryV2_id):
