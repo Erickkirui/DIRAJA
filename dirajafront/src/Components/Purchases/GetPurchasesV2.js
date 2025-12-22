@@ -183,6 +183,16 @@ const PurchasesV2 = () => {
       key: 'quantity',
       render: (purchase) => purchase.displayQuantity || `${purchase.quantity} ${purchase.metric}`
     },
+    {
+      header: 'Receive Quantity',
+      key: 'quantity',
+      render: (purchase) => purchase.displayQuantity || `${purchase.received_quantity} ${purchase.metric}`
+    },
+    {
+      header: 'Difference',
+      key: 'quantity',
+      render: (purchase) => purchase.displayQuantity || `${purchase.difference} ${purchase.metric}`
+    },
     // { header: 'Unit Cost (Ksh)', key: 'unitCost' },
     // { header: 'Total Cost (Ksh)', key: 'total_cost' },
     // { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
