@@ -1429,6 +1429,9 @@ class CapturePaymentResource(Resource):
             sale = Sales.query.filter_by(sales_id=sale_id).first()
             if not sale:
                 return {"message": "Sale not found"}, 404
+            
+            # FUNCTION: Check if customer exists in Creditors and deduct from credit if needed
+            self.deduct_from_creditor_if_exists(sale.customer_name, amount_paid, sale.shop_id)
 
             # Remove the "not payed" record if it exists
             unpaid_payment = SalesPaymentMethods.query.filter_by(
@@ -1511,6 +1514,65 @@ class CapturePaymentResource(Resource):
             db.session.rollback()
             return {"error": str(e)}, 500
 
+    def deduct_from_creditor_if_exists(self, customer_name, amount_paid, shop_id):
+        """
+        Check if customer exists in Creditors table and deduct payment from their credit amount.
+        
+        Args:
+            customer_name (str): Name of the customer to search for
+            amount_paid (float): Amount paid to deduct from creditor's credit
+            shop_id (int): Shop ID to match the correct creditor record
+        """
+        try:
+            # Search for creditor by name and shop_id (case-insensitive)
+            creditor = Creditors.query.filter(
+                func.lower(Creditors.name) == func.lower(customer_name),
+                Creditors.shop_id == shop_id
+            ).first()
+            
+            if creditor:
+                # Check if creditor has available credit
+                if creditor.credit_amount and creditor.credit_amount > 0:
+                    # Calculate how much can be deducted (min of amount_paid and available credit)
+                    deduction_amount = min(amount_paid, creditor.credit_amount)
+                    
+                    # Deduct from credit_amount
+                    creditor.credit_amount -= deduction_amount
+                    
+                    # Ensure credit_amount doesn't go below 0
+                    creditor.credit_amount = max(0, creditor.credit_amount)
+                    
+                    # Log the deduction (optional - you might want to create a transaction log)
+                    print(f"Deducted {deduction_amount} from creditor {creditor.name}. "
+                          f"Remaining credit: {creditor.credit_amount}")
+                    
+                    return {
+                        "success": True,
+                        "creditor_name": creditor.name,
+                        "amount_deducted": deduction_amount,
+                        "remaining_credit": creditor.credit_amount,
+                        "shop_id": shop_id
+                    }
+                else:
+                    print(f"Creditor {creditor.name} exists but has no available credit.")
+                    return {
+                        "success": False,
+                        "message": "No available credit",
+                        "creditor_name": creditor.name
+                    }
+            else:
+                print(f"No creditor found with name '{customer_name}' in shop {shop_id}")
+                return {
+                    "success": False,
+                    "message": "Creditor not found"
+                }
+                
+        except Exception as e:
+            print(f"Error deducting from creditor: {str(e)}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
 
 
 class CreditHistoryResource(Resource):
