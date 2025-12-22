@@ -35,20 +35,49 @@ const TotalPaidSales = () => {
     try {
       setLoading(true);
       
-      let params = {};
+      let startDate, endDate;
+      const today = dayjs();
       
+      // Calculate date range based on period
       if (period === 'custom') {
         if (dateRange.startDate && dateRange.endDate) {
-          const formattedStart = format(dateRange.startDate, 'yyyy-MM-dd');
-          const formattedEnd = format(dateRange.endDate, 'yyyy-MM-dd');
-          params = { 
-            start_date: formattedStart, 
-            end_date: formattedEnd 
-          };
+          startDate = dayjs(dateRange.startDate);
+          endDate = dayjs(dateRange.endDate);
+        } else {
+          // Fallback to yesterday if custom dates not set
+          startDate = today.subtract(1, 'day').startOf('day');
+          endDate = today.subtract(1, 'day').endOf('day');
         }
       } else {
-        params = { period };
+        switch (period) {
+          case "today":
+            startDate = today.startOf('day');
+            endDate = today.endOf('day');
+            break;
+          case "yesterday":
+            startDate = today.subtract(1, 'day').startOf('day');
+            endDate = today.subtract(1, 'day').endOf('day');
+            break;
+          case "week":
+            // Last 7 days (including today)
+            startDate = today.subtract(6, 'day').startOf('day');
+            endDate = today.endOf('day');
+            break;
+          case "month":
+            // Last 30 days (including today)
+            startDate = today.subtract(29, 'day').startOf('day');
+            endDate = today.endOf('day');
+            break;
+          default:
+            startDate = today.subtract(1, 'day').startOf('day');
+            endDate = today.subtract(1, 'day').endOf('day');
+        }
       }
+      
+      const params = {
+        start_date: startDate.format('YYYY-MM-DD'),
+        end_date: endDate.format('YYYY-MM-DD')
+      };
 
       const response = await axios.get('/api/diraja/totalsalespershop', {
         params,
@@ -98,39 +127,48 @@ const TotalPaidSales = () => {
   // ------------------- Fetch Category Summary -------------------
   const fetchCategorySummary = async () => {
     try {
-      let start, end;
-
-      if (period === "custom" && dateRange.startDate && dateRange.endDate) {
-        start = dayjs(dateRange.startDate);
-        end = dayjs(dateRange.endDate);
+      let startDate, endDate;
+      const today = dayjs();
+      
+      // Calculate date range based on period (same logic as fetchShopSales)
+      if (period === 'custom') {
+        if (dateRange.startDate && dateRange.endDate) {
+          startDate = dayjs(dateRange.startDate);
+          endDate = dayjs(dateRange.endDate);
+        } else {
+          startDate = today.subtract(1, 'day').startOf('day');
+          endDate = today.subtract(1, 'day').endOf('day');
+        }
       } else {
         switch (period) {
           case "today":
-            start = dayjs();
-            end = dayjs();
+            startDate = today.startOf('day');
+            endDate = today.endOf('day');
             break;
           case "yesterday":
-            start = dayjs().subtract(1, "day");
-            end = dayjs().subtract(1, "day");
+            startDate = today.subtract(1, 'day').startOf('day');
+            endDate = today.subtract(1, 'day').endOf('day');
             break;
           case "week":
-            start = dayjs().startOf("week");
-            end = dayjs().endOf("week");
+            // Last 7 days (including today)
+            startDate = today.subtract(6, 'day').startOf('day');
+            endDate = today.endOf('day');
             break;
           case "month":
-            start = dayjs().startOf("month");
-            end = dayjs().endOf("month");
+            // Last 30 days (including today)
+            startDate = today.subtract(29, 'day').startOf('day');
+            endDate = today.endOf('day');
             break;
           default:
-            start = dayjs().subtract(1, "day");
-            end = dayjs().subtract(1, "day");
+            startDate = today.subtract(1, 'day').startOf('day');
+            endDate = today.subtract(1, 'day').endOf('day');
         }
       }
 
       const response = await axios.get("/api/diraja/category-earnings-summary", {
         params: {
-          start: start.format("YYYY-MM-DD"),
-          end: end.format("YYYY-MM-DD"),
+          start: startDate.format("YYYY-MM-DD"),
+          end: endDate.format("YYYY-MM-DD"),
         },
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
@@ -148,6 +186,41 @@ const TotalPaidSales = () => {
     }
   };
 
+  // ------------------- Update Date Range When Period Changes -------------------
+  useEffect(() => {
+    const today = dayjs();
+    let newStartDate, newEndDate;
+
+    switch (period) {
+      case "today":
+        newStartDate = today.startOf('day').toDate();
+        newEndDate = today.endOf('day').toDate();
+        break;
+      case "yesterday":
+        newStartDate = today.subtract(1, 'day').startOf('day').toDate();
+        newEndDate = today.subtract(1, 'day').endOf('day').toDate();
+        break;
+      case "week":
+        // Last 7 days (including today)
+        newStartDate = today.subtract(6, 'day').startOf('day').toDate();
+        newEndDate = today.endOf('day').toDate();
+        break;
+      case "month":
+        // Last 30 days (including today)
+        newStartDate = today.subtract(29, 'day').startOf('day').toDate();
+        newEndDate = today.endOf('day').toDate();
+        break;
+      default:
+        // For custom, keep existing dates
+        return;
+    }
+
+    setDateRange({
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  }, [period]);
+
   // ------------------- Handle Date Range Change -------------------
   const handleDateRangeChange = (dates, dateStrings) => {
     if (dates && dates[0] && dates[1]) {
@@ -156,7 +229,7 @@ const TotalPaidSales = () => {
         endDate: dates[1].toDate(),
       });
     } else {
-      // Reset to default if cleared
+      // Reset to yesterday if cleared
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(today.getDate() - 1);
@@ -179,6 +252,34 @@ const TotalPaidSales = () => {
   const formatCurrency = (value) =>
     new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES', minimumFractionDigits: 2 }).format(value);
 
+  // ------------------- Get Date Range Display -------------------
+  const getDateRangeDisplay = () => {
+    if (period === 'custom') {
+      if (dateRange.startDate && dateRange.endDate) {
+        return `${format(dateRange.startDate, 'MMM dd, yyyy')} - ${format(dateRange.endDate, 'MMM dd, yyyy')}`;
+      }
+      return 'Custom Date Range';
+    }
+    
+    const today = dayjs();
+    
+    switch (period) {
+      case 'today':
+        return `Today (${format(today.toDate(), 'MMM dd, yyyy')})`;
+      case 'yesterday':
+        const yesterday = today.subtract(1, 'day');
+        return `Yesterday (${format(yesterday.toDate(), 'MMM dd, yyyy')})`;
+      case 'week':
+        const weekStart = today.subtract(6, 'day');
+        return `Last 7 Days (${format(weekStart.toDate(), 'MMM dd')} - ${format(today.toDate(), 'MMM dd, yyyy')})`;
+      case 'month':
+        const monthStart = today.subtract(29, 'day');
+        return `Last 30 Days (${format(monthStart.toDate(), 'MMM dd')} - ${format(today.toDate(), 'MMM dd, yyyy')})`;
+      default:
+        return '';
+    }
+  };
+
   // ------------------- Render -------------------
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
@@ -190,8 +291,8 @@ const TotalPaidSales = () => {
           <Select value={period} onChange={setPeriod} style={{ width: 200 }}>
             <Option value="today">Today</Option>
             <Option value="yesterday">Yesterday</Option>
-            <Option value="week">This Week</Option>
-            <Option value="month">This Month</Option>
+            <Option value="week">Last 7 Days</Option>
+            <Option value="month">Last 30 Days</Option>
             <Option value="custom">Custom Date Range</Option>
           </Select>
         </Col>
@@ -207,27 +308,37 @@ const TotalPaidSales = () => {
             />
           </Col>
         )}
+        <Col>
+          <span style={{ fontSize: 14, color: '#666', marginLeft: 16 }}>
+            {getDateRangeDisplay()}
+          </span>
+        </Col>
       </Row>
 
       {/* Error Message */}
       {error && <Alert message="Error" description={error} type="error" showIcon closable style={{ marginBottom: 16 }} />}
 
       {/* Summary Section */}
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={12}>
+      <Row gutter={16} style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+        <Col xs={24} sm={12} style={{ marginBottom: 16 }}>
           <Card>
             <Statistic title="Total Sales" value={totalSales} precision={2} prefix="Ksh" />
           </Card>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12} style={{ marginBottom: 16 }}>
           <Card>
-            <Statistic title="Average per Shop" value={shopCount > 0 ? totalSales / shopCount : 0} precision={2} prefix="Ksh" />
+            <Statistic 
+              title="Average per Shop" 
+              value={shopCount > 0 ? totalSales / shopCount : 0} 
+              precision={2} 
+              prefix="Ksh" 
+            />
           </Card>
         </Col>
       </Row>
 
       {/* Payment Summary */}
-      <Row gutter={16} style={{ marginBottom: 20 }}>
+      <Row gutter={16} style={{ marginBottom: 20, flexWrap: 'wrap' }}>
         <Col>
           <Tag color="green" style={{ fontSize: 14 }}>
             Sasapay: {formatCurrency(paymentSummary.sasapay)}
@@ -246,57 +357,82 @@ const TotalPaidSales = () => {
       </Row>
 
       {/* Category Totals */}
-      <h4>Products Totals</h4>
-      <Row gutter={16} style={{ marginBottom: 20 }}>
-        {categorySummary
-          .filter((c) => ["eggs", "chicken", "farmers choice"].includes((c.category || "").toLowerCase()))
-          .map((cat) => (
-            <Col span={8} key={cat.category}>
-              <Card>
-                <Statistic
-                  title={`Total ${cat.category}`}
-                  value={cat.total_revenue}
-                  precision={2}
-                  prefix="Ksh"
-                />
-                <div style={{ marginTop: 8, fontSize: 13, color: "#888" }}>
-                  {/* Qty: {cat.total_quantity_sold} */}
-                </div>
-              </Card>
-            </Col>
-          ))}
-      </Row>
+      {categorySummary.length > 0 && (
+        <>
+          <h4>Products Totals</h4>
+          <Row gutter={16} style={{ marginBottom: 20 , flexWrap: 'wrap'}}>
+            {categorySummary
+              .filter((c) => ["eggs", "chicken", "farmers choice"].includes((c.category || "").toLowerCase()))
+              .map((cat) => (
+                <Col span={8} key={cat.category}>
+                  <Card>
+                    <Statistic
+                      title={`Total ${cat.category}`}
+                      value={cat.total_revenue}
+                      precision={2}
+                      prefix="Ksh"
+                    />
+                    <div style={{ marginTop: 8, fontSize: 13, color: "#888" }}>
+                      {/* Qty: {cat.total_quantity_sold} */}
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+          </Row>
+        </>
+      )}
 
       {/* Shop Cards */}
       {loading ? (
-        <Spin size="large" />
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
+        </div>
       ) : shopSales.length > 0 ? (
-        <Row gutter={[12, 12]}>
-          {shopSales.map((shop) => {
-            const salesValue = parseFloat(shop.total_sales.replace(/[^\d.-]/g, ''));
-            const comparisonValue = shop.comparison || 0;
+        <>
+          <h4>Shop Performance ({shopSales.length} shops)</h4>
+          <Row gutter={[12, 12]}>
+            {shopSales.map((shop) => {
+              const salesValue = parseFloat(shop.total_sales.replace(/[^\d.-]/g, ''));
+              const comparisonValue = shop.comparison || 0;
 
-            return (
-              <Col key={shop.shop_id} xs={24} sm={12} md={8} lg={6}>
-                <Card title={shop.shop_name || `Shop ${shop.shop_id}`} size="small" bodyStyle={{ padding: 12 }}>
-                  <Statistic title="Sales" value={salesValue} precision={2} prefix="Ksh" valueStyle={{ fontSize: 16 }} />
-                  <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <a href={`/salesbyshop/${shop.shop_id}`} style={{ fontSize: 12 }}>
-                      View Sales
-                    </a>
-                    {comparisonValue !== 0 && (
-                      <span style={{ fontSize: 12, color: comparisonValue >= 0 ? 'green' : 'red' }}>
-                        {comparisonValue >= 0 ? `+${formatCurrency(comparisonValue)}` : `-${formatCurrency(Math.abs(comparisonValue))}`}
-                      </span>
-                    )}
-                  </div>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
-      ) : (
-        <p>No sales data available.</p>
+              return (
+                <Col key={shop.shop_id} xs={24} sm={12} md={8} lg={6}>
+                  <Card 
+                    title={shop.shop_name || `Shop ${shop.shop_id}`} 
+                    size="small" 
+                    bodyStyle={{ padding: 12 }}
+                    hoverable
+                  >
+                    <Statistic 
+                      title="Sales" 
+                      value={salesValue} 
+                      precision={2} 
+                      prefix="Ksh" 
+                      valueStyle={{ fontSize: 16 }} 
+                    />
+                    <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <a href={`/salesbyshop/${shop.shop_id}`} style={{ fontSize: 12 }}>
+                        View Sales
+                      </a>
+                      {comparisonValue !== 0 && (
+                        <span style={{ fontSize: 12, color: comparisonValue >= 0 ? 'green' : 'red' }}>
+                          {comparisonValue >= 0 ? `+${formatCurrency(comparisonValue)}` : `-${formatCurrency(Math.abs(comparisonValue))}`}
+                        </span>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
+          </Row>
+        </>
+      ) : !loading && (
+        <Alert
+          message="No Data"
+          description="No sales data available for the selected period."
+          type="info"
+          showIcon
+        />
       )}
     </div>
   );
