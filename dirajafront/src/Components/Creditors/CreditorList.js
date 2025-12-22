@@ -101,12 +101,12 @@ const CreditorsList = () => {
       render: (creditor) => creditor.shop_name || 'Unknown Shop',
     },
     {
-      header: 'Total Credit',
+      header: 'Total Credit Given',
       key: 'total_credit',
       render: (creditor) => formatCurrency(creditor.total_credit),
     },
     {
-      header: 'Credit Amount',
+      header: 'Current Credit Amount',
       key: 'credit_amount',
       render: (creditor) => formatCurrency(creditor.credit_amount),
     },
