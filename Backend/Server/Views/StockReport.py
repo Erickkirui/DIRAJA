@@ -358,10 +358,15 @@ class SubmitStockReport(Resource):
 
 class ResetShopReportStatus(Resource):
     def put(self):
-        # Reset all report_status to False
-        Shops.query.update({Shops.report_status: False})
+        # Reset report_status to False for all shops except shop_id = 12
+        Shops.query.filter(Shops.shops_id != 12).update(
+            {Shops.report_status: False},
+            synchronize_session=False
+        )
         db.session.commit()
-        return {'message': 'All shops have been closed'}, 200
+
+        return {'message': 'All shops except shop 12 have been closed'}, 200
+
 
 class GetStockReports(Resource):
     @jwt_required()

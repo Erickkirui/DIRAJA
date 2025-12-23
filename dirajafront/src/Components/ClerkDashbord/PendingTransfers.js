@@ -10,6 +10,20 @@ const PendingTransfers = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [stockItems, setStockItems] = useState([]);
+  const [receivingItem, setReceivingItem] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  // Form data state
+  const [formData, setFormData] = useState({
+    pack_quantity: '',
+    piece_quantity: '',
+    metric: '',
+    remainingStock: 0
+  });
+
+  const [selectedStockItem, setSelectedStockItem] = useState(null);
+  const [displayQuantity, setDisplayQuantity] = useState('');
 
   // List of items that should always use "kg" as metric
   const kgItems = [
@@ -20,6 +34,30 @@ const PendingTransfers = () => {
   // Format numbers: no decimals if whole, else show up to 3 decimals
   const formatNumber = (value) => {
     return Number(value) % 1 === 0 ? Number(value).toString() : Number(value).toFixed(3);
+  };
+
+  // Get unit label (pack or tray)
+  const getUnitLabel = () => {
+    if (!selectedStockItem) return 'pack';
+    if (selectedStockItem.item_name.toLowerCase().includes("eggs")) {
+      return 'tray';
+    }
+    return 'pack';
+  };
+
+  // Fetch stock items for proper metric conversion
+  const fetchStockItems = async () => {
+    try {
+      const response = await axios.get("api/diraja/stockitems", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+      });
+      return response.data.stock_items || [];
+    } catch (err) {
+      console.error("Error fetching stock items:", err);
+      return [];
+    }
   };
 
   // Process quantity display like ShopStockList
@@ -89,21 +127,6 @@ const PendingTransfers = () => {
     }));
   }, [processQuantityDisplay]);
 
-  // Fetch stock items for proper metric conversion
-  const fetchStockItems = async () => {
-    try {
-      const response = await axios.get("api/diraja/stockitems", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
-        },
-      });
-      return response.data.stock_items || [];
-    } catch (err) {
-      console.error("Error fetching stock items:", err);
-      return [];
-    }
-  };
-
   // Fetch pending transfers
   const fetchPendingTransfers = async () => {
     try {
@@ -159,27 +182,169 @@ const PendingTransfers = () => {
     fetchPendingTransfers();
   }, []);
 
-  // Handle "Receive Stock" for a specific transfer
-  const handleReceive = async (transferv2_id, itemname) => {
+  // Start receiving process - show input modal
+  const startReceiveProcess = (transfer) => {
+    // Find stock item details
+    const item = stockItems.find(stockItem => stockItem.item_name === transfer.itemname);
+    setSelectedStockItem(item || null);
+    
+    // Set initial form data
+    const initialFormData = {
+      pack_quantity: '',
+      piece_quantity: '',
+      metric: transfer.metric || '',
+      remainingStock: transfer.quantity || 0
+    };
+
+    // If item has pack quantity, auto-calculate packs/trays and pieces
+    if (item && item.pack_quantity > 0) {
+      const fullUnits = Math.floor(transfer.quantity / item.pack_quantity);
+      const remainingPieces = transfer.quantity % item.pack_quantity;
+      
+      if (item.item_name.toLowerCase().includes("eggs")) {
+        initialFormData.pack_quantity = fullUnits > 0 ? fullUnits.toString() : '';
+      } else {
+        initialFormData.pack_quantity = fullUnits > 0 ? fullUnits.toString() : '';
+      }
+      initialFormData.piece_quantity = remainingPieces > 0 ? remainingPieces.toString() : '';
+    } else {
+      // For items without pack quantity, show quantity in piece_quantity
+      initialFormData.piece_quantity = transfer.quantity.toString();
+    }
+
+    setFormData(initialFormData);
+    setReceivingItem(transfer);
+    setMessage({ type: '', text: '' });
+  };
+
+  // Cancel receiving process
+  const cancelReceive = () => {
+    setReceivingItem(null);
+    setFormData({
+      pack_quantity: '',
+      piece_quantity: '',
+      metric: '',
+      remainingStock: 0
+    });
+    setSelectedStockItem(null);
+    setDisplayQuantity('');
+  };
+
+  // Handle form input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    // Allow only numbers and decimal points for quantity fields
+    if ((name === 'pack_quantity' || name === 'piece_quantity') && value !== '') {
+      if (!/^\d*\.?\d*$/.test(value)) {
+        return;
+      }
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Calculate display quantity
+  useEffect(() => {
+    if (receivingItem && selectedStockItem) {
+      const remaining = receivingItem.quantity;
+
+      if (selectedStockItem.item_name.toLowerCase().includes("eggs")) {
+        const packQty = selectedStockItem.pack_quantity > 0 
+          ? selectedStockItem.pack_quantity 
+          : 30;
+        const trays = Math.floor(remaining / packQty);
+        const pieces = remaining % packQty;
+
+        setDisplayQuantity(
+          trays > 0
+            ? `${trays} tray${trays !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+            : `${pieces} pcs`
+        );
+      } else if (selectedStockItem.pack_quantity > 0) {
+        const packets = Math.floor(remaining / selectedStockItem.pack_quantity);
+        const pieces = remaining % selectedStockItem.pack_quantity;
+
+        setDisplayQuantity(
+          packets > 0
+            ? `${packets} pkt${packets !== 1 ? "s" : ""}${pieces > 0 ? `, ${pieces} pcs` : ""}`
+            : `${pieces} pcs`
+        );
+      } else {
+        setDisplayQuantity(`${remaining} ${receivingItem.metric || "pcs"}`);
+      }
+    }
+  }, [receivingItem, selectedStockItem]);
+
+  // Handle "Receive Stock" with quantity input
+  const handleReceive = async (e) => {
+    e.preventDefault();
+    
+    if (!receivingItem) return;
+
+    // Calculate final quantity
+    let finalQuantity;
+    if (selectedStockItem && selectedStockItem.pack_quantity > 0) {
+      let packs = parseFloat(formData.pack_quantity || 0);
+      let pieces = parseFloat(formData.piece_quantity || 0);
+      finalQuantity = (packs * selectedStockItem.pack_quantity) + pieces;
+    } else {
+      finalQuantity = parseFloat(formData.piece_quantity || 0);
+    }
+
+    // Validate input
+    if (isNaN(finalQuantity) || finalQuantity <= 0) {
+      setMessage({ type: 'error', text: 'Quantity must be greater than 0' });
+      return;
+    }
+
+    if (finalQuantity > parseFloat(receivingItem.quantity)) {
+      setMessage({ type: 'error', text: 'Quantity exceeds transferred amount' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
     try {
       const accessToken = localStorage.getItem("access_token");
       
       await axios.patch(
-        `api/diraja/transfers/${transferv2_id}/receive`,
-        {},
+        `api/diraja/transfers/${receivingItem.transferv2_id}/receive`,
+        { received_quantity: finalQuantity },
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
           },
         }
       );
 
       // Refresh list after receiving
       fetchPendingTransfers();
-      alert(`${itemname} stock received successfully!`);
+      
+      // Reset state
+      cancelReceive();
+      
+      setMessage({ type: 'success', text: `${receivingItem.itemname} stock received successfully!` });
     } catch (err) {
-      alert("Error receiving stock. Please try again.");
       console.error("Receive stock error:", err);
+      
+      // Show more specific error messages
+      if (err.response) {
+        if (err.response.status === 400 && err.response.data.message) {
+          setMessage({ type: 'error', text: `Error: ${err.response.data.message}` });
+        } else {
+          setMessage({ type: 'error', text: "Error receiving stock. Please try again." });
+        }
+      } else {
+        setMessage({ type: 'error', text: "Network error. Please check your connection." });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -204,9 +369,9 @@ const PendingTransfers = () => {
 
       // Refresh list after declining
       fetchPendingTransfers();
-      alert(`${itemname} stock declined successfully!`);
+      setMessage({ type: 'success', text: `${itemname} stock declined successfully!` });
     } catch (err) {
-      alert("Error declining stock. Please try again.");
+      setMessage({ type: 'error', text: "Error declining stock. Please try again." });
       console.error("Decline stock error:", err);
     }
   };
@@ -230,7 +395,7 @@ const PendingTransfers = () => {
               borderRadius: "6px",
               cursor: "pointer",
             }}
-            onClick={() => handleReceive(transfer.transferv2_id, transfer.itemname)}
+            onClick={() => startReceiveProcess(transfer)}
           >
             Receive
           </button>
@@ -257,6 +422,170 @@ const PendingTransfers = () => {
       <h2>Pending Transfers from store</h2>
 
       {error && <div className="error-message">{error}</div>}
+
+      {/* Receiving Modal */}
+      {receivingItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '20px', // Reduced from 30px
+            borderRadius: '10px',
+            minWidth: '350px', // Reduced from 500px (30% reduction)
+            maxWidth: '450px', // Reduced from 600px (25% reduction)
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <h3 style={{ fontSize: '18px', margin: '0 0 15px 0' }}>Receive {receivingItem.itemname}</h3>
+
+            {message.text && (
+              <div className={`message ${message.type}`} style={{
+                marginBottom: '15px',
+                padding: '8px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                backgroundColor: message.type === 'error' ? '#f8d7da' : '#d4edda',
+                color: message.type === 'error' ? '#721c24' : '#155724',
+                border: `1px solid ${message.type === 'error' ? '#f5c6cb' : '#c3e6cb'}`
+              }}>
+                {message.text}
+              </div>
+            )}
+            
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Expected:</strong> {receivingItem.display}</p>
+              {/* <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Batch:</strong> {receivingItem.BatchNumber}</p> */}
+              <p style={{ margin: 0, fontSize: '14px' }}><strong>Date:</strong> {receivingItem.formattedDate}</p>
+            </div>
+
+            <form onSubmit={handleReceive}>
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '14px' }}>
+                  Quantity Received
+                </label>
+                
+                {/* Show pack quantity input only for items with pack quantity */}
+                {selectedStockItem && selectedStockItem.pack_quantity > 0 ? (
+                  <>
+                    <div style={{ display: "flex", gap: "8px", marginBottom: '8px' }}>
+                      <input
+                        name="pack_quantity"
+                        type="text"
+                        value={formData.pack_quantity}
+                        onChange={handleChange}
+                        placeholder={`${getUnitLabel()}s`}
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc',
+                          fontSize: '14px'
+                        }}
+                      />
+                      <input
+                        name="piece_quantity"
+                        type="text"
+                        value={formData.piece_quantity}
+                        onChange={handleChange}
+                        placeholder="pieces"
+                        style={{
+                          flex: 1,
+                          padding: '8px',
+                          borderRadius: '4px',
+                          border: '1px solid #ccc',
+                          fontSize: '14px'
+                        }}
+                      />
+                    </div>
+                    <small style={{ color: '#666', display: 'block', fontSize: '12px' }}>
+                      1 {getUnitLabel()} = {selectedStockItem.pack_quantity} pieces
+                    </small>
+                  </>
+                ) : (
+                  // Show only piece quantity input for items without pack quantity
+                  <input
+                    name="piece_quantity"
+                    type="text"
+                    value={formData.piece_quantity}
+                    onChange={handleChange}
+                    placeholder="Quantity"
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      borderRadius: '4px',
+                      border: '1px solid #ccc',
+                      fontSize: '14px',
+                      marginBottom: '8px'
+                    }}
+                  />
+                )}
+              </div>
+
+              {receivingItem && (
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '14px' }}>
+                    Transfer Details
+                  </label>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '14px' }}>
+                    <li style={{ marginBottom: '3px' }}>
+                      <strong>Total:</strong> {displayQuantity}
+                    </li>
+                    {/* {receivingItem.metric && (
+                      <li style={{ marginBottom: '3px' }}>
+                        <strong>Metric:</strong> {receivingItem.metric}
+                      </li>
+                    )} */}
+                  </ul>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={cancelReceive}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#28a745',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : 'Receive'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <LoadingAnimation />

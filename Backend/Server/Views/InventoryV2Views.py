@@ -299,33 +299,60 @@ class DistributeInventoryV2(Resource):
 class ReceiveTransfer(Resource):
     @jwt_required()
     def patch(self, transfer_id):
+        # Get the request data
+        data = request.get_json()
+        
+        # Validate required field
+        if 'received_quantity' not in data:
+            return {'message': 'received_quantity is required'}, 400
+            
+        received_quantity = data['received_quantity']
+        
+        # Validate that received_quantity is a valid number
+        try:
+            received_quantity = float(received_quantity)
+        except ValueError:
+            return {'message': 'received_quantity must be a valid number'}, 400
+            
+        # Get the transfer
         transfer = TransfersV2.query.get(transfer_id)
         if not transfer:
             return {'message': 'Transfer not found'}, 404
 
+        # Check if already received (you might want to add a status field)
         if transfer.status == "Received":
             return {'message': 'Transfer already received'}, 400
 
         try:
-            # ✅ Add to shop stock (inventory already deducted earlier)
+            # Calculate difference
+            difference = transfer.quantity - received_quantity
+            
+            # Update transfer with received quantity and difference
+            transfer.received_quantity = received_quantity
+            transfer.difference = difference
+            transfer.status = "Received"
+            
+            # ✅ Update shop stock with ACTUAL received quantity, not original quantity
             new_shop_stock = ShopStockV2(
                 shop_id=transfer.shop_id,
                 transferv2_id=transfer.transferv2_id,
                 inventoryv2_id=transfer.inventoryV2_id,
-                quantity=transfer.quantity,
-                total_cost=transfer.unitCost * transfer.quantity,
+                quantity=received_quantity,  # Use actual received quantity
+                total_cost=transfer.unitCost * received_quantity,  # Recalculate based on received
                 itemname=transfer.itemname,
                 metric=transfer.metric,
                 BatchNumber=transfer.BatchNumber,
                 unitPrice=transfer.unitCost
             )
 
-            transfer.status = "Received"
-
             db.session.add(new_shop_stock)
             db.session.commit()
 
-            return {'message': 'Transfer received successfully and stock added to shop.'}, 200
+            return {
+                'message': 'Transfer received successfully and stock added to shop.',
+                'received_quantity': received_quantity,
+                'difference': difference
+            }, 200
 
         except Exception as e:
             db.session.rollback()
@@ -653,7 +680,9 @@ class GetTransferV2(Resource):
                 "transferv2_id": transfer.transferv2_id,  # lowercase to match model
                 "shop_id": transfer.shop_id,
                 "inventoryV2_id": transfer.inventoryV2_id,      
-                "quantity": transfer.quantity,             
+                "quantity": transfer.quantity, 
+                "received_quantity": transfer.received_quantity,
+                "difference": transfer.difference,            
                 "metric": transfer.metric,
                 "total_cost": transfer.total_cost,  # lowercase to match model
                 "BatchNumber": transfer.BatchNumber,
@@ -950,32 +979,52 @@ class InventoryResourceByIdV2(Resource):
 
         if not inventory:
             return {"error": "Inventory not found"}, 404
-        
-        try:
-            # Check what the actual foreign key column name is in your models
-            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
-            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            # Check what the actual foreign key column name is in your models
-            # Common options: inventory_id, inventoryv2_id, inventory_V2_id
-            transfers = TransfersV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            for transfer in transfers:
-                db.session.delete(transfer)
-            
-            # Check what the actual foreign key column name is in your models
-            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            # Check what the actual foreign key column name is in your models
-            shop_stocks = ShopStockV2.query.filter_by(inventory_id=inventoryV2_id).all()
-            for stock in shop_stocks:
-                db.session.delete(stock)
 
-            db.session.delete(inventory)
+        try:
+            # Delete transfer records (FK: inventoryV2_id)
+            try:
+                transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+                for transfer in transfers:
+                    db.session.delete(transfer)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting transfer records",
+                    "error": str(e),
+                    "hint": "Check TransfersV2 model foreign key. Should be 'inventoryV2_id'."
+                }, 500
+
+            # Delete shop stock records (FK: inventoryv2_id)
+            try:
+                shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
+                for stock in shop_stocks:
+                    db.session.delete(stock)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting shop stock records",
+                    "error": str(e),
+                    "hint": "Check ShopStockV2 model foreign key. Should be 'inventoryv2_id'."
+                }, 500
+
+            # Delete inventory itself
+            try:
+                db.session.delete(inventory)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting inventory record",
+                    "error": str(e)
+                }, 500
+
+            # Commit the transaction
             db.session.commit()
 
             return {"message": "Inventory deleted successfully"}, 200
-        
+
         except Exception as e:
             db.session.rollback()
-            return {"message": "Error deleting inventory", "error": str(e)}, 500
+            return {
+                "message": "General error while deleting inventory",
+                "error": str(e)
+            }, 500
 
     @jwt_required()
     def put(self, inventoryV2_id):

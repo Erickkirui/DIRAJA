@@ -19,8 +19,8 @@ from flask import request, make_response, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
-from datetime import datetime
-import datetime
+from datetime import datetime,timezone
+# import datetime
 import traceback
 from sqlalchemy import func
 
@@ -127,7 +127,7 @@ class ShopStockDeleteV2(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument(
         'quantity_to_delete',
-        type=int,
+        type=float,
         required=True,
         help="Quantity to delete cannot be blank!"
     )
@@ -343,7 +343,7 @@ class ApproveReturn(Resource):
             # ✅ Update return status
             return_record.status = "Approved"
             return_record.reviewed_by = current_user_id
-            return_record.review_date = datetime.datetime.utcnow()
+            return_record.review_date = datetime.now(timezone.utc)
 
             db.session.commit()
 
@@ -384,7 +384,7 @@ class DeclineReturn(Resource):
             # ✅ Update return status
             return_record.status = "Declined"
             return_record.reviewed_by = current_user_id
-            return_record.review_date = datetime.datetime.utcnow()
+            return_record.review_date = datetime.utcnow()
 
             db.session.commit()
 
