@@ -44,6 +44,7 @@ const SingleShopSale = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [grandTotal, setGrandTotal] = useState(0);
     const [stockItems, setStockItems] = useState([]);
+    const [shouldLockCustomerDetails, setShouldLockCustomerDetails] = useState(false);
 
     const unitTypes = [
         { value: 'pieces', label: 'Pieces' },
@@ -51,11 +52,11 @@ const SingleShopSale = () => {
     ];
     const validPaymentMethods = ['cash', 'mpesa', 'sasapay', 'not payed', 'sasapay deliveries'];
 
-    // Check if customer details should be shown
-    const shouldShowCustomerDetails = formData.status === 'unpaid' || formData.status === 'partially_paid';
-
     // Check if creditor field should be shown (for credit sales)
     const shouldShowCreditorField = formData.status === 'unpaid' || formData.status === 'partially_paid';
+
+    // Check if customer details should be shown - ONLY when creditor is selected
+    const shouldShowCustomerDetails = (formData.status === 'unpaid' || formData.status === 'partially_paid') && formData.creditor_id;
 
     // Fetch creditors for the shop
     const fetchCreditors = async () => {
@@ -105,6 +106,28 @@ const SingleShopSale = () => {
             fetchCreditors();
         }
     }, [formData.status, formData.shop_id]);
+
+    // Reset lock state when status changes or creditor is cleared
+    useEffect(() => {
+        // If status changes to something other than unpaid/partially_paid, reset everything
+        if (formData.status !== 'unpaid' && formData.status !== 'partially_paid') {
+            setShouldLockCustomerDetails(false);
+        }
+        // If creditor is cleared, reset customer details
+        else if (!formData.creditor_id) {
+            setShouldLockCustomerDetails(false);
+            // Clear customer details when no creditor is selected
+            setFormData(prev => ({
+                ...prev,
+                customer_name: '',
+                customer_number: ''
+            }));
+        }
+        // If creditor is selected, lock customer details
+        else if (formData.creditor_id) {
+            setShouldLockCustomerDetails(true);
+        }
+    }, [formData.status, formData.creditor_id]);
 
     useEffect(() => {
         const total = formData.items.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
@@ -231,16 +254,19 @@ const SingleShopSale = () => {
         const { name, value, type, checked } = e.target;
         
         if (name === 'creditor_id') {
-            // Handle creditor selection - auto-populate customer details
+            // Handle creditor selection
             if (value) {
                 const selectedCreditor = creditors.find(creditor => creditor.id.toString() === value);
                 if (selectedCreditor) {
+                    // Auto-populate customer details from creditor
                     setFormData(prev => ({
                         ...prev,
                         creditor_id: value,
                         customer_name: selectedCreditor.name,
                         customer_number: selectedCreditor.phone_number || ''
                     }));
+                    // Lock customer details when creditor is selected
+                    setShouldLockCustomerDetails(true);
                 }
             } else {
                 // Clear creditor and customer details if no creditor selected
@@ -250,10 +276,37 @@ const SingleShopSale = () => {
                     customer_name: '',
                     customer_number: ''
                 }));
+                // Unlock customer details when no creditor selected
+                setShouldLockCustomerDetails(false);
+            }
+        } else if (name === 'status') {
+            // Handle status change - reset creditor and customer details if changing from unpaid/partially_paid
+            const newStatus = value;
+            const shouldClearCreditor = 
+                (formData.status === 'unpaid' || formData.status === 'partially_paid') && 
+                (newStatus !== 'unpaid' && newStatus !== 'partially_paid');
+            
+            setFormData(prev => ({
+                ...prev,
+                [name]: value,
+                ...(shouldClearCreditor ? {
+                    creditor_id: '',
+                    customer_name: '',
+                    customer_number: ''
+                } : {})
+            }));
+            
+            if (shouldClearCreditor) {
+                setShouldLockCustomerDetails(false);
             }
         } else if (type === 'checkbox') {
             // Handle checkbox inputs
             setFormData({ ...formData, [name]: checked });
+        } else if (name === 'customer_name' || name === 'customer_number') {
+            // Only allow editing customer details if not locked
+            if (!shouldLockCustomerDetails) {
+                setFormData({ ...formData, [name]: value });
+            }
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -430,6 +483,9 @@ const SingleShopSale = () => {
                         estimated_cost: 0
                     }]
                 });
+                
+                // Reset lock state
+                setShouldLockCustomerDetails(false);
     
                 setTimeout(() => {
                     window.location.reload();
@@ -588,7 +644,7 @@ const SingleShopSale = () => {
                             value={formData.creditor_id} 
                             onChange={handleChange}
                         >
-                            <option value="">Select Creditor (Optional)</option>
+                            <option value="">Select Creditor </option>
                             {creditors.map((creditor) => (
                                 <option key={creditor.id} value={creditor.id}>
                                     {creditor.name} - {creditor.phone_number} 
@@ -601,23 +657,52 @@ const SingleShopSale = () => {
                     </>
                 )}
 
-                {/* Customer Details - Conditionally Rendered */}
+                {/* Customer Details - ONLY shown when creditor is selected */}
                 {shouldShowCustomerDetails && (
                     <>
                         <h5>Customer Details</h5>
+                        <p style={{ 
+                            fontSize: '12px', 
+                            color: '#666', 
+                            fontStyle: 'italic',
+                            marginTop: '-10px',
+                            marginBottom: '5px'
+                        }}>
+                            Customer details auto-filled from selected creditor
+                        </p>
                         <input 
                             name="customer_name" 
                             value={formData.customer_name} 
                             onChange={handleChange} 
                             placeholder="Customer Name" 
-                            required={!!formData.creditor_id} // Required if creditor is selected
+                            required
+                            readOnly={shouldLockCustomerDetails}
+                            style={{ 
+                                backgroundColor: '#f0f0f0', 
+                                cursor: 'not-allowed' 
+                            }}
                         />
                         <input 
                             name="customer_number" 
                             value={formData.customer_number} 
                             onChange={handleChange} 
-                            placeholder="Customer Number (optional)" 
+                            placeholder="Customer Number" 
+                            readOnly={shouldLockCustomerDetails}
+                            style={{ 
+                                backgroundColor: '#f0f0f0', 
+                                cursor: 'not-allowed' 
+                            }}
                         />
+                        
+                        <p style={{ 
+                            fontSize: '12px', 
+                            color: '#666', 
+                            fontStyle: 'italic',
+                            marginTop: '5px',
+                            marginBottom: '15px'
+                        }}>
+                            {/* Customer details are auto-filled from selected creditor and cannot be edited. */}
+                        </p>
                     </>
                 )}
                 

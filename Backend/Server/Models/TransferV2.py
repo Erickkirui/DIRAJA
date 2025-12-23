@@ -11,6 +11,8 @@ class TransfersV2(db.Model):
     shop_id = db.Column(db.Integer, db.ForeignKey('shops.shops_id'), nullable=False)
     inventoryV2_id = db.Column(db.Integer, db.ForeignKey('inventoryV2.inventoryV2_id'), nullable=True)  # ✅ FK points to inventoryV2
     quantity = db.Column(db.Float, nullable=False)
+    received_quantity = db.Column(db.Float, nullable=False, default=0)
+    difference = db.Column(db.Float, nullable=False, default=0)
     total_cost = db.Column(db.Float, nullable=False)
     BatchNumber = db.Column(db.String(50), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'))

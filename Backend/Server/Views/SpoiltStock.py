@@ -10,7 +10,7 @@ from Server.Models.SpoiltStock import SpoiltStock
 from Server.Models.Shopstock import ShopStock
 from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.LiveStock import LiveStock
-from datetime import datetime
+from datetime import datetime, timezone
 # import datetime
 from app import db
 from flask_restful import Resource
@@ -66,7 +66,7 @@ class AddSpoiltFromInventory(Resource):
             comment=comment,
             status="approved",  # ✅ CHANGED: Automatically set to approved
             batches_affected=inventory.BatchNumber,
-            created_at=datetime.utcnow()
+            created_at = datetime.now(timezone.utc)
         )
 
         # Deduct from inventory
@@ -245,7 +245,7 @@ class ApproveSpoiltStock(Resource):
         # Update the spoilt stock record to approved
         spoilt_record.status = 'approved'
         spoilt_record.approved_by = user_id
-        spoilt_record.approved_at = datetime.datetime.utcnow()
+        spoilt_record.approved_at = datetime.now(timezone.utc)
 
         try:
             db.session.commit()
@@ -328,7 +328,7 @@ class RejectSpoiltStock(Resource):
         # Update the spoilt stock record to rejected
         spoilt_record.status = 'rejected'
         spoilt_record.approved_by = user_id
-        spoilt_record.approved_at = datetime.datetime.utcnow()
+        spoilt_record.approved_at = datetime.now(timezone.utc)
 
         try:
             db.session.commit()

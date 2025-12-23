@@ -299,33 +299,60 @@ class DistributeInventoryV2(Resource):
 class ReceiveTransfer(Resource):
     @jwt_required()
     def patch(self, transfer_id):
+        # Get the request data
+        data = request.get_json()
+        
+        # Validate required field
+        if 'received_quantity' not in data:
+            return {'message': 'received_quantity is required'}, 400
+            
+        received_quantity = data['received_quantity']
+        
+        # Validate that received_quantity is a valid number
+        try:
+            received_quantity = float(received_quantity)
+        except ValueError:
+            return {'message': 'received_quantity must be a valid number'}, 400
+            
+        # Get the transfer
         transfer = TransfersV2.query.get(transfer_id)
         if not transfer:
             return {'message': 'Transfer not found'}, 404
 
+        # Check if already received (you might want to add a status field)
         if transfer.status == "Received":
             return {'message': 'Transfer already received'}, 400
 
         try:
-            # ✅ Add to shop stock (inventory already deducted earlier)
+            # Calculate difference
+            difference = transfer.quantity - received_quantity
+            
+            # Update transfer with received quantity and difference
+            transfer.received_quantity = received_quantity
+            transfer.difference = difference
+            transfer.status = "Received"
+            
+            # ✅ Update shop stock with ACTUAL received quantity, not original quantity
             new_shop_stock = ShopStockV2(
                 shop_id=transfer.shop_id,
                 transferv2_id=transfer.transferv2_id,
                 inventoryv2_id=transfer.inventoryV2_id,
-                quantity=transfer.quantity,
-                total_cost=transfer.unitCost * transfer.quantity,
+                quantity=received_quantity,  # Use actual received quantity
+                total_cost=transfer.unitCost * received_quantity,  # Recalculate based on received
                 itemname=transfer.itemname,
                 metric=transfer.metric,
                 BatchNumber=transfer.BatchNumber,
                 unitPrice=transfer.unitCost
             )
 
-            transfer.status = "Received"
-
             db.session.add(new_shop_stock)
             db.session.commit()
 
-            return {'message': 'Transfer received successfully and stock added to shop.'}, 200
+            return {
+                'message': 'Transfer received successfully and stock added to shop.',
+                'received_quantity': received_quantity,
+                'difference': difference
+            }, 200
 
         except Exception as e:
             db.session.rollback()
@@ -653,7 +680,9 @@ class GetTransferV2(Resource):
                 "transferv2_id": transfer.transferv2_id,  # lowercase to match model
                 "shop_id": transfer.shop_id,
                 "inventoryV2_id": transfer.inventoryV2_id,      
-                "quantity": transfer.quantity,             
+                "quantity": transfer.quantity, 
+                "received_quantity": transfer.received_quantity,
+                "difference": transfer.difference,            
                 "metric": transfer.metric,
                 "total_cost": transfer.total_cost,  # lowercase to match model
                 "BatchNumber": transfer.BatchNumber,
