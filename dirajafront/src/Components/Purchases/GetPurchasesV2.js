@@ -67,6 +67,31 @@ const PurchasesV2 = () => {
     return `${quantity} ${metric || "pcs"}`;
   }, [isEggItem]);
 
+  // Process purchase data to create separate display values for each quantity field
+  const processPurchaseData = useCallback((purchases, items) => {
+    return purchases.map(purchase => ({
+      ...purchase,
+      displayQuantity: processQuantityData(
+        purchase.quantity, 
+        purchase.metric, 
+        purchase.itemname, 
+        items
+      ),
+      displayReceivedQuantity: processQuantityData(
+        purchase.received_quantity, 
+        purchase.metric, 
+        purchase.itemname, 
+        items
+      ),
+      displayDifference: processQuantityData(
+        purchase.difference, 
+        purchase.metric, 
+        purchase.itemname, 
+        items
+      )
+    }));
+  }, [processQuantityData]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -103,16 +128,8 @@ const PurchasesV2 = () => {
             new Date(b.created_at) - new Date(a.created_at)
           );
           
-          // Process quantities for display
-          const processedPurchases = sortedPurchases.map(purchase => ({
-            ...purchase,
-            displayQuantity: processQuantityData(
-              purchase.quantity, 
-              purchase.metric, 
-              purchase.itemname, 
-              items
-            )
-          }));
+          // Process quantities for display with separate values for each field
+          const processedPurchases = processPurchaseData(sortedPurchases, items);
           
           setPurchases(processedPurchases);
         } else {
@@ -126,7 +143,7 @@ const PurchasesV2 = () => {
     };
 
     fetchData();
-  }, [processQuantityData]);
+  }, [processPurchaseData]);
 
   const getFirstName = (username) => {
     return username?.split(' ')[0] || '';
@@ -184,18 +201,26 @@ const PurchasesV2 = () => {
       render: (purchase) => purchase.displayQuantity || `${purchase.quantity} ${purchase.metric}`
     },
     {
-      header: 'Receive Quantity',
-      key: 'quantity',
-      render: (purchase) => purchase.displayQuantity || `${purchase.received_quantity} ${purchase.metric}`
+      header: 'Quantity Received',
+      key: 'received_quantity',
+      render: (purchase) => purchase.displayReceivedQuantity || `${purchase.received_quantity} ${purchase.metric}`
     },
     {
       header: 'Difference',
-      key: 'quantity',
-      render: (purchase) => purchase.displayQuantity || `${purchase.difference} ${purchase.metric}`
+      key: 'difference',
+      render: (purchase) => {
+        // Show difference with color coding
+        const diff = purchase.difference || 0;
+        const color = diff > 0 ? '#f44336' : diff < 0 ? '#ff9800' : '#4caf50';
+        const sign = diff > 0 ? '+' : '';
+        
+        return (
+          <span style={{ color }}>
+            {purchase.displayDifference || `${sign}${diff} ${purchase.metric}`}
+          </span>
+        );
+      }
     },
-    // { header: 'Unit Cost (Ksh)', key: 'unitCost' },
-    // { header: 'Total Cost (Ksh)', key: 'total_cost' },
-    // { header: 'Amount Paid (Ksh)', key: 'amountPaid' },
     { header: 'Status', key: 'status' },
     {
       header: 'Date',
@@ -208,7 +233,7 @@ const PurchasesV2 = () => {
       render: (purchase) => (
         <button
           className='editeInventory'
-          onClick={() => handleEdit(purchase.transfer_id)}
+          onClick={() => handleEdit(purchase.transferv2_id)}
         >
           Edit
         </button>

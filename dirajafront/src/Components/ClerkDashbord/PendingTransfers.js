@@ -439,20 +439,21 @@ const PendingTransfers = () => {
         }}>
           <div style={{
             backgroundColor: 'white',
-            padding: '30px',
+            padding: '20px', // Reduced from 30px
             borderRadius: '10px',
-            minWidth: '500px',
-            maxWidth: '600px',
+            minWidth: '350px', // Reduced from 500px (30% reduction)
+            maxWidth: '450px', // Reduced from 600px (25% reduction)
             maxHeight: '90vh',
             overflowY: 'auto'
           }}>
-            <h3>Receive {receivingItem.itemname}</h3>
+            <h3 style={{ fontSize: '18px', margin: '0 0 15px 0' }}>Receive {receivingItem.itemname}</h3>
 
             {message.text && (
               <div className={`message ${message.type}`} style={{
-                marginBottom: '20px',
-                padding: '10px',
-                borderRadius: '5px',
+                marginBottom: '15px',
+                padding: '8px',
+                borderRadius: '4px',
+                fontSize: '14px',
                 backgroundColor: message.type === 'error' ? '#f8d7da' : '#d4edda',
                 color: message.type === 'error' ? '#721c24' : '#155724',
                 border: `1px solid ${message.type === 'error' ? '#f5c6cb' : '#c3e6cb'}`
@@ -461,34 +462,34 @@ const PendingTransfers = () => {
               </div>
             )}
             
-            <div style={{ marginBottom: '20px' }}>
-              <p><strong>Expected Quantity:</strong> {receivingItem.display}</p>
-              <p><strong>Batch Number:</strong> {receivingItem.BatchNumber}</p>
-              <p><strong>Transfer Date:</strong> {receivingItem.formattedDate}</p>
+            <div style={{ marginBottom: '15px' }}>
+              <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Expected:</strong> {receivingItem.display}</p>
+              {/* <p style={{ margin: '0 0 5px 0', fontSize: '14px' }}><strong>Batch:</strong> {receivingItem.BatchNumber}</p> */}
+              <p style={{ margin: 0, fontSize: '14px' }}><strong>Date:</strong> {receivingItem.formattedDate}</p>
             </div>
 
             <form onSubmit={handleReceive}>
-              <div className="form-group" style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+              <div className="form-group" style={{ marginBottom: '15px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '14px' }}>
                   Quantity Received
                 </label>
                 
                 {/* Show pack quantity input only for items with pack quantity */}
                 {selectedStockItem && selectedStockItem.pack_quantity > 0 ? (
                   <>
-                    <div style={{ display: "flex", gap: "10px", marginBottom: '10px' }}>
+                    <div style={{ display: "flex", gap: "8px", marginBottom: '8px' }}>
                       <input
                         name="pack_quantity"
                         type="text"
                         value={formData.pack_quantity}
                         onChange={handleChange}
-                        placeholder={`No. of ${getUnitLabel()}s`}
+                        placeholder={`${getUnitLabel()}s`}
                         style={{
                           flex: 1,
-                          padding: '10px',
-                          borderRadius: '5px',
+                          padding: '8px',
+                          borderRadius: '4px',
                           border: '1px solid #ccc',
-                          fontSize: '16px'
+                          fontSize: '14px'
                         }}
                       />
                       <input
@@ -496,17 +497,17 @@ const PendingTransfers = () => {
                         type="text"
                         value={formData.piece_quantity}
                         onChange={handleChange}
-                        placeholder="No. of pieces"
+                        placeholder="pieces"
                         style={{
                           flex: 1,
-                          padding: '10px',
-                          borderRadius: '5px',
+                          padding: '8px',
+                          borderRadius: '4px',
                           border: '1px solid #ccc',
-                          fontSize: '16px'
+                          fontSize: '14px'
                         }}
                       />
                     </div>
-                    <small style={{ color: '#666', display: 'block' }}>
+                    <small style={{ color: '#666', display: 'block', fontSize: '12px' }}>
                       1 {getUnitLabel()} = {selectedStockItem.pack_quantity} pieces
                     </small>
                   </>
@@ -520,45 +521,46 @@ const PendingTransfers = () => {
                     placeholder="Quantity"
                     style={{
                       width: '100%',
-                      padding: '10px',
-                      borderRadius: '5px',
+                      padding: '8px',
+                      borderRadius: '4px',
                       border: '1px solid #ccc',
-                      fontSize: '16px',
-                      marginBottom: '10px'
+                      fontSize: '14px',
+                      marginBottom: '8px'
                     }}
                   />
                 )}
               </div>
 
               {receivingItem && (
-                <div className="form-group" style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                <div className="form-group" style={{ marginBottom: '15px' }}>
+                  <label style={{ display: 'block', marginBottom: '6px', fontWeight: 'bold', fontSize: '14px' }}>
                     Transfer Details
                   </label>
-                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                    <li style={{ marginBottom: '5px' }}>
-                      <strong>Transferred Quantity:</strong> {displayQuantity}
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '14px' }}>
+                    <li style={{ marginBottom: '3px' }}>
+                      <strong>Total:</strong> {displayQuantity}
                     </li>
-                    {receivingItem.metric && (
-                      <li style={{ marginBottom: '5px' }}>
+                    {/* {receivingItem.metric && (
+                      <li style={{ marginBottom: '3px' }}>
                         <strong>Metric:</strong> {receivingItem.metric}
                       </li>
-                    )}
+                    )} */}
                   </ul>
                 </div>
               )}
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button
                   type="button"
                   onClick={cancelReceive}
                   style={{
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     backgroundColor: '#6c757d',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
                   }}
                   disabled={isSubmitting}
                 >
@@ -567,16 +569,17 @@ const PendingTransfers = () => {
                 <button
                   type="submit"
                   style={{
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     backgroundColor: '#28a745',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
                   }}
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Submitting...' : 'Confirm Receive'}
+                  {isSubmitting ? 'Submitting...' : 'Receive'}
                 </button>
               </div>
             </form>

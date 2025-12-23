@@ -3,7 +3,8 @@ import axios from 'axios';
 // List of items that should always use "kg" as metric
 const kgItems = [
   "boneless breast", "thighs", "drumstick", "big legs", "backbone", 
-  "liver", "gizzard", "neck", "feet", "wings", "broiler"
+  "liver", "gizzard", "neck", "feet", "wings", "broiler", "pork", "nile perch",
+  "maize", "ndengu", "mbaazi", "yellow beans", "njahi"
 ];
 
 // Format numbers: no decimals if whole, else show up to 3 decimals

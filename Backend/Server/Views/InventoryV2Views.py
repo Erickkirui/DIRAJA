@@ -682,7 +682,7 @@ class GetTransferV2(Resource):
                 "inventoryV2_id": transfer.inventoryV2_id,      
                 "quantity": transfer.quantity, 
                 "received_quantity": transfer.received_quantity,
-                "differnece": transfer.difference,            
+                "difference": transfer.difference,            
                 "metric": transfer.metric,
                 "total_cost": transfer.total_cost,  # lowercase to match model
                 "BatchNumber": transfer.BatchNumber,

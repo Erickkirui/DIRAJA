@@ -292,6 +292,8 @@ const DistributeInventoryModal = ({
               shop_id: parseInt(shopId, 10),
               inventoryV2_id: inventoryItem.inventoryV2_id,
               quantity: finalQuantity,
+              received_quantity: 0, // Add received_quantity initialized as 0
+              difference: 0, // Add difference initialized as 0
               metric: inventoryItem.metric,
               itemname: inventoryItem.itemname, // Always use original item name when distributing
               unitCost: inventoryItem.unitCost,
