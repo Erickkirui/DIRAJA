@@ -460,7 +460,7 @@ class TotalAmountPaidPerShop(Resource):
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d').replace(
                     hour=23, minute=59, second=59, microsecond=999999
                 )
-                period = "custom"  # Set period for custom date range
+                period = "custom"
             except ValueError:
                 return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
         else:
@@ -480,16 +480,19 @@ class TotalAmountPaidPerShop(Resource):
 
                 if period == 'today':
                     start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = today
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
                 elif period == 'yesterday':
-                    start_date = (today - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = start_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    yesterday = today - timedelta(days=1)
+                    start_date = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
                 elif period == 'week':
-                    start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = today
+                    # Last 7 days inclusive (including today)
+                    start_date = (today - timedelta(days=6)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
                 elif period == 'month':
-                    start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = today
+                    # Last 30 days inclusive (including today)
+                    start_date = (today - timedelta(days=29)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
                 else:
                     return {
                         "message": "Invalid period specified. Use 'today', 'yesterday', 'week', 'month', or provide start_date and end_date."
@@ -573,13 +576,13 @@ class TotalAmountPaidPerShop(Resource):
                         comparison_start = (start_date - timedelta(days=1))
                         comparison_end = comparison_start.replace(hour=23, minute=59, second=59, microsecond=999999)
                     elif period == "week":
-                        # For this week, compare with previous week
+                        # For this week, compare with previous 7 days
                         comparison_start = (start_date - timedelta(days=7))
-                        comparison_end = start_date - timedelta(seconds=1)
+                        comparison_end = (start_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
                     elif period == "month":
-                        # For this month, compare with previous month
+                        # For this month, compare with previous 30 days
                         comparison_start = (start_date - timedelta(days=30))
-                        comparison_end = start_date - timedelta(seconds=1)
+                        comparison_end = (start_date - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999999)
 
                     if comparison_start and comparison_end:
                         previous_paid = (

@@ -37,15 +37,16 @@ class InventoryV2(db.Model):
     note = db.Column(db.Text, nullable=True)
     
     users = db.relationship('Users', backref='inventoryV2', lazy=True)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    created_at = db.Column(db.DateTime, nullable=False)
     source = db.Column(db.String(255), nullable=False)
     
+    # Time stamps
+    timestamp = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    received_timestamp = db.Column(db.DateTime, server_default=db.func.now())
+    updated_at = db.Column(db.DateTime, server_default=func.now(), onupdate=func.now())
     
      
     # Static method and other parts remain unchanged
-    
-    
-
 
     @staticmethod
     def generate_batch_code(Suppliername, Supplier_location, itemname, created_at, batch_number):

@@ -13,7 +13,7 @@ class Suppliers(db.Model):
 
     # Optional contact details
     email = db.Column(db.String(255), nullable=True)
-    phone_number = db.Column(db.String(50), nullable=True)
+    phone_number = db.Column(db.String(50), nullable=False)
 
     # ✅ New column: list of items the supplier sells
     items_sold = db.Column(db.JSON, nullable=True, default=list)
