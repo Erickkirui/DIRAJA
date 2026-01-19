@@ -1097,26 +1097,36 @@ class BrokenEggs(Resource):
 
         try:
             with db.session.begin_nested():
+
                 # 🔎 Get all "Eggs" batches in the shop (latest first)
                 from_stocks = (
                     ShopStockV2.query
-                    .join(InventoryV2, InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id)
+                    .join(
+                        InventoryV2,
+                        InventoryV2.inventoryV2_id == ShopStockV2.inventoryv2_id
+                    )
                     .filter(
                         ShopStockV2.shop_id == shop_id,
                         ShopStockV2.itemname == from_itemname
                     )
-                    .order_by(InventoryV2.created_at.desc())  # ✅ latest batch first
+                    .order_by(InventoryV2.created_at.desc())
                     .all()
                 )
 
                 if not from_stocks:
-                    return {"error": f"No stock for '{from_itemname}' in shop {shop_id}"}, 404
+                    return {
+                        "error": f"No stock for '{from_itemname}' in shop {shop_id}"
+                    }, 404
 
-                total_available = sum(s.quantity for s in from_stocks)
+                # ✅ SAFE total calculation
+                total_available = sum(s.quantity or 0 for s in from_stocks)
+
                 if quantity_to_move > total_available:
                     return {
-                        "error": f"Cannot move {quantity_to_move} units, "
-                                 f"only {total_available} '{from_itemname}' available"
+                        "error": (
+                            f"Cannot move {quantity_to_move} units, "
+                            f"only {total_available} '{from_itemname}' available"
+                        )
                     }, 400
 
                 qty_remaining = quantity_to_move
@@ -1127,22 +1137,28 @@ class BrokenEggs(Resource):
                     if qty_remaining <= 0:
                         break
 
-                    move_qty = min(qty_remaining, from_stock.quantity)
-                    if move_qty <= 0:
-                        continue  # ✅ skip if no deduction
+                    if not from_stock.quantity or from_stock.quantity <= 0:
+                        continue
 
-                    # Per-unit cost from this batch
-                    unit_cost = (
-                        from_stock.total_cost / from_stock.quantity
-                        if from_stock.quantity > 0 else 0
-                    )
+                    move_qty = min(qty_remaining, from_stock.quantity)
+
+                    if move_qty <= 0:
+                        continue
+
+                    # ✅ FIXED unit cost calculation (as requested)
+                    if from_stock.quantity is None or from_stock.quantity <= 0:
+                        unit_cost = 0
+                    elif from_stock.total_cost is None:
+                        unit_cost = 0
+                    else:
+                        unit_cost = from_stock.total_cost / from_stock.quantity
 
                     # Deduct from Eggs batch
                     from_stock.quantity -= move_qty
                     from_stock.total_cost = unit_cost * from_stock.quantity
                     db.session.add(from_stock)
 
-                    # Create new Broken eggs entry only if move_qty > 0
+                    # Create Broken eggs entry
                     broken_entry = ShopStockV2(
                         shop_id=shop_id,
                         inventoryv2_id=from_stock.inventoryv2_id,
@@ -1186,7 +1202,10 @@ class BrokenEggs(Resource):
                 db.session.commit()
 
             return {
-                "message": f"Successfully moved {quantity_to_move} from '{from_itemname}' to '{to_itemname}' in shop {shop_id}",
+                "message": (
+                    f"Successfully moved {quantity_to_move} from "
+                    f"'{from_itemname}' to '{to_itemname}' in shop {shop_id}"
+                ),
                 "details": moved_records,
                 "broken_entries": new_broken_entries
             }, 200
@@ -1200,6 +1219,7 @@ class BrokenEggs(Resource):
             db.session.rollback()
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "Unexpected error occurred"}, 500
+
 
 
 

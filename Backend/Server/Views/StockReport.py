@@ -546,6 +546,409 @@ class StockReconciliationList(Resource):
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return make_response(jsonify({"error": "An unexpected error occurred."}), 500)
         
+        
+class StockReconciliationByShop(Resource):
+    @jwt_required()
+    def get(self):
+        """
+        Get stock reconciliation records with filtering, pagination, and shop names.
+        Can filter by specific shop using shop_id parameter.
+        """
+        try:
+            # Get query parameters
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 50, type=int)
+            shop_id = request.args.get('shop_id', type=int)  # New parameter for specific shop
+            shop_name = request.args.get('shopname', type=str)
+            item_name = request.args.get('item_name', type=str)
+            status = request.args.get('status', type=str)
+            start_date = request.args.get('start_date', type=str)
+            end_date = request.args.get('end_date', type=str)
+            search_query = request.args.get('searchQuery', '', type=str)
+
+            # Base query
+            query = StockReconciliation.query.join(
+                Shops, StockReconciliation.shop_id == Shops.shops_id
+            )
+
+            # Apply filters
+            filters = []
+
+            # Filter by specific shop_id if provided (exact match)
+            if shop_id:
+                filters.append(StockReconciliation.shop_id == shop_id)
+
+            # Filter by shop name (partial match)
+            if shop_name:
+                filters.append(Shops.shopname.ilike(f"%{shop_name}%"))
+
+            if item_name:
+                filters.append(StockReconciliation.item.ilike(f"%{item_name}%"))
+
+            if status:
+                filters.append(StockReconciliation.status == status)
+
+            if search_query:
+                filters.append(or_(
+                    StockReconciliation.item.ilike(f"%{search_query}%"),
+                    Shops.shopname.ilike(f"%{search_query}%"),
+                    StockReconciliation.comment.ilike(f"%{search_query}%")
+                ))
+
+            if start_date and end_date:
+                try:
+                    start = datetime.strptime(start_date, '%Y-%m-%d')
+                    end = datetime.strptime(end_date, '%Y-%m-%d')
+                    # Include the entire end date
+                    end = end.replace(hour=23, minute=59, second=59)
+                    filters.append(StockReconciliation.created_at.between(start, end))
+                except ValueError:
+                    return make_response(jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400)
+
+            if filters:
+                query = query.filter(and_(*filters))
+
+            # Order by latest
+            query = query.order_by(StockReconciliation.created_at.desc())
+
+            # Pagination
+            pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+            recon_items = pagination.items
+
+            # Build response
+            reconciliations = []
+            for recon in recon_items:
+                # Get shop name
+                shop = Shops.query.filter_by(shops_id=recon.shop_id).first()
+                shopname_val = shop.shopname if shop else "Unknown Shop"
+
+                # Format created_at
+                created_at = None
+                if recon.created_at:
+                    if isinstance(recon.created_at, str):
+                        try:
+                            created_at = datetime.strptime(recon.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            created_at = recon.created_at
+                    elif isinstance(recon.created_at, datetime):
+                        created_at = recon.created_at.strftime('%Y-%m-%d %H:%M:%S')
+
+                reconciliations.append({
+                    'id': recon.id,
+                    'shop_id': recon.shop_id,
+                    'shopname': shopname_val,
+                    'user_id': recon.user_id,
+                    'item': recon.item,
+                    'stock_value': float(recon.stock_value),
+                    'report_value': float(recon.report_value),
+                    'difference': float(recon.difference),
+                    'status': recon.status,
+                    'comment': recon.comment,
+                    'created_at': created_at,
+                })
+
+            # Pagination metadata
+            pagination_info = {
+                "page": page,
+                "per_page": per_page,
+                "total_items": pagination.total,
+                "total_pages": ceil(pagination.total / per_page) if pagination.total > 0 else 1,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev,
+            }
+
+            return make_response(jsonify({
+                "reconciliations": reconciliations,
+                "pagination": pagination_info
+            }), 200)
+
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            return make_response(jsonify({"error": "Database operation failed."}), 500)
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return make_response(jsonify({"error": "An unexpected error occurred."}), 500)
+
+class GetReconciliationItemsByShop(Resource):
+    @jwt_required()
+    def get(self):
+        """
+        Get reconciliation items with detailed information grouped by shop
+        Simplified version - returns only basic data with single date filter
+        """
+        try:
+            shop_id = request.args.get('shop_id', type=int)
+            status = request.args.get('status', type=str)
+            item_name = request.args.get('item_name', type=str)
+            specific_date = request.args.get('date', type=str)  # Single date parameter
+            search_query = request.args.get('searchQuery', '', type=str)
+
+            # Query for reconciliation items with shop details
+            query = db.session.query(
+                StockReconciliation,
+                Shops.shopname
+            ).join(
+                Shops, StockReconciliation.shop_id == Shops.shops_id
+            )
+
+            # Apply filters
+            if shop_id:
+                query = query.filter(StockReconciliation.shop_id == shop_id)
+
+            if status:
+                query = query.filter(StockReconciliation.status == status)
+
+            if item_name:
+                query = query.filter(StockReconciliation.item.ilike(f"%{item_name}%"))
+
+            if search_query:
+                query = query.filter(or_(
+                    StockReconciliation.item.ilike(f"%{search_query}%"),
+                    Shops.shopname.ilike(f"%{search_query}%"),
+                    StockReconciliation.comment.ilike(f"%{search_query}%")
+                ))
+
+            if specific_date:
+                try:
+                    # Parse the specific date
+                    target_date = datetime.strptime(specific_date, '%Y-%m-%d')
+                    # Filter for the entire day
+                    start_of_day = target_date.replace(hour=0, minute=0, second=0)
+                    end_of_day = target_date.replace(hour=23, minute=59, second=59)
+                    query = query.filter(StockReconciliation.created_at.between(start_of_day, end_of_day))
+                except ValueError:
+                    return make_response(jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400)
+
+            # Order by shop and creation date
+            query = query.order_by(
+                Shops.shopname,
+                StockReconciliation.created_at.desc()
+            )
+
+            reconciliation_items = query.all()
+
+            # Group items by shop
+            shop_items_dict = {}
+            for recon, shopname in reconciliation_items:
+                shop_id_val = recon.shop_id
+                
+                if shop_id_val not in shop_items_dict:
+                    shop_items_dict[shop_id_val] = {
+                        "shop_id": shop_id_val,
+                        "shopname": shopname,
+                        "items": []
+                    }
+                
+                # Format created_at
+                created_at = None
+                if recon.created_at:
+                    if isinstance(recon.created_at, str):
+                        try:
+                            created_at = datetime.strptime(recon.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            created_at = recon.created_at
+                    elif isinstance(recon.created_at, datetime):
+                        created_at = recon.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Create item record (only basic data)
+                item_record = {
+                    # 'id': recon.id,
+                    # 'shop_id': recon.shop_id,
+                    # 'shopname': shopname,
+                    # 'user_id': recon.user_id,
+                    'item': recon.item,
+                    # 'stock_value': float(recon.stock_value),
+                    'report_value': float(recon.report_value),
+                    # 'difference': float(recon.difference),
+                    # 'status': recon.status,
+                    # 'comment': recon.comment,
+                    'created_at': created_at,
+                }
+                
+                shop_items_dict[shop_id_val]["items"].append(item_record)
+
+            # Convert dict to list
+            shop_reconciliations = []
+            for shop_data in shop_items_dict.values():
+                shop_reconciliations.append(shop_data)
+
+            # Response (simplified)
+            response = {
+                "shop_id": shop_id,
+                "status_filter": status,
+                "item_filter": item_name,
+                "date_filter": specific_date,
+                "search_query": search_query if search_query else None,
+                "total_shops": len(shop_reconciliations),
+                "total_reconciliations": sum(len(shop["items"]) for shop in shop_reconciliations),
+                "shop_reconciliations": shop_reconciliations
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error: {str(e)}")
+            return make_response(jsonify({
+                "error": "An error occurred while fetching reconciliation items",
+                "details": str(e)
+            }), 500)
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return make_response(jsonify({
+                "error": "An unexpected error occurred",
+                "details": str(e)
+            }), 500) 
+            
+class ReconciliationItemsByShop(Resource):
+    @jwt_required()
+    def get(self):
+        """
+        Get reconciliation items with detailed information grouped by shop
+        Fetches by shop_id for the current date
+        """
+        try:
+            shop_id = request.args.get('shop_id', type=int)
+            status = request.args.get('status', type=str)
+            item_name = request.args.get('item_name', type=str)
+            specific_date = request.args.get('date', type=str)  # Optional date parameter
+            search_query = request.args.get('searchQuery', '', type=str)
+
+            # Validate shop_id is required
+            if not shop_id:
+                return make_response(jsonify({"error": "shop_id parameter is required"}), 400)
+
+            # Query for reconciliation items with shop details
+            query = db.session.query(
+                StockReconciliation,
+                Shops.shopname
+            ).join(
+                Shops, StockReconciliation.shop_id == Shops.shops_id
+            ).filter(StockReconciliation.shop_id == shop_id)  # Always filter by shop_id
+
+            # Apply status filter
+            if status:
+                query = query.filter(StockReconciliation.status == status)
+
+            # Apply item name filter
+            if item_name:
+                query = query.filter(StockReconciliation.item.ilike(f"%{item_name}%"))
+
+            # Apply search query filter
+            if search_query:
+                query = query.filter(or_(
+                    StockReconciliation.item.ilike(f"%{search_query}%"),
+                    Shops.shopname.ilike(f"%{search_query}%"),
+                    StockReconciliation.comment.ilike(f"%{search_query}%")
+                ))
+
+            # Handle date filtering - prioritize specific_date if provided, otherwise use current date
+            if specific_date:
+                try:
+                    # Parse the specific date
+                    target_date = datetime.strptime(specific_date, '%Y-%m-%d')
+                    # Filter for the entire day
+                    start_of_day = target_date.replace(hour=0, minute=0, second=0)
+                    end_of_day = target_date.replace(hour=23, minute=59, second=59)
+                    query = query.filter(StockReconciliation.created_at.between(start_of_day, end_of_day))
+                    date_used = specific_date
+                except ValueError:
+                    return make_response(jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400)
+            else:
+                # Use current date by default
+                today = datetime.now().date()
+                start_of_day = datetime.combine(today, datetime.min.time())
+                end_of_day = datetime.combine(today, datetime.max.time())
+                query = query.filter(StockReconciliation.created_at.between(start_of_day, end_of_day))
+                date_used = today.strftime('%Y-%m-%d')
+
+            # Order by creation date (most recent first)
+            query = query.order_by(StockReconciliation.created_at.desc())
+
+            reconciliation_items = query.all()
+
+            # Group items by shop
+            shop_items_dict = {}
+            for recon, shopname in reconciliation_items:
+                shop_id_val = recon.shop_id
+                
+                if shop_id_val not in shop_items_dict:
+                    shop_items_dict[shop_id_val] = {
+                        "shop_id": shop_id_val,
+                        "shopname": shopname,
+                        "date": date_used,
+                        "items": [],
+                        "summary": {
+                            "total_items": 0,
+                            "total_report_value": 0.0
+                        }
+                    }
+                
+                # Format created_at
+                created_at = None
+                if recon.created_at:
+                    if isinstance(recon.created_at, str):
+                        try:
+                            created_at = datetime.strptime(recon.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            created_at = recon.created_at
+                    elif isinstance(recon.created_at, datetime):
+                        created_at = recon.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                
+                # Create item record
+                item_record = {
+                    # 'id': recon.id,
+                    'shop_id': recon.shop_id,
+                    # 'shopname': shopname,
+                    # 'user_id': recon.user_id,
+                    'item': recon.item,
+                    'stock_value': float(recon.stock_value),
+                    'report_value': float(recon.report_value),
+                    'difference': float(recon.difference),
+                    # 'status': recon.status,
+                    # 'comment': recon.comment,
+                    # 'created_at': created_at,
+                }
+                
+                shop_items_dict[shop_id_val]["items"].append(item_record)
+                # Update summary
+                shop_items_dict[shop_id_val]["summary"]["total_items"] += 1
+                shop_items_dict[shop_id_val]["summary"]["total_report_value"] += float(recon.report_value)
+
+            # Convert dict to list
+            shop_reconciliations = []
+            for shop_data in shop_items_dict.values():
+                shop_reconciliations.append(shop_data)
+
+            # Response
+            response = {
+                "shop_id": shop_id,
+                "date": date_used,
+                "status_filter": status,
+                "item_filter": item_name,
+                "search_query": search_query if search_query else None,
+                "total_shops": len(shop_reconciliations),
+                "total_reconciliations": sum(len(shop["items"]) for shop in shop_reconciliations),
+                "shop_reconciliations": shop_reconciliations
+            }
+
+            return make_response(jsonify(response), 200)
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            current_app.logger.error(f"Database error: {str(e)}")
+            return make_response(jsonify({
+                "error": "An error occurred while fetching reconciliation items",
+                "details": str(e)
+            }), 500)
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return make_response(jsonify({
+                "error": "An unexpected error occurred",
+                "details": str(e)
+            }), 500)           
+                  
+        
 class StockReconciliationResource(Resource):
     @jwt_required()
     def put(self, reconciliation_id):

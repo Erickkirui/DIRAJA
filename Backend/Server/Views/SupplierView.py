@@ -15,7 +15,8 @@ class AddSupplier(Resource):
 
         required_fields = [
             'supplier_name',
-            'supplier_location'
+            'supplier_location',
+            'phone_number'
         ]
 
         missing_fields = [field for field in required_fields if field not in data]

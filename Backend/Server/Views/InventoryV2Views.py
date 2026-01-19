@@ -15,6 +15,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, verify_jwt_in_req
 from dateutil import parser
 from flask_restful import reqparse
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import or_, func, and_
 from datetime import datetime
 import logging
 from Server.Models.PushSubscription import PushSubscription
@@ -299,6 +300,10 @@ class DistributeInventoryV2(Resource):
 class ReceiveTransfer(Resource):
     @jwt_required()
     def patch(self, transfer_id):
+        """
+        Receive a transfer with validation that received quantity 
+        is not less than 97% of the sent quantity
+        """
         # Get the request data
         data = request.get_json()
         
@@ -322,6 +327,28 @@ class ReceiveTransfer(Resource):
         # Check if already received (you might want to add a status field)
         if transfer.status == "Received":
             return {'message': 'Transfer already received'}, 400
+
+        # Calculate minimum acceptable quantity (97% of sent quantity)
+        MINIMUM_THRESHOLD_PERCENTAGE = 97
+        minimum_acceptable = transfer.quantity * (MINIMUM_THRESHOLD_PERCENTAGE / 100)
+        
+        # Validate that received quantity is not less than 97% of sent quantity
+        if received_quantity < minimum_acceptable:
+            shortfall = transfer.quantity - received_quantity
+            shortfall_percentage = (shortfall / transfer.quantity) * 100
+            
+            return {
+                'message': f'Received quantity is below acceptable threshold ({MINIMUM_THRESHOLD_PERCENTAGE}%)',
+                'details': {
+                    'sent_quantity': round(transfer.quantity, 2),
+                    'received_quantity': round(received_quantity, 2),
+                    'minimum_acceptable': round(minimum_acceptable, 2),
+                    'shortfall': round(shortfall, 2),
+                    'shortfall_percentage': round(shortfall_percentage, 2),
+                    'threshold_percentage': MINIMUM_THRESHOLD_PERCENTAGE
+                },
+                'action_required': 'Please verify the physical goods received and ensure they match or exceed the minimum acceptable quantity.'
+            }, 400
 
         try:
             # Calculate difference
@@ -348,15 +375,35 @@ class ReceiveTransfer(Resource):
             db.session.add(new_shop_stock)
             db.session.commit()
 
-            return {
+            # Determine if there was any loss (even if within acceptable range)
+            loss_percentage = (difference / transfer.quantity) * 100 if transfer.quantity > 0 else 0
+            
+            response_data = {
                 'message': 'Transfer received successfully and stock added to shop.',
-                'received_quantity': received_quantity,
-                'difference': difference
-            }, 200
+                'transfer_details': {
+                    'transfer_id': transfer_id,
+                    'item_name': transfer.itemname,
+                    'sent_quantity': round(transfer.quantity, 2),
+                    'received_quantity': round(received_quantity, 2),
+                    'difference': round(difference, 2),
+                    'loss_percentage': round(loss_percentage, 2)
+                },
+                'compliance': f'Received quantity meets {MINIMUM_THRESHOLD_PERCENTAGE}% threshold requirement',
+                'threshold_applied': MINIMUM_THRESHOLD_PERCENTAGE
+            }
+            
+            # Add warning if close to threshold (97-100%)
+            if 0 < loss_percentage <= (100 - MINIMUM_THRESHOLD_PERCENTAGE):
+                response_data['warning'] = 'Loss detected but within acceptable range'
+            
+            return response_data, 200
 
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error receiving transfer', 'error': str(e)}, 500
+            return {
+                'message': 'Error receiving transfer',
+                'error': str(e)
+            }, 500
 
 class DeclineTransfer(Resource):
     @jwt_required()
@@ -666,43 +713,192 @@ class DeleteShopStockV2(Resource):
 class GetTransferV2(Resource):
     @jwt_required()
     def get(self):
-        transfers = TransfersV2.query.all()
-        all_transfers = []
-
-        for transfer in transfers:
-            user = Users.query.filter_by(users_id=transfer.user_id).first()
-            shop = Shops.query.filter_by(shops_id=transfer.shop_id).first()
+        try:
+            # Pagination - use 'per_page' to match frontend
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', request.args.get('limit', 50)))
             
-            username = user.username if user else "Unknown User"
-            shopname = shop.shopname if shop else "Unknown Shop"
-        
-            all_transfers.append({
-                "transferv2_id": transfer.transferv2_id,  # lowercase to match model
-                "shop_id": transfer.shop_id,
-                "inventoryV2_id": transfer.inventoryV2_id,      
-                "quantity": transfer.quantity, 
-                "received_quantity": transfer.received_quantity,
-                "difference": transfer.difference,            
-                "metric": transfer.metric,
-                "total_cost": transfer.total_cost,  # lowercase to match model
-                "BatchNumber": transfer.BatchNumber,
-                "user_id": transfer.user_id,
-                "username": username,
-                "shop_name": shopname,
-                "itemname": transfer.itemname,
-                "status": transfer.status,
-                "amountPaid": transfer.amountPaid,
-                "status":transfer.status,
-                "unitCost": transfer.unitCost,
-                "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
-            })
+            # Filters
+            search_query = request.args.get('searchQuery', '')
+            status_filter = request.args.get('status', '')
+            shop_filter = request.args.get('shop_id', '')
+            item_filter = request.args.get('itemFilter', '')
+            
+            # Date range filters
+            start_date = request.args.get('startDate', '')
+            end_date = request.args.get('endDate', '')
+            
+            # Sort parameters
+            sort_by = request.args.get('sort_by', 'created_at')
+            sort_order = request.args.get('sort_order', 'desc')
 
-        return jsonify({
-            "status": "success",
-            "data": all_transfers,
-            "count": len(all_transfers),
-            "message": "Transfers retrieved successfully"
-        })
+            # Valid sort fields - make sure they match frontend
+            valid_sort_fields = ['created_at', 'username', 'shop_name', 'itemname', 'total_cost', 'quantity']
+            if sort_by not in valid_sort_fields:
+                sort_by = 'created_at'
+            if sort_order not in ['asc', 'desc']:
+                sort_order = 'desc'
+
+            # Base query with joins
+            transfers_query = TransfersV2.query.join(Users, TransfersV2.user_id == Users.users_id)\
+                                             .join(Shops, TransfersV2.shop_id == Shops.shops_id)
+
+            # Apply filters
+            if search_query:
+                transfers_query = transfers_query.filter(
+                    or_(
+                        TransfersV2.itemname.ilike(f"%{search_query}%"),
+                        TransfersV2.BatchNumber.ilike(f"%{search_query}%"),
+                        Users.username.ilike(f"%{search_query}%"),
+                        Shops.shopname.ilike(f"%{search_query}%")
+                    )
+                )
+
+            # Apply date range filter
+            if start_date and end_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    # Add one day to include the end date fully
+                    end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+                    
+                    transfers_query = transfers_query.filter(
+                        TransfersV2.created_at.between(start_date_obj, end_date_obj)
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            elif start_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    transfers_query = transfers_query.filter(
+                        TransfersV2.created_at >= start_date_obj
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            elif end_date:
+                try:
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+                    transfers_query = transfers_query.filter(
+                        TransfersV2.created_at <= end_date_obj
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+            if status_filter:
+                transfers_query = transfers_query.filter(TransfersV2.status == status_filter)
+
+            if shop_filter:
+                try:
+                    transfers_query = transfers_query.filter(TransfersV2.shop_id == int(shop_filter))
+                except ValueError:
+                    return {"error": "Invalid shop ID format."}, 400
+
+            if item_filter:
+                transfers_query = transfers_query.filter(TransfersV2.itemname.ilike(f"%{item_filter}%"))
+
+            # CALCULATE TOTALS FOR ENTIRE DATE RANGE/FILTERS
+            # Create a copy of the query for totals calculation
+            totals_query = transfers_query
+            
+            # Calculate total cost and total amount paid for all matching records
+            from sqlalchemy import func
+            
+            totals = totals_query.with_entities(
+                func.sum(TransfersV2.total_cost).label('total_cost_sum'),
+                func.sum(TransfersV2.amountPaid).label('amount_paid_sum'),
+                func.count(TransfersV2.transferv2_id).label('total_transfers_count')
+            ).first()
+            
+            total_cost_sum = totals.total_cost_sum or 0.0
+            total_amount_paid_sum = totals.amount_paid_sum or 0.0
+            total_transfers_count = totals.total_transfers_count or 0
+
+            # Handle sorting
+            if sort_by == 'username':
+                order_field = Users.username
+            elif sort_by == 'shop_name':
+                order_field = Shops.shopname
+            elif sort_by == 'itemname':
+                order_field = TransfersV2.itemname
+            elif sort_by == 'total_cost':
+                order_field = TransfersV2.total_cost
+            elif sort_by == 'quantity':
+                order_field = TransfersV2.quantity
+            else:
+                order_field = TransfersV2.created_at
+
+            # Sort direction
+            if sort_order == 'desc':
+                transfers_query = transfers_query.order_by(order_field.desc())
+            else:
+                transfers_query = transfers_query.order_by(order_field.asc())
+
+            # ALWAYS use pagination - never return all records
+            # Count total items before pagination
+            total_transfers = transfers_query.count()
+            total_pages = max(1, (total_transfers + per_page - 1) // per_page)
+            
+            # Apply pagination
+            offset = (page - 1) * per_page
+            transfers_list = transfers_query.offset(offset).limit(per_page).all()
+
+            # Construct response data
+            all_transfers = []
+            for transfer in transfers_list:
+                # Already joined, so we can access directly
+                username = transfer.users.username if transfer.users else "Unknown User"
+                shopname = transfer.shop.shopname if transfer.shop else "Unknown Shop"
+            
+                all_transfers.append({
+                    "transferv2_id": transfer.transferv2_id,
+                    "shop_id": transfer.shop_id,
+                    "inventoryV2_id": transfer.inventoryV2_id,      
+                    "quantity": float(transfer.quantity) if transfer.quantity else 0.0, 
+                    "received_quantity": float(transfer.received_quantity) if transfer.received_quantity else 0.0,
+                    "difference": float(transfer.difference) if transfer.difference else 0.0,            
+                    "metric": transfer.metric or "",
+                    "total_cost": float(transfer.total_cost) if transfer.total_cost else 0.0,
+                    "BatchNumber": transfer.BatchNumber or "",
+                    "user_id": transfer.user_id,
+                    "username": username,
+                    "shop_name": shopname,
+                    "itemname": transfer.itemname or "",
+                    "status": transfer.status or "",
+                    "amountPaid": float(transfer.amountPaid) if transfer.amountPaid else 0.0,
+                    "unitCost": float(transfer.unitCost) if transfer.unitCost else 0.0,
+                    "created_at": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
+                })
+
+            return {
+                "status": "success",
+                "data": all_transfers,
+                "total_transfers": total_transfers,
+                "total_pages": total_pages,
+                "current_page": page,
+                "per_page": per_page,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+                "count": len(all_transfers),
+                # NEW: Add summary data for the entire filtered range
+                "summary": {
+                    "total_cost": float(total_cost_sum),
+                    "total_amount_paid": float(total_amount_paid_sum),
+                    "balance": float(total_cost_sum - total_amount_paid_sum),
+                    "total_transfers_count": total_transfers_count
+                },
+                "message": "Transfers retrieved successfully"
+            }, 200
+
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            return {"error": "Database operation failed."}, 500
+        except ValueError as e:
+            current_app.logger.error(f"Value error: {str(e)}")
+            return {"error": str(e)}, 400
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return {"error": "An unexpected error occurred."}, 500
 
 
 class GetTransferByIdV2(Resource):
@@ -781,7 +977,7 @@ class AddInventoryV2(Resource):
 
         required_fields = [
             'itemname', 'quantity', 'metric', 'unitCost', 'amountPaid', 'unitPrice',
-            'Suppliername', 'Supplier_location', 'created_at'
+            'Suppliername', 'phone_number', 'Supplier_location', 'created_at'
         ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
@@ -895,14 +1091,15 @@ class AddInventoryV2(Resource):
                 user_id=current_user_id,
                 Suppliername=Suppliername,
                 Supplier_location=Supplier_location,
-                ballance=balance,
+                ballance=balance,  # Note: Typo from model (should be 'balance')
                 note=note,
-                created_at=created_at,
+                created_at=created_at,  # User-provided date
                 source=source,
-                Trasnaction_type_credit=amountPaid,
-                Transcation_type_debit=debit_account_value,
+                Trasnaction_type_credit=amountPaid,  # Note: Typo from model
+                Transcation_type_debit=debit_account_value,  # Note: Typo from model
                 paymentRef=paymentRef
             )
+            
 
             db.session.add(new_inventory)
             db.session.commit()
@@ -920,29 +1117,221 @@ class AddInventoryV2(Resource):
 
 class GetAllInventoryV2(Resource):
     @jwt_required()
-    # @check_role('manager')
     def get(self):
-        inventories = InventoryV2.query.order_by(InventoryV2.created_at.desc()).all()
+        try:
+            # Pagination
+            page = int(request.args.get('page', 1))
+            per_page = int(request.args.get('per_page', request.args.get('limit', 50)))
+            
+            # Filters
+            search_query = request.args.get('searchQuery', '')
+            item_name_filter = request.args.get('itemFilter', '')
+            source_filter = request.args.get('sourceFilter', '')
+            metric_filter = request.args.get('metricFilter', '')
+            stock_range_filter = request.args.get('stockRangeFilter', '')
+            
+            # Date range filters
+            start_date = request.args.get('startDate', '')
+            end_date = request.args.get('endDate', '')
+            
+            # Sort parameters
+            sort_by = request.args.get('sort_by', 'created_at')
+            sort_order = request.args.get('sort_order', 'desc')
 
-        all_inventory = [{
-            "inventoryV2_id": inventory.inventoryV2_id,
-            "itemname": inventory.itemname,
-            "initial_quantity": inventory.initial_quantity,
-            "remaining_quantity": inventory.quantity,
-            "metric": inventory.metric,
-            "totalCost": inventory.totalCost,
-            "unitCost": inventory.unitCost,
-            "batchnumber": inventory.BatchNumber,
-            "amountPaid": inventory.amountPaid,
-            "balance": inventory.ballance,
-            "note": inventory.note,
-            "created_at": inventory.created_at,
-            "unitPrice": inventory.unitPrice,
-            "source": inventory.source,
-            "paymentRef": inventory.paymentRef
-        } for inventory in inventories]
+            # Valid sort fields
+            valid_sort_fields = ['created_at', 'itemname', 'remaining_quantity', 'initial_quantity', 
+                               'unitPrice', 'totalCost', 'batchnumber', 'source']
+            if sort_by not in valid_sort_fields:
+                sort_by = 'created_at'
+            if sort_order not in ['asc', 'desc']:
+                sort_order = 'desc'
 
-        return make_response(jsonify(all_inventory), 200)
+            # Base query
+            inventory_query = InventoryV2.query
+
+            # Apply search filter
+            if search_query:
+                inventory_query = inventory_query.filter(
+                    or_(
+                        InventoryV2.itemname.ilike(f"%{search_query}%"),
+                        InventoryV2.BatchNumber.ilike(f"%{search_query}%"),
+                        InventoryV2.note.ilike(f"%{search_query}%"),
+                        InventoryV2.source.ilike(f"%{search_query}%")
+                    )
+                )
+
+            # Apply item name filter
+            if item_name_filter:
+                inventory_query = inventory_query.filter(InventoryV2.itemname == item_name_filter)
+
+            # Apply source filter
+            if source_filter:
+                inventory_query = inventory_query.filter(InventoryV2.source == source_filter)
+
+            # Apply metric filter
+            if metric_filter:
+                inventory_query = inventory_query.filter(InventoryV2.metric == metric_filter)
+
+            # Apply date range filter
+            if start_date and end_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    # Add one day to include the end date fully
+                    end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+                    
+                    inventory_query = inventory_query.filter(
+                        InventoryV2.created_at.between(start_date_obj, end_date_obj)
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            elif start_date:
+                try:
+                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+                    inventory_query = inventory_query.filter(
+                        InventoryV2.created_at >= start_date_obj
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+            elif end_date:
+                try:
+                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+                    end_date_obj = end_date_obj.replace(hour=23, minute=59, second=59)
+                    inventory_query = inventory_query.filter(
+                        InventoryV2.created_at <= end_date_obj
+                    )
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+            # Apply stock range filter
+            if stock_range_filter:
+                if stock_range_filter == "out-of-stock":
+                    inventory_query = inventory_query.filter(InventoryV2.quantity == 0)
+                elif stock_range_filter == "low-stock":
+                    inventory_query = inventory_query.filter(
+                        and_(
+                            InventoryV2.quantity > 0,
+                            InventoryV2.quantity <= InventoryV2.initial_quantity * 0.2
+                        )
+                    )
+                elif stock_range_filter == "medium-stock":
+                    inventory_query = inventory_query.filter(
+                        and_(
+                            InventoryV2.quantity > InventoryV2.initial_quantity * 0.2,
+                            InventoryV2.quantity <= InventoryV2.initial_quantity * 0.5
+                        )
+                    )
+                elif stock_range_filter == "high-stock":
+                    inventory_query = inventory_query.filter(
+                        InventoryV2.quantity > InventoryV2.initial_quantity * 0.5
+                    )
+
+            # Handle sorting
+            if sort_by == 'itemname':
+                order_field = InventoryV2.itemname
+            elif sort_by == 'remaining_quantity':
+                order_field = InventoryV2.quantity
+            elif sort_by == 'initial_quantity':
+                order_field = InventoryV2.initial_quantity
+            elif sort_by == 'unitPrice':
+                order_field = InventoryV2.unitPrice
+            elif sort_by == 'totalCost':
+                order_field = InventoryV2.totalCost
+            elif sort_by == 'batchnumber':
+                order_field = InventoryV2.BatchNumber
+            elif sort_by == 'source':
+                order_field = InventoryV2.source
+            else:
+                order_field = InventoryV2.created_at
+
+            # Sort direction
+            if sort_order == 'desc':
+                inventory_query = inventory_query.order_by(order_field.desc())
+            else:
+                inventory_query = inventory_query.order_by(order_field.asc())
+
+            # Count total items before pagination
+            total_inventory = inventory_query.count()
+            total_pages = max(1, (total_inventory + per_page - 1) // per_page)
+            
+            # Apply pagination
+            offset = (page - 1) * per_page
+            inventory_list = inventory_query.offset(offset).limit(per_page).all()
+
+            # Calculate summary statistics for the filtered data
+            all_items_summary = []
+            total_stock_value = 0
+            total_cost_value = 0
+            total_stock_quantity = 0
+            low_stock_count = 0
+            out_of_stock_count = 0
+            
+            for inv in inventory_list:
+                stock_value = inv.quantity * inv.unitPrice if inv.quantity and inv.unitPrice else 0
+                total_stock_value += stock_value
+                total_cost_value += inv.totalCost if inv.totalCost else 0
+                total_stock_quantity += inv.quantity if inv.quantity else 0
+                
+                # Calculate status
+                if inv.quantity <= 0:
+                    out_of_stock_count += 1
+                elif inv.initial_quantity > 0 and inv.quantity <= inv.initial_quantity * 0.2:
+                    low_stock_count += 1
+
+            # Construct response data
+            all_inventory = []
+            for inventory in inventory_list:
+                # Calculate balance if not already calculated
+                balance = inventory.ballance if hasattr(inventory, 'ballance') else 0
+                
+                all_inventory.append({
+                    "inventoryV2_id": inventory.inventoryV2_id,
+                    "itemname": inventory.itemname,
+                    "initial_quantity": float(inventory.initial_quantity) if inventory.initial_quantity else 0.0,
+                    "remaining_quantity": float(inventory.quantity) if inventory.quantity else 0.0,
+                    "metric": inventory.metric or "",
+                    "totalCost": float(inventory.totalCost) if inventory.totalCost else 0.0,
+                    "unitCost": float(inventory.unitCost) if inventory.unitCost else 0.0,
+                    "batchnumber": inventory.BatchNumber or "",
+                    "amountPaid": float(inventory.amountPaid) if inventory.amountPaid else 0.0,
+                    "balance": float(balance) if balance else 0.0,
+                    "note": inventory.note or "",
+                    "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
+                    "unitPrice": float(inventory.unitPrice) if inventory.unitPrice else 0.0,
+                    "source": inventory.source or "",
+                    "paymentRef": inventory.paymentRef or ""
+                })
+
+            return {
+                "status": "success",
+                "data": all_inventory,
+                "total_inventory": total_inventory,
+                "total_pages": total_pages,
+                "current_page": page,
+                "per_page": per_page,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+                "count": len(all_inventory),
+                "summary": {
+                    "totalItems": total_inventory,
+                    "totalValue": total_stock_value,
+                    "totalCost": total_cost_value,
+                    "totalStock": total_stock_quantity,
+                    "lowStockItems": low_stock_count,
+                    "outOfStockItems": out_of_stock_count
+                },
+                "message": "Inventory retrieved successfully"
+            }, 200
+
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error: {str(e)}")
+            return {"error": "Database operation failed."}, 500
+        except ValueError as e:
+            current_app.logger.error(f"Value error: {str(e)}")
+            return {"error": str(e)}, 400
+        except Exception as e:
+            current_app.logger.error(f"Unexpected error: {str(e)}")
+            return {"error": "An unexpected error occurred."}, 500
 
 class InventoryResourceByIdV2(Resource):
     @jwt_required()
@@ -963,7 +1352,7 @@ class InventoryResourceByIdV2(Resource):
                 "amountPaid": inventory.amountPaid,
                 "balance": inventory.ballance,
                 "note": inventory.note,
-                "created_at": inventory.created_at.strftime('%Y-%m-%d') if inventory.created_at else None,
+                "created_at": inventory.created_at.isoformat() if inventory.created_at else None,
                 "unitPrice": inventory.unitPrice,
                 "source": inventory.source,
                 "paymentRef": inventory.paymentRef,

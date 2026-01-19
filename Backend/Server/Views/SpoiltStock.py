@@ -6,6 +6,7 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.InventoryV2 import InventoryV2
+from Server.Models.TransferV2 import TransfersV2
 from Server.Models.SpoiltStock import SpoiltStock
 from Server.Models.Shopstock import ShopStock
 from Server.Models.ShopstockV2 import ShopStockV2
@@ -515,3 +516,196 @@ class SpoiltStockResource(Resource):
         return {"message": "Spoilt stock record deleted successfully"}, 200
 
 
+class SpoiltValue(Resource):
+    def get(self):
+        """Get combined stock loss report from spoilt stock and transfer differences per shop"""
+        
+        shop_id = request.args.get('shop_id')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Parse date filters if provided
+        date_filters = {}
+        if start_date:
+            try:
+                date_filters['start_date'] = datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                return make_response(jsonify({"error": "Invalid start_date format. Use YYYY-MM-DD"}), 400)
+        
+        if end_date:
+            try:
+                date_filters['end_date'] = datetime.strptime(end_date, '%Y-%m-%d').date()
+            except ValueError:
+                return make_response(jsonify({"error": "Invalid end_date format. Use YYYY-MM-DD"}), 400)
+        
+        # Get spoilt stock records
+        spoilt_query = SpoiltStock.query
+        
+        if shop_id:
+            spoilt_query = spoilt_query.filter_by(shop_id=shop_id)
+        
+        if 'start_date' in date_filters:
+            spoilt_query = spoilt_query.filter(SpoiltStock.created_at >= date_filters['start_date'])
+        
+        if 'end_date' in date_filters:
+            spoilt_query = spoilt_query.filter(SpoiltStock.created_at <= date_filters['end_date'])
+        
+        spoilt_records = spoilt_query.order_by(SpoiltStock.created_at.desc()).all()
+        
+        # Get transfer records with differences
+        transfer_query = TransfersV2.query.filter(TransfersV2.difference != 0)
+        
+        if shop_id:
+            transfer_query = transfer_query.filter_by(shop_id=shop_id)
+        
+        if 'start_date' in date_filters:
+            transfer_query = transfer_query.filter(TransfersV2.created_at >= date_filters['start_date'])
+        
+        if 'end_date' in date_filters:
+            transfer_query = transfer_query.filter(TransfersV2.created_at <= date_filters['end_date'])
+        
+        transfer_records = transfer_query.order_by(TransfersV2.created_at.desc()).all()
+        
+        # Process spoilt stock records
+        spoilt_losses = []
+        for record in spoilt_records:
+            user = Users.query.filter_by(users_id=record.clerk_id).first()
+            
+            # Get shop name
+            if record.shop_id:
+                shop = Shops.query.filter_by(shops_id=record.shop_id).first()
+                shopname = shop.shopname if shop else f"Shop ID: {record.shop_id}"
+            else:
+                shopname = "Inventory"
+            
+            # Calculate value for spoilt stock
+            # First try to get unit cost from InventoryV2 using item name
+            inventory_item = InventoryV2.query.filter_by(
+                itemname=record.item
+            ).order_by(InventoryV2.created_at.desc()).first()
+            
+            if inventory_item:
+                unit_cost = inventory_item.unitCost
+                total_value = unit_cost * record.quantity if unit_cost else 0
+            else:
+                unit_cost = None
+                total_value = 0
+            
+            spoilt_losses.append({
+                "type": "spoilt_stock",
+                "id": record.id,
+                "date": record.created_at.strftime('%Y-%m-%d') if record.created_at else None,
+                "datetime": record.created_at.strftime('%Y-%m-%d %H:%M:%S') if record.created_at else None,
+                "shop_id": record.shop_id,
+                "shop_name": shopname,
+                "item": record.item,
+                "quantity": record.quantity,
+                "unit": record.unit,
+                "unit_cost": unit_cost,
+                "total_value": total_value,
+                "reason": f"Spoilt - {record.disposal_method}",
+                "batch_number": record.batches_affected,
+                "clerk": user.username if user else "Unknown",
+                "status": record.status,
+                "comment": record.comment
+            })
+        
+        # Process transfer differences
+        transfer_losses = []
+        for transfer in transfer_records:
+            # Only consider negative differences (losses)
+            if transfer.difference >= 0:
+                continue
+                
+            user = Users.query.filter_by(users_id=transfer.user_id).first()
+            shop = Shops.query.filter_by(shops_id=transfer.shop_id).first()
+            
+            # Calculate value for transfer difference
+            unit_cost = transfer.unitCost
+            
+            # If unitCost is not available in transfer, try to get from InventoryV2
+            if not unit_cost and transfer.BatchNumber:
+                inventory_item = InventoryV2.query.filter_by(
+                    BatchNumber=transfer.BatchNumber
+                ).first()
+                if inventory_item:
+                    unit_cost = inventory_item.unitCost
+            
+            # Calculate loss value (difference is negative for losses)
+            loss_quantity = abs(transfer.difference)
+            total_value = unit_cost * loss_quantity if unit_cost else 0
+            
+            transfer_losses.append({
+                "type": "transfer_difference",
+                "id": transfer.transferv2_id,
+                "date": transfer.created_at.strftime('%Y-%m-%d') if transfer.created_at else None,
+                "datetime": transfer.created_at.strftime('%Y-%m-%d %H:%M:%S') if transfer.created_at else None,
+                "shop_id": transfer.shop_id,
+                "shop_name": shop.shopname if shop else f"Shop ID: {transfer.shop_id}",
+                "item": transfer.itemname,
+                "quantity": loss_quantity,
+                "unit": transfer.metric,
+                "unit_cost": unit_cost,
+                "total_value": total_value,
+                "reason": f"Transfer Shortage",
+                "batch_number": transfer.BatchNumber,
+                "clerk": user.username if user else "Unknown",
+                "received_quantity": transfer.received_quantity,
+                "expected_quantity": transfer.quantity,
+                "difference": transfer.difference,
+                "status": transfer.status
+            })
+        
+        # Combine both lists
+        all_losses = spoilt_losses + transfer_losses
+        
+        # Sort by date descending
+        all_losses.sort(key=lambda x: x['datetime'] or '', reverse=True)
+        
+        # Calculate totals
+        total_spoilt_value = sum(item['total_value'] for item in spoilt_losses)
+        total_transfer_loss_value = sum(item['total_value'] for item in transfer_losses)
+        total_loss_value = total_spoilt_value + total_transfer_loss_value
+        
+        # Group by shop for summary
+        shop_summary = {}
+        for loss in all_losses:
+            shop_id_key = loss['shop_id'] or 'inventory'
+            shop_name = loss['shop_name']
+            
+            if shop_id_key not in shop_summary:
+                shop_summary[shop_id_key] = {
+                    'shop_id': loss['shop_id'],
+                    'shop_name': shop_name,
+                    'total_loss_value': 0,
+                    'spoilt_value': 0,
+                    'transfer_loss_value': 0,
+                    'item_count': 0
+                }
+            
+            shop_summary[shop_id_key]['total_loss_value'] += loss['total_value']
+            shop_summary[shop_id_key]['item_count'] += 1
+            
+            if loss['type'] == 'spoilt_stock':
+                shop_summary[shop_id_key]['spoilt_value'] += loss['total_value']
+            else:
+                shop_summary[shop_id_key]['transfer_loss_value'] += loss['total_value']
+        
+        # Convert shop_summary to list
+        shop_summary_list = list(shop_summary.values())
+        
+        return jsonify({
+            "status": "success",
+            "data": all_losses,
+            "summary": {
+                "total_losses": len(all_losses),
+                "total_spoilt_items": len(spoilt_losses),
+                "total_transfer_differences": len(transfer_losses),
+                "total_spoilt_value": total_spoilt_value,
+                "total_transfer_loss_value": total_transfer_loss_value,
+                "total_loss_value": total_loss_value,
+                "shops_summary": shop_summary_list
+            },
+            "count": len(all_losses),
+            "message": "Stock loss report retrieved successfully"
+        })
