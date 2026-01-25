@@ -433,56 +433,71 @@ class SpoiltStockHistory(Resource):
 class SpoiltStockResource(Resource):
     @jwt_required()
     def get(self):
-        shop_id = request.args.get('shop_id')
-
-        if shop_id:
-            records = SpoiltStock.query.filter_by(shop_id=shop_id).order_by(SpoiltStock.created_at.desc()).all()
-        else:
-            records = SpoiltStock.query.order_by(SpoiltStock.created_at.desc()).all()
-
-        result = []
-        for record in records:
-            user = Users.query.filter_by(users_id=record.clerk_id).first()
-            shop = Shops.query.filter_by(shops_id=record.shop_id).first()
-
-            username = user.username if user else "Unknown User"
+        try:
+            shop_id = request.args.get('shop_id')
+            filter_by_shop = request.args.get('filter_by_shop', 'false').lower() == 'true'
             
-            # ✅ CHANGED: Return "Inventory" when shop_id is null, otherwise get shopname from Shops table
-            if record.shop_id is None:
-                shopname = "Inventory"
+            base_query = SpoiltStock.query.order_by(SpoiltStock.created_at.desc())
+            
+            # Filter by shop_id if provided
+            if shop_id:
+                # If shop_id is provided, filter by exact match
+                records = base_query.filter_by(shop_id=shop_id).all()
+            elif filter_by_shop:
+                # If filter_by_shop=true but no shop_id, filter out records with null shop_id
+                records = base_query.filter(SpoiltStock.shop_id.isnot(None)).all()
             else:
-                shopname = shop.shopname if shop else "Unknown Shop"
+                # Get all records (including those with null shop_id)
+                records = base_query.all()
 
-            # Format created_at
-            if record.created_at:
-                if isinstance(record.created_at, str):
-                    try:
-                        created_at = datetime.strptime(record.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        created_at = record.created_at
+            result = []
+            for record in records:
+                user = Users.query.filter_by(users_id=record.clerk_id).first()
+                shop = Shops.query.filter_by(shops_id=record.shop_id).first() if record.shop_id else None
+
+                username = user.username if user else "Unknown User"
+                
+                # Determine shopname
+                if record.shop_id is None:
+                    shopname = "Inventory"
+                elif shop:
+                    shopname = shop.shopname
                 else:
-                    created_at = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                created_at = None
+                    shopname = "Unknown Shop"
 
-            result.append({
-                "id": record.id,
-                "created_at": created_at,
-                "clerk_id": record.clerk_id,
-                "username": username,
-                "shop_id": record.shop_id,
-                "shop_name": shopname,  # This will now show "Inventory" for null shop_id
-                "item": record.item,
-                "quantity": record.quantity,
-                "unit": record.unit,
-                "disposal_method": record.disposal_method,
-                "collector_name": record.collector_name,
-                'batches_affected': record.batches_affected,
-                'status': record.status,
-                "comment": record.comment
-            })
+                # Format created_at
+                if record.created_at:
+                    if isinstance(record.created_at, str):
+                        try:
+                            created_at = datetime.strptime(record.created_at, '%Y-%m-%d %H:%M:%S').strftime('%Y-%m-%d %H:%M:%S')
+                        except ValueError:
+                            created_at = record.created_at
+                    else:
+                        created_at = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
+                else:
+                    created_at = None
 
-        return make_response(jsonify(result), 200)
+                result.append({
+                    "id": record.id,
+                    "created_at": created_at,
+                    "clerk_id": record.clerk_id,
+                    "username": username,
+                    "shop_id": record.shop_id,
+                    "shop_name": shopname,
+                    "item": record.item,
+                    "quantity": record.quantity,
+                    "unit": record.unit,
+                    "disposal_method": record.disposal_method,
+                    "collector_name": record.collector_name,
+                    'batches_affected': record.batches_affected,
+                    'status': record.status,
+                    "comment": record.comment
+                })
+
+            return make_response(jsonify(result), 200)
+        
+        except Exception as e:
+            return make_response(jsonify({"error": str(e)}), 500)
 
 
     @jwt_required()

@@ -13,7 +13,7 @@ class StockReport(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.users_id'), nullable=False)
 
     report = db.Column(db.JSON, nullable=False)
-    comment = db.Column(db.Text, nullable=True)
+    comment = db.Column(db.String(100), nullable=True)
     reported_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships

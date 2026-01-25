@@ -324,19 +324,72 @@ class DeclineTransfers(Resource):
 class GetAllShopToShopTransfers(Resource):
     @jwt_required()
     def get(self):
-        # Get all transfer records with related data loaded efficiently
-        transfers = Shoptoshoptransfer.query.options(
+        # Get query parameters
+        from_shop_id = request.args.get('from_shop_id')
+        to_shop_id = request.args.get('to_shop_id')
+        shop_id = request.args.get('shop_id')  # For transfers involving either from or to shop
+        item_name = request.args.get('item_name')
+        status = request.args.get('status')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Build base query
+        query = Shoptoshoptransfer.query.options(
             db.joinedload(Shoptoshoptransfer.user),
             db.joinedload(Shoptoshoptransfer.shop),
             db.joinedload(Shoptoshoptransfer.stockv2)
-        ).order_by(Shoptoshoptransfer.transfer_date.desc()).all()
+        )
+        
+        # Apply filters
+        if from_shop_id:
+            query = query.filter_by(from_shop_id=from_shop_id)
+        
+        if to_shop_id:
+            query = query.filter_by(to_shop_id=to_shop_id)
+        
+        if shop_id:
+            # Filter by transfers involving the shop (either as sender or receiver)
+            query = query.filter(
+                db.or_(
+                    Shoptoshoptransfer.from_shop_id == shop_id,
+                    Shoptoshoptransfer.to_shop_id == shop_id
+                )
+            )
+        
+        if item_name:
+            # Case-insensitive search for item name
+            query = query.filter(Shoptoshoptransfer.itemname.ilike(f"%{item_name}%"))
+        
+        if status:
+            query = query.filter_by(status=status)
+        
+        # Date range filtering
+        if start_date:
+            try:
+                start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+                query = query.filter(Shoptoshoptransfer.transfer_date >= start_datetime)
+            except ValueError:
+                return make_response(jsonify({"error": "Invalid start_date format. Use YYYY-MM-DD"}), 400)
+        
+        if end_date:
+            try:
+                end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+                query = query.filter(Shoptoshoptransfer.transfer_date < end_datetime)
+            except ValueError:
+                return make_response(jsonify({"error": "Invalid end_date format. Use YYYY-MM-DD"}), 400)
+        
+        # Order by transfer date (most recent first)
+        query = query.order_by(Shoptoshoptransfer.transfer_date.desc())
+        
+        # Get all transfers
+        transfers = query.all()
         
         if not transfers:
             return make_response(jsonify({"message": "No transfers found"}), 404)
         
         transfers_data = []
         for transfer in transfers:
-            # Get additional shop names (since we only have relationship for shops_id)
+            # Get additional shop names
             from_shop = Shops.query.get(transfer.from_shop_id)
             to_shop = Shops.query.get(transfer.to_shop_id)
             

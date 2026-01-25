@@ -34,7 +34,7 @@ class Inventory(db.Model):
     Supplier_location = db.Column(db.String(50), nullable=False)  # Corrected
 
     ballance = db.Column(db.Float)
-    note = db.Column(db.Text, nullable=True)
+    note = db.Column(db.String(100), nullable=True)
     
     users = db.relationship('Users', backref='inventory', lazy=True)
     created_at = db.Column(db.DateTime, server_default=db.func.now())

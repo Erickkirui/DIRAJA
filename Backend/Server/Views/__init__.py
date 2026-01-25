@@ -82,9 +82,7 @@ from Server.Views.Emailnotifications import (
 )
 
 from Server.Views.Accountingviews import (
-    AccountTypeResource, AccountTypeListResource, CreateAccount,
-    CreateChartOfAccounts, ChartOfAccountsList, CreateItemAccount,
-    GetAllItemAccounts, SalesLedger, PurchasesLedger,GetItems,CreateItem
+    CreateChartOfAccounts, ChartOfAccountsList, SalesLedger, PurchasesLedger,GetItems,CreateItem
 )
 
 from Server.Views.AccountBalances import (
@@ -173,6 +171,13 @@ from Server.Views.credirors import (
 )
 from Server.Views.Permissions import (
     GetAllPermissions,GetUserPermissions,UpdateUserPermissions
+)
+from Server.Views.ShopTargets import (
+    PostShopTarget,GetShopTargets,TargetResource
+)
+
+from Server.Views.LedgerViews import (
+    SalesLedgerList,CreditSalesLedgerList
 )
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -327,13 +332,13 @@ api.add_resource(TotalAmountPaidSalesMabanda,'/totalsalesmabanda')
 api.add_resource(MabandaProfitLossAPI, '/mabandap&l')
 
 #Accounting 
-api.add_resource(CreateAccount, '/add-account')
-api.add_resource(AccountTypeListResource, '/account-types/all')
-api.add_resource(AccountTypeResource, '/account-types/<int:id>')
+# api.add_resource(CreateAccount, '/add-account')
+# api.add_resource(AccountTypeListResource, '/account-types/all')
+# api.add_resource(AccountTypeResource, '/account-types/<int:id>')
 api.add_resource(CreateChartOfAccounts, '/add-chart-of-accounts')
 api.add_resource(ChartOfAccountsList, '/chart-of-accounts')
-api.add_resource(CreateItemAccount, '/itemaccounts')
-api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
+# api.add_resource(CreateItemAccount, '/itemaccounts')
+# api.add_resource(GetAllItemAccounts, '/itemaccounts/all')
 api.add_resource(SalesLedger, '/sale-ledger')
 api.add_resource(PurchasesLedger , '/purchases-ledger')
 api.add_resource(CreateItem,'/create-items')
@@ -516,4 +521,13 @@ api.add_resource(GetUserPermissions, "/permissions/user/<int:user_id>")
 api.add_resource(UpdateUserPermissions, "/permissions/user/<int:user_id>")
 
 
+
+#ShopTargets 
+api.add_resource(TargetResource, "/shop-targets/<int:target_id>") 
+api.add_resource(PostShopTarget, "/add-target")
+api.add_resource(GetShopTargets, "/targets")
+
+#LEdgers 
+api.add_resource(SalesLedgerList, "/accounting/sales-ledger")
+api.add_resource(CreditSalesLedgerList,"/accounting/credit-sales-ledger")
 

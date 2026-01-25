@@ -10,3 +10,4 @@ class ChartOfAccounts(db.Model):
 
     def __str__(self):
         return f"ChartOfAccounts(id={self.id}, code='{self.code}', name='{self.name}')"
+ 

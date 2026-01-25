@@ -1114,7 +1114,6 @@ class AddInventoryV2(Resource):
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
 
-
 class GetAllInventoryV2(Resource):
     @jwt_required()
     def get(self):
@@ -1123,7 +1122,7 @@ class GetAllInventoryV2(Resource):
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', request.args.get('limit', 50)))
             
-            # Filters
+            # Existing filters
             search_query = request.args.get('searchQuery', '')
             item_name_filter = request.args.get('itemFilter', '')
             source_filter = request.args.get('sourceFilter', '')
@@ -1134,13 +1133,18 @@ class GetAllInventoryV2(Resource):
             start_date = request.args.get('startDate', '')
             end_date = request.args.get('endDate', '')
             
+            # New filters
+            supplier_filter = request.args.get('supplier', '')
+            transaction_code_filter = request.args.get('transactionCode', '')
+            filter_item_name = request.args.get('filterItemName', '')
+            
             # Sort parameters
             sort_by = request.args.get('sort_by', 'created_at')
             sort_order = request.args.get('sort_order', 'desc')
 
             # Valid sort fields
             valid_sort_fields = ['created_at', 'itemname', 'remaining_quantity', 'initial_quantity', 
-                               'unitPrice', 'totalCost', 'batchnumber', 'source']
+                               'unitPrice', 'totalCost', 'batchnumber', 'source', 'supplier']
             if sort_by not in valid_sort_fields:
                 sort_by = 'created_at'
             if sort_order not in ['asc', 'desc']:
@@ -1156,13 +1160,19 @@ class GetAllInventoryV2(Resource):
                         InventoryV2.itemname.ilike(f"%{search_query}%"),
                         InventoryV2.BatchNumber.ilike(f"%{search_query}%"),
                         InventoryV2.note.ilike(f"%{search_query}%"),
-                        InventoryV2.source.ilike(f"%{search_query}%")
+                        InventoryV2.source.ilike(f"%{search_query}%"),
+                        InventoryV2.Suppliername.ilike(f"%{search_query}%"),
+                        InventoryV2.paymentRef.ilike(f"%{search_query}%")  # Added to search
                     )
                 )
 
-            # Apply item name filter
+            # Apply item name filter (original filter)
             if item_name_filter:
                 inventory_query = inventory_query.filter(InventoryV2.itemname == item_name_filter)
+
+            # Apply filter item name (new filter from Filter dropdown)
+            if filter_item_name:
+                inventory_query = inventory_query.filter(InventoryV2.itemname.ilike(f"%{filter_item_name}%"))
 
             # Apply source filter
             if source_filter:
@@ -1171,6 +1181,18 @@ class GetAllInventoryV2(Resource):
             # Apply metric filter
             if metric_filter:
                 inventory_query = inventory_query.filter(InventoryV2.metric == metric_filter)
+
+            # Apply supplier filter - using Suppliername field
+            if supplier_filter:
+                inventory_query = inventory_query.filter(
+                    InventoryV2.Suppliername.ilike(f"%{supplier_filter}%")
+                )
+
+            # Apply transaction code filter (search in paymentRef) - UPDATED
+            if transaction_code_filter:
+                inventory_query = inventory_query.filter(
+                    InventoryV2.paymentRef.ilike(f"%{transaction_code_filter}%")
+                )
 
             # Apply date range filter
             if start_date and end_date:
@@ -1226,7 +1248,7 @@ class GetAllInventoryV2(Resource):
                         InventoryV2.quantity > InventoryV2.initial_quantity * 0.5
                     )
 
-            # Handle sorting
+            # Handle sorting - updated for Suppliername
             if sort_by == 'itemname':
                 order_field = InventoryV2.itemname
             elif sort_by == 'remaining_quantity':
@@ -1241,6 +1263,8 @@ class GetAllInventoryV2(Resource):
                 order_field = InventoryV2.BatchNumber
             elif sort_by == 'source':
                 order_field = InventoryV2.source
+            elif sort_by == 'supplier':
+                order_field = InventoryV2.Suppliername
             else:
                 order_field = InventoryV2.created_at
 
@@ -1299,7 +1323,10 @@ class GetAllInventoryV2(Resource):
                     "created_at": inventory.created_at.strftime('%Y-%m-%d %H:%M:%S') if inventory.created_at else None,
                     "unitPrice": float(inventory.unitPrice) if inventory.unitPrice else 0.0,
                     "source": inventory.source or "",
-                    "paymentRef": inventory.paymentRef or ""
+                    "paymentRef": inventory.paymentRef or "",
+                    "supplier": inventory.Suppliername if hasattr(inventory, 'Suppliername') else "",
+                    "expiry_date": inventory.expiry_date.strftime('%Y-%m-%d') if hasattr(inventory, 'expiry_date') and inventory.expiry_date else None,
+                    "location": inventory.location if hasattr(inventory, 'location') else ""
                 })
 
             return {
@@ -1332,6 +1359,7 @@ class GetAllInventoryV2(Resource):
         except Exception as e:
             current_app.logger.error(f"Unexpected error: {str(e)}")
             return {"error": "An unexpected error occurred."}, 500
+        
 
 class InventoryResourceByIdV2(Resource):
     @jwt_required()
