@@ -366,6 +366,26 @@ class AddSale(Resource):
                 ))
 
             db.session.commit()
+            from Server.Views.Services.journal_service import JournalService
+
+            try:
+                journal_result = JournalService.post_sale_journal(
+                    sale=new_sale,
+                    sold_items=sold_items,
+                    shop_id=shop_id,
+                    creditor_id=creditor_id,
+                    amount_paid=total_amount_paid
+                )
+
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                return {
+                    "message": "Sale saved but journal posting failed",
+                    "error": str(e),
+                    "sale_id": new_sale.sales_id
+                }, 500
+            
 
             response_data = {
                 'message': 'Sale processed successfully',

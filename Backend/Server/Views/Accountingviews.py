@@ -1,7 +1,5 @@
 from  flask_restful import Resource,reqparse
-from Server.Models.AccountTypes import AccountTypes
 from Server.Models.ChartOfAccounts import ChartOfAccounts
-from Server.Models.ItemAccountsTable import ItemAccounts
 from app import db 
 from flask import request,make_response,jsonify
 from flask_jwt_extended import jwt_required
@@ -11,117 +9,117 @@ from Server.Models.Users import Users
 from Server.Models.Shops import Shops
 from Server.Models.ItemsLists import ItemsList
 
-class CreateAccount(Resource):
-    @jwt_required()
-    def post(self):
-        data = request.get_json()
+# class CreateAccount(Resource):
+#     @jwt_required()
+#     def post(self):
+#         data = request.get_json()
 
-        name = data.get('name')
-        type_ = data.get('type')
+#         name = data.get('name')
+#         type_ = data.get('type')
 
-        if not name or not type_:
-            return make_response(jsonify({"message": "Both 'name' and 'type' are required."}), 400)
+#         if not name or not type_:
+#             return make_response(jsonify({"message": "Both 'name' and 'type' are required."}), 400)
 
-        new_type = AccountTypes(name=name, type=type_)
+#         new_type = AccountTypes(name=name, type=type_)
 
-        try:
-            db.session.add(new_type)
-            db.session.commit()
-            return make_response(jsonify({
-                "message": "Account type created successfully.",
-                "account_type": {
-                    "id": new_type.id,
-                    "name": new_type.name,
-                    "type": new_type.type
-                }
-            }), 201)
-        except Exception as e:
-            db.session.rollback()
-            return make_response(jsonify({"message": "Error creating account type.", "error": str(e)}), 500)
+#         try:
+#             db.session.add(new_type)
+#             db.session.commit()
+#             return make_response(jsonify({
+#                 "message": "Account type created successfully.",
+#                 "account_type": {
+#                     "id": new_type.id,
+#                     "name": new_type.name,
+#                     "type": new_type.type
+#                 }
+#             }), 201)
+#         except Exception as e:
+#             db.session.rollback()
+#             return make_response(jsonify({"message": "Error creating account type.", "error": str(e)}), 500)
 
         
-class AccountTypeListResource(Resource):
-    @jwt_required()
-    def get(self):
-        try:
-            account_types = AccountTypes.query.all()
-            results = [
-                {
-                    "id": acct.id,
-                    "name": acct.name,
-                    "type": acct.type
-                } for acct in account_types
-            ]
-            return make_response(jsonify(results), 200)
-        except Exception as e:
-            return make_response(jsonify({
-                "message": "Error fetching account types.",
-                "error": str(e)
-            }), 500)
+# class AccountTypeListResource(Resource):
+#     @jwt_required()
+#     def get(self):
+#         try:
+#             account_types = AccountTypes.query.all()
+#             results = [
+#                 {
+#                     "id": acct.id,
+#                     "name": acct.name,
+#                     "type": acct.type
+#                 } for acct in account_types
+#             ]
+#             return make_response(jsonify(results), 200)
+#         except Exception as e:
+#             return make_response(jsonify({
+#                 "message": "Error fetching account types.",
+#                 "error": str(e)
+#             }), 500)
         
-class AccountTypeResource(Resource):
-    # GET an account type by ID
-    @jwt_required()
-    def get(self, id):
-        account_type = AccountTypes.query.get(id)
+# class AccountTypeResource(Resource):
+#     # GET an account type by ID
+#     @jwt_required()
+#     def get(self, id):
+#         account_type = AccountTypes.query.get(id)
         
-        if not account_type:
-            return make_response(jsonify({"message": "Account type not found."}), 404)
+#         if not account_type:
+#             return make_response(jsonify({"message": "Account type not found."}), 404)
         
-        return make_response(jsonify({
-            "id": account_type.id,
-            "name": account_type.name,
-            "type": account_type.type
-        }), 200)
+#         return make_response(jsonify({
+#             "id": account_type.id,
+#             "name": account_type.name,
+#             "type": account_type.type
+#         }), 200)
 
-    # PUT (update) an account type by ID
-    @jwt_required()
-    def put(self, id):
-        data = request.get_json()
-        account_type = AccountTypes.query.get(id)
+#     # PUT (update) an account type by ID
+#     @jwt_required()
+#     def put(self, id):
+#         data = request.get_json()
+#         account_type = AccountTypes.query.get(id)
 
-        if not account_type:
-            return make_response(jsonify({"message": "Account type not found."}), 404)
+#         if not account_type:
+#             return make_response(jsonify({"message": "Account type not found."}), 404)
 
-        name = data.get('name', account_type.name)
-        type_ = data.get('type', account_type.type)
+#         name = data.get('name', account_type.name)
+#         type_ = data.get('type', account_type.type)
 
-        # Check if the type already exists
-        if AccountTypes.query.filter_by(type=type_).first() and type_ != account_type.type:
-            return make_response(jsonify({"message": f"Account type '{type_}' already exists."}), 409)
+#         # Check if the type already exists
+#         if AccountTypes.query.filter_by(type=type_).first() and type_ != account_type.type:
+#             return make_response(jsonify({"message": f"Account type '{type_}' already exists."}), 409)
 
-        account_type.name = name
-        account_type.type = type_
+#         account_type.name = name
+#         account_type.type = type_
 
-        try:
-            db.session.commit()
-            return make_response(jsonify({
-                "message": "Account type updated successfully.",
-                "account_type": {
-                    "id": account_type.id,
-                    "name": account_type.name,
-                    "type": account_type.type
-                }
-            }), 200)
-        except Exception as e:
-            db.session.rollback()
-            return make_response(jsonify({"message": "Error updating account type.", "error": str(e)}), 500)
+#         try:
+#             db.session.commit()
+#             return make_response(jsonify({
+#                 "message": "Account type updated successfully.",
+#                 "account_type": {
+#                     "id": account_type.id,
+#                     "name": account_type.name,
+#                     "type": account_type.type
+#                 }
+#             }), 200)
+#         except Exception as e:
+#             db.session.rollback()
+#             return make_response(jsonify({"message": "Error updating account type.", "error": str(e)}), 500)
 
-    # DELETE an account type by ID
-    @jwt_required()
-    def delete(self, id):
-        account_type = AccountTypes.query.get(id)
+#     # DELETE an account type by ID
+#     @jwt_required()
+#     def delete(self, id):
+#         account_type = AccountTypes.query.get(id)
 
-        if not account_type:
-            return make_response(jsonify({"message": "Account type not found."}), 404)
+#         if not account_type:
+#             return make_response(jsonify({"message": "Account type not found."}), 404)
 
-        try:
-            db.session.delete(account_type)
-            db.session.commit()
-            return make_response(jsonify({"message": "Account type deleted successfully."}), 200)
-        except Exception as e:
-            db.session.rollback()
-            return make_response(jsonify({"message": "Error deleting account type.", "error": str(e)}), 500)
+#         try:
+#             db.session.delete(account_type)
+#             db.session.commit()
+#             return make_response(jsonify({"message": "Account type deleted successfully."}), 200)
+#         except Exception as e:
+#             db.session.rollback()
+#             return make_response(jsonify({"message": "Error deleting account type.", "error": str(e)}), 500)
         
 #chat of aacounts 
 
@@ -232,68 +230,68 @@ class ChartOfAccountResource(Resource):
         return make_response(jsonify({"message": "Chart of Account deleted successfully"}), 200)
 
 
-class CreateItemAccount(Resource):
-    @jwt_required()
-    def post(self):
-        data = request.get_json()
+# class CreateItemAccount(Resource):
+#     @jwt_required()
+#     def post(self):
+#         data = request.get_json()
 
-        item = data.get('item')
-        chart_account_ids = data.get('chart_account_ids')  # Expecting a list of chart_of_accounts IDs
+#         item = data.get('item')
+#         chart_account_ids = data.get('chart_account_ids')  # Expecting a list of chart_of_accounts IDs
 
-        if not item or not isinstance(chart_account_ids, list) or not chart_account_ids:
-            return {"message": "Missing or invalid fields. 'item' and 'chart_account_ids' are required."}, 400
+#         if not item or not isinstance(chart_account_ids, list) or not chart_account_ids:
+#             return {"message": "Missing or invalid fields. 'item' and 'chart_account_ids' are required."}, 400
 
-        try:
-            # Create the item
-            new_item_account = ItemAccounts(item=item)
+#         try:
+#             # Create the item
+#             new_item_account = ItemAccounts(item=item)
 
-            # Query chart accounts
-            chart_accounts = ChartOfAccounts.query.filter(ChartOfAccounts.id.in_(chart_account_ids)).all()
+#             # Query chart accounts
+#             chart_accounts = ChartOfAccounts.query.filter(ChartOfAccounts.id.in_(chart_account_ids)).all()
 
-            if not chart_accounts:
-                return {"message": "No valid chart accounts found for given IDs."}, 400
+#             if not chart_accounts:
+#                 return {"message": "No valid chart accounts found for given IDs."}, 400
 
-            # Assign the relationships
-            new_item_account.chart_accounts = chart_accounts
+#             # Assign the relationships
+#             new_item_account.chart_accounts = chart_accounts
 
-            # Save to DB
-            db.session.add(new_item_account)
-            db.session.commit()
+#             # Save to DB
+#             db.session.add(new_item_account)
+#             db.session.commit()
 
-            return {
-                "message": "Item account created successfully.",
-                "item_account": {
-                    "id": new_item_account.id,
-                    "item": new_item_account.item,
-                    "chart_accounts": [account.id for account in new_item_account.chart_accounts]
-                }
-            }, 201
+#             return {
+#                 "message": "Item account created successfully.",
+#                 "item_account": {
+#                     "id": new_item_account.id,
+#                     "item": new_item_account.item,
+#                     "chart_accounts": [account.id for account in new_item_account.chart_accounts]
+#                 }
+#             }, 201
 
-        except Exception as e:
-            db.session.rollback()
-            return {"message": "An error occurred.", "error": str(e)}, 500
+#         except Exception as e:
+#             db.session.rollback()
+#             return {"message": "An error occurred.", "error": str(e)}, 500
 
         
-class GetAllItemAccounts(Resource):
-    @jwt_required()
-    def get(self):
-        try:
-            items = ItemAccounts.query.all()
-            item_list = []
-            for item in items:
-                # Collect the account names associated with this item account
-                account_names = [account.Account for account in item.chart_accounts]
+# class GetAllItemAccounts(Resource):
+#     @jwt_required()
+#     def get(self):
+#         try:
+#             items = ItemAccounts.query.all()
+#             item_list = []
+#             for item in items:
+#                 # Collect the account names associated with this item account
+#                 account_names = [account.Account for account in item.chart_accounts]
 
-                item_list.append({
-                    "id": item.id,
-                    "item": item.item,
-                    "accounts": account_names  # Return list of associated account names
-                })
+#                 item_list.append({
+#                     "id": item.id,
+#                     "item": item.item,
+#                     "accounts": account_names  # Return list of associated account names
+#                 })
                 
-            return {"item_accounts": item_list}, 200
+#             return {"item_accounts": item_list}, 200
 
-        except Exception as e:
-            return {"message": "Failed to fetch item accounts", "error": str(e)}, 500
+#         except Exception as e:
+#             return {"message": "Failed to fetch item accounts", "error": str(e)}, 500
 
 
 class PurchasesLedger(Resource):

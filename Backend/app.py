@@ -34,10 +34,8 @@ def initialize_models():
     from Server.Models.LiveStock import LiveStock
     from Server.Models.ShopTransfers import ShopTransfer
     from Server.Models.SystemStockTransfer import SystemStockTransfer
-    from Server.Models.AccountTypes import AccountTypes
     from Server.Models.ChartOfAccounts import ChartOfAccounts
     from Server.Models.BankAccounts import BankAccount, BankingTransaction
-    from Server.Models.ItemAccountsTable import ItemAccounts
     from Server.Models.SalesDepartment import SalesDepartment
     from Server.Models.Supplier import Suppliers, SupplierHistory
     from Server.Models.InventoryV2 import InventoryV2
@@ -62,7 +60,7 @@ def create_app(config_name):
     app.config.from_object(config_name)
 
     # Database config
-    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost/Diraja"
+    app.config["SQLALCHEMY_DATABASE_URI"] =  "mysql+pymysql://root:MyNewPass@localhost/Diraja"
     # app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@217.20.124.83/kulimaco_dirajaapp'
 
 

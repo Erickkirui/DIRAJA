@@ -18,7 +18,7 @@ class Expenses(db.Model):
     amountPaid = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow)
     source = db.Column(db.String(100), nullable=False)
-    comments = db.Column(db.Text, nullable=True)  # Added comments column
+    comments = db.Column(db.String(100), nullable=True)  # Added comments column
     paymentRef = db.Column(db.String(100), nullable=False)
 
     # Relationships
