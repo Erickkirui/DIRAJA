@@ -343,6 +343,10 @@ class GetEmployeeLeaderboard(Resource):
         try:
             start_date = datetime(2025, 10, 1)
 
+            # Pagination params
+            page = request.args.get("page", 1, type=int)
+            per_page = request.args.get("per_page", 10, type=int)
+
             # Subquery: total amount paid per sale
             payments_subq = (
                 db.session.query(
@@ -357,12 +361,15 @@ class GetEmployeeLeaderboard(Resource):
             total_amount_expr = case(
                 (Sales.status == "paid", func.coalesce(payments_subq.c.amount_paid, 0)),
                 (Sales.status == "unpaid", func.coalesce(Sales.balance, 0)),
-                (Sales.status == "partially_paid", func.coalesce(payments_subq.c.amount_paid, 0) + func.coalesce(Sales.balance, 0)),
+                (
+                    Sales.status == "partially_paid",
+                    func.coalesce(payments_subq.c.amount_paid, 0) + func.coalesce(Sales.balance, 0)
+                ),
                 else_=0
             )
 
-            # Query
-            sales = (
+            # Base query (aggregated per employee)
+            base_query = (
                 db.session.query(
                     Sales.user_id,
                     func.count(Sales.sales_id).label("total_sales"),
@@ -373,11 +380,30 @@ class GetEmployeeLeaderboard(Resource):
                 .filter(Sales.created_at >= start_date)
                 .group_by(Sales.user_id)
                 .order_by(func.sum(total_amount_expr).desc())
+            )
+
+            # Total employees (for pagination)
+            total_records = base_query.count()
+            total_pages = (total_records + per_page - 1) // per_page
+
+            # Apply pagination
+            sales = (
+                base_query
+                .offset((page - 1) * per_page)
+                .limit(per_page)
                 .all()
             )
 
             if not sales:
-                return make_response(jsonify({"message": "No data found for this period"}), 200)
+                return make_response(jsonify({
+                    "data": [],
+                    "pagination": {
+                        "total": total_records,
+                        "pages": total_pages,
+                        "current_page": page,
+                        "per_page": per_page
+                    }
+                }), 200)
 
             leaderboard = []
             for sale in sales:
@@ -390,10 +416,21 @@ class GetEmployeeLeaderboard(Resource):
                     "total_amount": f"{sale.total_amount:,.2f}" if sale.total_amount else "0.00"
                 })
 
-            return make_response(jsonify(leaderboard), 200)
+            return make_response(jsonify({
+                "data": leaderboard,
+                "pagination": {
+                    "total": total_records,
+                    "pages": total_pages,
+                    "current_page": page,
+                    "per_page": per_page,
+                    "has_next": page < total_pages,
+                    "has_prev": page > 1
+                }
+            }), 200)
 
         except Exception as e:
             return {"error": str(e)}, 500
+
 
 
 

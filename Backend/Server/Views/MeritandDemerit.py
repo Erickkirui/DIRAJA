@@ -8,6 +8,7 @@ from Server.Models.Users import Users
 from Server.Models.MeritLedger import MeritLedger
 from Server.Models.Meritpoints import MeritPoints
 from functools import wraps
+from sqlalchemy import desc
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from flask import jsonify,request,make_response
 
@@ -79,25 +80,96 @@ class AssignMeritPoints(Resource):
             }
         }, 200
 
+
+
 class GetMeritLedger(Resource):
     def get(self):
-        merit_entries = MeritLedger.query.all()
+        # Get pagination parameters from query string
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)  # Default 20 items per page
+        
+        # Get sorting parameters
+        sort_by = request.args.get('sort_by', 'date')
+        sort_order = request.args.get('sort_order', 'desc')  # Default descending (newest first)
+        
+        # Get filter parameters
+        employee_id = request.args.get('employee_id', type=int)
+        merit_type = request.args.get('type')  # 'merit' or 'demerit'
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        search = request.args.get('search', '')
+        
+        # Base query
+        query = MeritLedger.query
+        
+        # Apply filters
+        if employee_id:
+            query = query.filter(MeritLedger.employee_id == employee_id)
+        
+        if merit_type:
+            if merit_type == 'merit':
+                query = query.filter(MeritLedger.merit_reason.has(point__gt=0))
+            elif merit_type == 'demerit':
+                query = query.filter(MeritLedger.merit_reason.has(point__lt=0))
+        
+        if start_date:
+            query = query.filter(MeritLedger.date >= start_date)
+        
+        if end_date:
+            query = query.filter(MeritLedger.date <= end_date)
+        
+        
+        # Apply sorting
+        sort_mapping = {
+            'date': MeritLedger.date,
+            'employee': MeritLedger.employee_id,
+            'points': MeritLedger.merit_id,
+            'resulting_points': MeritLedger.resulting_points
+        }
+        
+        sort_column = sort_mapping.get(sort_by, MeritLedger.date)
+        if sort_order == 'desc':
+            query = query.order_by(desc(sort_column))
+        else:
+            query = query.order_by(sort_column)
+        
+        # Get paginated results
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Prepare response data
         result = []
-
-        for entry in merit_entries:
+        for entry in paginated.items:
             result.append({
                 'meritledger_id': entry.meritledger_id,
                 'employee_id': entry.employee_id,
-                'employee_name': entry.employee.first_name if entry.employee else None,  # assuming 'name' exists
+                'employee_name': f"{entry.employee.first_name} {entry.employee.surname}" if entry.employee else None,
+                'employee_first_name': entry.employee.first_name if entry.employee else None,
+                'employee_last_name': entry.employee.surname if entry.employee else None,
+                'employee_department': entry.employee.department if entry.employee else None,
+                'employee_designation': entry.employee.designation if entry.employee else None,
                 'merit_id': entry.merit_id,
-                'merit_reason': entry.merit_reason.reason if entry.merit_reason else None,  # assuming 'reason' field
+                'merit_reason': entry.merit_reason.reason if entry.merit_reason else None,
                 'merit_point': entry.merit_reason.point if entry.merit_reason else None,
                 'comment': entry.comment,
                 'date': entry.date.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': entry.date.strftime('%Y-%m-%d %H:%M:%S'),  # For backward compatibility
                 'resulting_points': entry.resulting_points
             })
-
-        return {'merit_ledger': result}, 200
+        
+        # Return paginated response
+        return {
+            'merit_ledger': result,
+            'pagination': {
+                'page': paginated.page,
+                'per_page': paginated.per_page,
+                'total_pages': paginated.pages,
+                'total_items': paginated.total,
+                'has_next': paginated.has_next,
+                'has_prev': paginated.has_prev,
+                'next_page': paginated.next_num if paginated.has_next else None,
+                'prev_page': paginated.prev_num if paginated.has_prev else None
+            }
+        }, 200
     
 
 class GetEmployeeMeritLedger(Resource):

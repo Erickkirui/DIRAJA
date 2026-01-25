@@ -61,8 +61,12 @@ class GetAllMeripoints(Resource):
     @jwt_required()
     @check_role('manager')
     def get(self):
-        # Optional query param: ?filter=positive|negative|all
+        # Filters
         filter_type = request.args.get('filter', 'all')
+
+        # Pagination params
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
 
         query = MeritPoints.query
 
@@ -71,14 +75,34 @@ class GetAllMeripoints(Resource):
         elif filter_type == 'negative':
             query = query.filter(MeritPoints.point < 0)
 
-        merit_points = query.order_by(MeritPoints.meritpoint_id.desc()).all()
+        pagination = query.order_by(
+            MeritPoints.meritpoint_id.desc()
+        ).paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
 
-        return [{
-            "id": mp.meritpoint_id,
-            "reason": mp.reason,
-            "point": mp.point,
-            "created_at": mp.created_at
-        } for mp in merit_points], 200
+        return {
+            "data": [
+                {
+                    "id": mp.meritpoint_id,
+                    "reason": mp.reason,
+                    "point": mp.point,
+                    "created_at": mp.created_at
+                }
+                for mp in pagination.items
+            ],
+            "pagination": {
+                "total": pagination.total,
+                "pages": pagination.pages,
+                "current_page": pagination.page,
+                "per_page": pagination.per_page,
+                "has_next": pagination.has_next,
+                "has_prev": pagination.has_prev
+            }
+        }, 200
+
 
 class MeritPointResource(Resource):
 

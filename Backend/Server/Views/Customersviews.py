@@ -166,8 +166,29 @@ class GetAllCustomers(Resource):
     @jwt_required()
     def get(self):
         try:
-            customers = Customers.query.all()
-
+            # Get pagination parameters from query string
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            
+            # Validate pagination parameters
+            if page < 1:
+                return {"error": "Page must be greater than 0"}, 400
+            if per_page < 1 or per_page > 100:
+                return {"error": "per_page must be between 1 and 100"}, 400
+            
+            # Calculate offset
+            offset = (page - 1) * per_page
+            
+            # Get total count
+            total_customers = Customers.query.count()
+            
+            # Get paginated customers
+            customers = Customers.query \
+                .order_by(Customers.created_at.desc()) \
+                .limit(per_page) \
+                .offset(offset) \
+                .all()
+            
             customer_list = []
             for customer in customers:
                 customer_data = {
@@ -179,16 +200,30 @@ class GetAllCustomers(Resource):
                     "item": customer.item,
                     "amount_paid": customer.amount_paid,
                     "payment_method": customer.payment_method,
-                    "created_at": customer.created_at
+                    "created_at": customer.created_at.isoformat() if customer.created_at else None
                 }
                 customer_list.append(customer_data)
-
-            return make_response(jsonify(customer_list), 200)
+            
+            # Return simple paginated response
+            return {
+                "customers": customer_list,
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total_items": total_customers,
+                    "total_pages": (total_customers + per_page - 1) // per_page,
+                    "has_next": page * per_page < total_customers,
+                    "has_prev": page > 1
+                }
+            }, 200
         
         except SQLAlchemyError as e:
             db.session.rollback()
+            print(f"Database error: {str(e)}")
             return {"error": "An error occurred while fetching customers"}, 500
-
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return {"error": "An unexpected error occurred"}, 500
 
 
 class GetCustomerById(Resource):

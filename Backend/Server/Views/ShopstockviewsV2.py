@@ -8,6 +8,7 @@ from Server.Models.Users import Users
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Expenses import Expenses
+from Server.Models.BrokenEggs import BrokenEggsLog
 from pywebpush import webpush, WebPushException
 from Server.Models.PushSubscription import PushSubscription
 import json
@@ -1172,15 +1173,30 @@ class BrokenEggs(Resource):
                     db.session.flush()
 
                     # Log reclassification
-                    reclass_log = ReturnsV2(
-                        stockv2_id=from_stock.stockv2_id,
-                        inventoryv2_id=from_stock.inventoryv2_id,
+                    # reclass_log = ReturnsV2(
+                    #     stockv2_id=from_stock.stockv2_id,
+                    #     inventoryv2_id=from_stock.inventoryv2_id,
+                    #     shop_id=shop_id,
+                    #     quantity=move_qty,
+                    #     returned_by=get_jwt_identity(),
+                    #     return_date=func.now(),
+                    #     reason=reason or f"Reclassified to {to_itemname}"
+                    # )
+                    # db.session.add(reclass_log)
+                    
+                    reclass_log = BrokenEggsLog(
+                        from_stockv2_id=from_stock.stockv2_id,
+                        from_inventoryv2_id=from_stock.inventoryv2_id,
+                        to_stockv2_id=broken_entry.stockv2_id,
+                        to_inventoryv2_id=broken_entry.inventoryv2_id,
                         shop_id=shop_id,
                         quantity=move_qty,
-                        returned_by=get_jwt_identity(),
-                        return_date=func.now(),
+                        unit_cost=unit_cost,
+                        total_cost=unit_cost * move_qty,
+                        reclassified_by=get_jwt_identity(),
                         reason=reason or f"Reclassified to {to_itemname}"
                     )
+
                     db.session.add(reclass_log)
 
                     moved_records.append({
