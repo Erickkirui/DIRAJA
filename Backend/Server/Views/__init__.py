@@ -348,7 +348,7 @@ api.add_resource(GetItems, '/created-items-list')
 api.add_resource(PostBankAccount, '/bankaccount')
 api.add_resource(GetAllBankAccounts, '/all-acounts')
 api.add_resource(DailySalesDeposit, '/sales/daily-deposit', '/sales/daily-deposit/<string:date_str>')
-api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>')
+api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>/deposit')
 api.add_resource(TotalBankBalance, '/total-balance')
 
 #Spoiltstock

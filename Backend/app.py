@@ -62,7 +62,7 @@ def create_app(config_name):
     app.config.from_object(config_name)
 
     # Database config
-    app.config["SQLALCHEMY_DATABASE_URI"] =  "mysql+pymysql://root:MyNewPass@localhost/Diraja"
+    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost/Diraja"
     # app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@217.20.124.83/kulimaco_dirajaapp'
 
 

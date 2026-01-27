@@ -162,24 +162,70 @@ class BankAccountResource(Resource):
 
     @jwt_required()
     def put(self, account_id):
-        account = BankAccount.query.get(account_id)
-        if not account:
-            return {"message": "Account not found."}, 404
-        
+        """
+        account_id => destination account (deposit INTO)
+        from_account => source account (deduct FROM)
+        """
+
         data = request.get_json()
-        account.Account_name = data.get("Account_name", account.Account_name)
-        account.Account_Balance = data.get("Account_Balance", account.Account_Balance)
 
-        db.session.commit()
+        amount = data.get("amount")
+        from_account_id = data.get("from_account")
 
-        return {
-            "message": "Account updated successfully.",
-            "account": {
-                "id": account.id,
-                "Account_name": account.Account_name,
-                "Account_Balance": account.Account_Balance
-            }
-        }, 200
+        if not amount or not from_account_id:
+            return {
+                "message": "amount and from_account are required."
+            }, 400
+
+        try:
+            amount = float(amount)
+        except:
+            return {"message": "Invalid amount format."}, 400
+
+        if amount <= 0:
+            return {"message": "Amount must be greater than zero."}, 400
+
+        to_account = BankAccount.query.get(account_id)
+        from_account = BankAccount.query.get(from_account_id)
+
+        if not to_account or not from_account:
+            return {
+                "message": "One or both accounts not found."
+            }, 404
+
+        if from_account.Account_Balance < amount:
+            return {
+                "message": "Insufficient balance in source account."
+            }, 400
+
+        try:
+            # Deduct from source
+            from_account.Account_Balance -= amount
+
+            # Add to destination
+            to_account.Account_Balance += amount
+
+            db.session.commit()
+
+            return {
+                "message": "Deposit successful.",
+                "from_account": {
+                    "id": from_account.id,
+                    "balance": from_account.Account_Balance
+                },
+                "to_account": {
+                    "id": to_account.id,
+                    "balance": to_account.Account_Balance
+                }
+            }, 200
+
+        except Exception as e:
+            db.session.rollback()
+            return {
+                "message": "Deposit failed.",
+                "error": str(e)
+            }, 500
+
 
     @jwt_required()
     def delete(self, account_id):
