@@ -17,6 +17,9 @@ class Sales(db.Model):
     promocode = db.Column(db.String(70), nullable=True)
     delivery = db.Column(db.Boolean, default=True, nullable=False)
     
+    
+    timestamp = db.Column(db.DateTime, server_default=db.func.now(), nullable=False)
+    
 
     # Relationships
     users = db.relationship('Users', backref='sales', lazy=True)
