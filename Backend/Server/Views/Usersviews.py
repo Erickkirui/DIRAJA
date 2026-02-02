@@ -10,6 +10,9 @@ from flask import jsonify,request,make_response
 from functools import wraps
 from flask_jwt_extended import jwt_required,get_jwt_identity
 import re
+from Server.Models.ShopReport import ShopReport
+from sqlalchemy import func
+from datetime import datetime, date
 
 
 def check_role(required_role):
@@ -205,3 +208,72 @@ class GetAllUsers(Resource):
 
         return make_response(jsonify(all_users), 200)
     
+
+class PostShopReport(Resource):
+
+    @jwt_required()
+    def post(self):
+        user_id = get_jwt_identity()
+        data = request.get_json() or {}
+
+        shop_id = data.get("shop_id")
+        latitude = data.get("latitude")
+        longitude = data.get("longitude")
+        location = data.get("location")
+        note = data.get("note")
+
+        # ---- Validation ----
+        if not shop_id:
+            return {"message": "shop_id is required"}, 400
+
+        try:
+            shop_id = int(shop_id)
+        except (ValueError, TypeError):
+            return {"message": "shop_id must be an integer"}, 400
+
+        user = Users.query.get(user_id)
+        if not user:
+            return {"message": "User not found"}, 404
+
+        # ---- Prevent multiple reports per day (per user per shop) ----
+        today = date.today()
+
+        existing_report = ShopReport.query.filter(
+            ShopReport.shop_id == shop_id,
+            ShopReport.user_id == user.users_id,
+            func.date(ShopReport.reported_at) == today
+        ).first()
+
+        if existing_report:
+            return {
+                "message": "You have already submitted a report for this shop today"
+            }, 409
+
+        # ---- Create report ----
+        report = ShopReport(
+            user_id=user.users_id,
+            username=user.username,
+            shop_id=shop_id,
+            latitude=latitude,
+            longitude=longitude,
+            location=location,
+            note=note,
+            reported_at=datetime.utcnow()
+        )
+
+        db.session.add(report)
+        db.session.commit()
+
+        return {
+            "message": "Shop report submitted successfully",
+            "report": {
+                "id": report.id,
+                "shop_id": report.shop_id,
+                "user_id": report.user_id,
+                "username": report.username,
+                "reported_at": report.reported_at.isoformat(),
+                "location": report.location,
+                "latitude": report.latitude,
+                "longitude": report.longitude
+            }
+        }, 201
