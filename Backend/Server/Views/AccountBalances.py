@@ -338,3 +338,66 @@ class DailySalesDeposit(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+
+
+class MultipleToOneTransfer(Resource):
+    def post(self):
+        try:
+            data = request.get_json()
+
+            to_account_id = data.get("to_account_id")
+            transfers = data.get("transfers", [])
+
+            if not to_account_id or not transfers:
+                return {"error": "Invalid request payload"}, 400
+
+            to_account = BankAccount.query.get(to_account_id)
+            if not to_account:
+                return {"error": "Destination account not found"}, 404
+
+            total_amount = 0
+
+            for transfer in transfers:
+                from_account_id = transfer.get("from_account_id")
+                amount = transfer.get("amount")
+
+                if not from_account_id or not amount or amount <= 0:
+                    return {"error": "Invalid transfer data"}, 400
+
+                from_account = BankAccount.query.get(from_account_id)
+                if not from_account:
+                    return {"error": f"Source account {from_account_id} not found"}, 404
+
+                if from_account.Account_Balance < amount:
+                    return {
+                        "error": f"Insufficient balance in {from_account.Account_name}"
+                    }, 400
+
+                # Debit source account
+                from_account.Account_Balance -= amount
+
+                # Record individual transaction
+                transaction = TranscationType(
+                    Transaction_type="TRANSFER",
+                    Transaction_amount=amount,
+                    From_account=from_account.Account_name,
+                    To_account=to_account.Account_name
+                )
+
+                db.session.add(transaction)
+                total_amount += amount
+
+            # Credit destination account
+            to_account.Account_Balance += total_amount
+
+            db.session.commit()
+
+            return jsonify({
+                "message": "Transfer successful",
+                "total_received": round(total_amount, 2),
+                "to_account": to_account.Account_name
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            return {"error": str(e)}, 500
