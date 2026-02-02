@@ -1130,6 +1130,33 @@ class AddInventoryV2(Resource):
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
 
+class AllInventoryV2(Resource):
+    @jwt_required()
+   
+    def get(self):
+        inventories = InventoryV2.query.order_by(InventoryV2.created_at.desc()).all()
+
+        all_inventory = [{
+            "inventoryV2_id": inventory.inventoryV2_id,
+            "itemname": inventory.itemname,
+            "initial_quantity": inventory.initial_quantity,
+            "remaining_quantity": inventory.quantity,
+            "metric": inventory.metric,
+            "totalCost": inventory.totalCost,
+            "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
+            "amountPaid": inventory.amountPaid,
+            "balance": inventory.ballance,
+            "note": inventory.note,
+            "created_at": inventory.created_at,
+            "unitPrice": inventory.unitPrice,
+            "source": inventory.source,
+            "paymentRef": inventory.paymentRef
+        } for inventory in inventories]
+
+        return make_response(jsonify(all_inventory), 200)
+
+
 class GetAllInventoryV2(Resource):
     @jwt_required()
     def get(self):

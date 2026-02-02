@@ -123,9 +123,12 @@ class GetTasks(Resource):
     @check_role('manager')
     def get(self):
         # Use joinedload to eagerly load the assigner and assignee relationships
+        # Add order_by to sort by due_date descending (newest first)
         tasks = TaskManager.query.options(
             joinedload(TaskManager.assigner),
             joinedload(TaskManager.assignee)
+        ).order_by(
+            TaskManager.due_date.desc()  # Newest first
         ).all()
         
         if not tasks:
@@ -147,7 +150,6 @@ class GetTasks(Resource):
             }
             for task in tasks
         ], 200
-
 
 class TaskResource(Resource):
     @jwt_required()
