@@ -5,7 +5,7 @@ api_endpoint = Blueprint
 
 # add all file inputs 
 from Server.Views.Usersviews import (
-    CountUsers, Addusers, UsersResourceById, UserLogin, GetAllUsers
+    CountUsers, Addusers, UsersResourceById, UserLogin, GetAllUsers,PostShopReport
 )
 
 from Server.Views.Shopsviews import (
@@ -86,7 +86,7 @@ from Server.Views.Accountingviews import (
 )
 
 from Server.Views.AccountBalances import (
-    PostBankAccount, DepositToAccount, BankAccountResource,
+    PostBankAccount, DepositToAccount, BankAccountResource,MultipleToOneTransfer,
     GetAllBankAccounts, DailySalesDeposit, TotalBankBalance
 )
 
@@ -177,7 +177,11 @@ from Server.Views.ShopTargets import (
 )
 
 from Server.Views.LedgerViews import (
-    SalesLedgerList,CreditSalesLedgerList
+    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList
+)
+
+from Server.Views.ClerkReportTime import (
+    GetShopReports,GetShopReportStats,GetTodayShopReportStatus
 )
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
@@ -196,6 +200,8 @@ api.add_resource(GetAllUsers,'/allusers')
 api.add_resource(Addusers , '/newuser')
 api.add_resource(UsersResourceById, '/user/<int:users_id>')
 api.add_resource(UserLogin, '/login')
+api.add_resource(PostShopReport, "/shop-reports")
+
 
 # shops endpoints 
 api.add_resource(AddShops, '/newshop')
@@ -350,6 +356,7 @@ api.add_resource(GetAllBankAccounts, '/all-acounts')
 api.add_resource(DailySalesDeposit, '/sales/daily-deposit', '/sales/daily-deposit/<string:date_str>')
 api.add_resource(BankAccountResource, '/bankaccount/<int:account_id>/deposit')
 api.add_resource(TotalBankBalance, '/total-balance')
+api.add_resource(MultipleToOneTransfer,"/bulk-transfer")
 
 #Spoiltstock
 api.add_resource(AddSpoiltStock, '/newspoilt')
@@ -530,4 +537,12 @@ api.add_resource(GetShopTargets, "/targets")
 #LEdgers 
 api.add_resource(SalesLedgerList, "/accounting/sales-ledger")
 api.add_resource(CreditSalesLedgerList,"/accounting/credit-sales-ledger")
+api.add_resource(DistributionLedgerList, '/accounting/distribution-ledger')
+api.add_resource(PurchaseLedgerInventoryList, '/accounting/purchase-ledger-inventory')
+api.add_resource(BankTransfersLedgerList, '/accounting/bank-transfers-ledger')
 
+
+# clerkShopReportTime
+api.add_resource(GetShopReports, '/shop-reports')
+api.add_resource(GetTodayShopReportStatus, '/shop-reports/today-status')
+api.add_resource(GetShopReportStats, '/shop-reports/stats')

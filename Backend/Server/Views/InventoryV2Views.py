@@ -246,6 +246,14 @@ class DistributeInventoryV2(Resource):
             )
 
             db.session.add(new_transfer)
+            db.session.flush() 
+            from Server.Views.Services.journal_service import DistributionJournalService
+
+
+            journal_result = DistributionJournalService.post_distribution_journal(
+            transfer=new_transfer,
+            shop_id=shop_id
+    )
             db.session.commit()
 
             # ✅ Send push notification
@@ -1015,7 +1023,7 @@ class AddInventoryV2(Resource):
             source = "Unknown"
 
         try:
-            # ✅ Step 1: Check or create supplier
+            # Step 1: Check or create supplier
             supplier = Suppliers.query.filter_by(
                 supplier_name=Suppliername,
                 supplier_location=Supplier_location
@@ -1028,15 +1036,12 @@ class AddInventoryV2(Resource):
                     total_amount_received=amountPaid,
                     email=data.get('email'),
                     phone_number=data.get('phone_number'),
-                    items_sold=json.dumps([itemname])  # store as JSON string
+                    items_sold=json.dumps([itemname])
                 )
                 db.session.add(supplier)
-                db.session.flush()  # ensures supplier_id is available immediately
+                db.session.flush()
             else:
-                # Update totals and items
                 supplier.total_amount_received += amountPaid
-
-                # ✅ Ensure items_sold is a valid list
                 if not supplier.items_sold:
                     items_list = []
                 else:
@@ -1044,15 +1049,12 @@ class AddInventoryV2(Resource):
                         items_list = json.loads(supplier.items_sold)
                     except Exception:
                         items_list = supplier.items_sold.split(",") if isinstance(supplier.items_sold, str) else []
-
-                # ✅ Add new item if not already there
                 if itemname not in items_list:
                     items_list.append(itemname)
-
                 supplier.items_sold = json.dumps(items_list)
-                db.session.flush()  # ensure supplier_id is updated before history insert
+                db.session.flush()
 
-            # ✅ Step 2: Add supplier history
+            # Step 2: Add supplier history
             supplier_history = SupplierHistory(
                 supplier_id=supplier.supplier_id,
                 amount_received=amountPaid,
@@ -1061,7 +1063,7 @@ class AddInventoryV2(Resource):
             )
             db.session.add(supplier_history)
 
-            # ✅ Step 3: Handle bank transaction if applicable
+            # Step 3: Handle bank transaction
             if source not in ["Unknown", "External funding"]:
                 account = BankAccount.query.filter_by(Account_name=source).first()
                 if not account:
@@ -1077,7 +1079,7 @@ class AddInventoryV2(Resource):
                 )
                 db.session.add(transaction)
 
-            # ✅ Step 4: Add inventory record
+            # Step 4: Add inventory record
             new_inventory = InventoryV2(
                 itemname=itemname,
                 initial_quantity=quantity,
@@ -1091,23 +1093,37 @@ class AddInventoryV2(Resource):
                 user_id=current_user_id,
                 Suppliername=Suppliername,
                 Supplier_location=Supplier_location,
-                ballance=balance,  # Note: Typo from model (should be 'balance')
+                ballance=balance,
                 note=note,
-                created_at=created_at,  # User-provided date
+                created_at=created_at,
                 source=source,
-                Trasnaction_type_credit=amountPaid,  # Note: Typo from model
-                Transcation_type_debit=debit_account_value,  # Note: Typo from model
+                Trasnaction_type_credit=amountPaid,
+                Transcation_type_debit=debit_account_value,
                 paymentRef=paymentRef
             )
-            
 
             db.session.add(new_inventory)
-            db.session.commit()
+            db.session.commit()  # commit inventory first
+            from Server.Views.Services.journal_service import PurchaseJournalService
+
+            # Step 5: Try posting journal entry
+            try:
+                journal_result = PurchaseJournalService.post_purchase_journal(new_inventory)
+                db.session.commit()  # commit journal
+            except Exception as e:
+                db.session.rollback()  # rollback journal only
+                return {
+                    "message": "Inventory saved but journal posting failed",
+                    "error": str(e),
+                    "BatchNumber": batch_code,
+                    "SupplierID": supplier.supplier_id
+                }, 500
 
             return {
-                'message': 'Inventory and supplier records added successfully',
+                'message': 'Inventory and journal entry added successfully',
                 'BatchNumber': batch_code,
-                'SupplierID': supplier.supplier_id
+                'SupplierID': supplier.supplier_id,
+                'journal_entry': journal_result
             }, 201
 
         except Exception as e:
