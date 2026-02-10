@@ -23,7 +23,7 @@ class ShopReport(db.Model):
 
     reported_at = db.Column(
         db.DateTime,
-        default=datetime.utcnow,
+        server_default=db.func.now(),
         nullable=False
     )
 

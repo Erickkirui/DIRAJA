@@ -460,6 +460,14 @@ class GetShopStockV2(Resource):
         try:
             shop_id = request.args.get('shop_id', type=int)
             inventoryV2_id = request.args.get('inventoryV2_id', type=int)
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            
+            # Validate pagination parameters
+            if page < 1:
+                return {"error": "Page number must be greater than 0"}, 400
+            if per_page < 1 or per_page > 100:
+                return {"error": "Per page must be between 1 and 100"}, 400
 
             query = ShopStockV2.query.options(
                 joinedload(ShopStockV2.inventory),
@@ -471,7 +479,16 @@ class GetShopStockV2(Resource):
             if inventoryV2_id:
                 query = query.filter_by(inventoryv2_id=inventoryV2_id)
 
-            shop_stocks = query.all()
+            # Apply pagination
+            paginated_result = query.paginate(
+                page=page, 
+                per_page=per_page, 
+                error_out=False
+            )
+            
+            shop_stocks = paginated_result.items
+            total_pages = paginated_result.pages
+            total_items = paginated_result.total
 
             shop_stock_list = []
             for stock in shop_stocks:
@@ -492,7 +509,19 @@ class GetShopStockV2(Resource):
                     "stock_type": "InventoryV2" if stock.inventoryv2_id else "transfer" if stock.transferv2_id else "direct"
                 })
 
-            return make_response(jsonify({"shop_stocks": shop_stock_list}), 200)
+            return make_response(jsonify({
+                "shop_stocks": shop_stock_list,
+                "pagination": {
+                    "page": page,
+                    "per_page": per_page,
+                    "total_pages": total_pages,
+                    "total_items": total_items,
+                    "has_next": paginated_result.has_next,
+                    "has_prev": paginated_result.has_prev,
+                    "next_page": paginated_result.next_num if paginated_result.has_next else None,
+                    "prev_page": paginated_result.prev_num if paginated_result.has_prev else None
+                }
+            }), 200)
 
         except SQLAlchemyError as e:
             db.session.rollback()

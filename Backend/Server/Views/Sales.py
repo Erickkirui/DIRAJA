@@ -2114,58 +2114,72 @@ class CashSalesByUser(Resource):
 class TotalCashSalesByUser(Resource):
     @jwt_required()
     def get(self, username, shop_id):
-        today = datetime.utcnow()
-        start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
-
         try:
-            # Get user
-            user = db.session.query(Users).filter(Users.username == username).first()
+            # ===============================
+            # 1. Fixed start date (31/01/2026)
+            # ===============================
+            start_date = datetime.strptime("2026-01-31", "%Y-%m-%d").date()
+            today = datetime.now().date()
+
+            # ===============================
+            # 2. Get user
+            # ===============================
+            user = Users.query.filter_by(username=username).first()
             if not user:
                 return {"message": f"User '{username}' not found"}, 404
 
-            # Calculate total cash sales for today
-            total_cash_query = (
-                db.session.query(db.func.sum(SalesPaymentMethods.amount_paid))
+            # ===============================
+            # 3. Total CASH sales from 31/01/2026
+            # ===============================
+            total_cash_sales = (
+                db.session.query(
+                    func.coalesce(func.sum(SalesPaymentMethods.amount_paid), 0)
+                )
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
                 .filter(Sales.user_id == user.users_id)
                 .filter(Sales.shop_id == shop_id)
-                .filter(SalesPaymentMethods.payment_method == 'cash')
-                .filter(Sales.created_at.between(start_date, end_date))
+                .filter(SalesPaymentMethods.payment_method == "cash")
+                .filter(func.date(Sales.created_at) >= start_date)
+                .filter(func.date(Sales.created_at) <= today)
+                .scalar()
             )
 
-            total_cash_sales = total_cash_query.scalar() or 0
-
-            # Calculate total deposits for today (to subtract from cash sales)
-            total_deposits_query = (
-                db.session.query(db.func.sum(CashDeposits.amount))
+            # ===============================
+            # 4. Total CASH deposits from 31/01/2026
+            # ===============================
+            total_deposits = (
+                db.session.query(
+                    func.coalesce(func.sum(CashDeposits.amount), 0)
+                )
                 .filter(CashDeposits.user_id == user.users_id)
                 .filter(CashDeposits.shop_id == shop_id)
-                .filter(CashDeposits.created_at.between(start_date, end_date))
+                .filter(func.date(CashDeposits.created_at) >= start_date)
+                .filter(func.date(CashDeposits.created_at) <= today)
+                .scalar()
             )
 
-            total_deposits = total_deposits_query.scalar() or 0
-
-            # Calculate net cash (sales minus deposits)
+            # ===============================
+            # 5. Net cash (cash - deposits)
+            # ===============================
             net_cash = total_cash_sales - total_deposits
-
-            # Ensure it doesn't go negative
             net_cash = max(0, net_cash)
-            
-            formatted_cash = "Ksh {:,.2f}".format(net_cash)
 
             return {
-                "total_cash_sales": formatted_cash,
-                "period": "today",
-                "date": today.date().isoformat()
+                "net_cash": f"Ksh {net_cash:,.2f}",
+                "raw_net_cash": float(net_cash),
+                "cash_sales": float(total_cash_sales),
+                "deposits": float(total_deposits),
+                "from_date": start_date.isoformat(),
+                "to_date": today.isoformat()
             }, 200
 
         except SQLAlchemyError as e:
             db.session.rollback()
             return {
-                "error": "An error occurred while calculating total cash sales by user",
+                "error": "Failed to calculate net cash",
                 "details": str(e)
             }, 500
+
 
 
 
