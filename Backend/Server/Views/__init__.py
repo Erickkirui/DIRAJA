@@ -160,7 +160,7 @@ from Server.Views.PushSubscription import  (
 )
 
 from Server.Views.TaskManagerViews import (
-    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks,CompleteTask
+    CreateTask, TaskResource, PendingTasks, ViewTask, AcknowledgeTask, GetTasks, CompleteTask, GetUserTasks
 )
 
 from Server.Views.CookedItemsView import  (
@@ -510,6 +510,7 @@ api.add_resource(ProcessCSV, '/process-csv')
 api.add_resource(CreateTask, "/newtask")
 api.add_resource(TaskResource, "/tasks/<int:task_id>")
 api.add_resource(GetTasks, "/alltasks")
+api.add_resource(GetUserTasks, "/mytasks/<int:user_id>")
 api.add_resource(PendingTasks, "/tasks/pending/<int:user_id>")
 api.add_resource(ViewTask, "/tasks/view/<int:task_id>")
 api.add_resource(AcknowledgeTask, "/tasks/acknowledge/<int:task_id>")

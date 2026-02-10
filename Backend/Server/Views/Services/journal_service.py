@@ -5,6 +5,9 @@ from Server.Models.ChartOfAccounts import ChartOfAccounts
 from Server.Models.Accounting.PurchaseLedger import PurchaseLedgerInventory,DistributionLedger
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.TransferV2 import TransfersV2
+from Server.Models.Accounting.BankTransferLedger import BankTransfersLedger
+from Server.Models.BankAccounts import BankAccount
+from datetime import datetime
 
 class JournalService:
 
@@ -250,3 +253,48 @@ class DistributionJournalService:
                 "created_at": transfer.created_at.isoformat()
             }
         }
+        
+class BankJournalService:
+
+    @staticmethod
+    def post_transfer_journal(transaction, from_account, to_account, amount):
+
+        # Get chart accounts for both from_account and to_account
+        debit_chart_account = from_account.chart_account
+        credit_chart_account = to_account.chart_account
+
+        if not debit_chart_account:
+            raise Exception(f"Source account '{from_account.Account_name}' is not linked to Chart of Accounts.")
+
+        if not credit_chart_account:
+            raise Exception(f"Destination account '{to_account.Account_name}' is not linked to Chart of Accounts.")
+
+        description = (
+            f"Transfer from {from_account.Account_name} to {to_account.Account_name}"
+        )
+
+        # Credit entry (debit_account_id = null)
+        credit_entry = BankTransfersLedger(
+            bank_transaction_id=transaction.id,
+            description=description,
+            debit_account_id=None,
+            credit_account_id=credit_chart_account.id,
+            amount=amount,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(credit_entry)
+
+        # Debit entry (credit_account_id = null)
+        debit_entry = BankTransfersLedger(
+            bank_transaction_id=transaction.id,
+            description=description,
+            debit_account_id=debit_chart_account.id,
+            credit_account_id=None,
+            amount=amount,
+            created_at=datetime.utcnow()
+        )
+        db.session.add(debit_entry)
+
+
+
+

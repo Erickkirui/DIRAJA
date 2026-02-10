@@ -150,6 +150,54 @@ class GetTasks(Resource):
             }
             for task in tasks
         ], 200
+        
+class GetUserTasks(Resource):
+    @jwt_required()
+    def get(self, user_id=None):  # Accept user_id as parameter
+        # Get status from query parameters if provided
+        status = request.args.get('status')  # 'pending', 'completed', or None for all
+        
+        # Start building the query
+        query = TaskManager.query.options(
+            joinedload(TaskManager.assigner),
+            joinedload(TaskManager.assignee)
+        )
+        
+        # Filter by user_id if provided (tasks assigned to this user)
+        # Note: user_id parameter comes from the URL path, not query string
+        if user_id:
+            query = query.filter(TaskManager.assignee_id == user_id)
+        
+        
+        
+        # Apply ordering by due_date descending (newest first)
+        query = query.order_by(
+            TaskManager.due_date.desc(),
+            TaskManager.priority.desc()
+        )
+        
+        # Execute query
+        tasks = query.all()
+        
+        if not tasks:
+            return {"message": "No tasks found"}, 404
+
+        return [
+            {
+                "task_id": task.task_id,
+                "assigner_id": task.user_id,
+                "assigner_username": task.assigner.username if task.assigner else "Unknown",
+                "assignee_id": task.assignee_id,
+                "assignee_username": task.assignee.username if task.assignee else "Unknown",
+                "task": task.task,
+                "priority": task.priority,
+                "assigned_date": str(task.assigned_date),
+                "due_date": str(task.due_date) if task.due_date else None,
+                "status": task.status,
+                "closing_date": str(task.closing_date) if task.closing_date else None
+            }
+            for task in tasks
+        ], 200
 
 class TaskResource(Resource):
     @jwt_required()
