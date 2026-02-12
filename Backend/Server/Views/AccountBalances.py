@@ -12,6 +12,8 @@ from Server.Models.BankAccounts import BankAccount  # adjust import if needed
 from flask_jwt_extended import jwt_required,get_jwt_identity
 from functools import wraps
 from Server.Models import ChartOfAccounts
+from Server.Views.Services.journal_service import BankJournalService
+from Server.Models.BankAccounts import BankingTransaction
 
 def check_role(required_role):
     def wrapper(fn):
@@ -132,9 +134,22 @@ class DepositToAccount(Resource):
             Transaction_amount=deposit_amount,
             From_account=account.Account_name
         )
+
         db.session.add(transaction)
+        db.session.flush()  # get transaction.id
+
+        # ===== Post Journal =====
+        try:
+            journal_result = BankJournalService.post_bank_journal(
+                transaction=transaction,
+                account_name=account.Account_name
+            )
+        except Exception as e:
+            db.session.rollback()
+            return {"message": "Deposit saved but journal failed", "error": str(e)}, 500
 
         db.session.commit()
+
 
         return {
             "message": "Deposit successful.",
@@ -162,10 +177,6 @@ class BankAccountResource(Resource):
 
     @jwt_required()
     def put(self, account_id):
-        """
-        account_id => destination account (deposit INTO)
-        from_account => source account (deduct FROM)
-        """
 
         data = request.get_json()
 
@@ -199,16 +210,36 @@ class BankAccountResource(Resource):
             }, 400
 
         try:
-            # Deduct from source
+            # 1️⃣ Update balances
             from_account.Account_Balance -= amount
-
-            # Add to destination
             to_account.Account_Balance += amount
+
+            # 2️⃣ Create transaction record
+            transaction = TranscationType(
+                Transaction_type="TRANSFER",
+                Transaction_amount=amount,
+                From_account=from_account.Account_name,
+                To_account=to_account.Account_name
+            )
+
+            db.session.add(transaction)
+            db.session.commit()  # commit to get transaction.id
+
+            # 3️⃣ Post ledger
+            from Server.Views.Services.journal_service import BankJournalService
+
+            journal_result = BankJournalService.post_transfer_journal(
+                transaction,
+                from_account,
+                to_account,
+                amount
+            )
 
             db.session.commit()
 
             return {
-                "message": "Deposit successful.",
+                "message": "Transfer successful.",
+                "journal_entry": journal_result,
                 "from_account": {
                     "id": from_account.id,
                     "balance": from_account.Account_Balance
@@ -222,7 +253,7 @@ class BankAccountResource(Resource):
         except Exception as e:
             db.session.rollback()
             return {
-                "message": "Deposit failed.",
+                "message": "Transfer failed.",
                 "error": str(e)
             }, 500
 
@@ -345,7 +376,7 @@ class MultipleToOneTransfer(Resource):
         try:
             data = request.get_json()
 
-            to_account_id = data.get("to_account_id")
+            to_account_id = int(data.get("to_account_id"))
             transfers = data.get("transfers", [])
 
             if not to_account_id or not transfers:
@@ -358,8 +389,8 @@ class MultipleToOneTransfer(Resource):
             total_amount = 0
 
             for transfer in transfers:
-                from_account_id = transfer.get("from_account_id")
-                amount = transfer.get("amount")
+                from_account_id = int(transfer.get("from_account_id"))
+                amount = float(transfer.get("amount"))
 
                 if not from_account_id or not amount or amount <= 0:
                     return {"error": "Invalid transfer data"}, 400
@@ -373,21 +404,37 @@ class MultipleToOneTransfer(Resource):
                         "error": f"Insufficient balance in {from_account.Account_name}"
                     }, 400
 
-                # Debit source account
+                # 1️⃣ Deduct from source
                 from_account.Account_Balance -= amount
-
-                # Record individual transaction
-                transaction = TranscationType(
-                    Transaction_type="TRANSFER",
-                    Transaction_amount=amount,
-                    From_account=from_account.Account_name,
-                    To_account=to_account.Account_name
-                )
-
-                db.session.add(transaction)
                 total_amount += amount
 
-            # Credit destination account
+                # 2️⃣ Create transaction record
+                # transaction = TranscationType(
+                #     Transaction_type="TRANSFER",
+                #     Transaction_amount=amount,
+                #     From_account=from_account.Account_name,
+                #     To_account=to_account.Account_name
+                # )
+                
+                transaction = BankingTransaction(
+                    account_id=from_account.id,
+                    Transaction_type_debit=amount,
+                    Transaction_type_credit=None
+                )
+
+
+                db.session.add(transaction)
+                db.session.flush()  # get transaction.id before journal
+
+                # 3️⃣ Post Journal (correct method)
+                BankJournalService.post_transfer_journal(
+                    transaction=transaction,
+                    from_account=from_account,
+                    to_account=to_account,
+                    amount=amount
+                )
+
+            # 4️⃣ Credit destination account once
             to_account.Account_Balance += total_amount
 
             db.session.commit()
@@ -401,3 +448,4 @@ class MultipleToOneTransfer(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+

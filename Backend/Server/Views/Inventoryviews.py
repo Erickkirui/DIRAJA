@@ -423,6 +423,7 @@ class GetAllInventory(Resource):
         return make_response(jsonify(all_inventory), 200)
 
 
+
 class InventoryResourceById(Resource):
     @jwt_required()
     @check_role('manager')

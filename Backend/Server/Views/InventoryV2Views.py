@@ -100,93 +100,116 @@ class ProcessInventoryV2(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Required fields for processing inventory
-        required_fields = [
-            'source_inventory_id', 'processed_items', 'note'
-        ]
+        # Required fields
+        required_fields = ['source_inventory_id', 'processed_items', 'note', 'created_at']
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
         source_inventory_id = data['source_inventory_id']
-        processed_items = data['processed_items']  # List of processed items
+        processed_items = data['processed_items']
         note = data['note']
+        created_at_str = data['created_at']
 
         try:
-            # ✅ Fetch source inventory item
+            # ✅ Parse ISO date
+            try:
+                created_at = datetime.fromisoformat(
+                    created_at_str.replace("Z", "+00:00")
+                )
+            except Exception:
+                return {'message': 'Invalid date format. Use ISO format.'}, 400
+
+            # ✅ Fetch source item
             source_item = InventoryV2.query.get(source_inventory_id)
             if not source_item:
                 return {'message': 'Source inventory item not found'}, 404
 
+            if source_item.quantity <= 0:
+                return {'message': 'Source inventory has no quantity left'}, 400
+
             # ✅ Validate processed items
             total_processed_quantity = 0
+
             for item in processed_items:
                 if not all(field in item for field in ['itemname', 'quantity', 'metric', 'unitPrice']):
                     return {'message': 'Missing fields in processed items'}, 400
+
+                if item['quantity'] <= 0:
+                    return {'message': 'Processed quantity must be greater than zero'}, 400
+
                 total_processed_quantity += item['quantity']
 
-            # ✅ Ensure we're not processing more than available
-            if source_item.quantity < total_processed_quantity:
+            if total_processed_quantity > source_item.quantity:
                 return {'message': 'Insufficient inventory quantity for processing'}, 400
 
-            # ✅ Calculate cost allocation based on quantity ratio
             processed_inventory_items = []
-            
-            for item_data in processed_items:
-                # Calculate the cost allocation for this processed item
-                quantity_ratio = item_data['quantity'] / total_processed_quantity
-                allocated_cost = source_item.totalCost * quantity_ratio
-                allocated_amount_paid = source_item.amountPaid * quantity_ratio
-                
-                # Calculate unit cost based on allocated cost
-                unit_cost = allocated_cost / item_data['quantity'] if item_data['quantity'] > 0 else 0
 
-                # Create new inventory item for the processed product
+            source_unit_cost = source_item.unitCost
+
+            # 🔥 Create processed items
+            for item_data in processed_items:
+
+                processed_quantity = item_data['quantity']
+                total_cost = processed_quantity * source_unit_cost
+                amount_paid = total_cost
+
                 new_processed_item = InventoryV2(
                     itemname=item_data['itemname'],
-                    initial_quantity=item_data['quantity'],
-                    quantity=item_data['quantity'],
+                    initial_quantity=processed_quantity,
+                    quantity=processed_quantity,
                     metric=item_data['metric'],
-                    unitCost=unit_cost,
-                    totalCost=allocated_cost,
-                    amountPaid=allocated_amount_paid,
+                    unitCost=source_unit_cost,
+                    totalCost=total_cost,
+                    amountPaid=amount_paid,
                     unitPrice=item_data['unitPrice'],
-                    BatchNumber=source_item.BatchNumber,  # Same batch number
+                    BatchNumber=source_item.BatchNumber,
                     user_id=current_user_id,
-                    Trasnaction_type_credit=item_data['quantity'],  # Credit for new items
+                    Trasnaction_type_credit=processed_quantity,
                     Transcation_type_debit=0.0,
                     paymentRef=source_item.paymentRef,
                     Suppliername=source_item.Suppliername,
                     Supplier_location=source_item.Supplier_location,
-                    ballance=item_data['quantity'],
-                    note=f"Processed from {source_item.itemname}.",
-                    source=source_item.source
+                    ballance=processed_quantity,
+                    note=f"Processed from {source_item.itemname}. {note}",
+                    source=source_item.source,
+                    created_at=created_at  # ✅ USE PAYLOAD DATE
                 )
 
                 db.session.add(new_processed_item)
+
                 processed_inventory_items.append({
                     'itemname': item_data['itemname'],
-                    'quantity': item_data['quantity'],
-                    'metric': item_data['metric'],
-                    'new_item_id': new_processed_item.inventoryV2_id
+                    'quantity': processed_quantity,
+                    'metric': item_data['metric']
                 })
 
-            # ✅ Deduct the processed quantity from source item
+            # ✅ Deduct quantity AND cost from source
+            total_cost_to_deduct = total_processed_quantity * source_unit_cost
+
             source_item.quantity -= total_processed_quantity
+            source_item.totalCost -= total_cost_to_deduct
+            source_item.amountPaid -= total_cost_to_deduct
             source_item.ballance = source_item.quantity
             source_item.Transcation_type_debit = total_processed_quantity
             source_item.note = f"Processed into multiple items. {note}"
+            source_item.created_at = created_at  # Optional: update transaction date
 
             db.session.commit()
 
             return {
                 'message': 'Inventory processed successfully',
                 'processed_items': processed_inventory_items,
-                'source_item_remaining_quantity': source_item.quantity
+                'source_item_remaining_quantity': source_item.quantity,
+                'source_item_remaining_cost': source_item.totalCost,
+                'created_at_used': created_at.isoformat()
             }, 201
 
         except Exception as e:
             db.session.rollback()
-            return {'message': 'Error processing inventory', 'error': str(e)}, 500
+            return {
+                'message': 'Error processing inventory',
+                'error': str(e)
+            }, 500
 
 
 class DistributeInventoryV2(Resource):
@@ -1129,6 +1152,33 @@ class AddInventoryV2(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error adding inventory', 'error': str(e)}, 500
+
+class AllInventoryV2(Resource):
+    @jwt_required()
+   
+    def get(self):
+        inventories = InventoryV2.query.order_by(InventoryV2.created_at.desc()).all()
+
+        all_inventory = [{
+            "inventoryV2_id": inventory.inventoryV2_id,
+            "itemname": inventory.itemname,
+            "initial_quantity": inventory.initial_quantity,
+            "remaining_quantity": inventory.quantity,
+            "metric": inventory.metric,
+            "totalCost": inventory.totalCost,
+            "unitCost": inventory.unitCost,
+            "batchnumber": inventory.BatchNumber,
+            "amountPaid": inventory.amountPaid,
+            "balance": inventory.ballance,
+            "note": inventory.note,
+            "created_at": inventory.created_at,
+            "unitPrice": inventory.unitPrice,
+            "source": inventory.source,
+            "paymentRef": inventory.paymentRef
+        } for inventory in inventories]
+
+        return make_response(jsonify(all_inventory), 200)
+
 
 class GetAllInventoryV2(Resource):
     @jwt_required()
