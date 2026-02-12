@@ -25,17 +25,16 @@ class PurchaseLedgerInventory(db.Model):
     debit_account_id = db.Column(
         db.Integer,
         db.ForeignKey("chart_of_accounts.id"),
-        nullable=False
+        nullable=True
     )
     debit_account = db.relationship(
         "ChartOfAccounts",
         foreign_keys=[debit_account_id]
     )
-
     credit_account_id = db.Column(
         db.Integer,
         db.ForeignKey("chart_of_accounts.id"),
-        nullable=False
+        nullable=True
     )
     credit_account = db.relationship(
         "ChartOfAccounts",

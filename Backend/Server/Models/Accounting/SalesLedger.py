@@ -24,7 +24,7 @@ class SalesLedger(db.Model):
     debit_account_id = db.Column(
         db.Integer,
         db.ForeignKey("chart_of_accounts.id"),
-        nullable=False
+        nullable=True
     )
     
     debit_account = db.relationship(
@@ -36,7 +36,7 @@ class SalesLedger(db.Model):
     credit_account_id = db.Column(
         db.Integer,
         db.ForeignKey("chart_of_accounts.id"),
-        nullable=False
+        nullable=True
     )
     credit_account = db.relationship(
         "ChartOfAccounts",
