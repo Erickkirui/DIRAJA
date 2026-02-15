@@ -177,7 +177,7 @@ from Server.Views.ShopTargets import (
 )
 
 from Server.Views.LedgerViews import (
-    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList
+    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList
 )
 
 from Server.Views.ClerkReportTime import (
@@ -542,6 +542,7 @@ api.add_resource(CreditSalesLedgerList,"/accounting/credit-sales-ledger")
 api.add_resource(DistributionLedgerList, '/accounting/distribution-ledger')
 api.add_resource(PurchaseLedgerInventoryList, '/accounting/purchase-ledger-inventory')
 api.add_resource(BankTransfersLedgerList, '/accounting/bank-transfers-ledger')
+api.add_resource(ExpensesLedgerList, "/accounting/expenses-ledger")
 
 
 # clerkShopReportTime

@@ -5,7 +5,9 @@ from Server.Models.ChartOfAccounts import ChartOfAccounts
 from Server.Models.Accounting.PurchaseLedger import PurchaseLedgerInventory,DistributionLedger
 from Server.Models.InventoryV2 import InventoryV2
 from Server.Models.TransferV2 import TransfersV2
-
+from Server.Models.Expenses import Expenses
+from Server.Models.ExpenseCategory import ExpenseCategory
+from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.Accounting.SpoiltStockLedger import SpoiltStockLedger
 from Server.Models.SpoiltStock import SpoiltStock
 
@@ -405,6 +407,84 @@ class BankJournalService:
         )
         db.session.add(debit_entry)
 
+
+
+class ExpensesJournalService:
+    """
+    Service to handle journal entries for expenses.
+    """
+
+    @staticmethod
+    def post_expense_journal(
+        expense: Expenses,
+        debit_account_name: str = "Expense",
+        credit_account_name: str = "Cash & Bank"
+    ):
+        # ===== Account lookups =====
+        debit_account = ChartOfAccounts.query.filter_by(name=debit_account_name).first()
+        credit_account = ChartOfAccounts.query.filter_by(name=credit_account_name).first()
+
+        if not debit_account:
+            raise Exception(f"Debit account '{debit_account_name}' not found")
+
+        if not credit_account:
+            raise Exception(f"Credit account '{credit_account_name}' not found")
+
+        # ===== Fetch Category (required by ledger FK) =====
+        category_obj = ExpenseCategory.query.filter_by(category_name=expense.category).first()
+        if not category_obj:
+            raise Exception(f"Expense category '{expense.category}' not found")
+
+        # ===== Description =====
+        description = f"Expense: {expense.item}, Ref {expense.paymentRef}"
+
+        amount = expense.amountPaid
+        created_at = expense.created_at
+
+        # ===== DR: Expense =====
+        debit_entry = ExpensesLedger(
+            expense_id=expense.expense_id,
+            category_id=category_obj.id,
+            debit_account_id=debit_account.id,
+            credit_account_id=None,
+            amount=amount,
+            shop_id=expense.shop_id,
+            created_at=created_at
+        )
+
+        # ===== CR: Cash & Bank =====
+        credit_entry = ExpensesLedger(
+            expense_id=expense.expense_id,
+            category_id=category_obj.id,
+            debit_account_id=None,
+            credit_account_id=credit_account.id,
+            amount=amount,
+            shop_id=expense.shop_id,
+            created_at=created_at
+        )
+
+        db.session.add_all([debit_entry, credit_entry])
+
+        return {
+            "journal_type": "expense",
+            "journal_payload": {
+                "expense_id": expense.expense_id,
+                "item": expense.item,
+                "entries": [
+                    {
+                        "type": "debit",
+                        "account": debit_account.name,
+                        "amount": float(amount),
+                    },
+                    {
+                        "type": "credit",
+                        "account": credit_account.name,
+                        "amount": float(amount),
+                    }
+                ],
+                "created_at": created_at.isoformat(),
+            }
+        }
 
 
 

@@ -29,6 +29,7 @@ class AddExpense(Resource):
     @jwt_required()
     @check_role('manager')
     def post(self):
+
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
@@ -40,76 +41,90 @@ class AddExpense(Resource):
         totalPrice = data.get('totalPrice')
         amountPaid = data.get('amountPaid')
         paidTo = data.get('paidTo')
-        source = data.get('source')  # e.g. "Cash", "Sasapay", or "External funding"
+        source = data.get('source')
         paymentRef = data.get('paymentRef')
         comments = data.get('comments')
+        created_at_str = data.get('created_at')
 
-        # ✅ Validate required fields
-        if not shop_id:
-            return {"message": "Shop ID is required."}, 400
-        if not category:
-            return {"message": "Category is required."}, 400
-        if not source:
-            return {"message": "Payment source (e.g. 'Cash' or 'Sasapay') is required."}, 400
-        if not paymentRef:
-            return {"message": "Payment reference (paymentRef) is required."}, 400
+        # ===== Validations =====
+        if not shop_id or not category or not source or not paymentRef:
+            return {"message": "Missing required fields"}, 400
+
         if quantity is None or quantity <= 0:
-            return {"message": "Quantity must be a valid number greater than 0."}, 400
+            return {"message": "Invalid quantity"}, 400
+
         if totalPrice is None or totalPrice <= 0:
-            return {"message": "Total Price must be a valid number greater than 0."}, 400
+            return {"message": "Invalid total price"}, 400
+
         if amountPaid is None or amountPaid <= 0:
-            return {"message": "Amount Paid must be a valid number greater than 0."}, 400
-
-        created_at = data.get('created_at')
-        if created_at:
-            try:
-                created_at = datetime.strptime(created_at, '%Y-%m-%d')
-            except ValueError:
-                return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
-
-        transaction = None
-        if source != "External funding":
-            # Step 1: Fetch account
-            account = BankAccount.query.filter_by(Account_name=source).first()
-            if not account:
-                return {"message": f"Account '{source}' not found."}, 404
-
-            # Step 2: Deduct amount
-            account.Account_Balance -= amountPaid
-
-            # Step 3: Log transaction
-            transaction = BankingTransaction(
-                account_id=account.id,
-                Transaction_type_debit=amountPaid,
-                Transaction_type_credit=None
-            )
-
-        # Step 4: Create expense
-        new_expense = Expenses(
-            shop_id=shop_id,
-            item=item,
-            description=description,
-            quantity=quantity,
-            category=category,
-            totalPrice=totalPrice,
-            amountPaid=amountPaid,
-            paidTo=paidTo,
-            created_at=created_at or datetime.utcnow(),
-            user_id=current_user_id,
-            source=source,
-            paymentRef=paymentRef,
-            comments=comments
-        )
+            return {"message": "Invalid amount paid"}, 400
 
         try:
-            db.session.add(new_expense)
-            if transaction:
+            created_at = datetime.strptime(created_at_str, "%Y-%m-%d")
+        except:
+            return {"message": "Invalid date format. Use YYYY-MM-DD."}, 400
+
+        try:
+            # ===== Step 1: Handle Bank Deduction =====
+            if source not in ["External funding"]:
+                account = BankAccount.query.filter_by(Account_name=source).first()
+                if not account:
+                    return {"message": f"Bank account '{source}' not found"}, 404
+
+                account.Account_Balance -= amountPaid
+                db.session.add(account)
+
+                transaction = BankingTransaction(
+                    account_id=account.id,
+                    Transaction_type_debit=amountPaid,
+                    Transaction_type_credit=None
+                )
                 db.session.add(transaction)
-            db.session.commit()
-            return {"message": "Expense added successfully"}, 201
+
+            # ===== Step 2: Create Expense =====
+            new_expense = Expenses(
+                shop_id=shop_id,
+                item=item,
+                description=description,
+                quantity=quantity,
+                category=category,
+                totalPrice=totalPrice,
+                amountPaid=amountPaid,
+                paidTo=paidTo,
+                created_at=created_at,
+                user_id=current_user_id,
+                source=source,
+                paymentRef=paymentRef,
+                comments=comments
+            )
+
+            db.session.add(new_expense)
+            db.session.commit()  # commit expense first
+
+            # ===== Step 3: Post Journal =====
+            from Server.Views.Services.journal_service import ExpensesJournalService
+
+            try:
+                journal_result = ExpensesJournalService.post_expense_journal(new_expense)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                return {
+                    "message": "Expense saved but journal posting failed",
+                    "error": str(e),
+                    "expense_id": new_expense.expense_id
+                }, 500
+
+            return {
+                "message": "Expense and journal entry added successfully",
+                "expense_id": new_expense.expense_id,
+                "journal_entry": journal_result
+            }, 201
+
         except Exception as e:
             db.session.rollback()
-            return {"message": "Failed to add expense", "error": str(e)}, 500
+            return {"message": "Error adding expense", "error": str(e)}, 500
+
 
 
 class AllExpenses(Resource):
