@@ -59,14 +59,15 @@ class TotalAmountPaidAllSales(Resource):
     @check_role('manager')
     def get(self):
         try:
-            # Extract the date or period from the request
             period = request.args.get('period', 'today')
             today = datetime.utcnow()
-            
-            # Support custom date range
+
             start_date_str = request.args.get('startDate')
             end_date_str = request.args.get('endDate')
 
+            # -------------------------
+            # DATE HANDLING
+            # -------------------------
             if start_date_str and end_date_str:
                 try:
                     start_date = datetime.strptime(start_date_str, '%Y-%m-%d').replace(
@@ -81,51 +82,83 @@ class TotalAmountPaidAllSales(Resource):
                 if period == 'today':
                     start_date = today.replace(hour=0, minute=0, second=0, microsecond=0)
                     end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+
                 elif period == 'yesterday':
-                    yesterday_date = today - timedelta(days=1)
-                    start_date = yesterday_date.replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = yesterday_date.replace(hour=23, minute=59, second=59, microsecond=999999)
+                    yesterday = today - timedelta(days=1)
+                    start_date = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+                    end_date = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+
                 elif period == 'week':
-                    start_date = (today - timedelta(days=7)).replace(hour=0, minute=0, second=0, microsecond=0)
+                    start_date = (today - timedelta(days=7)).replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
                     end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+
                 elif period == 'month':
-                    start_date = (today - timedelta(days=30)).replace(hour=0, minute=0, second=0, microsecond=0)
-                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=0)
+                    start_date = (today - timedelta(days=30)).replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+                    end_date = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+
                 elif period == 'alltime':
                     start_date = None
                     end_date = None
+
                 else:
                     return {"message": "Invalid period specified"}, 400
 
-            # Query paid
+            # -------------------------
+            # BASE QUERIES
+            # -------------------------
+
             query_paid = (
                 db.session.query(func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
             )
 
-            # Query unpaid
-            query_unpaid = db.session.query(func.sum(Sales.balance)).select_from(Sales)
+            query_unpaid = (
+                db.session.query(func.sum(Sales.balance))
+                .filter(
+                    Sales.balance > 0,
+                    Sales.status.in_(["unpaid", "partially paid"])
+                )
+            )
 
-            # Apply date filters if not alltime
+            # -------------------------
+            # APPLY DATE FILTER
+            # -------------------------
             if start_date and end_date:
-                query_paid = query_paid.filter(Sales.created_at.between(start_date, end_date))
-                query_unpaid = query_unpaid.filter(Sales.created_at.between(start_date, end_date))
+                query_paid = query_paid.filter(
+                    Sales.created_at.between(start_date, end_date)
+                )
+
+                query_unpaid = query_unpaid.filter(
+                    Sales.created_at.between(start_date, end_date)
+                )
 
             total_paid = query_paid.scalar() or 0
             total_unpaid = query_unpaid.scalar() or 0
             total_sales = total_paid + total_unpaid
 
-            # Query all-time totals (no date filters)
+            # -------------------------
+            # ALL TIME TOTALS
+            # -------------------------
+
             all_time_paid = (
                 db.session.query(func.sum(SalesPaymentMethods.amount_paid))
                 .join(Sales, Sales.sales_id == SalesPaymentMethods.sale_id)
                 .scalar() or 0
             )
+
             all_time_unpaid = (
                 db.session.query(func.sum(Sales.balance))
-                .select_from(Sales)
+                .filter(
+                    Sales.balance > 0,
+                    Sales.status.in_(["unpaid", "partially paid"])
+                )
                 .scalar() or 0
             )
+
             all_time_sales = all_time_paid + all_time_unpaid
 
             return {
@@ -140,9 +173,10 @@ class TotalAmountPaidAllSales(Resource):
         except SQLAlchemyError as e:
             db.session.rollback()
             return {
-                "error": "An error occurred while fetching the total sales amount", 
+                "error": "An error occurred while fetching the total sales amount",
                 "details": str(e)
             }, 500
+
 
 
 
