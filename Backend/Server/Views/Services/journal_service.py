@@ -32,9 +32,6 @@ class JournalService:
         - Unpaid / Partial → A/R DR, Revenue CR
         """
 
-        # ===== TOTAL SALE =====
-        total_sale_amount = sum(float(item['total_price']) for item in sold_items)
-
         # ===== ACCOUNT LOOKUPS =====
         revenue_account = ChartOfAccounts.query.filter_by(type="Revenue").first()
         receivable_account = ChartOfAccounts.query.filter_by(name="Current Asset").first()
@@ -52,41 +49,58 @@ class JournalService:
             if not cash_account:
                 raise Exception("Cash & Bank account not found")
 
-            description = f"Cash sale #{sale.sales_id}"
+            entries = []
+            journal_payload_entries = []
 
-            # DR: Cash
-            debit_entry = SalesLedger(
-                sales_id=sale.sales_id,
-                description=description,
-                debit_account_id=cash_account.id,
-                credit_account_id=None,
-                amount=total_sale_amount,
-                shop_id=shop_id,
-                created_at=created_at
-            )
+            for item in sold_items:
+                description = f"Sales - {item['item_name']}"
+                item_amount = float(item['total_price'])
 
-            # CR: Revenue
-            credit_entry = SalesLedger(
-                sales_id=sale.sales_id,
-                description=description,
-                debit_account_id=None,
-                credit_account_id=revenue_account.id,
-                amount=total_sale_amount,
-                shop_id=shop_id,
-                created_at=created_at
-            )
+                # DR: Cash
+                debit_entry = SalesLedger(
+                    sales_id=sale.sales_id,
+                    description=description,
+                    debit_account_id=cash_account.id,
+                    credit_account_id=None,
+                    amount=item_amount,
+                    shop_id=shop_id,
+                    created_at=created_at
+                )
 
-            db.session.add_all([debit_entry, credit_entry])
+                # CR: Revenue
+                credit_entry = SalesLedger(
+                    sales_id=sale.sales_id,
+                    description=description,
+                    debit_account_id=None,
+                    credit_account_id=revenue_account.id,
+                    amount=item_amount,
+                    shop_id=shop_id,
+                    created_at=created_at
+                )
+
+                entries.extend([debit_entry, credit_entry])
+                
+                journal_payload_entries.append({
+                    "item": item['item_name'],
+                    "type": "debit", 
+                    "account": cash_account.name, 
+                    "amount": item_amount
+                })
+                journal_payload_entries.append({
+                    "item": item['item_name'],
+                    "type": "credit", 
+                    "account": revenue_account.name, 
+                    "amount": item_amount
+                })
+
+            db.session.add_all(entries)
 
             return {
                 "journal_type": "sales",
                 "journal_payload": {
                     "sales_id": sale.sales_id,
                     "status": sale.status,
-                    "entries": [
-                        {"type": "debit", "account": cash_account.name, "amount": total_sale_amount},
-                        {"type": "credit", "account": revenue_account.name, "amount": total_sale_amount},
-                    ]
+                    "entries": journal_payload_entries
                 }
             }
 
@@ -104,36 +118,62 @@ class JournalService:
             journal_amount = (
                 sale.balance
                 if sale.status == "partially_paid"
-                else total_sale_amount
+                else sum(float(item['total_price']) for item in sold_items)
             )
 
-            description = f"Credit sale #{sale.sales_id}"
+            entries = []
+            journal_payload_entries = []
 
-            # DR: Accounts Receivable
-            debit_entry = CreditSalesLedger(
-                sales_id=sale.sales_id,
-                creditor_id=creditor_id,
-                description=description,
-                debit_account_id=receivable_account.id,
-                credit_account_id=None,
-                amount=journal_amount,
-                shop_id=shop_id,
-                created_at=created_at
-            )
+            # For credit sales, we need to allocate the journal amount across items
+            # This example assumes proportional allocation based on item prices
+            total_sale = sum(float(item['total_price']) for item in sold_items)
+            
+            for item in sold_items:
+                description = f"Sales - {item['item_name']}"
+                
+                # Calculate proportional amount for this item
+                item_amount = (float(item['total_price']) / total_sale) * journal_amount
+                
+                # DR: Accounts Receivable
+                debit_entry = CreditSalesLedger(
+                    sales_id=sale.sales_id,
+                    creditor_id=creditor_id,
+                    description=description,
+                    debit_account_id=receivable_account.id,
+                    credit_account_id=None,
+                    amount=item_amount,
+                    shop_id=shop_id,
+                    created_at=created_at
+                )
 
-            # CR: Revenue
-            credit_entry = CreditSalesLedger(
-                sales_id=sale.sales_id,
-                creditor_id=creditor_id,
-                description=description,
-                debit_account_id=None,
-                credit_account_id=revenue_account.id,
-                amount=journal_amount,
-                shop_id=shop_id,
-                created_at=created_at
-            )
+                # CR: Revenue
+                credit_entry = CreditSalesLedger(
+                    sales_id=sale.sales_id,
+                    creditor_id=creditor_id,
+                    description=description,
+                    debit_account_id=None,
+                    credit_account_id=revenue_account.id,
+                    amount=item_amount,
+                    shop_id=shop_id,
+                    created_at=created_at
+                )
 
-            db.session.add_all([debit_entry, credit_entry])
+                entries.extend([debit_entry, credit_entry])
+                
+                journal_payload_entries.append({
+                    "item": item['item_name'],
+                    "type": "debit", 
+                    "account": receivable_account.name, 
+                    "amount": item_amount
+                })
+                journal_payload_entries.append({
+                    "item": item['item_name'],
+                    "type": "credit", 
+                    "account": revenue_account.name, 
+                    "amount": item_amount
+                })
+
+            db.session.add_all(entries)
 
             return {
                 "journal_type": "credit_sales",
@@ -141,10 +181,7 @@ class JournalService:
                     "sales_id": sale.sales_id,
                     "status": sale.status,
                     "creditor_id": creditor_id,
-                    "entries": [
-                        {"type": "debit", "account": receivable_account.name, "amount": journal_amount},
-                        {"type": "credit", "account": revenue_account.name, "amount": journal_amount},
-                    ],
+                    "entries": journal_payload_entries,
                     "balance": sale.balance
                 }
             }

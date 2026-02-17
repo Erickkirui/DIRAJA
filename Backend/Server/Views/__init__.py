@@ -183,6 +183,7 @@ from Server.Views.LedgerViews import (
 from Server.Views.ClerkReportTime import (
     GetShopReports,GetShopReportStats,GetTodayShopReportStatus
 )
+from Server.Views.IncomeStatement import (IncomeStatement)
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -549,3 +550,7 @@ api.add_resource(ExpensesLedgerList, "/accounting/expenses-ledger")
 api.add_resource(GetShopReports, '/shop-reports')
 api.add_resource(GetTodayShopReportStatus, '/shop-reports/today-status')
 api.add_resource(GetShopReportStats, '/shop-reports/stats')
+
+
+#income statement 
+api.add_resource(IncomeStatement,'/income-statement')
