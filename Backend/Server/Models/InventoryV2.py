@@ -9,7 +9,7 @@ import string
 class InventoryV2(db.Model):
     __tablename__ = "inventoryV2"
 
-    # Table columns
+    # Table columAns
     inventoryV2_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     itemname = db.Column(db.String(50), nullable=False)
     initial_quantity = db.Column(db.Float)

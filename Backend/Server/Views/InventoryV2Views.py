@@ -100,116 +100,214 @@ class ProcessInventoryV2(Resource):
         data = request.get_json()
         current_user_id = get_jwt_identity()
 
-        # Required fields
-        required_fields = ['source_inventory_id', 'processed_items', 'note', 'created_at']
+        # Required fields for processing inventory
+        required_fields = [
+            'source_inventory_id', 'processed_items', 'note'
+        ]
         if not all(field in data for field in required_fields):
             return {'message': 'Missing required fields'}, 400
 
         source_inventory_id = data['source_inventory_id']
-        processed_items = data['processed_items']
+        processed_items = data['processed_items']  # List of processed items
         note = data['note']
-        created_at_str = data['created_at']
+        
+        # Get created_at from payload if provided
+        created_at = data.get('created_at')  # This will be None if not provided
 
         try:
-            # ✅ Parse ISO date
-            try:
-                created_at = datetime.fromisoformat(
-                    created_at_str.replace("Z", "+00:00")
-                )
-            except Exception:
-                return {'message': 'Invalid date format. Use ISO format.'}, 400
-
-            # ✅ Fetch source item
+            # ✅ Fetch source inventory item
             source_item = InventoryV2.query.get(source_inventory_id)
             if not source_item:
                 return {'message': 'Source inventory item not found'}, 404
 
-            if source_item.quantity <= 0:
-                return {'message': 'Source inventory has no quantity left'}, 400
-
             # ✅ Validate processed items
             total_processed_quantity = 0
-
             for item in processed_items:
                 if not all(field in item for field in ['itemname', 'quantity', 'metric', 'unitPrice']):
                     return {'message': 'Missing fields in processed items'}, 400
-
-                if item['quantity'] <= 0:
-                    return {'message': 'Processed quantity must be greater than zero'}, 400
-
                 total_processed_quantity += item['quantity']
 
-            if total_processed_quantity > source_item.quantity:
+            # ✅ Ensure we're not processing more than available
+            if source_item.quantity < total_processed_quantity:
                 return {'message': 'Insufficient inventory quantity for processing'}, 400
 
+            # ✅ Calculate cost allocation based on quantity ratio
             processed_inventory_items = []
-
-            source_unit_cost = source_item.unitCost
-
-            # 🔥 Create processed items
+            
             for item_data in processed_items:
+                # Calculate the cost allocation for this processed item
+                quantity_ratio = item_data['quantity'] / total_processed_quantity
+                allocated_cost = source_item.totalCost * quantity_ratio
+                allocated_amount_paid = source_item.amountPaid * quantity_ratio
+                
+                # Calculate unit cost based on allocated cost
+                unit_cost = allocated_cost / item_data['quantity'] if item_data['quantity'] > 0 else 0
 
-                processed_quantity = item_data['quantity']
-                total_cost = processed_quantity * source_unit_cost
-                amount_paid = total_cost
-
+                # Create new inventory item for the processed product
                 new_processed_item = InventoryV2(
                     itemname=item_data['itemname'],
-                    initial_quantity=processed_quantity,
-                    quantity=processed_quantity,
+                    initial_quantity=item_data['quantity'],
+                    quantity=item_data['quantity'],
                     metric=item_data['metric'],
-                    unitCost=source_unit_cost,
-                    totalCost=total_cost,
-                    amountPaid=amount_paid,
+                    unitCost=unit_cost,
+                    totalCost=allocated_cost,
+                    amountPaid=allocated_amount_paid,
                     unitPrice=item_data['unitPrice'],
-                    BatchNumber=source_item.BatchNumber,
+                    BatchNumber=source_item.BatchNumber,  # Same batch number
                     user_id=current_user_id,
-                    Trasnaction_type_credit=processed_quantity,
+                    Trasnaction_type_credit=item_data['quantity'],  # Credit for new items
                     Transcation_type_debit=0.0,
                     paymentRef=source_item.paymentRef,
                     Suppliername=source_item.Suppliername,
                     Supplier_location=source_item.Supplier_location,
-                    ballance=processed_quantity,
-                    note=f"Processed from {source_item.itemname}. {note}",
+                    ballance=item_data['quantity'],
+                    note=f"Processed from {source_item.itemname}.",
                     source=source_item.source,
-                    created_at=created_at  # ✅ USE PAYLOAD DATE
+                    created_at=created_at  # ✅ Set created_at from payload
                 )
 
                 db.session.add(new_processed_item)
-
                 processed_inventory_items.append({
                     'itemname': item_data['itemname'],
-                    'quantity': processed_quantity,
-                    'metric': item_data['metric']
+                    'quantity': item_data['quantity'],
+                    'metric': item_data['metric'],
+                    'new_item_id': new_processed_item.inventoryV2_id
                 })
 
-            # ✅ Deduct quantity AND cost from source
-            total_cost_to_deduct = total_processed_quantity * source_unit_cost
-
+            # ✅ Deduct the processed quantity from source item
             source_item.quantity -= total_processed_quantity
-            source_item.totalCost -= total_cost_to_deduct
-            source_item.amountPaid -= total_cost_to_deduct
             source_item.ballance = source_item.quantity
             source_item.Transcation_type_debit = total_processed_quantity
             source_item.note = f"Processed into multiple items. {note}"
-            source_item.created_at = created_at  # Optional: update transaction date
 
             db.session.commit()
 
             return {
                 'message': 'Inventory processed successfully',
                 'processed_items': processed_inventory_items,
-                'source_item_remaining_quantity': source_item.quantity,
-                'source_item_remaining_cost': source_item.totalCost,
-                'created_at_used': created_at.isoformat()
+                'source_item_remaining_quantity': source_item.quantity
             }, 201
 
         except Exception as e:
             db.session.rollback()
+            return {'message': 'Error processing inventory', 'error': str(e)}, 500
+
+
+class DistributeInventoryV2(Resource):
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+        current_user_id = get_jwt_identity()
+
+        required_fields = [
+            'shop_id', 'inventoryV2_id', 'quantity', 'itemname',
+            'unitCost', 'amountPaid', 'BatchNumber', 'created_at', 'metric'
+        ]
+        if not all(field in data for field in required_fields):
+            return {'message': 'Missing required fields'}, 400
+
+        shop_id = data['shop_id']
+        inventoryV2_id = data['inventoryV2_id']
+        quantity = data['quantity']
+        metric = data['metric']
+        itemname = data['itemname']
+        unitCost = data['unitCost']
+        amountPaid = data['amountPaid']
+        BatchNumber = data['BatchNumber']
+
+        try:
+            distribution_date = parser.isoparse(data['created_at'])
+        except ValueError:
+            return {'message': 'Invalid date format'}, 400
+
+        # ✅ Fetch inventory item
+        inventory_item = InventoryV2.query.get(inventoryV2_id)
+        if not inventory_item:
+            return {'message': 'Inventory item not found'}, 404
+
+        # ✅ Ensure enough stock is available
+        if inventory_item.quantity < quantity:
+            return {'message': 'Insufficient inventory quantity'}, 400
+
+        try:
+            # ✅ Deduct stock immediately
+            inventory_item.quantity -= quantity
+
+            # ✅ Create transfer record
+            new_transfer = TransfersV2(
+                shop_id=shop_id,
+                inventoryV2_id=inventoryV2_id,
+                quantity=quantity,
+                metric=metric,
+                total_cost=unitCost * quantity,
+                BatchNumber=BatchNumber,
+                user_id=current_user_id,
+                itemname=itemname,
+                amountPaid=amountPaid,
+                unitCost=unitCost,
+                created_at=distribution_date,
+                status="Not Received"
+            )
+
+            db.session.add(new_transfer)
+            db.session.flush() 
+            from Server.Views.Services.journal_service import DistributionJournalService
+
+
+            journal_result = DistributionJournalService.post_distribution_journal(
+            transfer=new_transfer,
+            shop_id=shop_id
+    )
+            db.session.commit()
+
+            # ✅ Send push notification
+            self.send_push_to_shop(shop_id, itemname)
+
             return {
-                'message': 'Error processing inventory',
-                'error': str(e)
-            }, 500
+                'message': 'Transfer created successfully and notification sent.',
+                'transfer_id': new_transfer.transferv2_id
+            }, 201
+
+        except Exception as e:
+            db.session.rollback()
+            return {'message': 'Error creating transfer', 'error': str(e)}, 500
+
+
+    def send_push_to_shop(self, shop_id, itemname):
+        """Send push notification to all subscriptions for a shop."""
+        subscriptions = PushSubscription.query.filter_by(shop_id=shop_id).all()
+        if not subscriptions:
+            print(f"No push subscriptions found for shop {shop_id}")
+            return
+
+        # ✅ Fetch VAPID keys from app config
+        vapid_private_key = current_app.config.get("VAPID_PRIVATE_KEY")
+        vapid_email = current_app.config.get("VAPID_EMAIL")
+
+        payload = {
+            "title": "New Stock Alert",
+            "body": f"New stock of {itemname} has been distributed to your shop. Please receive it.",
+            "icon": "/logo192.png",
+        }
+
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {
+                            "p256dh": sub.p256dh,
+                            "auth": sub.auth,
+                        },
+                    },
+                    data=json.dumps(payload),
+                    vapid_private_key=vapid_private_key,
+                    vapid_claims={"sub": vapid_email},
+                )
+                print(f"Push sent to shop {shop_id} subscriber {sub.id}")
+            except WebPushException as e:
+                print(f"Push failed for {sub.id}: {repr(e)}")
+
 
 
 class DistributeInventoryV2(Resource):

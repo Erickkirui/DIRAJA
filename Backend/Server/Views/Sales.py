@@ -536,109 +536,46 @@ class GetSales(Resource):
             page = int(request.args.get('page', 1))
             limit = int(request.args.get('limit', 50))
 
-            # Filters - Match your React component filters
+            # Filters
             search_query = request.args.get('searchQuery', '')
-            shop_filter = request.args.get('shop')  # Changed from shop_id to match component
+            selected_date = request.args.get('selectedDate')
             status_filter = request.args.get('status')
-            payment_method_filter = request.args.get('payment_method')  # New filter
-            user_filter = request.args.get('user')  # New filter
-            date_range_filter = request.args.get('dateRange')  # For predefined ranges
-            start_date = request.args.get('start_date')  # Custom start date
-            end_date = request.args.get('end_date')  # Custom end date
-            
-            # Sorting
+            shop_filter = request.args.get('shop_id')
             sort_by = request.args.get('sort_by', 'created_at')
             sort_order = request.args.get('sort_order', 'desc')
 
-            # Valid sort fields (match your component options)
-            valid_sort_fields = ['created_at', 'total_amount_paid', 'shopname', 'username']
+            # Valid sort fields
+            valid_sort_fields = ['created_at', 'username', 'shopname', 'total_amount_paid']
             if sort_by not in valid_sort_fields:
                 sort_by = 'created_at'
             if sort_order not in ['asc', 'desc']:
                 sort_order = 'desc'
 
             # Base query
-            sales_query = Sales.query.join(Users, Users.id == Sales.user_id).join(
-                Shops, Shops.shops_id == Sales.shop_id
-            )
+            sales_query = Sales.query.join(Users).join(Shops)
 
-            # Apply search filter
+            # Apply filters
             if search_query:
                 sales_query = sales_query.filter(
                     or_(
                         Sales.customer_name.ilike(f"%{search_query}%"),
                         Users.username.ilike(f"%{search_query}%"),
-                        Shops.shopname.ilike(f"%{search_query}%"),
-                        Sales.sales_id.cast(db.String).ilike(f"%{search_query}%")  # Search by sale ID
+                        Shops.shopname.ilike(f"%{search_query}%")
                     )
                 )
 
-            # Apply shop filter
-            if shop_filter:
-                sales_query = sales_query.filter(Shops.shopname == shop_filter)
+            if selected_date:
+                try:
+                    selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+                    sales_query = sales_query.filter(func.date(Sales.created_at) == selected_date_obj)
+                except ValueError:
+                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
 
-            # Apply status filter
             if status_filter:
-                if status_filter.lower() == 'unpaid':
-                    # Unpaid includes both unpaid and partially paid
-                    sales_query = sales_query.filter(Sales.status.in_(['unpaid', 'partially paid']))
-                else:
-                    sales_query = sales_query.filter(Sales.status == status_filter.lower())
+                sales_query = sales_query.filter(Sales.status == status_filter)
 
-            # Apply user filter
-            if user_filter:
-                sales_query = sales_query.filter(Users.username == user_filter)
-
-            # Apply date filters
-            today = datetime.utcnow().date()
-            
-            # Handle date range filter (predefined periods)
-            if date_range_filter:
-                if date_range_filter == 'today':
-                    start_date_obj = datetime.combine(today, datetime.min.time())
-                    end_date_obj = datetime.combine(today, datetime.max.time())
-                    sales_query = sales_query.filter(Sales.created_at.between(start_date_obj, end_date_obj))
-                
-                elif date_range_filter == 'this-week':
-                    week_start = today - timedelta(days=today.weekday())
-                    start_date_obj = datetime.combine(week_start, datetime.min.time())
-                    end_date_obj = datetime.combine(today, datetime.max.time())
-                    sales_query = sales_query.filter(Sales.created_at.between(start_date_obj, end_date_obj))
-                
-                elif date_range_filter == 'this-month':
-                    month_start = today.replace(day=1)
-                    start_date_obj = datetime.combine(month_start, datetime.min.time())
-                    end_date_obj = datetime.combine(today, datetime.max.time())
-                    sales_query = sales_query.filter(Sales.created_at.between(start_date_obj, end_date_obj))
-            
-            # Handle custom date range
-            if start_date and end_date:
-                try:
-                    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
-                    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').replace(
-                        hour=23, minute=59, second=59
-                    )
-                    sales_query = sales_query.filter(Sales.created_at.between(start_date_obj, end_date_obj))
-                except ValueError:
-                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
-            elif start_date:
-                # Single date filter (backward compatibility)
-                try:
-                    date_obj = datetime.strptime(start_date, '%Y-%m-%d')
-                    start_date_obj = date_obj.replace(hour=0, minute=0, second=0)
-                    end_date_obj = date_obj.replace(hour=23, minute=59, second=59)
-                    sales_query = sales_query.filter(Sales.created_at.between(start_date_obj, end_date_obj))
-                except ValueError:
-                    return {"error": "Invalid date format. Use YYYY-MM-DD."}, 400
-
-            # Apply payment method filter - This requires joining with payment methods
-            if payment_method_filter:
-                sales_query = sales_query.join(
-                    SalesPaymentMethods,
-                    SalesPaymentMethods.sale_id == Sales.sales_id
-                ).filter(SalesPaymentMethods.payment_method == payment_method_filter.lower())
-                # Remove duplicates that might be created by the join
-                sales_query = sales_query.distinct()
+            if shop_filter:
+                sales_query = sales_query.filter(Sales.shop_id == int(shop_filter))
 
             # Handle sorting
             if sort_by == 'username':
@@ -646,7 +583,6 @@ class GetSales(Resource):
             elif sort_by == 'shopname':
                 order_field = Shops.shopname
             elif sort_by == 'total_amount_paid':
-                # For sorting by total amount paid, we need to aggregate payment methods
                 payment_subquery = (
                     db.session.query(
                         SalesPaymentMethods.sale_id,
@@ -664,23 +600,35 @@ class GetSales(Resource):
             else:
                 order_field = Sales.created_at
 
-            # Apply sorting
+            # Sort direction
             if sort_order == 'desc':
                 sales_query = sales_query.order_by(order_field.desc())
             else:
                 sales_query = sales_query.order_by(order_field.asc())
 
-            # Get total count before pagination
-            total_sales = sales_query.count()
+            # Decide pagination
+            use_pagination = not (
+                search_query or
+                selected_date or
+                status_filter or
+                shop_filter or
+                sort_by != 'created_at' or
+                sort_order != 'desc'
+            )
 
-            # Apply pagination
-            sales_list = sales_query.offset((page - 1) * limit).limit(limit).all()
-            total_pages = (total_sales + limit - 1) // limit
+            if use_pagination:
+                offset = (page - 1) * limit
+                sales_list = sales_query.offset(offset).limit(limit).all()
+                total_sales = sales_query.count()
+                total_pages = (total_sales + limit - 1) // limit
+            else:
+                sales_list = sales_query.all()
+                total_sales = len(sales_list)
+                total_pages = 1
 
             # Construct response data
             sales_data = []
             for sale in sales_list:
-                # Get sold items
                 sold_items = [
                     {
                         "item_name": item.item_name,
@@ -693,7 +641,6 @@ class GetSales(Resource):
                     for item in sale.items
                 ]
 
-                # Get payment methods
                 payments = [
                     {
                         "payment_method": p.payment_method,
@@ -704,7 +651,6 @@ class GetSales(Resource):
                     for p in sale.payment
                 ]
 
-                # Calculate total amount paid
                 total_amount_paid = sum(p["amount_paid"] for p in payments)
 
                 sales_data.append({
@@ -726,27 +672,15 @@ class GetSales(Resource):
                     "promocode": sale.promocode
                 })
 
-            # Get unique values for filter dropdowns (optional, can be returned for UI)
-            filter_options = {}
-            if page == 1:  # Only fetch filter options on first page to reduce load
-                filter_options = {
-                    "shops": [shop.shopname for shop in Shops.query.filter_by(shopstatus="active").all()],
-                    "statuses": db.session.query(Sales.status).distinct().all(),
-                    "users": [user.username for user in Users.query.filter_by(role="staff").all()],
-                    "payment_methods": db.session.query(SalesPaymentMethods.payment_method).distinct().all()
-                }
-
             return {
                 "sales_data": sales_data,
                 "total_sales": total_sales,
                 "total_pages": total_pages,
-                "current_page": page,
-                "filter_options": filter_options  # Optional: helps populate dropdowns
+                "current_page": page
             }, 200
 
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error: {str(e)}")
-            db.session.rollback()
             return {"error": "Database operation failed."}, 500
         except ValueError as e:
             current_app.logger.error(f"Value error: {str(e)}")
@@ -2181,9 +2115,9 @@ class TotalCashSalesByUser(Resource):
     def get(self, username, shop_id):
         try:
             # ===============================
-            # 1. Fixed start date (31/01/2026)
+            # 1. Fixed start date (16/02/2026)
             # ===============================
-            start_date = datetime.strptime("2026-01-31", "%Y-%m-%d").date()
+            start_date = datetime.strptime("2026-02-16", "%Y-%m-%d").date()
             today = datetime.now().date()
 
             # ===============================
