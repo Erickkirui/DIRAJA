@@ -87,7 +87,7 @@ class IncomeStatement(Resource):
         for item in revenue_items:
             description = item.description
             if description and description.startswith("Sales - "):
-                description = description.replace("Sales - ", "Sale of ")
+                description = description.replace("Sales - ", "Sales - ")
             
             amount = round(float(item.total_amount or 0), 2)
             
