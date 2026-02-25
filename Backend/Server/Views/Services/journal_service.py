@@ -10,7 +10,8 @@ from Server.Models.ExpenseCategory import ExpenseCategory
 from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.Accounting.SpoiltStockLedger import SpoiltStockLedger
 from Server.Models.SpoiltStock import SpoiltStock
-
+from Server.Models.ShopstockV2 import ShopStockV2
+from Server.Models.Accounting.CostOfSalesLedger import CostOfSaleLedger
 from Server.Models.Accounting.BankTransferLedger import BankTransfersLedger
 from Server.Models.BankAccounts import BankAccount
 from datetime import datetime
@@ -30,17 +31,96 @@ class JournalService:
         Posts journal entries for sales using proper double-entry:
         - Paid → Cash DR, Revenue CR
         - Unpaid / Partial → A/R DR, Revenue CR
+        - Cost of Goods Sold → Cost of Goods Sold DR, Inventory CR
         """
 
         # ===== ACCOUNT LOOKUPS =====
         revenue_account = ChartOfAccounts.query.filter_by(type="Revenue").first()
         receivable_account = ChartOfAccounts.query.filter_by(name="Current Asset").first()
         cash_account = ChartOfAccounts.query.filter_by(name="Cash & Bank").first()
+        
+        # Cost of Goods Sold account lookups
+        cogs_account = ChartOfAccounts.query.filter_by(name="Cost of Goods Sold").first()
+        inventory_account = ChartOfAccounts.query.filter_by(name="Inventory").first()
 
         if not revenue_account:
             raise Exception("Revenue account not found")
+        if not cogs_account:
+            raise Exception("Cost of Goods Sold account not found")
+        if not inventory_account:
+            raise Exception("Inventory account not found")
 
         created_at = sale.created_at
+
+        # ==============================
+        # POST COST OF GOODS SOLD ENTRIES (Common for all sale types)
+        # ==============================
+        cogs_entries = []
+        cogs_journal_payload = []
+
+        for item in sold_items:
+            # Skip if no cost (e.g., livestock deduction with zero cost)
+            if float(item.get('Purchase_account', 0)) <= 0:
+                continue
+
+            description = f"Cost of Goods Sold - {item['item_name']}"
+            cogs_amount = float(item['Purchase_account'])
+
+            # Find inventory_id from the batch or stock
+            inventory_id = None
+            if item.get('stockv2_id'):
+                stock = ShopStockV2.query.filter_by(stockv2_id=item['stockv2_id']).first()
+                if stock:
+                    inventory_id = stock.inventoryv2_id
+
+            if not inventory_id:
+                # For livestock or if inventory not found, skip or use default
+                continue
+
+            # DR: Cost of Goods Sold
+            debit_entry = CostOfSaleLedger(
+                sales_id=sale.sales_id,
+                inventory_id=inventory_id,
+                description=description,
+                debit_account_id=cogs_account.id,
+                credit_account_id=None,
+                amount=cogs_amount,
+                shop_id=shop_id,
+                created_at=created_at
+            )
+
+            # CR: Inventory
+            credit_entry = CostOfSaleLedger(
+                sales_id=sale.sales_id,
+                inventory_id=inventory_id,
+                description=description,
+                debit_account_id=None,
+                credit_account_id=inventory_account.id,
+                amount=cogs_amount,
+                shop_id=shop_id,
+                created_at=created_at
+            )
+
+            cogs_entries.extend([debit_entry, credit_entry])
+            
+            cogs_journal_payload.append({
+                "item": item['item_name'],
+                "type": "debit", 
+                "account": cogs_account.name, 
+                "amount": cogs_amount,
+                "inventory_id": inventory_id
+            })
+            cogs_journal_payload.append({
+                "item": item['item_name'],
+                "type": "credit", 
+                "account": inventory_account.name, 
+                "amount": cogs_amount,
+                "inventory_id": inventory_id
+            })
+
+        # Add cost of goods sold entries to database
+        if cogs_entries:
+            db.session.add_all(cogs_entries)
 
         # ==============================
         # PAID SALE
@@ -101,6 +181,10 @@ class JournalService:
                     "sales_id": sale.sales_id,
                     "status": sale.status,
                     "entries": journal_payload_entries
+                },
+                "cost_of_goods_sold": {
+                    "entries": cogs_journal_payload,
+                    "total_cogs": sum(float(item['Purchase_account']) for item in sold_items if float(item.get('Purchase_account', 0)) > 0)
                 }
             }
 
@@ -183,10 +267,254 @@ class JournalService:
                     "creditor_id": creditor_id,
                     "entries": journal_payload_entries,
                     "balance": sale.balance
+                },
+                "cost_of_goods_sold": {
+                    "entries": cogs_journal_payload,
+                    "total_cogs": sum(float(item['Purchase_account']) for item in sold_items if float(item.get('Purchase_account', 0)) > 0)
                 }
             }
 
         raise Exception(f"Unsupported sale status: {sale.status}")
+
+
+# Optional: Add a separate method if you want to post cost of goods sold independently
+@staticmethod
+def post_cost_of_goods_sold(sale, sold_items, shop_id):
+    """
+    Standalone method to post only cost of goods sold entries
+    """
+    cogs_account = ChartOfAccounts.query.filter_by(name="Cost of Goods Sold").first()
+    inventory_account = ChartOfAccounts.query.filter_by(name="Inventory").first()
+
+    if not cogs_account or not inventory_account:
+        raise Exception("Cost of Goods Sold or Inventory account not found")
+
+    created_at = sale.created_at
+    entries = []
+    
+    for item in sold_items:
+        if float(item.get('Purchase_account', 0)) <= 0:
+            continue
+
+        description = f"Cost of Goods Sold - {item['item_name']}"
+        cogs_amount = float(item['Purchase_account'])
+
+        # Find inventory_id
+        inventory_id = None
+        if item.get('stockv2_id'):
+            stock = ShopStockV2.query.filter_by(stockv2_id=item['stockv2_id']).first()
+            if stock:
+                inventory_id = stock.inventoryv2_id
+
+        if not inventory_id:
+            continue
+
+        # DR: Cost of Goods Sold
+        debit_entry = CostOfSaleLedger(
+            sales_id=sale.sales_id,
+            inventory_id=inventory_id,
+            description=description,
+            debit_account_id=cogs_account.id,
+            credit_account_id=None,
+            amount=cogs_amount,
+            shop_id=shop_id,
+            created_at=created_at
+        )
+
+        # CR: Inventory
+        credit_entry = CostOfSaleLedger(
+            sales_id=sale.sales_id,
+            inventory_id=inventory_id,
+            description=description,
+            debit_account_id=None,
+            credit_account_id=inventory_account.id,
+            amount=cogs_amount,
+            shop_id=shop_id,
+            created_at=created_at
+        )
+
+        entries.extend([debit_entry, credit_entry])
+
+    if entries:
+        db.session.add_all(entries)
+    
+    return {
+        "message": "Cost of goods sold entries posted successfully",
+        "entries_count": len(entries) // 2,
+        "total_cogs": sum(float(item['Purchase_account']) for item in sold_items if float(item.get('Purchase_account', 0)) > 0)
+    }
+
+# class JournalService:
+
+#     @staticmethod
+#     def post_sale_journal(
+#         sale,
+#         sold_items,
+#         shop_id,
+#         creditor_id=None,
+#         amount_paid=0
+#     ):
+#         """
+#         Posts journal entries for sales using proper double-entry:
+#         - Paid → Cash DR, Revenue CR
+#         - Unpaid / Partial → A/R DR, Revenue CR
+#         """
+
+#         # ===== ACCOUNT LOOKUPS =====
+#         revenue_account = ChartOfAccounts.query.filter_by(type="Revenue").first()
+#         receivable_account = ChartOfAccounts.query.filter_by(name="Current Asset").first()
+#         cash_account = ChartOfAccounts.query.filter_by(name="Cash & Bank").first()
+
+#         if not revenue_account:
+#             raise Exception("Revenue account not found")
+
+#         created_at = sale.created_at
+
+#         # ==============================
+#         # PAID SALE
+#         # ==============================
+#         if sale.status == "paid":
+#             if not cash_account:
+#                 raise Exception("Cash & Bank account not found")
+
+#             entries = []
+#             journal_payload_entries = []
+
+#             for item in sold_items:
+#                 description = f"Sales - {item['item_name']}"
+#                 item_amount = float(item['total_price'])
+
+#                 # DR: Cash
+#                 debit_entry = SalesLedger(
+#                     sales_id=sale.sales_id,
+#                     description=description,
+#                     debit_account_id=cash_account.id,
+#                     credit_account_id=None,
+#                     amount=item_amount,
+#                     shop_id=shop_id,
+#                     created_at=created_at
+#                 )
+
+#                 # CR: Revenue
+#                 credit_entry = SalesLedger(
+#                     sales_id=sale.sales_id,
+#                     description=description,
+#                     debit_account_id=None,
+#                     credit_account_id=revenue_account.id,
+#                     amount=item_amount,
+#                     shop_id=shop_id,
+#                     created_at=created_at
+#                 )
+
+#                 entries.extend([debit_entry, credit_entry])
+                
+#                 journal_payload_entries.append({
+#                     "item": item['item_name'],
+#                     "type": "debit", 
+#                     "account": cash_account.name, 
+#                     "amount": item_amount
+#                 })
+#                 journal_payload_entries.append({
+#                     "item": item['item_name'],
+#                     "type": "credit", 
+#                     "account": revenue_account.name, 
+#                     "amount": item_amount
+#                 })
+
+#             db.session.add_all(entries)
+
+#             return {
+#                 "journal_type": "sales",
+#                 "journal_payload": {
+#                     "sales_id": sale.sales_id,
+#                     "status": sale.status,
+#                     "entries": journal_payload_entries
+#                 }
+#             }
+
+#         # ==============================
+#         # CREDIT / PARTIALLY PAID SALE
+#         # ==============================
+#         if sale.status in ["unpaid", "partially_paid"]:
+
+#             if not creditor_id:
+#                 raise Exception("Creditor ID is required")
+
+#             if not receivable_account:
+#                 raise Exception("Accounts Receivable account not found")
+
+#             journal_amount = (
+#                 sale.balance
+#                 if sale.status == "partially_paid"
+#                 else sum(float(item['total_price']) for item in sold_items)
+#             )
+
+#             entries = []
+#             journal_payload_entries = []
+
+#             # For credit sales, we need to allocate the journal amount across items
+#             # This example assumes proportional allocation based on item prices
+#             total_sale = sum(float(item['total_price']) for item in sold_items)
+            
+#             for item in sold_items:
+#                 description = f"Sales - {item['item_name']}"
+                
+#                 # Calculate proportional amount for this item
+#                 item_amount = (float(item['total_price']) / total_sale) * journal_amount
+                
+#                 # DR: Accounts Receivable
+#                 debit_entry = CreditSalesLedger(
+#                     sales_id=sale.sales_id,
+#                     creditor_id=creditor_id,
+#                     description=description,
+#                     debit_account_id=receivable_account.id,
+#                     credit_account_id=None,
+#                     amount=item_amount,
+#                     shop_id=shop_id,
+#                     created_at=created_at
+#                 )
+
+#                 # CR: Revenue
+#                 credit_entry = CreditSalesLedger(
+#                     sales_id=sale.sales_id,
+#                     creditor_id=creditor_id,
+#                     description=description,
+#                     debit_account_id=None,
+#                     credit_account_id=revenue_account.id,
+#                     amount=item_amount,
+#                     shop_id=shop_id,
+#                     created_at=created_at
+#                 )
+
+#                 entries.extend([debit_entry, credit_entry])
+                
+#                 journal_payload_entries.append({
+#                     "item": item['item_name'],
+#                     "type": "debit", 
+#                     "account": receivable_account.name, 
+#                     "amount": item_amount
+#                 })
+#                 journal_payload_entries.append({
+#                     "item": item['item_name'],
+#                     "type": "credit", 
+#                     "account": revenue_account.name, 
+#                     "amount": item_amount
+#                 })
+
+#             db.session.add_all(entries)
+
+#             return {
+#                 "journal_type": "credit_sales",
+#                 "journal_payload": {
+#                     "sales_id": sale.sales_id,
+#                     "status": sale.status,
+#                     "creditor_id": creditor_id,
+#                     "entries": journal_payload_entries,
+#                     "balance": sale.balance
+#                 }
+#             }
+
+#         raise Exception(f"Unsupported sale status: {sale.status}")
 
 
 class PurchaseJournalService:
@@ -333,40 +661,37 @@ class DistributionJournalService:
             }
         }
 
-
-
 class SpoiltJournalService:
     """
-    Handles journal entries for spoilt stock.
+    Handles journal entries for spoilt stock
+    and updates account balances.
     """
 
     @staticmethod
     def post_spoilt_journal(spoilt: SpoiltStock):
+
         # ===== Account lookups =====
         expense_account = ChartOfAccounts.query.filter_by(
-            name="Spoilage Expense"
-        ).first()
+            name="Stock Adjustment"   # changed from Spoilage Expense
+        ).with_for_update().first()
 
         inventory_account = ChartOfAccounts.query.filter_by(
             name="Inventory"
-        ).first()
+        ).with_for_update().first()
 
         if not expense_account:
-            raise Exception("Spoilage Expense account not found")
+            raise Exception("Stock Adjustment account not found")
 
         if not inventory_account:
             raise Exception("Inventory account not found")
 
         # ===== Amount logic =====
-        # If you later want valuation from inventory batches,
-        # this is where you change it.
         amount = float(spoilt.quantity)
 
         description = f"Spoilt stock: {spoilt.item} ({spoilt.quantity} {spoilt.unit})"
-
         created_at = spoilt.approved_at or spoilt.created_at
 
-        # ===== DR: Spoilage Expense =====
+        # ===== DR: Stock Adjustment =====
         dr_entry = SpoiltStockLedger(
             spoilt_id=spoilt.id,
             shop_id=spoilt.shop_id,
@@ -388,6 +713,22 @@ class SpoiltJournalService:
             created_at=created_at
         )
 
+        # ===== Adjust Account Balances =====
+
+        # Debit increases expense account
+        expense_account.debit_balance = (
+            (expense_account.debit_balance or 0) + amount
+        )
+
+        # Credit increases credit side of inventory
+        inventory_account.credit_balance = (
+            (inventory_account.credit_balance or 0) + amount
+        )
+
+        # Optional: If you use a normal balance calculation
+        # expense_account.balance += amount
+        # inventory_account.balance -= amount
+
         db.session.add_all([dr_entry, cr_entry])
 
         return {
@@ -402,6 +743,7 @@ class SpoiltJournalService:
                 ]
             }
         }
+
         
 class BankJournalService:
 
