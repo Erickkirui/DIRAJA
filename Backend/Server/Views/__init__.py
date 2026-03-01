@@ -184,6 +184,7 @@ from Server.Views.ClerkReportTime import (
     GetShopReports,GetShopReportStats,GetTodayShopReportStatus
 )
 from Server.Views.IncomeStatement import (IncomeStatement)
+from Server.Views.Balancesheet import (BalanceSheet)
 
 api_endpoint = Blueprint('auth',__name__,url_prefix='/api/diraja')
 api = Api(api_endpoint)
@@ -554,3 +555,6 @@ api.add_resource(GetShopReportStats, '/shop-reports/stats')
 
 #income statement 
 api.add_resource(IncomeStatement,'/income-statement')
+
+#balance sheet
+api.add_resource(BalanceSheet,'/balance-sheet')
