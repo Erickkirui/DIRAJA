@@ -293,7 +293,7 @@ api.add_resource(UpdateTransfer, "/updatetransfer/<int:transfer_id>")
 api.add_resource(ManualTransfer,'/manualtransfer')
 api.add_resource(GetTransferById, '/singletransfer/<int:transfer_id>')
 
-#Live stock 
+#Live stock
 api.add_resource(GetStock,"/get-stock/<int:shop_id>")
 api.add_resource(RegisterStock , '/registerstock')
 api.add_resource(CheckInStock, '/stockcheckin')
