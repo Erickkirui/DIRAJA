@@ -5,6 +5,8 @@ from Server.Models.StoreReturn import ReturnsV2
 from Server.Models.Shops import Shops
 from Server.Models.ShopstockV2 import ShopStockV2
 from Server.Models.BankAccounts import BankAccount, BankingTransaction
+from Server.Models.Accounting.PurchaseLedger import PurchaseLedgerInventory
+from Server.Models.Accounting.PurchaseLedger import DistributionLedger
 from Server.Models.Users import Users
 from app import db
 import json
@@ -1562,9 +1564,39 @@ class InventoryResourceByIdV2(Resource):
             return {"error": "Inventory not found"}, 404
 
         try:
+            # Delete purchase ledger entries first (FK: inventory_id)
+            try:
+                purchase_ledger_entries = PurchaseLedgerInventory.query.filter_by(
+                    inventory_id=inventoryV2_id
+                ).all()
+                for entry in purchase_ledger_entries:
+                    db.session.delete(entry)
+            except Exception as e:
+                return {
+                    "message": "Failed while deleting purchase ledger records",
+                    "error": str(e),
+                    "hint": "Check PurchaseLedgerInventory model foreign key. Should be 'inventory_id'."
+                }, 500
+
+            # Get all transfers to delete their distribution ledger entries
+            transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            
+            # Delete distribution ledger entries for each transfer
+            for transfer in transfers:
+                try:
+                    distribution_entries = DistributionLedger.query.filter_by(
+                        transfer_id=transfer.transferv2_id
+                    ).all()
+                    for entry in distribution_entries:
+                        db.session.delete(entry)
+                except Exception as e:
+                    return {
+                        "message": f"Failed while deleting distribution ledger records for transfer {transfer.transferv2_id}",
+                        "error": str(e)
+                    }, 500
+
             # Delete transfer records (FK: inventoryV2_id)
             try:
-                transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
                 for transfer in transfers:
                     db.session.delete(transfer)
             except Exception as e:
@@ -1598,7 +1630,7 @@ class InventoryResourceByIdV2(Resource):
             # Commit the transaction
             db.session.commit()
 
-            return {"message": "Inventory deleted successfully"}, 200
+            return {"message": "Inventory and all related records (including ledger entries) deleted successfully"}, 200
 
         except Exception as e:
             db.session.rollback()
@@ -1615,18 +1647,34 @@ class InventoryResourceByIdV2(Resource):
             return {'message': 'Inventory not found'}, 404
 
         try:
+            # Store old values for comparison
+            old_itemname = inventory.itemname
+            old_initial_quantity = inventory.initial_quantity
+            old_unitCost = inventory.unitCost
+            old_unitPrice = inventory.unitPrice
+            old_totalCost = inventory.totalCost
+            old_amountPaid = inventory.amountPaid
+            old_ballance = inventory.ballance  # Fixed: use ballance (double 'l')
+            old_paymentRef = inventory.paymentRef
+            old_Suppliername = inventory.Suppliername
+            old_Supplier_location = inventory.Supplier_location
+            old_note = inventory.note
+            old_created_at = inventory.created_at
+
+            # Get new values from request
             itemname = data.get('itemname', inventory.itemname)
             initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
             unitCost = float(data.get('unitCost', inventory.unitCost))
             unitPrice = float(data.get('unitPrice', inventory.unitPrice))
             totalCost = unitCost * initial_quantity
             amountPaid = float(data.get('amountPaid', inventory.amountPaid))
-            balance = totalCost - amountPaid
-            paymentRef = data.get('paymentRef', inventory.paymentRef)  # Added paymentRef
+            ballance = totalCost - amountPaid  # Fixed: calculate ballance
+            paymentRef = data.get('paymentRef', inventory.paymentRef)
             Suppliername = data.get('Suppliername', inventory.Suppliername)
             Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
             note = data.get('note', inventory.note)
 
+            # Handle date
             created_at_str = data.get('created_at', None)
             if created_at_str:
                 try:
@@ -1636,35 +1684,94 @@ class InventoryResourceByIdV2(Resource):
             else:
                 created_at = inventory.created_at
 
+            # Update inventory
             inventory.itemname = itemname
             inventory.initial_quantity = initial_quantity
             inventory.unitCost = unitCost
             inventory.unitPrice = unitPrice
             inventory.totalCost = totalCost
             inventory.amountPaid = amountPaid
-            inventory.balance = balance
-            inventory.paymentRef = paymentRef  # Added paymentRef assignment
+            inventory.ballance = ballance  # Fixed: update ballance (double 'l')
+            inventory.paymentRef = paymentRef
             inventory.Suppliername = Suppliername
             inventory.Supplier_location = Supplier_location
             inventory.note = note
             inventory.created_at = created_at
 
-            # Check what the actual foreign key column name is in your models
+            # Update purchase ledger entries
+            purchase_ledger_entries = PurchaseLedgerInventory.query.filter_by(
+                inventory_id=inventoryV2_id
+            ).all()
+            
+            for entry in purchase_ledger_entries:
+                # Update amount if totalCost changed
+                if totalCost != old_totalCost:
+                    entry.amount = totalCost
+                
+                # Update date if created_at changed
+                if created_at != old_created_at:
+                    entry.created_at = created_at
+                
+                # Update description if itemname changed
+                if itemname != old_itemname:
+                    entry.description = f"Purchase of {itemname} (Batch: {inventory.BatchNumber})"
+
+            # Get all transfers to update their distribution ledger entries
             transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
+            
             for transfer in transfers:
+                # Update transfer details
                 transfer.itemname = itemname
                 transfer.unitCost = unitCost
                 transfer.amountPaid = amountPaid
-                transfer.paymentRef = paymentRef  # Added paymentRef update for transfers
+                transfer.paymentRef = paymentRef
 
-            # Check what the actual foreign key column name is in your models
+                # Update distribution ledger entries for this transfer
+                distribution_entries = DistributionLedger.query.filter_by(
+                    transfer_id=transfer.transferv2_id
+                ).all()
+                
+                for entry in distribution_entries:
+                    # Update amount based on transfer quantity and unit cost
+                    if unitCost != old_unitCost or transfer.quantity != old_initial_quantity:
+                        # Calculate new amount based on transferred quantity
+                        transferred_quantity = transfer.quantity
+                        entry.amount = transferred_quantity * unitCost
+                    
+                    # Update date if created_at changed
+                    if created_at != old_created_at:
+                        entry.created_at = created_at
+                    
+                    # Update description if needed
+                    if itemname != old_itemname:
+                        entry.description = f"Distribution of {itemname} to {transfer.shop.shopname if transfer.shop else 'shop'}"
+
+            # Update shop stock records
             shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
             for stock in shop_stocks:
                 stock.itemname = itemname
                 stock.unitPrice = unitPrice
+                
+                # Update selling price if unitPrice changed
+                if unitPrice != old_unitPrice:
+                    stock.unitPrice = unitPrice
 
             db.session.commit()
-            return {'message': 'Inventory and related records updated successfully'}, 200
+            
+            return {
+                'message': 'Inventory and all related records (including ledger entries) updated successfully',
+                'updated_fields': {
+                    'itemname': itemname != old_itemname,
+                    'quantity': initial_quantity != old_initial_quantity,
+                    'unitCost': unitCost != old_unitCost,
+                    'unitPrice': unitPrice != old_unitPrice,
+                    'totalCost': totalCost != old_totalCost,
+                    'amountPaid': amountPaid != old_amountPaid,
+                    'ballance': ballance != old_ballance,  # Fixed: use ballance
+                    'paymentRef': paymentRef != old_paymentRef,
+                    'date': created_at != old_created_at
+                }
+            }, 200
 
         except ValueError as e:
             db.session.rollback()
@@ -1672,71 +1779,6 @@ class InventoryResourceByIdV2(Resource):
         except Exception as e:
             db.session.rollback()
             return {'message': 'Error updating inventory', 'error': str(e)}, 500
-
-    # @jwt_required()
-    # @check_role('manager')
-    # def put(self, inventoryV2_id):
-    #     data = request.get_json()
-    #     inventory = InventoryV2.query.get(inventoryV2_id)
-    #     if not inventory:
-    #         return {'message': 'Inventory not found'}, 404
-
-    #     try:
-    #         itemname = data.get('itemname', inventory.itemname)
-    #         initial_quantity = int(data.get('initial_quantity', inventory.initial_quantity))
-    #         unitCost = float(data.get('unitCost', inventory.unitCost))
-    #         unitPrice = float(data.get('unitPrice', inventory.unitPrice))
-    #         totalCost = unitCost * initial_quantity
-    #         amountPaid = float(data.get('amountPaid', inventory.amountPaid))
-    #         balance = totalCost - amountPaid
-    #         Suppliername = data.get('Suppliername', inventory.Suppliername)
-    #         Supplier_location = data.get('Supplier_location', inventory.Supplier_location)
-    #         note = data.get('note', inventory.note)
-
-            # created_at_str = data.get('created_at', None)
-            # if created_at_str:
-            #     try:
-            #         created_at = datetime.strptime(created_at_str, '%Y-%m-%d')
-            #     except ValueError:
-            #         return {'message': 'Invalid date format for created_at, expected YYYY-MM-DD'}, 400
-            # else:
-            #     created_at = inventory.created_at
-
-    #         inventory.itemname = itemname
-    #         inventory.initial_quantity = initial_quantity
-    #         inventory.unitCost = unitCost
-    #         inventory.unitPrice = unitPrice
-    #         inventory.totalCost = totalCost
-    #         inventory.amountPaid = amountPaid
-    #         inventory.balance = balance
-    #         inventory.Suppliername = Suppliername
-    #         inventory.Supplier_location = Supplier_location
-    #         inventory.note = note
-    #         inventory.created_at = created_at
-
-            # Check what the actual foreign key column name is in your models
-            # transfers = TransfersV2.query.filter_by(inventoryV2_id=inventoryV2_id).all()
-            # for transfer in transfers:
-            #     transfer.itemname = itemname
-            #     transfer.unitCost = unitCost
-            #     transfer.amountPaid = amountPaid
-
-            # # Check what the actual foreign key column name is in your models
-            # shop_stocks = ShopStockV2.query.filter_by(inventoryv2_id=inventoryV2_id).all()
-            # for stock in shop_stocks:
-            #     stock.itemname = itemname
-            #     stock.unitPrice = unitPrice
-
-    #         db.session.commit()
-    #         return {'message': 'Inventory and related records updated successfully'}, 200
-
-    #     except ValueError as e:
-    #         db.session.rollback()
-    #         return {'message': 'Invalid data type', 'error': str(e)}, 400
-    #     except Exception as e:
-    #         db.session.rollback()
-    #         return {'message': 'Error updating inventory', 'error': str(e)}, 500
-
 
 class StockDeletionResourceV2(Resource):     
     @jwt_required()
