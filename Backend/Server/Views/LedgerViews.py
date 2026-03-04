@@ -13,6 +13,7 @@ from Server.Models.Shops import Shops
 from Server.Models.Expenses import Expenses
 from Server.Models.Creditors import Creditors
 from Server.Models.Accounting.BankTransferLedger import BankTransfersLedger
+from Server.Models.Accounting.ManualLedger import ManualLedger
 from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.Accounting.PurchaseLedger import PurchaseLedgerInventory,DistributionLedger
 from Server.Models.BankAccounts import BankAccount,BankingTransaction
@@ -3153,3 +3154,79 @@ class ExpensesLedgerList(Resource):
         except Exception as e:
             db.session.rollback()
             return {"error": str(e)}, 500
+
+
+class CreateManualLedger(Resource):
+
+    @jwt_required()
+    def post(self):
+        data = request.get_json()
+
+        debit_account_id = data.get("debit_account_id")
+        credit_account_id = data.get("credit_account_id")
+        shop_id = data.get("shop_id")
+        amount = data.get("amount")
+        description = data.get("description")
+        
+
+        # ===== Strict Double Entry Validation =====
+        if not amount:
+            return {"message": "Amount is required"}, 400
+
+        if not debit_account_id or not credit_account_id:
+            return {"message": "Both debit and credit accounts are required"}, 400
+
+        if debit_account_id == credit_account_id:
+            return {"message": "Debit and Credit accounts cannot be the same"}, 400
+
+        # Validate debit account
+        debit_account = ChartOfAccounts.query.get(debit_account_id)
+        if not debit_account:
+            return {"message": "Invalid debit account"}, 404
+
+        # Validate credit account
+        credit_account = ChartOfAccounts.query.get(credit_account_id)
+        if not credit_account:
+            return {"message": "Invalid credit account"}, 404
+
+        # Validate shop
+        if shop_id:
+            shop = Shops.query.get(shop_id)
+            if not shop:
+                return {"message": "Invalid shop_id"}, 404
+
+        timestamp = datetime.utcnow()
+
+        # ===== Entry 1 → Debit Side =====
+        debit_entry = ManualLedger(
+            debit_account_id=debit_account_id,
+            credit_account_id=None,
+            description=description,
+            shop_id=shop_id,
+            amount=amount,
+            created_at=timestamp
+        )
+
+        # ===== Entry 2 → Credit Side =====
+        credit_entry = ManualLedger(
+            debit_account_id=None,
+            credit_account_id=credit_account_id,
+            description=description,
+            shop_id=shop_id,
+            amount=amount,
+            created_at=timestamp
+        )
+
+        db.session.add(debit_entry)
+        db.session.add(credit_entry)
+        db.session.commit()
+
+        return {
+            "message": "Double entry posted successfully",
+            "debit_entry_id": debit_entry.id,
+            "credit_entry_id": credit_entry.id,
+            "amount": amount,
+            "description": description,
+            "shop_id": shop_id,
+            "created_at": timestamp.isoformat()
+        }, 201
