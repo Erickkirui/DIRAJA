@@ -56,16 +56,19 @@ def create_app(config_name):
     app = Flask(__name__)
     app.url_map.strict_slashes = False
 
-    CORS(app)
+    # Update CORS to allow your new origin
+    CORS(app, origins=[
+        "https://beta.kulima.co.ke",
+        # you can keep localhost or other origins if needed
+        "http://localhost:3000",
+        "http://127.0.0.1:3000"
+    ])
 
     # Load config
     app.config.from_object(config_name)
 
     # Database config
-    # app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:MyNewPass@localhost/Diraja"
-    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:@localhost/Diraja"
-    # app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://kulimaco_dirajaapp:Diraja2024@217.20.124.83/kulimaco_dirajaapp'
-
+    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:MyNewPass@localhost/Diraja"
 
     # JWT config
     app.config['JWT_SECRET_KEY'] = "Soweto@2024"
@@ -82,7 +85,7 @@ def create_app(config_name):
     app.config['MAIL_USE_TLS'] = False
     app.config['MAIL_DEFAULT_SENDER'] = 'kukuzetureports@kulima.co.ke'
 
-    # ✅ VAPID keys (from .env)
+    # VAPID keys
     app.config['VAPID_PUBLIC_KEY'] = os.getenv("VAPID_PUBLIC_KEY")
     app.config['VAPID_PRIVATE_KEY'] = os.getenv("VAPID_PRIVATE_KEY")
     app.config['VAPID_EMAIL'] = os.getenv("VAPID_EMAIL")  # e.g. "mailto:admin@yourdomain.com"
