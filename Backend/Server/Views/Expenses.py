@@ -1,7 +1,9 @@
 from  flask_restful import Resource
 from Server.Models.Expenses import Expenses
 from Server.Models.Users import Users
+from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.Shops import Shops
+from Server.Models.ExpenseCategory import ExpenseCategory
 from Server.Models.BankAccounts import BankAccount, BankingTransaction
 from app import db
 from flask_jwt_extended import jwt_required,get_jwt_identity
@@ -264,7 +266,6 @@ class ExpensesResources(Resource):
     
     @jwt_required()
     @check_role('manager')
-
     def get(self, expense_id):
         # Fetch the specific expense by ID
         expense = Expenses.query.get(expense_id)
@@ -290,59 +291,102 @@ class ExpensesResources(Resource):
         else:
             return {"error": "Expense not found"}, 404
 
-   
+    
+    @jwt_required()
+    @check_role('manager')
+    def put(self, expense_id):
+
+        data = request.get_json()
+        expense = Expenses.query.get(expense_id)
+
+        if not expense:
+            return {"error": "Expense not found"}, 404
+
+        # Store old values for comparison
+        old_amount = expense.totalPrice
+        old_category = expense.category
+        old_date = expense.created_at
+
+        # ------------------------
+        # Update Expense Fields
+        # ------------------------
+
+        expense.item = data.get('item', expense.item)
+        expense.description = data.get('description', expense.description)
+        expense.category = data.get('category', expense.category)
+        expense.quantity = data.get('quantity', expense.quantity)
+        expense.totalPrice = data.get('totalPrice', expense.totalPrice)
+        expense.amountPaid = data.get('amountPaid', expense.amountPaid)
+        expense.paidTo = data.get('paidTo', expense.paidTo)
+        expense.source = data.get('source', expense.source)
+        expense.paymentRef = data.get('paymentRef', expense.paymentRef)
+        expense.comments = data.get('comments', expense.comments)
+
+        # Handle date update
+        if 'created_at' in data:
+            try:
+                expense.created_at = datetime.strptime(
+                    data['created_at'], '%Y-%m-%d %H:%M:%S'
+                )
+            except ValueError:
+                expense.created_at = datetime.strptime(
+                    data['created_at'], '%Y-%m-%d'
+                )
+
+        # -----------------------------------
+        # Update Related Ledger Entries
+        # -----------------------------------
+
+        ledger_entries = ExpensesLedger.query.filter_by(
+            expense_id=expense_id
+        ).all()
+
+        for ledger in ledger_entries:
+
+            # 🔹 Update amount if changed
+            if expense.totalPrice != old_amount:
+                ledger.amount = expense.totalPrice
+
+            # 🔹 Update date if changed
+            if expense.created_at != old_date:
+                ledger.created_at = expense.created_at
+
+            # 🔹 Update category if changed
+            if expense.category != old_category:
+
+                # get new category object
+                category_obj = ExpenseCategory.query.filter_by(
+                    name=expense.category
+                ).first()
+
+                if category_obj:
+                    ledger.category_id = category_obj.id
+
+                    # 🔥 If your category controls accounts, update accounts too
+                    ledger.debit_account_id = category_obj.debit_account_id
+                    ledger.credit_account_id = category_obj.credit_account_id
+
+        db.session.commit()
+
+        return {"message": "Expense and ledger updated successfully"}, 200
+    
     @jwt_required()
     @check_role('manager')
     def delete(self, expense_id):
-        # Fetch the specific expense by ID
+
         expense = Expenses.query.get(expense_id)
 
-        if expense:
-            # Delete the expense
-            db.session.delete(expense)
-            db.session.commit()
-
-            return {"message": "Expense deleted successfully"}, 200
-        else:
+        if not expense:
             return {"error": "Expense not found"}, 404
-        
-      
-    @jwt_required()
-    @check_role('manager')
-    
-    def put(self, expense_id):
-            # Get the data from the request to update the expense
-            data = request.get_json()
 
-            # Fetch the specific expense by ID
-            expense = Expenses.query.get(expense_id)
+        # 🔥 Delete related ledger entries first
+        ExpensesLedger.query.filter_by(expense_id=expense_id).delete()
 
-            if expense:
-                # Update the expense with the provided data
-                expense.item = data.get('item', expense.item)
-                expense.description = data.get('description', expense.description)
-                expense.category = data.get('category', expense.category)
-                expense.quantity = data.get('quantity', expense.quantity)
-                expense.totalPrice = data.get('totalPrice', expense.totalPrice)
-                expense.amountPaid = data.get('amountPaid', expense.amountPaid)
-                expense.paidTo = data.get('paidTo', expense.paidTo)
-                expense.source = data.get('source', expense.source)
-                expense.paymentRef = data.get('paymentRef', expense.paymentRef)
-                expense.comments = data.get('comments', expense.comments)  # New comments column
+        # Then delete expense
+        db.session.delete(expense)
+        db.session.commit()
 
-                # Convert created_at from String to datetime if provided
-                if 'created_at' in data:
-                    try:
-                        expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d %H:%M:%S')
-                    except ValueError:
-                        expense.created_at = datetime.strptime(data['created_at'], '%Y-%m-%d')
-
-                # Commit the changes to the database
-                db.session.commit()
-
-                return {"message": "Expense updated successfully"}, 200
-
-            return {"error": "Expense not found"}, 404
+        return {"message": "Expense and related ledger deleted successfully"}, 200
 
 
 
