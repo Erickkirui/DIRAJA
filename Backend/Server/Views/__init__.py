@@ -177,12 +177,10 @@ from Server.Views.ShopTargets import (
 )
 
 from Server.Views.LedgerViews import (
-Alex
+
     SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList, SpoiltStockLedgerList
 
-    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList,CreateManualLedger
 
-    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList
 )
 
 from Server.Views.ClerkReportTime import (
