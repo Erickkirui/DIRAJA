@@ -13,6 +13,7 @@ from Server.Models.Shops import Shops
 from Server.Models.Expenses import Expenses
 from Server.Models.Creditors import Creditors
 from Server.Models.Accounting.BankTransferLedger import BankTransfersLedger
+from Server.Models.Accounting.ManualLedger import ManualLedger
 from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.Accounting.PurchaseLedger import PurchaseLedgerInventory,DistributionLedger
 from Server.Models.BankAccounts import BankAccount,BankingTransaction

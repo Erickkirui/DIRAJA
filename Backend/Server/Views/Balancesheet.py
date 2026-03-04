@@ -6,6 +6,10 @@ from flask_jwt_extended import jwt_required
 from Server.Models.Accounting.ExpensesLedger import ExpensesLedger
 from Server.Models.ExpenseCategory import ExpenseCategory
 from Server.Models.Shops import Shops
+from Server.Models.BankAccounts import BankAccount
+from Server.Models.Accounting.CreditSalesLedger import CreditSalesLedger
+from Server.Models.Accounting.ManualLedger import ManualLedger
+from Server.Models.ChartOfAccounts import ChartOfAccounts
 from app import db
 
 class BalanceSheet(Resource):
@@ -13,41 +17,36 @@ class BalanceSheet(Resource):
     @jwt_required()
     def get(self):
         """
-        Simple balance sheet showing cumulative expenses up to the selected end date.
+        Balance sheet showing:
+        - Fixed Assets
+        - Current Assets (Cash & Bank + Accounts Receivable)
+        - Liabilities (Current + Equity & Long-Term)
         """
         end_date = request.args.get("end_date")
         shop_id = request.args.get("shop_id")
 
-        if not end_date:
-            return {
-                "success": False,
-                "message": "end_date required (YYYY-MM-DD)"
-            }, 400
-
         try:
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            # Use today if end_date not provided
+            if not end_date:
+                today = datetime.today()
+                end_date = datetime.combine(today.date(), datetime.max.time())
+            else:
+                end_date = datetime.strptime(end_date, "%Y-%m-%d")
+                end_date = datetime.combine(end_date.date(), datetime.max.time())
+
             if shop_id:
                 shop_id = int(shop_id)
         except ValueError:
-            return {
-                "success": False,
-                "message": "Invalid date format or shop_id"
-            }, 400
+            return {"success": False, "message": "Invalid date format or shop_id"}, 400
 
-        # Get earliest transaction date
-        earliest_expense = db.session.query(
-            func.min(ExpensesLedger.created_at)
-        ).scalar()
-        
+        # Earliest transaction date
+        earliest_expense = db.session.query(func.min(ExpensesLedger.created_at)).scalar()
         if not earliest_expense:
-            earliest_shop = db.session.query(
-                func.min(Shops.created_at)
-            ).scalar()
+            earliest_shop = db.session.query(func.min(Shops.created_at)).scalar()
             earliest_expense = earliest_shop or datetime.now()
-
         start_date = earliest_expense
 
-        # Simple query to get all expenses by category
+        # ----- Fixed Assets -----
         expenses = db.session.query(
             ExpenseCategory.category_name,
             func.sum(ExpensesLedger.amount).label('total_amount'),
@@ -67,47 +66,111 @@ class BalanceSheet(Resource):
             func.sum(ExpensesLedger.amount).desc()
         ).all()
 
-        # Format the results
-        expense_list = []
-        total_expenses = 0
-        total_transactions = 0
-
+        fixed_assets = []
+        total_fixed_assets = 0
         for expense in expenses:
             amount = round(float(expense.total_amount or 0), 2)
-            expense_list.append({
+            fixed_assets.append({
                 "category": expense.category_name,
                 "amount": amount,
                 "transaction_count": expense.transaction_count
             })
-            total_expenses += amount
-            total_transactions += expense.transaction_count
+            total_fixed_assets += amount
 
-        # Get shop info if filtered
-        shop_info = None
+        # ----- Current Assets -----
+        # Cash & Bank
+        current_assets_query = db.session.query(
+            func.sum(BankAccount.Account_Balance).label("total_balance")
+        )
         if shop_id:
-            shop = Shops.query.get(shop_id)
-            if shop:
-                shop_info = {
-                    'id': shop.id,
-                    'name': shop.shopname
-                }
+            current_assets_query = current_assets_query.filter(BankAccount.shop_id == shop_id)
 
+        total_cash_bank = current_assets_query.scalar() or 0
+        total_cash_bank = round(float(total_cash_bank), 2)
+
+        current_assets = [
+            {"account_name": "Cash and Bank", "balance": total_cash_bank}
+        ]
+
+        # Accounts Receivable
+        receivable_query = db.session.query(
+            func.sum(CreditSalesLedger.amount).label("total_receivable")
+        ).filter(
+            CreditSalesLedger.debit_account_id.isnot(None),
+            CreditSalesLedger.credit_account_id.is_(None)
+        )
+        if shop_id:
+            receivable_query = receivable_query.filter(CreditSalesLedger.shop_id == shop_id)
+
+        total_receivable = receivable_query.scalar() or 0
+        total_receivable = round(float(total_receivable), 2)
+
+        current_assets.append({
+            "account_name": "Accounts Receivable",
+            "balance": total_receivable
+        })
+
+        # ----- Manual Ledger (Liabilities + Equity) -----
+        manual_ledger = db.session.query(
+            ManualLedger,
+            ChartOfAccounts.type
+        ).join(
+            ChartOfAccounts,
+            ((ManualLedger.debit_account_id == ChartOfAccounts.id) |
+             (ManualLedger.credit_account_id == ChartOfAccounts.id))
+        ).filter(
+            ManualLedger.created_at <= end_date
+        )
+
+        if shop_id:
+            manual_ledger = manual_ledger.filter(ManualLedger.shop_id == shop_id)
+
+        # Initialize lists and totals
+        current_liabilities_list = []
+        equity_and_long_term_list = []
+        total_current_liabilities = 0
+        total_equity_and_long_term = 0
+
+        for entry, account_type in manual_ledger:
+            t = account_type.lower()
+            if t in ["liability", "current liability"]:
+                current_liabilities_list.append({
+                    "account_name": entry.description or "Manual Entry",
+                    "balance": entry.amount
+                })
+                total_current_liabilities += entry.amount
+            elif t in ["equity", "long-term liability"]:
+                equity_and_long_term_list.append({
+                    "account_name": entry.description or "Manual Entry",
+                    "balance": entry.amount
+                })
+                total_equity_and_long_term += entry.amount
+
+        total_liabilities = round(total_current_liabilities + total_equity_and_long_term, 2)
+
+        # ----- Compose Response -----
         response = {
             "success": True,
             "period": {
                 "start_date": start_date.strftime("%Y-%m-%d"),
                 "end_date": end_date.strftime("%Y-%m-%d")
             },
-            "summary": {
-                "total_expenses": total_expenses,
-                "total_transactions": total_transactions,
-                "number_of_categories": len(expense_list)
+            "assets": {
+                "fixed_assets": fixed_assets,
+                "current_assets": current_assets,
+                "total_assets": round(total_fixed_assets + total_cash_bank + total_receivable, 2)
             },
-            "expenses": expense_list
+            "liabilities": {
+                "current_liabilities": current_liabilities_list,
+                "equity_and_long_term_liabilities": equity_and_long_term_list,
+                "total": total_liabilities
+            }
         }
 
-        if shop_info:
-            response["shop"] = shop_info
+        if shop_id:
+            shop = Shops.query.get(shop_id)
+            if shop:
+                response["shop"] = {'id': shop.id, 'name': shop.shopname}
         else:
             response["shops_count"] = Shops.query.count()
 
