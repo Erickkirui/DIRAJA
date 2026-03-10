@@ -148,7 +148,7 @@ from Server.Views.Shoptoshoptransferviews import (
 )
 from Server.Views.StockReport import (
     SubmitStockReport, ResetShopReportStatus, GetStockReports, GetStockReportById, StockReconciliationList, StockReconciliationResource,
-    GetReportedStock, StockReconciliationByShop, GetReconciliationItemsByShop, ReconciliationItemsByShop
+    GetReportedStock, StockReconciliationByShop, GetReconciliationItemsByShop, ReconciliationItemsByShop, InventoryCount
     
 )
 
@@ -178,7 +178,7 @@ from Server.Views.ShopTargets import (
 
 from Server.Views.LedgerViews import (
 
-    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList, SpoiltStockLedgerList
+    SalesLedgerList,CreditSalesLedgerList,DistributionLedgerList,PurchaseLedgerInventoryList,BankTransfersLedgerList, ExpensesLedgerList, SpoiltStockLedgerList, CreateManualLedger, ManualLedgerList
 
 
 )
@@ -496,6 +496,7 @@ api.add_resource(ExpenseCategoryResource, '/expensecategories/<int:category_id>'
 
 #StockReport 
 api.add_resource(SubmitStockReport, '/report-stock')
+api.add_resource(InventoryCount, '/inventory-count')
 api.add_resource(ResetShopReportStatus, '/reset-report')
 api.add_resource(GetStockReports, '/stock-reports')
 api.add_resource(GetStockReportById, '/stock-reports/<int:report_id>')
@@ -550,6 +551,7 @@ api.add_resource(PurchaseLedgerInventoryList, '/accounting/purchase-ledger-inven
 api.add_resource(BankTransfersLedgerList, '/accounting/bank-transfers-ledger')
 api.add_resource(SpoiltStockLedgerList, "/accounting/spoilt-ledger")
 api.add_resource(ExpensesLedgerList, "/accounting/expenses-ledger")
+api.add_resource(ManualLedgerList,"/accounting/manual-ledger")
 
 
 # clerkShopReportTime
